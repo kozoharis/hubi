@@ -5,6 +5,7 @@ import { quien } from '@/lib/supabase/quien'
 import { calcular, euros, eurosRedondo, type Vista } from '@/lib/periodos'
 import { fechaBreve } from '@/lib/carpetas'
 import { nombreApartamento } from '@/lib/reservas'
+import { unidadesDe, comoEsLaSeccion } from '@/lib/unidades'
 import Barra from './barra'
 import Cabecera from './cabecera'
 import { Ico, Pastilla, type Icono } from './iconos'
@@ -34,8 +35,25 @@ export type Cuenta = {
   ruta: string
   /** Qué pestaña se enciende abajo. */
   pestana: 'finca' | 'helechos'
-  /** Los Helechos se reparte en tres apartamentos. La Finca, no. */
+  /**
+   * Los Helechos se reparte en apartamentos. La Finca, no.
+   *
+   * OJO: esto ya NO decide nada — lo decide la base de datos
+   * (`categorias.usa_unidades`). Se queda como red por si el SQL de
+   * las unidades todavía no se ha ejecutado: sin él, esta pantalla
+   * seguiría enseñando los tres apartamentos como siempre en vez de
+   * quedarse en blanco.
+   */
   apartamentos?: boolean
+  /**
+   * Cómo se llaman aquí las unidades, en el idioma de la casa.
+   *
+   * «Cada apartamento» en Los Helechos, «Cada obra» en un reformista.
+   * Nadie quiere leer «Detalle por unidad» en su propia pantalla:
+   * «unidad» es una palabra nuestra, de la fontanería, y no tiene por
+   * qué salir a la superficie.
+   */
+  etiquetaUnidades?: string
 }
 
 type Movimiento = {
@@ -47,6 +65,7 @@ type Movimiento = {
   categoria_id: string | null
   documento_id: string | null
   apartamento: number | null
+  unidad_id: string | null
   personas: number | null
   noches: number | null
   huesped: string | null
@@ -89,18 +108,58 @@ export default async function Cuentas({
     }
   }
 
-  const { data } = await supabase
+  /*
+    DOS INTENTOS, Y NO ES DESCONFIANZA: ES EXPERIENCIA.
+
+    `unidad_id` es una columna nueva. Si el SQL todavía no se ha
+    ejecutado, meterla en el SELECT no hace fallar esa columna: hace
+    que Postgres rechace LA CONSULTA ENTERA. Y esta pantalla, como
+    todas, no mira el error — enseñaría «no hay nada apuntado» con
+    las cuentas del trimestre intactas debajo.
+
+    Ya ha pasado tres veces en este proyecto. Así que se pide con la
+    columna, y si no puede ser, se pide sin ella y se sigue como
+    antes.
+  */
+  const columnas =
+    'id, tipo, concepto, importe, fecha, categoria_id, documento_id, apartamento, personas, noches, huesped'
+
+  let data: unknown[] | null = null
+  const conUnidad = await supabase
     .from('movimientos')
-    .select(
-      'id, tipo, concepto, importe, fecha, categoria_id, documento_id, apartamento, personas, noches, huesped'
-    )
+    .select(`${columnas}, unidad_id`)
     .gte('fecha', periodo.desde)
     .lte('fecha', periodo.hasta)
     .order('fecha', { ascending: false })
 
+  if (conUnidad.error) {
+    const sinUnidad = await supabase
+      .from('movimientos')
+      .select(columnas)
+      .gte('fecha', periodo.desde)
+      .lte('fecha', periodo.hasta)
+      .order('fecha', { ascending: false })
+    data = sinUnidad.data
+  } else {
+    data = conUnidad.data
+  }
+
   const movimientos = ((data ?? []) as Movimiento[]).filter(
     (m) => m.categoria_id && deFinca.has(m.categoria_id)
   )
+
+  /*
+    Las unidades de esta sección, y si reparte lo común.
+
+    Antes esto estaba escrito en el código: tres apartamentos,
+    divididos entre tres. Ahora sale de la base de datos, y por eso
+    esta misma pantalla vale para Los Helechos, para el piso de la
+    abuela y para las ocho obras de un reformista sin tocar una línea.
+  */
+  const unidades = raiz ? await unidadesDe(supabase, raiz.id) : []
+  const comoEs = raiz
+    ? await comoEsLaSeccion(supabase, raiz.id)
+    : { usaUnidades: false, reparteComunes: false }
 
   const ingresos = suma(movimientos.filter((m) => m.tipo === 'ingreso'))
   const gastos = suma(movimientos.filter((m) => m.tipo === 'gasto'))
@@ -109,7 +168,22 @@ export default async function Cuentas({
   const desglose = agrupar(movimientos.filter((m) => m.tipo === 'gasto'), porId)
   const mayor = desglose[0]?.total ?? 0
 
-  const casas = seccion.apartamentos ? porApartamento(movimientos) : null
+  /*
+    Manda la base de datos; el ajuste del código es la red.
+
+    Si las unidades están puestas, se usan. Si no —porque el SQL no se
+    ha ejecutado todavía—, Los Helechos siguen enseñando sus tres
+    apartamentos como siempre. Nadie se queda mirando una sección que
+    ha perdido la mitad de lo que enseñaba.
+  */
+  const porUnidades = comoEs.usaUnidades && unidades.length > 0
+  const casas = porUnidades
+    ? repartir(movimientos, unidades, comoEs.reparteComunes)
+    : seccion.apartamentos
+      ? repartir(movimientos, APARTAMENTOS_DE_SIEMPRE, true)
+      : null
+
+  const nombreDeUnidad = new Map(unidades.map((u) => [u.id, u.nombre]))
 
   return (
     <main className="min-h-screen pb-40">
@@ -187,20 +261,20 @@ export default async function Cuentas({
           </p>
         </div>
 
-        {/* ── Cada apartamento ── */}
-        {casas && (
+        {/* ── Cada unidad ── */}
+        {casas && casas.casas.length > 0 && (
           <section className="mt-5">
-            <h2 className="rotulo">Cada apartamento</h2>
+            <h2 className="rotulo">{seccion.etiquetaUnidades ?? 'Cada una'}</h2>
 
             <ul className="mt-3 space-y-2.5">
               {casas.casas.map((c) => (
                 <li
-                  key={c.n}
+                  key={c.id}
                   className="rounded-[20px] border border-borde bg-superficie px-4 py-4"
                 >
                   <div className="flex items-baseline justify-between gap-3">
                     <p className="text-[18px] font-extrabold tracking-tight">
-                      Helechos {c.n}
+                      {c.nombre}
                     </p>
                     <p
                       className="text-[21px] font-extrabold tabular-nums"
@@ -217,7 +291,7 @@ export default async function Cuentas({
                   <div
                     className="mt-2.5 flex h-2.5 w-full overflow-hidden rounded-full bg-borde"
                     role="img"
-                    aria-label={`Helechos ${c.n}: ${euros(c.ingresos)} de ingresos y ${euros(c.gastos)} de gastos`}
+                    aria-label={`${c.nombre}: ${euros(c.ingresos)} de ingresos y ${euros(c.gastos)} de gastos`}
                   >
                     <div
                       className="h-2.5"
@@ -244,12 +318,27 @@ export default async function Cuentas({
               ))}
             </ul>
 
-            {casas.comunes > 0 && (
-              <p className="mt-3 text-[15px] font-semibold leading-snug text-tenue">
-                Incluye {euros(casas.comunes)} de gastos de toda la casa —luz, seguro,
-                gestoría— repartidos a partes iguales entre los tres.
-              </p>
-            )}
+            {/*
+              Decir SIEMPRE qué se ha hecho con lo común, y las dos
+              cosas son noticia: que se reparte, y que no se reparte.
+              Si no se dice, alguien suma las partes, no le cuadra con
+              el balance de arriba, y deja de fiarse de la pantalla
+              entera.
+            */}
+            {casas.comunes > 0 &&
+              (casas.reparte ? (
+                <p className="mt-3 text-[15px] font-semibold leading-snug text-tenue">
+                  Incluye {euros(casas.comunes)} de gastos comunes —luz, seguro,
+                  gestoría— repartidos a partes iguales entre{' '}
+                  {casas.cuantas === 2 ? 'las dos' : `las ${casas.cuantas}`}.
+                </p>
+              ) : (
+                <p className="mt-3 text-[15px] font-semibold leading-snug text-tenue">
+                  Aparte hay {euros(casas.comunes)} de gastos comunes que no son de
+                  ninguna en concreto. No se reparten: sí cuentan en el balance de
+                  arriba.
+                </p>
+              ))}
           </section>
         )}
 
@@ -302,7 +391,11 @@ export default async function Cuentas({
                       {m.categoria_id && porId.get(m.categoria_id)
                         ? ` · ${porId.get(m.categoria_id)!.nombre}`
                         : ''}
-                      {seccion.apartamentos ? ` · ${nombreApartamento(m.apartamento)}` : ''}
+                      {casas
+                        ? ` · ${m.unidad_id
+                            ? (nombreDeUnidad.get(m.unidad_id) ?? 'Toda la casa')
+                            : nombreApartamento(m.apartamento)}`
+                        : ''}
                     </p>
                     {m.noches != null && (
                       <p className="text-[14.5px] font-semibold text-tenue">
@@ -374,32 +467,74 @@ function suma(lista: { importe: number }[]): number {
 }
 
 /*
-  Las cuentas de cada apartamento.
+  Los tres apartamentos, escritos a mano.
 
-  LO COMÚN SE REPARTE. Un gasto sin apartamento —la luz, el seguro, la
-  gestoría— no es de ninguno de los tres y es de los tres a la vez. Si
-  se dejara fuera, los tres parecerían más rentables de lo que son y la
-  suma de las tres casas no cuadraría con el balance de arriba. Se
-  divide entre tres, que es la única manera honesta de repartirlo
-  cuando los tres se alquilan igual.
-
-  Se dice en pantalla, debajo. Un número reparte­do sin avisar es un
-  número que engaña.
+  Es la red de seguridad, y solo se usa si las unidades todavía no
+  están en la base de datos. En cuanto lo estén, esto no lo mira
+  nadie — y desaparecerá cuando ya no haya forma de volver atrás.
 */
-function porApartamento(movimientos: Movimiento[]) {
-  const comunes = suma(
-    movimientos.filter((m) => m.tipo === 'gasto' && m.apartamento == null)
-  )
-  const cadaUno = comunes / 3
+const APARTAMENTOS_DE_SIEMPRE = [
+  { id: 'a1', nombre: 'Helechos 1', orden: 1 },
+  { id: 'a2', nombre: 'Helechos 2', orden: 2 },
+  { id: 'a3', nombre: 'Helechos 3', orden: 3 },
+]
 
-  const casas = [1, 2, 3].map((n) => {
-    const suyos = movimientos.filter((m) => m.apartamento === n)
+/*
+  Las cuentas de cada unidad.
+
+  ─────────────────────────────────────────────────────────────
+  LO COMÚN SE REPARTE… CUANDO REPARTIRLO DICE ALGO.
+
+  Un gasto que no es de ninguna unidad —la luz, el seguro, la
+  gestoría— es de todas a la vez. Dejarlo fuera haría que todas
+  parecieran más rentables de lo que son, y la suma de las partes no
+  cuadraría con el balance de arriba.
+
+  En Los Helechos se divide a partes iguales, que es lo honesto
+  cuando los tres apartamentos se alquilan igual.
+
+  PERO EN UNAS OBRAS ESO SERÍA MENTIR. Partir la gasolina del mes
+  entre una reforma de 40.000 € y un baño de 3.000 no dice nada de
+  ninguna de las dos. Por eso repartir es una decisión de cada
+  sección y no una regla del programa — y por defecto, no se reparte.
+
+  Se avisa siempre en pantalla, debajo. Un número repartido sin
+  decirlo es un número que engaña.
+
+  ─────────────────────────────────────────────────────────────
+  POR QUÉ UN APUNTE PUEDE ENCONTRARSE POR DOS CAMINOS
+
+  Lo normal es `unidad_id`. Pero las pantallas de apuntar todavía
+  guardan el número de apartamento, así que un movimiento nuevo llega
+  sin unidad. Si solo se mirara `unidad_id`, esos apuntes recién
+  hechos desaparecerían del desglose sin dar ningún error — y el
+  primero en notarlo sería Juan Miguel, no nosotros.
+
+  Así que si no trae unidad, se busca por el número. Este segundo
+  camino se quita cuando las pantallas de apuntar guarden la unidad.
+*/
+function repartir(
+  movimientos: Movimiento[],
+  unidades: { id: string; nombre: string; orden: number }[],
+  reparte: boolean
+) {
+  const esSuyo = (m: Movimiento, u: { id: string; orden: number }) =>
+    m.unidad_id ? m.unidad_id === u.id : m.apartamento === u.orden
+
+  const deNadie = (m: Movimiento) => m.unidad_id == null && m.apartamento == null
+
+  const comunes = suma(movimientos.filter((m) => m.tipo === 'gasto' && deNadie(m)))
+  const cadaUno = reparte && unidades.length > 0 ? comunes / unidades.length : 0
+
+  const casas = unidades.map((u) => {
+    const suyos = movimientos.filter((m) => esSuyo(m, u))
     const reservas = suyos.filter((m) => m.tipo === 'ingreso')
     const ingresos = suma(reservas)
     const gastos = suma(suyos.filter((m) => m.tipo === 'gasto')) + cadaUno
 
     return {
-      n,
+      id: u.id,
+      nombre: u.nombre,
       ingresos,
       gastos,
       balance: ingresos - gastos,
@@ -409,10 +544,10 @@ function porApartamento(movimientos: Movimiento[]) {
     }
   })
 
-  // La barra más larga marca la escala: así las tres se comparan entre sí.
+  // La barra más larga marca la escala: así se comparan entre sí.
   const tope = Math.max(...casas.map((c) => c.ingresos + c.gastos), 0)
 
-  return { casas, comunes, tope }
+  return { casas, comunes, tope, reparte, cuantas: unidades.length }
 }
 
 function agrupar(

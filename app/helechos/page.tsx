@@ -35,6 +35,7 @@ export default function Helechos({
         ruta: '/helechos',
         pestana: 'helechos',
         apartamentos: true,
+        etiquetaUnidades: 'Cada apartamento',
       }}
       searchParams={searchParams}
     />
