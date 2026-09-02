@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { Ico, type Icono } from './iconos'
+import { Ico, iconoDeEmoji, type Icono } from './iconos'
+import { useActividades } from './actividades-contexto'
+import { nombreCorto } from '@/lib/actividades'
 
 /*
   La barra de abajo.
@@ -26,16 +28,12 @@ import { Ico, type Icono } from './iconos'
   símbolo, y dos botones para lo mismo en una pantalla es uno de más.
 */
 
-type Seccion =
-  | 'inicio'
-  | 'documentos'
-  | 'agenda'
-  | 'finca'
-  | 'helechos'
-  | null
+type Seccion = string | null
 
 /*
-  Cinco pestañas, y ni una más.
+  ═══════════════════════════════════════════════════════════════
+  CINCO PESTAÑAS, Y NI UNA MÁS
+  ═══════════════════════════════════════════════════════════════
 
   Con seis, cada botón baja de los 48 px que fijamos como mínimo para
   lo que hay que pulsar — la regla que protege a un dedo de 75 años. Y
@@ -48,15 +46,39 @@ type Seccion =
   cosas que tengo que recordar". Ahora son una: Agenda, con sus dos
   vistas dentro.
 
-  Eso liberó el sitio de Los Helechos sin apretar nada.
+  ─────────────────────────────────────────────────────────────
+  Y LAS DOS QUE SOBRAN LAS DECIDE EL SISTEMA, NO LA PERSONA
+
+  Quedan dos huecos y cada casa tiene las actividades que tiene: aquí
+  la Finca y Los Helechos; en otra, cuatro obras y la casa.
+
+  Se barajaron dos maneras, y las dos tenían un pero:
+
+  · Dejar elegir en Ajustes cuáles dos van abajo. Es una decisión más
+    que cobrarle a alguien, y quien tenga cinco actividades esconde
+    tres.
+
+  · Poner siempre un botón «Actividades» que abra la lista. Resuelve
+    lo anterior, pero le cobra UN TOQUE MÁS TODOS LOS DÍAS a quien
+    solo tiene dos y las usa a diario. Arreglar con su tiempo un
+    problema que no tiene.
+
+  Así que la regla la aplica HUBI y nadie configura nada:
+
+      Una o dos actividades  →  cada una es su pestaña. Un toque.
+      Tres o más             →  una sola pestaña, «Actividades».
+
+  Juan Miguel y Conchita, que tienen dos, siguen viendo exactamente lo
+  de siempre. Es el punto 29: la complejidad pertenece al sistema.
 */
-const PESTANAS: { clave: Exclude<Seccion, null>; texto: string; icono: Icono; href: string }[] = [
-  { clave: 'inicio',     texto: 'Inicio',     icono: 'casa',       href: '/' },
-  { clave: 'documentos', texto: 'Papeles',    icono: 'carpeta',    href: '/documentos' },
-  { clave: 'agenda',     texto: 'Agenda',     icono: 'calendario', href: '/agenda' },
-  { clave: 'finca',      texto: 'Finca',      icono: 'hoja',       href: '/finca' },
-  { clave: 'helechos',   texto: 'Helechos',   icono: 'llave',      href: '/helechos' },
+type Pestana = { clave: string; texto: string; icono: Icono; href: string }
+
+const FIJAS: Pestana[] = [
+  { clave: 'inicio',     texto: 'Inicio',  icono: 'casa',       href: '/' },
+  { clave: 'documentos', texto: 'Papeles', icono: 'carpeta',    href: '/documentos' },
+  { clave: 'agenda',     texto: 'Agenda',  icono: 'calendario', href: '/agenda' },
 ]
+
 
 export default function Barra({
   activa = null,
@@ -65,6 +87,32 @@ export default function Barra({
   activa?: Seccion
   voz?: boolean
 }) {
+  const actividades = useActividades()
+
+  /* Tres o más no caben: se juntan detrás de una sola pestaña. Dos o
+     menos van directas, que es lo que ahorra un toque diario a quien
+     las usa. */
+  const sueltas = actividades.length <= 2
+
+  const PESTANAS: Pestana[] = [
+    ...FIJAS,
+    ...(sueltas
+      ? actividades.map((a) => ({
+          clave: a.id,
+          texto: nombreCorto(a.nombre),
+          icono: iconoDeEmoji(a.icono),
+          href: a.ruta,
+        }))
+      : [
+          {
+            clave: 'actividades',
+            texto: 'Actividades',
+            icono: 'euro' as Icono,
+            href: '/actividades',
+          },
+        ]),
+  ]
+
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40">
       <div className="pointer-events-none relative mx-auto max-w-md">

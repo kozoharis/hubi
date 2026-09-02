@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
+import { clienteSesion } from '@/lib/supabase/sesion'
+import { actividadesDe, type Actividad } from '@/lib/actividades'
+import { ProveedorActividades } from './actividades-contexto'
 
 const fuente = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -36,9 +39,29 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 }
 
-export default function RootLayout({
+/*
+  LAS ACTIVIDADES SE LEEN AQUÍ, UNA VEZ, Y PARA TODA LA APLICACIÓN.
+
+  La barra de abajo sale en todas las pantallas y sus pestañas
+  dependen de qué tenga cada casa —la Finca y Los Helechos aquí; las
+  obras y la casa en otra—. Leerlas en cada pantalla sería quince
+  consultas y quince sitios donde olvidarse; pedirlas desde el
+  navegador haría que la barra parpadeara al cargar.
+
+  Se leen aquí y se dejan disponibles. Si algo falla, `actividadesDe`
+  devuelve las de siempre: nadie se queda sin poder navegar.
+*/
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  let actividades: Actividad[] = []
+  try {
+    actividades = await actividadesDe(await clienteSesion())
+  } catch {
+    /* Sin sesión —la pantalla de entrar— o con la base caída. La barra
+       tira de su lista de respaldo y se navega igual. */
+  }
+
   return (
     <html lang="es" className={fuente.variable}>
       <head>
@@ -55,7 +78,11 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <ProveedorActividades actividades={actividades}>
+          {children}
+        </ProveedorActividades>
+      </body>
     </html>
   )
 }

@@ -239,3 +239,33 @@ export function Volver({
     </Link>
   )
 }
+
+/*
+  El emoji de una sección, traducido al icono de línea que usa HUBI.
+
+  Las secciones guardan su icono como emoji porque es lo que se puede
+  elegir desde una pantalla sin programar nada. Pero en la barra de
+  abajo y en las cabeceras se pintan iconos de línea: un emoji entre
+  ellos se ve como un pegote de otra aplicación.
+
+  Lo que no tenga equivalente cae en la carpeta. Es honesto —dice «una
+  sección»— y no promete nada que no sea.
+*/
+const POR_EMOJI: Record<string, Icono> = {
+  '🌿': 'hoja',
+  '🔑': 'llave',
+  '🏠': 'casa',
+  '🚗': 'coche',
+  '❤️': 'corazon',
+  '🩺': 'corazon',
+  '🛡': 'escudo',
+  '📄': 'papel',
+  '💊': 'pastilla',
+  '📁': 'carpeta',
+  '💰': 'euro',
+  '🧱': 'carpeta',
+}
+
+export function iconoDeEmoji(emoji: string | null | undefined): Icono {
+  return POR_EMOJI[(emoji ?? '').trim()] ?? 'carpeta'
+}

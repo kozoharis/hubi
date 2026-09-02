@@ -1,43 +1,32 @@
-import Cuentas from '../cuentas'
+import { redirect, notFound } from 'next/navigation'
+import { clienteSesion } from '@/lib/supabase/sesion'
 
 export const dynamic = 'force-dynamic'
 
 /*
-  Los Helechos — la casa de Los Realejos.
+  LOS HELECHOS YA NO SON UNA PANTALLA: SON UN DATO.
 
-  Tres apartamentos en alquiler vacacional, con sus gastos (gestión,
-  limpieza, mantenimiento, suministros) y sus ingresos (las plataformas
-  y las reservas directas).
+  Aquí había un archivo con el nombre, el color y el icono escritos a
+  mano, idéntico al de la Finca salvo por esas tres cosas. Ahora
+  hay UNA sola pantalla de cuentas —`/seccion/[id]`— que los lee de la
+  base de datos, y por eso sirve igual para la finca de Juan Miguel
+  que para las ocho obras de un reformista.
 
-  Empezó contando como una sola casa, a propósito. Ya no: cada apunte
-  lleva su apartamento —Helechos 1, 2 o 3, o "toda la casa"— y los
-  ingresos llevan además las noches y las personas. Eso es lo que
-  permite saber cuál se reserva más y cuál RENTA más, que no son
-  siempre el mismo.
-
-  Los gastos comunes —la luz, el seguro, la gestoría— no son de ningún
-  apartamento: se apuntan a "toda la casa" y la pantalla los reparte a
-  partes iguales, diciéndolo.
+  Esta dirección se queda como puerta: alguien puede tenerla guardada
+  en el móvil, o escrita en un aviso antiguo. Reenvía a la de verdad
+  en vez de dar un error — romper un enlace que alguien usa a diario
+  es de las cosas que hacen desconfiar de una aplicación.
 */
-export default function Helechos({
-  searchParams,
-}: {
-  searchParams: Promise<{ vista?: string; ancla?: string }>
-}) {
-  return (
-    <Cuentas
-      seccion={{
-        raiz: 'HELECHOS',
-        nombre: 'Los Helechos',
-        icono: 'casa',
-        color: '#F59E0B',
-        fondo: '#FEF1DC',
-        ruta: '/helechos',
-        pestana: 'helechos',
-        apartamentos: true,
-        etiquetaUnidades: 'Cada apartamento',
-      }}
-      searchParams={searchParams}
-    />
-  )
+export default async function Helechos() {
+  const supabase = await clienteSesion()
+
+  const { data } = await supabase
+    .from('categorias')
+    .select('id')
+    .eq('segmento_drive', 'HELECHOS')
+    .is('padre_id', null)
+    .maybeSingle()
+
+  if (!data) notFound()
+  redirect(`/seccion/${data.id}`)
 }

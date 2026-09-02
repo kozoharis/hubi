@@ -33,8 +33,10 @@ export type Cuenta = {
   fondo: string
   /** Dónde vive esta pantalla, para los enlaces de periodo. */
   ruta: string
-  /** Qué pestaña se enciende abajo. */
-  pestana: 'finca' | 'helechos'
+  /* Cuál de las pestañas de abajo se marca. Ya no es una lista
+     cerrada de dos: es el identificador de la actividad, porque cada
+     casa tiene las suyas y no las conocemos de antemano. */
+  pestana: string
   /**
    * Los Helechos se reparte en apartamentos. La Finca, no.
    *
