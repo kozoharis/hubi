@@ -1,0 +1,398 @@
+@import "tailwindcss";
+
+/*
+  HUBI — lenguaje visual
+
+  Manual de marca: un color por sección, tipografía Plus Jakarta Sans.
+
+  Dos modos, claro y oscuro. Los colores de la marca —verde azulado,
+  azul, morado, coral, naranja— son los MISMOS en los dos: lo que
+  cambia es el fondo, el papel y el texto. Así los iconos tienen el
+  mismo color de día y de noche, y la sección se reconoce igual.
+
+  Regla que manda por encima del manual: 17 px como mínimo en el texto
+  que hay que leer y 48 px como mínimo en lo que hay que pulsar.
+*/
+
+@theme {
+  --color-fondo:        var(--t-fondo);
+  --color-superficie:   var(--t-superficie);
+  --color-borde:        var(--t-borde);
+
+  --color-tinta:        var(--t-tinta);
+  --color-tinta-suave:  var(--t-tinta-suave);
+  --color-tenue:        var(--t-tenue);
+  --color-apagado:      var(--t-apagado);
+
+  /* El botón principal. En claro es azul marino; en oscuro, el azul
+     marino sería invisible, así que toma el verde de la marca. */
+  --color-boton:        var(--t-boton);
+  --color-boton-texto:  var(--t-boton-texto);
+
+  /* Un color por sección — idénticos en los dos modos */
+  --color-verde:        #14B8A6;   /* acento principal · Finca */
+  --color-azul:         #3B82F6;   /* Seguros · documentos */
+  --color-morado:       #8B5CF6;   /* Vehículos · dinero */
+  --color-coral:        #FF6B6B;   /* Salud · vencimientos */
+  --color-naranja:      #F59E0B;   /* Casa · tareas */
+
+  --color-verde-suave:  var(--t-verde-suave);
+  --color-coral-suave:  var(--t-coral-suave);
+  --color-terracota:       #FF6B6B;
+  --color-terracota-suave: var(--t-coral-suave);
+
+  --font-titulo: var(--fuente), "Segoe UI", system-ui, sans-serif;
+  --font-texto:  var(--fuente), "Segoe UI", system-ui, sans-serif;
+}
+
+/* ── Modo claro ────────────────────────────────────────── */
+:root {
+  --t-fondo:        #F1F5F9;
+  --t-superficie:   #FFFFFF;
+  --t-borde:        #E2E8F0;
+  --t-tinta:        #0F172A;
+  --t-tinta-suave:  #334155;
+  --t-tenue:        #64748B;
+  --t-apagado:      #94A3B8;
+  --t-boton:        #0F172A;
+  --t-boton-texto:  #FFFFFF;
+  --t-verde-suave:  #DFF7F3;
+  --t-coral-suave:  #FFE7E7;
+  --t-velo:         rgba(15, 23, 42, 0.04);
+}
+
+/* ── Modo oscuro ───────────────────────────────────────── */
+/* Se define una vez y se aplica en dos sitios: cuando lo pide el
+   teléfono y cuando lo pide la persona desde Ajustes. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --t-fondo:        #0B1220;
+    --t-superficie:   #182133;
+    --t-borde:        #253148;
+    --t-tinta:        #F1F5F9;
+    --t-tinta-suave:  #CBD5E1;
+    --t-tenue:        #94A3B8;
+    --t-apagado:      #64748B;
+    --t-boton:        #14B8A6;
+    --t-boton-texto:  #06202B;
+    --t-verde-suave:  #10322F;
+    --t-coral-suave:  #3A1D22;
+    --t-velo:         rgba(255, 255, 255, 0.06);
+  }
+}
+
+:root[data-tema="oscuro"] {
+  --t-fondo:        #0B1220;
+  --t-superficie:   #182133;
+  --t-borde:        #253148;
+  --t-tinta:        #F1F5F9;
+  --t-tinta-suave:  #CBD5E1;
+  --t-tenue:        #94A3B8;
+  --t-apagado:      #64748B;
+  --t-boton:        #14B8A6;
+  --t-boton-texto:  #06202B;
+  --t-verde-suave:  #10322F;
+  --t-coral-suave:  #3A1D22;
+  --t-velo:         rgba(255, 255, 255, 0.06);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--t-fondo);
+}
+
+body {
+  background: var(--t-fondo);
+  color: var(--t-tinta);
+  font-family: var(--font-texto);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Nada importante depende de pasar el ratón por encima:
+   el foco tiene que verse siempre, y verse mucho. */
+:focus-visible {
+  outline: 3px solid var(--color-verde);
+  outline-offset: 3px;
+}
+
+/* 16px como mínimo: por debajo, iOS hace zoom al escribir. */
+input, textarea, select {
+  font-size: 1.0625rem;
+}
+
+/* ── El hueco de arriba ────────────────────────────────────
+   La aplicación ocupa toda la pantalla, muesca incluida. Sin este
+   aire, la cabecera queda DEBAJO de la barra de estado del móvil y
+   los toques se los queda el sistema: el botón está ahí, se ve, y no
+   responde. Pasó de verdad. */
+.techo {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+}
+.techo-holgado {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 2.5rem);
+}
+
+/* ── La cabecera, clavada arriba ───────────────────────────
+   El fondo es el del tema a un 80% con desenfoque por detrás: así el
+   color que se mueve en Inicio no desaparece bajo una banda opaca,
+   pero el título se sigue leyendo sobre lo que pase por debajo.
+
+   Ojo: `sticky` no funciona si algún antepasado recorta con
+   overflow-hidden. Por eso el color de Inicio va en una capa fija
+   aparte y <main> ya no recorta nada. */
+.cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+  padding-bottom: 0.9rem;
+
+  /*
+    Aquí había un `backdrop-filter: blur(16px)`. Se ve muy bien y es
+    carísimo: obliga al navegador a volver a desenfocar todo lo que
+    pasa por debajo en CADA fotograma del scroll. El iPhone lo disimula
+    porque tiene músculo de sobra; un Android normal se atasca, y de
+    ahí venía la diferencia entre los dos teléfonos.
+
+    Lo sustituye un degradado: opaco arriba, transparente abajo. El
+    contenido se desvanece al pasar por detrás en vez de emborronarse.
+    Cuesta lo mismo que pintar un color plano —nada— y en un móvil
+    corriente la diferencia al deslizar se nota con la mano.
+  */
+  background: linear-gradient(
+    to bottom,
+    var(--t-fondo) 0%,
+    var(--t-fondo) 68%,
+    transparent 100%
+  );
+}
+
+/* El color que va a la deriva: capa fija, de borde a borde, siempre
+   por detrás de todo. Fija y no absoluta para que no se corte al
+   hacer scroll ni se quede a medio camino de la pantalla. */
+.telon {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ── Etiqueta de sección ───────────────────────────────── */
+.rotulo {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--t-tenue);
+}
+
+/* ── Píldora de selección ──────────────────────────────── */
+/* Sin poner: papel con borde. Puesta: el color de su sección, que
+   cada pantalla pasa por `style`. */
+.pildora {
+  display: flex;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 0 1rem;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  background: var(--t-superficie);
+  border: 1px solid var(--t-borde);
+  color: var(--t-tinta-suave);
+}
+
+/* ── El botón de voz: dos anillos que laten ────────────── */
+.pulso {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid rgba(20, 184, 166, 0.55);
+  animation: pulso 2.8s ease-out infinite;
+}
+.pulso-b { animation-delay: 1.4s; }
+
+@keyframes pulso {
+  0%   { transform: scale(1);   opacity: 0.75; }
+  70%  { opacity: 0.12; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* ── Manchas de color que van a la deriva ──────────────── */
+.mancha {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(58px);
+  will-change: transform;
+}
+
+@keyframes deriva1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%     { transform: translate(58px,66px) scale(1.18); }
+}
+@keyframes deriva2 {
+  0%,100% { transform: translate(0,0) scale(1.1); }
+  50%     { transform: translate(-70px,52px) scale(.9); }
+}
+@keyframes deriva3 {
+  0%,100% { transform: translate(0,0) scale(.95); }
+  50%     { transform: translate(44px,-74px) scale(1.22); }
+}
+@keyframes deriva4 {
+  0%,100% { transform: translate(0,0) scale(1.05); }
+  50%     { transform: translate(-52px,-40px) scale(.88); }
+}
+@keyframes brillo {
+  0%,100% { transform: translateX(-7%) scale(1.06); }
+  50%     { transform: translateX(7%) scale(1.16); }
+}
+
+.deriva-1 { animation: deriva1 19s ease-in-out infinite; }
+.deriva-2 { animation: deriva2 27s ease-in-out infinite; }
+.deriva-3 { animation: deriva3 23s ease-in-out infinite; }
+.deriva-4 { animation: deriva4 21s ease-in-out infinite; }
+.brillo   { animation: brillo 14s ease-in-out infinite; }
+
+/* Quien haya pedido menos movimiento en su teléfono, que no lo vea. */
+@media (prefers-reduced-motion: reduce) {
+  .mancha, .brillo, .pulso {
+    animation: none !important;
+  }
+}
+
+/* ── El armazón que se ve mientras llega la pantalla ────── */
+/*
+  No aparece hasta pasados 280 ms.
+
+  Ese era el "rastro" al cambiar de pestaña: la navegación tarda ahora
+  unos 200 ms, y el armazón salía y se iba dentro de ese suspiro. El
+  ojo no llegaba a leerlo como "está cargando" — solo veía la pantalla
+  vaciarse, un destello gris con otra forma, y la pantalla nueva. Tres
+  imágenes en un cuarto de segundo. De ahí la torpeza.
+
+  Con el retardo, una navegación rápida no lo enseña NUNCA: se salta
+  del contenido viejo al nuevo, limpio. Y si el servidor tarda de
+  verdad, el armazón sigue estando ahí para que nadie crea que el
+  botón no ha funcionado.
+
+  `both` es lo que hace que funcione: mantiene la opacidad a 0
+  durante la espera en vez de mostrarlo y luego animarlo.
+*/
+.espera {
+  animation: asomar 260ms ease-out 280ms both;
+}
+
+@keyframes asomar {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Un latido muy suave. Ni barrido brillante ni ruedecita: solo
+   señal de que algo está en marcha, sin llamar la atención. */
+.latido {
+  animation: latido 1.6s ease-in-out infinite;
+}
+
+@keyframes latido {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.95; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .latido { animation: none; opacity: 0.7; }
+}
+
+/* ── El micrófono: anillos que orbitan ─────────────────────
+   Un aro de los cinco colores de la marca dando vueltas alrededor
+   del botón. No es adorno: mientras gira, está escuchando — y eso
+   se entiende sin leer nada.
+
+   Se dibuja con un degradado cónico recortado por una máscara, así
+   que es UN solo elemento girando. Girar una imagen ya pintada no le
+   cuesta nada al teléfono; dibujar cinco puntitos moviéndose por una
+   circunferencia, sí. Después de lo del desenfoque, esto importa. */
+.orbita {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #2DD4BF, #3B82F6, #8B5CF6, #FF6B6B, #F59E0B, #2DD4BF
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 5px));
+  animation: girar 3.2s linear infinite;
+  will-change: transform;
+}
+
+/* El segundo, más fino, al revés y más despacio: da profundidad
+   sin marear. */
+.orbita-b {
+  inset: -20px;
+  opacity: 0.4;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  animation: girar 6.5s linear infinite reverse;
+}
+
+/* En reposo el aro está quieto y apagado: presente, sin pedir nada. */
+.orbita-quieta {
+  animation: none;
+  opacity: 0.28;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbita, .orbita-b { animation: none; }
+}
+
+/* ── La barra de desplazamiento ─────────────────────────────
+   Fuera en el móvil, donde no sirve para nada: nadie arrastra una
+   barra de tres píxeles con el pulgar, se desliza el dedo por la
+   pantalla. Ahí solo es una raya que ensucia el borde.
+
+   Pero SE QUEDA en el ordenador. Con ratón sí se usa —se arrastra, se
+   ve cuánto queda por bajar— y esconderla sería quitar algo que la
+   gente utiliza de verdad. `pointer: coarse` distingue las dos cosas:
+   un dedo de un ratón. */
+@media (pointer: coarse) {
+  html {
+    scrollbar-width: none;          /* estándar */
+    -ms-overflow-style: none;       /* Edge antiguo */
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;                  /* Chrome y Safari */
+  }
+}
+
+/* ── Campo de escribir ─────────────────────────────────────── */
+/* 58 px de alto y letra de 19: por debajo de eso, un dedo de 75
+   años falla y una vista de 75 años no lee lo que ha escrito. */
+.entrada {
+  display: block;
+  width: 100%;
+  height: 3.625rem;
+  border-radius: 16px;
+  border: 1px solid var(--t-borde);
+  background: var(--t-superficie);
+  padding: 0 1rem;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--t-tinta);
+  outline: none;
+}
+.entrada:focus {
+  border-color: var(--color-verde);
+}
+.entrada::placeholder {
+  color: var(--t-tenue);
+  font-weight: 600;
+}
