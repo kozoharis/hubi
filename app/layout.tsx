@@ -40,6 +40,29 @@ export const viewport: Viewport = {
 }
 
 /*
+  ═══════════════════════════════════════════════════════════════
+  ESTA LÍNEA ES OBLIGATORIA, Y ME COSTÓ UN ERROR 500 APRENDERLO
+  ═══════════════════════════════════════════════════════════════
+
+  Al leer las actividades aquí, la plantilla pasa a depender de la
+  sesión —o sea, de las cookies—. Y Next avisa de eso lanzando un
+  error interno muy concreto durante la construcción: «esta página no
+  se puede pregenerar».
+
+  El problema es que ese aviso viaja como una excepción normal, y el
+  `try` de abajo se lo tragaba. Next se quedaba tan tranquilo creyendo
+  que nueve pantallas eran fijas, las pregeneraba… y en Vercel
+  reventaban al abrirlas. En el ordenador de uno no se nota: la
+  construcción decía «9/9 correcto».
+
+  Con esto se le dice de frente que ninguna pantalla es fija. No hay
+  aviso que tragarse, no hay nada que pregenerar, y el `try` vuelve a
+  hacer solo lo suyo: que si la base de datos no contesta, la barra
+  tire de su lista de respaldo.
+*/
+export const dynamic = 'force-dynamic'
+
+/*
   LAS ACTIVIDADES SE LEEN AQUÍ, UNA VEZ, Y PARA TODA LA APLICACIÓN.
 
   La barra de abajo sale en todas las pantallas y sus pestañas
