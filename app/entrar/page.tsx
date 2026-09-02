@@ -41,7 +41,7 @@ export default function Entrar() {
     if (error) {
       const segundos = segundosDeEspera(error.message)
       if (segundos) setEspera(segundos)
-      setAviso(mensajeClaro(error.message))
+      setAviso(mensajeClaro(error.message, 'correo'))
       // Si el problema es solo la espera, el código anterior sigue
       // valiendo: le dejamos pasar a escribirlo.
       if (segundos) setPaso('codigo')
@@ -67,7 +67,7 @@ export default function Entrar() {
     setOcupado(false)
 
     if (error) {
-      setAviso(mensajeClaro(error.message))
+      setAviso(mensajeClaro(error.message, 'codigo'))
       return
     }
 
@@ -235,24 +235,67 @@ function segundosDeEspera(original: string): number | null {
 }
 
 /** Traduce los errores técnicos de Supabase a algo comprensible. */
-function mensajeClaro(original: string): string {
+/*
+  ═══════════════════════════════════════════════════════════════
+  TRADUCIR EL ERROR SIN INVENTARSE LA CAUSA
+  ═══════════════════════════════════════════════════════════════
+
+  Aquí había un fallo que engañaba, y de los caros: la regla
+  «si el error contiene "invalid", di que el número está mal» se
+  tragaba también el «Invalid API key» que devuelve Supabase cuando la
+  aplicación está mal configurada.
+
+  Resultado: alguien escribía su correo, pulsaba Continuar, y HUBI le
+  contestaba «ese número no es correcto» — hablándole de un código que
+  aún no había escrito. Con eso, la persona se pone a mirar su bandeja
+  de entrada y a copiar números durante media hora, buscando un fallo
+  que estaba en otro sitio.
+
+  Un mensaje que señala mal es peor que uno genérico: manda a buscar
+  donde no hay nada. Así que ahora:
+
+  · Se mira PRIMERO lo concreto (la clave mal puesta, el correo sin
+    acceso, el código caducado).
+  · Y sobre todo, se le dice EN QUÉ PASO estamos. Estando en el
+    correo, esta función no puede decir nada sobre el número: no ha
+    habido ninguno.
+*/
+function mensajeClaro(original: string, paso: Paso): string {
   const e = original.toLowerCase()
 
   const segundos = segundosDeEspera(original)
   if (segundos) {
     return `Acabas de pedir un código. Si ya te ha llegado uno, escríbelo aquí abajo. Para pedir otro nuevo, espera ${segundos} segundos.`
   }
+
+  /* Esto NO es culpa de quien entra: es la aplicación, que no está
+     bien configurada. Decirlo así evita que alguien se pase la tarde
+     probando códigos buenos. */
+  if (e.includes('api key') || e.includes('anon key') || e.includes('jwt')) {
+    return 'HUBI no está bien conectado con su base de datos. No es cosa tuya: avisa a quien lo mantiene.'
+  }
   if (e.includes('signups not allowed') || e.includes('not authorized')) {
     return 'Este correo no tiene acceso a HUBI. Revisa que esté bien escrito.'
   }
-  if (e.includes('expired')) {
-    return 'Ese código ya ha caducado. Pide uno nuevo.'
+  if (e.includes('rate limit') || e.includes('too many')) {
+    return 'Se han pedido demasiados códigos en poco rato. Espera unos minutos y vuelve a intentarlo.'
   }
-  if (e.includes('invalid') || e.includes('token')) {
-    return 'Ese número no es correcto. Cópialo del correo tal cual, sin espacios.'
+  if (e.includes('sending') || e.includes('smtp') || e.includes('mail')) {
+    return 'No se ha podido enviar el correo con el código. Inténtalo dentro de un rato.'
   }
   if (e.includes('fetch') || e.includes('network')) {
     return 'No hay conexión con el servidor. Comprueba tu internet.'
   }
+  if (e.includes('expired')) {
+    return 'Ese código ya ha caducado. Pide uno nuevo.'
+  }
+
+  /* Solo AQUÍ se puede hablar del número, y solo si de verdad se ha
+     escrito uno. En el paso del correo, hablar del código es mandar a
+     alguien a buscar donde no hay nada. */
+  if (paso === 'codigo' && (e.includes('invalid') || e.includes('token'))) {
+    return 'Ese número no es correcto. Cópialo del correo tal cual, sin espacios.'
+  }
+
   return 'Algo no ha funcionado. Inténtalo de nuevo en un momento.'
 }
