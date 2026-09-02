@@ -31,19 +31,48 @@ export function cadena(categorias: Categoria[], hojaId: string): Categoria[] {
  * dinero, porque así es como se consultan las cuentas de la finca.
  * En el resto basta con separar por años.
  */
-export function rutaDeCarpetas(camino: Categoria[], fecha: Date): string[] {
+export function rutaDeCarpetas(
+  camino: Categoria[],
+  fecha: Date,
+  /*
+    DE QUÉ UNIDAD ES: «Helechos 2», «Obra Manuel».
+
+    Se mete justo debajo de la sección, que es donde lo buscaría una
+    persona abriendo su Drive: primero la carpeta de la obra, y dentro
+    sus facturas. Al revés —los materiales de todas las obras juntos y
+    la obra dentro— no lo ordena nadie así.
+
+        OBRAS / OBRA MANUEL / GASTOS / 2026 / T3 / MATERIALES
+
+    Sin unidad, la ruta es exactamente la de siempre. Eso no es un
+    detalle: los gastos comunes —la luz, el seguro— no son de ninguna
+    unidad, y meterlos a la fuerza en una carpeta cualquiera sería
+    colocarlos donde nadie los va a buscar.
+  */
+  unidad?: string | null
+): string[] {
   const anio = String(fecha.getFullYear())
   const trimestre = `T${Math.floor(fecha.getMonth() / 3) + 1}`
 
   const segmentos = camino.map((c) => c.segmento_drive)
   const hoja = camino[camino.length - 1]
 
-  if (hoja.naturaleza === 'gasto' || hoja.naturaleza === 'ingreso') {
-    const sinHoja = segmentos.slice(0, -1)
-    return [...sinHoja, anio, trimestre, segmentos[segmentos.length - 1]]
+  /* La unidad entra después de la RAÍZ, no después de la hoja. Si
+     `camino` viniera vacío no se mete en ningún sitio: una ruta que
+     empieza por la unidad sin sección encima sería una carpeta suelta
+     colgando del Drive. */
+  const conUnidad = (partes: string[]): string[] => {
+    const nombre = unidad ? limpiar(unidad) : ''
+    if (!nombre || partes.length === 0) return partes
+    return [partes[0], nombre, ...partes.slice(1)]
   }
 
-  return [...segmentos, anio]
+  if (hoja.naturaleza === 'gasto' || hoja.naturaleza === 'ingreso') {
+    const sinHoja = segmentos.slice(0, -1)
+    return [...conUnidad(sinHoja), anio, trimestre, segmentos[segmentos.length - 1]]
+  }
+
+  return [...conUnidad(segmentos), anio]
 }
 
 /** Quita acentos y caracteres raros para que el nombre de archivo sea limpio. */

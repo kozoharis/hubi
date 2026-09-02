@@ -13,6 +13,7 @@ import { estadoGuardado } from '@/lib/google/calendario'
 import TuPerfil from './foto'
 import PrepararCalendario from './calendario'
 import MiCalendario from './mi-calendario'
+import Unidades, { type UnidadDeLaLista } from './unidades'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,6 +59,67 @@ export default async function Ajustes() {
     .neq('id', user.id)
     .limit(1)
   const elOtro = otros?.[0]?.nombre?.split(' ')[0] ?? null
+
+  /*
+    ── Las secciones que se dividen, con lo que tienen dentro ──
+
+    Todo esto va envuelto para que no pueda tumbar Ajustes. `unidades`
+    y `palabra_unidad` son cosas nuevas: si el SQL todavía no se ha
+    ejecutado, Postgres no falla «esa columna» — rechaza la consulta
+    entera. Y una pantalla de Ajustes en blanco deja a la persona sin
+    poder ni siquiera salir de la sesión.
+
+    Se lee con la SESIÓN y no con la clave de servidor: las unidades
+    son del hogar de quien ha entrado, y las políticas por hogar son
+    justamente lo que impide ver las de otra casa.
+  */
+  const conUnidades: {
+    id: string
+    nombre: string
+    palabra: string
+    conPresupuesto: boolean
+    unidades: UnidadDeLaLista[]
+  }[] = []
+
+  try {
+    const { data: secciones } = await supabase
+      .from('categorias')
+      .select('id, nombre, palabra_unidad, segmento_drive')
+      .is('padre_id', null)
+      .eq('usa_unidades', true)
+      .eq('activa', true)
+      .order('orden')
+
+    for (const s of secciones ?? []) {
+      const { data: suyas } = await supabase
+        .from('unidades')
+        .select('id, nombre, referencia, presupuesto')
+        .eq('seccion_id', s.id)
+        .eq('activa', true)
+        .order('orden')
+
+      conUnidades.push({
+        id: s.id as string,
+        nombre: s.nombre as string,
+        /* Sin palabra no se inventa una rara: «la unidad» al menos es
+           honesto, y la comprobación del SQL 26 avisa de que falta. */
+        palabra: (s.palabra_unidad as string | null) ?? 'la unidad',
+        /* El presupuesto solo tiene sentido donde alguien cobra por lo
+           que hace. Un apartamento en alquiler no lo tiene; una obra
+           sí, y sin él no se puede contestar lo único que de verdad
+           quiere saber un reformista: cuánto le queda por cobrar. */
+        conPresupuesto: String(s.segmento_drive ?? '').includes('OBRA'),
+        unidades: (suyas ?? []).map((u) => ({
+          id: u.id as string,
+          nombre: u.nombre as string,
+          referencia: (u.referencia as string | null) ?? null,
+          presupuesto: u.presupuesto == null ? null : Number(u.presupuesto),
+        })),
+      })
+    }
+  } catch {
+    /* Sin unidades todavía. Ajustes sigue funcionando entero. */
+  }
 
   const icalDesde = mio?.ical_desde
     ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long' }).format(
@@ -197,6 +259,31 @@ export default async function Ajustes() {
             elOtro={elOtro}
           />
         </div>
+
+        {/*
+          ── Lo que hay dentro de cada sección ──
+
+          Solo sale si alguna sección se divide. Una casa que no tenga
+          apartamentos, obras ni pisos no ve nada de esto: el punto 5
+          pide pocas decisiones por pantalla, y un apartado vacío es
+          una decisión que alguien tiene que descartar cada vez que
+          pasa por aquí.
+        */}
+        {conUnidades.length > 0 && (
+          <>
+            <h2 className="rotulo mt-5">Lo que llevas por separado</h2>
+            {conUnidades.map((s) => (
+              <Unidades
+                key={s.id}
+                seccionId={s.id}
+                seccionNombre={s.nombre}
+                palabra={s.palabra}
+                unidades={s.unidades}
+                conPresupuesto={s.conPresupuesto}
+              />
+            ))}
+          </>
+        )}
 
         {/* ── Si algo no va ── */}
         <h2 className="rotulo mt-5">Si algo no va</h2>
