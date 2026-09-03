@@ -199,6 +199,25 @@ export default async function Cuentas({
             icono={23}
           />
           <h1 className="text-[27px] font-extrabold tracking-tight">{seccion.nombre}</h1>
+
+          {/*
+            Cómo se lleva esta actividad: si va por partes, cómo se
+            llama cada una, y sus partidas. Va aquí, al lado de su
+            nombre, y no escondido en los Ajustes de la aplicación:
+            esto es de ESTA finca, no de HUBI.
+
+            Solo sale en las que tienen ficha propia —las que vienen
+            de la base de datos—, no en el respaldo antiguo.
+          */}
+          {raiz && (
+            <Link
+              href={`/seccion/${raiz.id}/ajustes`}
+              aria-label={`Cómo llevas ${seccion.nombre}`}
+              className="ml-auto flex h-12 w-12 items-center justify-center rounded-[14px] text-tenue"
+            >
+              <Ico nombre="lapiz" tam={20} grosor={2.2} />
+            </Link>
+          )}
         </div>
       </Cabecera>
 

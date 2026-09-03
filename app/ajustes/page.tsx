@@ -13,7 +13,6 @@ import { estadoGuardado } from '@/lib/google/calendario'
 import TuPerfil from './foto'
 import PrepararCalendario from './calendario'
 import MiCalendario from './mi-calendario'
-import Unidades, { type UnidadDeLaLista } from './unidades'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,45 +75,39 @@ export default async function Ajustes() {
   const conUnidades: {
     id: string
     nombre: string
-    palabra: string
-    conPresupuesto: boolean
-    unidades: UnidadDeLaLista[]
+    color: string
+    fondo: string
+    pie: string
   }[] = []
 
   try {
+    /* TODAS las actividades, se dividan o no. Antes solo salían las
+       divididas, y por eso la Finca no aparecía por ningún lado: no
+       había manera de decirle a HUBI «ésta también quiero llevarla
+       por partes». El interruptor está ahora dentro de cada una. */
     const { data: secciones } = await supabase
       .from('categorias')
-      .select('id, nombre, palabra_unidad, segmento_drive')
+      .select('id, nombre, color, fondo, usa_unidades, palabra_unidad')
       .is('padre_id', null)
-      .eq('usa_unidades', true)
+      .eq('lleva_cuentas', true)
       .eq('activa', true)
       .order('orden')
 
     for (const s of secciones ?? []) {
-      const { data: suyas } = await supabase
-        .from('unidades')
-        .select('id, nombre, referencia, presupuesto')
-        .eq('seccion_id', s.id)
-        .eq('activa', true)
-        .order('orden')
+      const divide = s.usa_unidades === true
+      const palabra = ((s.palabra_unidad as string | null) ?? '').replace(
+        /^(el|la|los|las)\s+/i,
+        ''
+      )
 
       conUnidades.push({
         id: s.id as string,
         nombre: s.nombre as string,
-        /* Sin palabra no se inventa una rara: «la unidad» al menos es
-           honesto, y la comprobación del SQL 26 avisa de que falta. */
-        palabra: (s.palabra_unidad as string | null) ?? 'la unidad',
-        /* El presupuesto solo tiene sentido donde alguien cobra por lo
-           que hace. Un apartamento en alquiler no lo tiene; una obra
-           sí, y sin él no se puede contestar lo único que de verdad
-           quiere saber un reformista: cuánto le queda por cobrar. */
-        conPresupuesto: String(s.segmento_drive ?? '').includes('OBRA'),
-        unidades: (suyas ?? []).map((u) => ({
-          id: u.id as string,
-          nombre: u.nombre as string,
-          referencia: (u.referencia as string | null) ?? null,
-          presupuesto: u.presupuesto == null ? null : Number(u.presupuesto),
-        })),
+        color: (s.color as string) || '#64748B',
+        fondo: (s.fondo as string) || '#EEF2F7',
+        pie: divide
+          ? `Por ${palabra || 'partes'} · partidas`
+          : 'Una sola · partidas',
       })
     }
   } catch {
@@ -271,17 +264,20 @@ export default async function Ajustes() {
         */}
         {conUnidades.length > 0 && (
           <>
-            <h2 className="rotulo mt-5">Lo que llevas por separado</h2>
-            {conUnidades.map((s) => (
-              <Unidades
-                key={s.id}
-                seccionId={s.id}
-                seccionNombre={s.nombre}
-                palabra={s.palabra}
-                unidades={s.unidades}
-                conPresupuesto={s.conPresupuesto}
-              />
-            ))}
+            <h2 className="rotulo mt-5">Tus actividades</h2>
+            <div className="mt-2.5 space-y-2.5">
+              {conUnidades.map((s) => (
+                <Opcion
+                  key={s.id}
+                  href={`/seccion/${s.id}/ajustes`}
+                  icono="euro"
+                  color={s.color}
+                  fondo={s.fondo}
+                  titulo={s.nombre}
+                  pie={s.pie}
+                />
+              ))}
+            </div>
           </>
         )}
 
