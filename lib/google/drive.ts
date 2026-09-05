@@ -116,8 +116,9 @@ export async function asegurarRaiz(acceso: string): Promise<string> {
  * última carpeta, creando por el camino las que falten.
  *
  * La tabla carpetas_drive hace de memoria: si la ruta ya se resolvió antes,
- * no se vuelve a preguntar a Google. Y como esa tabla tiene la ruta como
- * clave única, nunca acaban existiendo dos carpetas "LUZ" hermanas.
+ * no se vuelve a preguntar a Google. Su clave es (hogar, ruta), así que
+ * dentro de una casa nunca acaban existiendo dos carpetas "LUZ" hermanas,
+ * y la ruta de una casa no dice nada de la de al lado.
  */
 export async function idDeCarpeta(
   acceso: string,
@@ -147,12 +148,20 @@ export async function idDeCarpeta(
   for (const segmento of segmentos) {
     ruta = ruta ? `${ruta}/${segmento}` : segmento
 
-    const { data: memoria } = await supa
-      .from('carpetas_drive')
-      .select('drive_folder_id')
-      .eq('ruta', ruta)
-      .eq('hogar_id', hogarId ?? '')
-      .maybeSingle()
+    /* Sin hogar no se usa la memoria, ni para leer ni para escribir.
+       Antes se buscaba con `hogar_id = ''`, que para Postgres no es un
+       identificador válido: la consulta fallaba entera y en silencio, y
+       la memoria se comportaba como si nunca hubiera nada guardado. */
+    const memoria = hogarId
+      ? (
+          await supa
+            .from('carpetas_drive')
+            .select('drive_folder_id')
+            .eq('ruta', ruta)
+            .eq('hogar_id', hogarId)
+            .maybeSingle()
+        ).data
+      : null
 
     if (memoria?.drive_folder_id) {
       padre = memoria.drive_folder_id
@@ -162,15 +171,29 @@ export async function idDeCarpeta(
     const existente = await buscarCarpeta(acceso, segmento, padre)
     const id = existente ?? (await crearCarpeta(acceso, segmento, padre))
 
-    const { error: fallo } = await supa
-      .from('carpetas_drive')
-      .upsert({ ruta, drive_folder_id: id, hogar_id: hogarId }, { onConflict: 'ruta' })
+    if (hogarId) {
+      /*
+        LA CLAVE ES (hogar, ruta), NO LA RUTA.
 
-    /* Si la memoria no se guarda, el documento se sube igual: lo único
-       que pasa es que la próxima vez habrá que volver a buscar la
-       carpeta en Drive. Pero que quede dicho en el registro, porque
-       una memoria que nunca guarda nada se nota solo en la lentitud. */
-    if (fallo) console.error('[HUBI] Carpeta creada pero no recordada:', fallo)
+        Con `onConflict: 'ruta'` la segunda familia que guardara una
+        factura de la luz habría PISADO la fila de la primera: misma
+        ruta, otro identificador de carpeta. Y a partir de ese momento
+        los documentos de una casa se subirían a la carpeta de la otra
+        sin que saltara ningún error. Va con el archivo sql/28.
+      */
+      const { error: fallo } = await supa
+        .from('carpetas_drive')
+        .upsert(
+          { ruta, drive_folder_id: id, hogar_id: hogarId },
+          { onConflict: 'hogar_id,ruta' }
+        )
+
+      /* Si la memoria no se guarda, el documento se sube igual: lo único
+         que pasa es que la próxima vez habrá que volver a buscar la
+         carpeta en Drive. Pero que quede dicho en el registro, porque
+         una memoria que nunca guarda nada se nota solo en la lentitud. */
+      if (fallo) console.error('[HUBI] Carpeta creada pero no recordada:', fallo)
+    }
 
     padre = id
   }

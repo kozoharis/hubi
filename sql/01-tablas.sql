@@ -69,6 +69,18 @@ create index if not exists idx_categorias_padre on categorias(padre_id);
 --  3. CARPETAS DE DRIVE — evita carpetas duplicadas
 -- ───────────────────────────────────────────────────────────
 
+/*
+  OJO: la clave de verdad es (hogar_id, ruta), no `ruta`.
+
+  Aquí sigue puesta la ruta a secas porque `hogar_id` no existía
+  todavía —lo añade el 17— y este archivo es el primer día del
+  proyecto. Quien monte HUBI desde cero ejecuta 01 → 17 → 28 y acaba
+  con la clave correcta. Lo que NO se puede es dejar la clave así:
+  con la ruta sola, "FINCA/GASTOS/2026/T3/LUZ" es una única fila para
+  todas las familias, y los documentos de una acabarían en el Drive
+  de otra sin que salte ningún error. Está explicado entero en
+  sql/28-carpetas-por-hogar.sql.
+*/
 create table if not exists carpetas_drive (
   ruta             text primary key,
   drive_folder_id  text not null,
