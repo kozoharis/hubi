@@ -7,12 +7,22 @@ import { clienteNavegador } from '@/lib/supabase/navegador'
 import { Ico, Logo } from '../iconos'
 import ColorDeBarra from '../color-barra'
 
-type Paso = 'correo' | 'codigo'
+/*
+  Tres pasos, no dos.
+
+  El de en medio —'alta'— solo lo ve quien viene invitado: escribe su
+  correo y la palabra que le han dado, y a partir de ahí sigue por el
+  mismo camino de siempre, el del número por correo. Se separa a
+  propósito de «Entrar»: quien ya tiene cuenta no debería ver jamás un
+  campo que le pida una palabra de invitación que no tiene.
+*/
+type Paso = 'correo' | 'alta' | 'codigo'
 
 export default function Entrar() {
   const router = useRouter()
   const [paso, setPaso] = useState<Paso>('correo')
   const [correo, setCorreo] = useState('')
+  const [palabra, setPalabra] = useState('')
   const [codigo, setCodigo] = useState('')
   const [aviso, setAviso] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
@@ -44,6 +54,58 @@ export default function Entrar() {
       setAviso(mensajeClaro(error.message, 'correo'))
       // Si el problema es solo la espera, el código anterior sigue
       // valiendo: le dejamos pasar a escribirlo.
+      if (segundos) setPaso('codigo')
+      return
+    }
+
+    setEspera(60)
+    setPaso('codigo')
+  }
+
+  /*
+    Crear la cuenta y, acto seguido, pedir el número.
+
+    Son dos pasos para HUBI y uno solo para quien se apunta: escribe su
+    correo y su palabra, y lo siguiente que ve es la pantalla del
+    número, igual que quien ya tenía cuenta. Cuantas menos pantallas
+    distintas, menos sitios donde perderse.
+
+    La palabra la comprueba el SERVIDOR. Aquí no está escrita en
+    ninguna parte — si lo estuviera, la tendría cualquiera que abriera
+    las herramientas del navegador.
+  */
+  async function crearCuenta(e: React.FormEvent) {
+    e.preventDefault()
+    setAviso(null)
+    setOcupado(true)
+
+    const email = correo.trim().toLowerCase()
+
+    const r = await fetch('/api/alta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correo: email, palabra }),
+    })
+
+    if (!r.ok) {
+      const d = (await r.json().catch(() => ({}))) as { error?: string }
+      setOcupado(false)
+      setAviso(d.error ?? 'No se ha podido crear la cuenta.')
+      return
+    }
+
+    const supabase = clienteNavegador()
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false },
+    })
+
+    setOcupado(false)
+
+    if (error) {
+      const segundos = segundosDeEspera(error.message)
+      if (segundos) setEspera(segundos)
+      setAviso(mensajeClaro(error.message, 'correo'))
       if (segundos) setPaso('codigo')
       return
     }
@@ -161,6 +223,84 @@ export default function Entrar() {
               >
                 Ya tengo un código
               </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAviso(null)
+                  setPaso('alta')
+                }}
+                className="mt-1 w-full py-3 text-[15px] font-bold text-apagado underline underline-offset-4"
+              >
+                Todavía no tengo cuenta
+              </button>
+            </form>
+          ) : paso === 'alta' ? (
+            <form onSubmit={crearCuenta}>
+              <p className="text-[16.5px] font-semibold leading-snug text-apagado">
+                HUBI todavía no está abierto a todo el mundo. Para crear tu casa hace
+                falta la palabra que te haya dado quien te invitó.
+              </p>
+
+              <label htmlFor="correo-alta" className="mt-6 block text-[17px] font-bold text-white">
+                Tu correo
+              </label>
+              <input
+                id="correo-alta"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                required
+                autoFocus
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                placeholder="nombre@gmail.com"
+                className="mt-3 h-[62px] w-full rounded-[16px] px-4 font-semibold text-white placeholder:text-apagado focus:outline-none"
+                style={{ background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.16)' }}
+              />
+
+              <label htmlFor="palabra" className="mt-5 block text-[17px] font-bold text-white">
+                La palabra de invitación
+              </label>
+              <input
+                id="palabra"
+                type="text"
+                autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                required
+                value={palabra}
+                onChange={(e) => setPalabra(e.target.value)}
+                placeholder="la que te han dado"
+                className="mt-3 h-[62px] w-full rounded-[16px] px-4 font-semibold text-white placeholder:text-apagado focus:outline-none"
+                style={{ background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.16)' }}
+              />
+
+              <button
+                type="submit"
+                disabled={ocupado || correo.trim().length < 5 || palabra.trim().length < 2}
+                className="mt-5 flex h-[62px] w-full items-center justify-center rounded-[16px] bg-verde text-[18px] font-extrabold text-white transition disabled:opacity-40"
+              >
+                {ocupado ? 'Creando…' : 'Crear mi cuenta'}
+              </button>
+
+              <p className="mt-4 text-center text-[15px] font-semibold leading-relaxed text-apagado">
+                Después te enviaremos un número por correo.
+                <br />
+                No hace falta inventarse ninguna contraseña.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAviso(null)
+                  setPalabra('')
+                  setPaso('correo')
+                }}
+                className="mt-2 w-full py-3 text-[15px] font-bold text-apagado underline underline-offset-4"
+              >
+                Ya tengo cuenta
+              </button>
             </form>
           ) : (
             <form onSubmit={comprobarCodigo}>
@@ -199,6 +339,7 @@ export default function Entrar() {
                 onClick={() => {
                   setAviso(null)
                   setCodigo('')
+                  setPalabra('')
                   setPaso('correo')
                 }}
                 className="mt-3 w-full py-3 text-[16px] font-bold text-apagado underline underline-offset-4 disabled:no-underline disabled:opacity-50"
@@ -217,9 +358,12 @@ export default function Entrar() {
           )}
         </div>
 
+        {/* Ya no dice «Solo Juan Miguel y Conchita»: era verdad hasta
+            hoy y ahora sería mentira, y a quien acaba de recibir una
+            invitación le diría que se ha equivocado de sitio. */}
         <p className="mt-8 flex items-center justify-center gap-2 text-[14px] font-bold text-tenue">
           <Ico nombre="candado" tam={18} grosor={2} />
-          Solo Juan Miguel y Conchita
+          Cada casa ve solo lo suyo
         </p>
       </div>
     </main>

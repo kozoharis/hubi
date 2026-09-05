@@ -63,8 +63,19 @@ export default async function Inicio({
 
   const admin = clienteServidor()
 
-  /* La conexión con Drive es la de SU casa. */
+  /*
+    ── ¿TIENE CASA? ──
+
+    Quien entra sin hogar no ve NADA: todas las políticas de la base
+    de datos dicen `hogar_id = mi_hogar()`, así que cada consulta le
+    devuelve cero filas. Y un HUBI completamente vacío, con sus cinco
+    pestañas y ni un dato, no parece una casa nueva: parece una
+    aplicación rota.
+
+    Se le lleva a crear la suya, que es lo que de verdad le falta.
+  */
   const hogarId = await miHogar(supabase, user.id)
+  if (!hogarId) redirect('/empezar')
 
   const CAMPOS =
     'id, titulo, tipo, asignado_a, creado_por, fecha, hora, estado, nota, documento_origen_id'
