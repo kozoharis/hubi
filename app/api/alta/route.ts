@@ -84,7 +84,7 @@ export async function POST(peticion: NextRequest) {
 
   const admin = clienteServidor()
 
-  const { error } = await admin.auth.admin.createUser({
+  const { data: creada, error } = await admin.auth.admin.createUser({
     email: correo,
     /*
       CONFIRMADA DESDE EL PRINCIPIO, Y NO ES UN AGUJERO.
@@ -107,17 +107,58 @@ export async function POST(peticion: NextRequest) {
     email_confirm: true,
   })
 
-  if (error) {
-    /* Ya existía. Se contesta que bien: puede entrar con el camino
-       normal, y aquí no se le dice a nadie quién está registrado. */
-    const yaEstaba = /already|registered|exists/i.test(error.message)
-    if (!yaEstaba) {
-      console.error('[HUBI] Fallo creando la cuenta:', error)
-      return NextResponse.json(
-        { error: 'No se ha podido crear la cuenta. Inténtalo en un minuto.' },
-        { status: 500 }
-      )
+  /*
+    ═══════════════════════════════════════════════════════════
+    AQUÍ HABÍA UN FALLO MÍO, Y ES EL QUE PROHÍBE EL PUNTO 26
+    ═══════════════════════════════════════════════════════════
+
+    Esto decía antes: si el error de Google… perdón, de Supabase,
+    contiene «already», «registered» o «exists», entonces la cuenta ya
+    existía y todo va bien. Y contestaba `bien: true`.
+
+    Es adivinar leyendo un texto. Si el error dice otra cosa —o si el
+    texto cambia con una versión de Supabase— esta ruta responde «todo
+    bien» sobre una cuenta QUE NO SE HA CREADO. Y lo siguiente que pasa
+    es que se pide el número, Supabase contesta «ese usuario no
+    existe», y la pantalla le echa la culpa al correo de quien está
+    intentando entrar: «este correo no tiene acceso a HUBI».
+
+    Media hora buscando un fallo en un correo bien escrito. Eso es
+    exactamente «simular una conexión diciendo que funciona».
+
+    Ahora NO se adivina: se pregunta si la cuenta está.
+  */
+  let existe = Boolean(creada?.user?.id)
+
+  if (!existe) {
+    const { data: lista, error: alBuscar } = await admin.auth.admin.listUsers({
+      page: 1,
+      perPage: 200,
+    })
+
+    if (alBuscar) {
+      console.error('[HUBI] No se ha podido comprobar si la cuenta existe:', alBuscar)
     }
+
+    existe = (lista?.users ?? []).some((u) => (u.email ?? '').toLowerCase() === correo)
+  }
+
+  if (!existe) {
+    console.error('[HUBI] La cuenta no se ha creado:', error)
+
+    /*
+      El motivo de verdad, en la pantalla. No es un descuido: a esta
+      línea solo llega quien ya ha acertado la palabra de invitación,
+      y es quien está montando esto. Un «inténtalo en un minuto» aquí
+      manda a esperar por algo que no se arregla esperando.
+    */
+    return NextResponse.json(
+      {
+        error: 'No se ha podido crear la cuenta.',
+        detalle: error?.message ?? 'Supabase no ha devuelto ningún motivo.',
+      },
+      { status: 500 }
+    )
   }
 
   return NextResponse.json({ bien: true })

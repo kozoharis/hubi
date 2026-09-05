@@ -88,9 +88,12 @@ export default function Entrar() {
     })
 
     if (!r.ok) {
-      const d = (await r.json().catch(() => ({}))) as { error?: string }
+      const d = (await r.json().catch(() => ({}))) as { error?: string; detalle?: string }
       setOcupado(false)
-      setAviso(d.error ?? 'No se ha podido crear la cuenta.')
+      /* El detalle se enseña cuando viene. Sin él, un fallo de
+         configuración parece un fallo del correo de quien entra, y se
+         pasa media hora buscando donde no hay nada. */
+      setAviso([d.error ?? 'No se ha podido crear la cuenta.', d.detalle].filter(Boolean).join(' · '))
       return
     }
 
@@ -105,7 +108,7 @@ export default function Entrar() {
     if (error) {
       const segundos = segundosDeEspera(error.message)
       if (segundos) setEspera(segundos)
-      setAviso(mensajeClaro(error.message, 'correo'))
+      setAviso(mensajeClaro(error.message, 'alta'))
       if (segundos) setPaso('codigo')
       return
     }
@@ -418,8 +421,20 @@ function mensajeClaro(original: string, paso: Paso): string {
   if (e.includes('api key') || e.includes('anon key') || e.includes('jwt')) {
     return 'HUBI no está bien conectado con su base de datos. No es cosa tuya: avisa a quien lo mantiene.'
   }
+  /*
+    «Signups not allowed for otp» significa UNA cosa: Supabase no
+    encuentra ese usuario. Pero significa cosas muy distintas según
+    dónde estemos, y decir siempre lo mismo mandó a buscar un fallo
+    donde no lo había.
+
+    · Entrando: es verdad, ese correo no está dado de alta.
+    · Recién creada la cuenta: es imposible que sea el correo — se
+      acaba de crear. Es la aplicación, y hay que decirlo así.
+  */
   if (e.includes('signups not allowed') || e.includes('not authorized')) {
-    return 'Este correo no tiene acceso a HUBI. Revisa que esté bien escrito.'
+    return paso === 'alta'
+      ? 'La cuenta se ha creado pero HUBI no ha podido mandarte el número. No es cosa tuya: hay que mirar los ajustes de registro en Supabase.'
+      : 'Este correo no tiene acceso a HUBI. Revisa que esté bien escrito, o crea tu cuenta ahí abajo.'
   }
   if (e.includes('rate limit') || e.includes('too many')) {
     return 'Se han pedido demasiados códigos en poco rato. Espera unos minutos y vuelve a intentarlo.'
