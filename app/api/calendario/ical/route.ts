@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar } from '@/lib/hogar'
 import { cifrar } from '@/lib/cifrado'
 import { esDireccionDeCalendario, leerICS } from '@/lib/ical'
 import { idCalendarioHubi } from '@/lib/google/calendario'
@@ -82,7 +83,8 @@ export async function POST(peticion: NextRequest) {
     Aquí se dice A LA CARA, en el momento, y con la solución delante:
     la que hay que pegar es la del calendario PERSONAL.
   */
-  const hubi = await idCalendarioHubi()
+  const casa = await miHogar(supabase, user.id)
+  const hubi = casa ? await idCalendarioHubi(casa) : null
   if (hubi && decodeURIComponent(url).includes(hubi)) {
     return NextResponse.json(
       {

@@ -9,11 +9,23 @@ const CARPETA = 'application/vnd.google-apps.folder'
 export const NOMBRE_RAIZ = 'J+C · FAMILY HUB'
 
 /**
- * Devuelve un acceso temporal a Drive usando el permiso de Juan Miguel.
- * Este permiso lo usan LOS DOS usuarios: Conchita sube documentos a
- * través de él sin tener que conectar nada.
+ * Devuelve un acceso temporal al Drive DE ESTA CASA.
+ *
+ * Dentro de una casa el permiso es uno solo y lo usan todos sus
+ * miembros: Conchita sube documentos con el permiso de Juan Miguel sin
+ * tener que conectar nada suyo. Lo que no puede pasar es que ese
+ * permiso lo use otra casa.
+ *
+ * ── POR QUÉ EL HOGAR ES OBLIGATORIO ──
+ *
+ * Podría tener un valor por defecto, o buscarse solo. No lo tiene a
+ * propósito: así el compilador está obligado a señalar TODOS los
+ * sitios desde los que se llama. Un olvido aquí no daría ningún error
+ * —devolvería el permiso de otra familia y subiría el documento a su
+ * Drive tan tranquilo—, y esa clase de fallo solo se caza antes de
+ * ocurrir. Es la misma razón por la que `idDeCarpeta` lo pide.
  */
-export async function accesoDrive(): Promise<{
+export async function accesoDrive(hogarId: string): Promise<{
   acceso: string
   raiz: string
 }> {
@@ -22,8 +34,8 @@ export async function accesoDrive(): Promise<{
   const { data: conexion, error } = await supa
     .from('conexion_drive')
     .select('refresh_token_cifrado, carpeta_raiz_id, estado')
-    .eq('id', 1)
-    .single()
+    .eq('hogar_id', hogarId)
+    .maybeSingle()
 
   if (error) throw new Error('No se ha podido leer la conexión con Drive')
   if (!conexion?.refresh_token_cifrado || conexion.estado !== 'activa') {
@@ -35,11 +47,43 @@ export async function accesoDrive(): Promise<{
     return { acceso, raiz: conexion.carpeta_raiz_id as string }
   } catch (e) {
     if (e instanceof Error && e.message === 'PERMISO_CADUCADO') {
-      await supa.from('conexion_drive').update({ estado: 'caducada' }).eq('id', 1)
+      await supa.from('conexion_drive').update({ estado: 'caducada' }).eq('hogar_id', hogarId)
       throw new Error('DRIVE_CADUCADO')
     }
     throw e
   }
+}
+
+/**
+ * Guarda —o actualiza— la conexión con Google de una casa.
+ *
+ * No usa `upsert`: eso necesitaría que `hogar_id` fuera clave única, y
+ * no lo es hasta que se ejecuta sql/29. Así esta función funciona
+ * igual con la base de datos vieja y con la nueva, que es lo que
+ * permite desplegar primero y ejecutar el SQL después sin dejar a
+ * nadie sin Drive por el camino.
+ */
+export async function guardarConexion(
+  hogarId: string,
+  campos: Record<string, unknown>
+): Promise<void> {
+  const supa = clienteServidor()
+
+  const { data: cambiadas, error: fallo } = await supa
+    .from('conexion_drive')
+    .update(campos)
+    .eq('hogar_id', hogarId)
+    .select('hogar_id')
+
+  if (fallo) throw fallo
+  if (cambiadas && cambiadas.length > 0) return
+
+  /* No había fila para esta casa: es la primera vez que conecta. */
+  const { error: alInsertar } = await supa
+    .from('conexion_drive')
+    .insert({ ...campos, hogar_id: hogarId })
+
+  if (alInsertar) throw alInsertar
 }
 
 /** Escapa comillas para las consultas de Drive. */

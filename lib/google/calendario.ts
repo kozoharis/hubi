@@ -35,15 +35,31 @@ export const NOMBRE_CALENDARIO = 'HUBI'
    cita en el calendario con una hora de más. */
 const COLOR_MARCA = '#14B8A6'
 
-/** Los datos de conexión, o null si no se puede usar el calendario. */
-async function conexion(): Promise<{ acceso: string; calendarioId: string | null } | null> {
+/*
+  ─────────────────────────────────────────────────────────────
+  TODO EN ESTE ARCHIVO PIDE EL HOGAR, Y LO PIDE OBLIGATORIO
+
+  El calendario HUBI vive dentro de la cuenta de Google de quien
+  conectó Drive en SU casa. Sin el hogar, esto leía «la conexión» —la
+  única que podía existir— y una segunda familia habría acabado
+  escribiendo sus citas en el calendario de Juan Miguel.
+
+  Ninguna de estas funciones tiene valor por defecto para el hogar a
+  propósito: así el compilador señala cada sitio desde el que se llama
+  y no queda ninguno al azar.
+*/
+
+/** Los datos de conexión de esta casa, o null si no se puede usar. */
+async function conexion(
+  hogarId: string
+): Promise<{ acceso: string; calendarioId: string | null } | null> {
   const supa = clienteServidor()
 
   const { data, error } = await supa
     .from('conexion_drive')
     .select('refresh_token_cifrado, estado, alcances, calendario_id')
-    .eq('id', 1)
-    .single()
+    .eq('hogar_id', hogarId)
+    .maybeSingle()
 
   if (error || !data?.refresh_token_cifrado || data.estado !== 'activa') return null
 
@@ -83,7 +99,8 @@ async function pedir(
  */
 async function asegurarCalendario(
   acceso: string,
-  guardado: string | null
+  guardado: string | null,
+  hogarId: string
 ): Promise<string | null> {
   const supa = clienteServidor()
 
@@ -133,7 +150,7 @@ async function asegurarCalendario(
     body: JSON.stringify({ backgroundColor: COLOR_MARCA, foregroundColor: '#0F172A' }),
   }).catch(() => null)
 
-  await supa.from('conexion_drive').update({ calendario_id: id }).eq('id', 1)
+  await supa.from('conexion_drive').update({ calendario_id: id }).eq('hogar_id', hogarId)
   return id
 }
 
@@ -153,11 +170,11 @@ async function asegurarCalendario(
  */
 export type Reparto = 'compartido' | 'a-mano' | 'fallo'
 
-export async function compartirCon(correo: string): Promise<Reparto> {
-  const c = await conexion()
+export async function compartirCon(correo: string, hogarId: string): Promise<Reparto> {
+  const c = await conexion(hogarId)
   if (!c) return 'fallo'
 
-  const id = await asegurarCalendario(c.acceso, c.calendarioId)
+  const id = await asegurarCalendario(c.acceso, c.calendarioId, hogarId)
   if (!id) return 'fallo'
 
   const r = await pedir(c.acceso, `/calendars/${encodeURIComponent(id)}/acl`, {
@@ -248,13 +265,13 @@ function sumarUnDia(iso: string): string {
   tarea saldría dos veces en la Agenda —una como tarea de HUBI y otra
   como cita traída de Google— y nadie entendería por qué.
 */
-export async function idCalendarioHubi(): Promise<string | null> {
+export async function idCalendarioHubi(hogarId: string): Promise<string | null> {
   try {
     const supa = clienteServidor()
     const { data } = await supa
       .from('conexion_drive')
       .select('calendario_id')
-      .eq('id', 1)
+      .eq('hogar_id', hogarId)
       .maybeSingle()
     return (data?.calendario_id as string | null) ?? null
   } catch {
@@ -271,13 +288,14 @@ export async function idCalendarioHubi(): Promise<string | null> {
  */
 export async function ponerCita(
   cita: Cita,
+  hogarId: string,
   eventoAnterior?: string | null
 ): Promise<string | null> {
   try {
-    const c = await conexion()
+    const c = await conexion(hogarId)
     if (!c) return null
 
-    const id = await asegurarCalendario(c.acceso, c.calendarioId)
+    const id = await asegurarCalendario(c.acceso, c.calendarioId, hogarId)
     if (!id) return null
 
     const cuerpo = JSON.stringify(cuerpoDelEvento(cita))
@@ -307,9 +325,9 @@ export async function ponerCita(
 }
 
 /** Quita la cita del calendario. Nunca lanza. */
-export async function quitarCita(evento: string): Promise<void> {
+export async function quitarCita(evento: string, hogarId: string): Promise<void> {
   try {
-    const c = await conexion()
+    const c = await conexion(hogarId)
     if (!c?.calendarioId) return
 
     await pedir(
@@ -333,7 +351,7 @@ export async function quitarCita(evento: string): Promise<void> {
  * se ha ejecutado, esto devuelve «no preparado» en vez de tumbar la
  * pantalla entera. Ya nos pasó una vez con la foto del perfil.
  */
-export async function estadoGuardado(): Promise<{
+export async function estadoGuardado(hogarId: string): Promise<{
   permiso: boolean
   creado: boolean
 }> {
@@ -342,7 +360,7 @@ export async function estadoGuardado(): Promise<{
     const { data, error } = await supa
       .from('conexion_drive')
       .select('alcances, calendario_id')
-      .eq('id', 1)
+      .eq('hogar_id', hogarId)
       .maybeSingle()
 
     if (error || !data) return { permiso: false, creado: false }
@@ -357,12 +375,12 @@ export async function estadoGuardado(): Promise<{
 }
 
 /** Para la pantalla de comprobación: ¿existe ya el calendario? */
-export async function estadoCalendario(): Promise<{
+export async function estadoCalendario(hogarId: string): Promise<{
   puedeUsarse: boolean
   creado: boolean
   id: string | null
 }> {
-  const c = await conexion()
+  const c = await conexion(hogarId)
   if (!c) return { puedeUsarse: false, creado: false, id: null }
   return { puedeUsarse: true, creado: c.calendarioId != null, id: c.calendarioId }
 }
@@ -390,7 +408,7 @@ export async function estadoCalendario(): Promise<{
   podemos comprobar desde aquí, pero conviene saberlo antes de ponerse
   a buscar una avería que no existe.
 */
-export async function comprobarCalendario(): Promise<{
+export async function comprobarCalendario(hogarId: string): Promise<{
   existe: boolean
   enLaLista: boolean
   nombre: string | null
@@ -399,7 +417,7 @@ export async function comprobarCalendario(): Promise<{
 }> {
   const nada = { existe: false, enLaLista: false, nombre: null, id: null }
 
-  const c = await conexion()
+  const c = await conexion(hogarId)
   if (!c) {
     return { ...nada, diagnostico: 'Google no está conectado, o falta el permiso del calendario.' }
   }

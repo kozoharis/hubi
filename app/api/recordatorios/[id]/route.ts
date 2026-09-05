@@ -1,6 +1,7 @@
 import { NextResponse, after, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar } from '@/lib/hogar'
 import { ponerCita, quitarCita } from '@/lib/google/calendario'
 import { clienteServidor } from '@/lib/supabase/servidor'
 
@@ -121,7 +122,13 @@ export async function PATCH(
     queda donde estuviera. `after` lo hace después de contestar y lo
     termina de verdad.
   */
+  /* La casa, antes del `after`: dentro ya no hay sesión que consultar
+     y el calendario que se toca es el de esta casa. */
+  const hogarId = await miHogar(supabase, user.id)
+
   after(async () => {
+    if (!hogarId) return
+
     const enGoogle = clienteServidor()
 
     // El evento lleva un ✓ delante cuando está hecho. No se borra: en
@@ -130,6 +137,7 @@ export async function PATCH(
       try {
         const evento = await ponerCita(
           { titulo: r.titulo, fecha: r.fecha, hora: r.hora, nota: r.nota, hecho },
+          hogarId,
           r.evento_google
         )
         if (evento && evento !== r.evento_google) {
@@ -151,13 +159,16 @@ export async function PATCH(
     */
     if (siguiente && proximaFecha && r) {
       try {
-        const evento = await ponerCita({
-          titulo: r.titulo,
-          fecha: proximaFecha,
-          hora: r.hora,
-          nota: r.nota,
-          hecho: false,
-        })
+        const evento = await ponerCita(
+          {
+            titulo: r.titulo,
+            fecha: proximaFecha,
+            hora: r.hora,
+            nota: r.nota,
+            hecho: false,
+          },
+          hogarId
+        )
         if (evento) {
           await enGoogle
             .from('recordatorios')
@@ -308,13 +319,18 @@ export async function PUT(
     hueco en Google para siempre. En el móvil salía una cita que en
     HUBI ya no tenía fecha, y no había forma de quitarla desde aquí.
   */
+  /* La casa, mientras todavía hay sesión. */
+  const casa = await miHogar(supabase, user.id)
+
   after(async () => {
+    if (!casa) return
+
     const enGoogle = clienteServidor()
 
     if (!data.fecha) {
       if (data.evento_google) {
         try {
-          await quitarCita(data.evento_google)
+          await quitarCita(data.evento_google, casa)
           await enGoogle.from('recordatorios').update({ evento_google: null }).eq('id', id)
         } catch (e) {
           console.error('[HUBI] La cita se ha quedado en Google sin fecha en HUBI:', e)
@@ -332,6 +348,7 @@ export async function PUT(
           nota: data.nota,
           hecho: data.estado === 'hecho',
         },
+        casa,
         data.evento_google
       )
       if (evento && evento !== data.evento_google) {
@@ -426,11 +443,13 @@ export async function DELETE(
      función se congela al devolver la respuesta y la cita se quedaba
      en el calendario de Google para siempre, borrada en HUBI y viva en
      el móvil. */
-  if (antes?.evento_google) {
+  const donde = await miHogar(supabase, user.id)
+
+  if (antes?.evento_google && donde) {
     const evento = antes.evento_google
     after(async () => {
       try {
-        await quitarCita(evento)
+        await quitarCita(evento, donde)
       } catch (e) {
         console.error('[HUBI] Borrado en HUBI pero no en Google:', e)
       }

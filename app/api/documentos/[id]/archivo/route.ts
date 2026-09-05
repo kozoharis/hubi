@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar, SIN_CASA } from '@/lib/hogar'
 import { accesoDrive, descargarArchivo } from '@/lib/google/drive'
 
 export const dynamic = 'force-dynamic'
@@ -32,8 +33,14 @@ export async function GET(
 
   if (!documento) return new NextResponse('Documento no encontrado.', { status: 404 })
 
+  /* La consulta de arriba va con la sesión, así que la base de datos
+     ya ha impedido ver el documento de otra casa. Esto es lo mismo por
+     el otro lado: se abre el Drive de SU casa, nunca otro. */
+  const hogarId = await miHogar(supabase, user.id)
+  if (!hogarId) return new NextResponse(SIN_CASA, { status: 403 })
+
   try {
-    const { acceso } = await accesoDrive()
+    const { acceso } = await accesoDrive(hogarId)
     const respuesta = await descargarArchivo(acceso, documento.drive_file_id)
 
     if (!respuesta.ok || !respuesta.body) {

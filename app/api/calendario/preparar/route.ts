@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar, mandaEnSuCasa, SIN_CASA } from '@/lib/hogar'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { compartirCon, estadoCalendario, NOMBRE_CALENDARIO } from '@/lib/google/calendario'
 
@@ -26,20 +27,20 @@ export async function POST() {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('es_propietario_drive')
-    .eq('id', user.id)
-    .maybeSingle()
+  const hogarId = await miHogar(supabase, user.id)
+  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
-  if (!perfil?.es_propietario_drive) {
+  if (!(await mandaEnSuCasa(supabase, user.id))) {
     return NextResponse.json(
-      { error: 'Solo Juan Miguel puede preparar el calendario: está en su cuenta de Google.' },
+      {
+        error:
+          'El calendario vive en la cuenta de Google de quien conectó Drive en tu casa, así que tiene que prepararlo esa persona.',
+      },
       { status: 403 }
     )
   }
 
-  const antes = await estadoCalendario()
+  const antes = await estadoCalendario(hogarId)
   if (!antes.puedeUsarse) {
     return NextResponse.json(
       {
@@ -50,10 +51,26 @@ export async function POST() {
     )
   }
 
-  // Los correos de los demás. Se sacan de la lista de usuarios, no de
-  // una constante escrita a mano: si algún día entra alguien más, esto
-  // sigue funcionando sin tocarlo.
+  /*
+    LOS CORREOS DE LOS DE SU CASA. SOLO LOS DE SU CASA.
+
+    Aquí había una fuga esperando a la segunda familia: se leían TODOS
+    los usuarios de HUBI y se compartía el calendario con todos. Con
+    dos personas era correcto; con dos familias, la casa nueva habría
+    invitado a Juan Miguel y a Conchita a su calendario sin querer, y
+    ellos habrían visto sus citas médicas en el móvil.
+
+    Se cruza con `miembros`: solo quien está en este hogar.
+  */
   const admin = clienteServidor()
+
+  const { data: gente } = await admin
+    .from('miembros')
+    .select('perfil_id')
+    .eq('hogar_id', hogarId)
+
+  const deLaCasa = new Set((gente ?? []).map((m) => m.perfil_id as string))
+
   const { data: usuarios, error } = await admin.auth.admin.listUsers()
 
   if (error) {
@@ -64,21 +81,22 @@ export async function POST() {
   }
 
   const otros = usuarios.users
+    .filter((u) => deLaCasa.has(u.id) && u.id !== user.id)
     .map((u) => u.email)
-    .filter((c): c is string => Boolean(c) && c !== user.email)
+    .filter((c): c is string => Boolean(c))
 
   const compartido: string[] = []
   const aMano: string[] = []
   const fallidos: string[] = []
 
   for (const correo of otros) {
-    const r = await compartirCon(correo)
+    const r = await compartirCon(correo, hogarId)
     if (r === 'compartido') compartido.push(correo)
     else if (r === 'a-mano') aMano.push(correo)
     else fallidos.push(correo)
   }
 
-  const despues = await estadoCalendario()
+  const despues = await estadoCalendario(hogarId)
 
   if (!despues.creado) {
     return NextResponse.json(

@@ -34,12 +34,29 @@ export async function GET(peticion: NextRequest) {
   /* El día de hoy donde viven ellos, no donde está el servidor. */
   const hoy = hoyAqui()
 
-  const { data: perfiles } = await supa.from('perfiles').select('id, nombre')
-  const todos = (perfiles ?? []).map((p) => p.id)
+  /*
+    QUIÉN VIVE EN CADA CASA.
+
+    Aquí estaba el aviso que cruzaba familias. Una tarea sin persona
+    asignada —«recoger la medicación», para quien pueda— se le mandaba
+    a `todos`, y `todos` era, con la clave de servidor, TODOS los
+    usuarios de HUBI. La segunda familia habría hecho sonar el
+    teléfono de Juan Miguel y Conchita con sus recados.
+
+    Se agrupa por hogar y cada tarea avisa solo a los suyos.
+  */
+  const { data: gente } = await supa.from('miembros').select('perfil_id, hogar_id')
+
+  const deCadaCasa = new Map<string, string[]>()
+  for (const m of gente ?? []) {
+    const casa = m.hogar_id as string
+    if (!casa) continue
+    deCadaCasa.set(casa, [...(deCadaCasa.get(casa) ?? []), m.perfil_id as string])
+  }
 
   const { data: pendientes } = await supa
     .from('recordatorios')
-    .select('id, titulo, tipo, asignado_a, fecha, hora, aviso_previo, ultimo_aviso')
+    .select('id, titulo, tipo, asignado_a, fecha, hora, aviso_previo, ultimo_aviso, hogar_id')
     .eq('estado', 'pendiente')
     .is('eliminado_en', null)
     .not('fecha', 'is', null)
@@ -51,7 +68,16 @@ export async function GET(peticion: NextRequest) {
     if (r.ultimo_aviso === hoy) continue // ya se avisó hoy de esto
 
     const faltan = diasHasta(hoy, r.fecha as string)
-    const destinatarios = r.asignado_a ? [r.asignado_a] : todos
+
+    /* Sin persona concreta, va a los de SU casa. Y si la tarea no
+       tiene casa apuntada, no se avisa a nadie: es preferible un aviso
+       que no suena a un aviso que suena en el móvil de otra familia. */
+    const suCasa = (r.hogar_id as string | null) ?? null
+    const destinatarios = r.asignado_a
+      ? [r.asignado_a]
+      : suCasa
+        ? (deCadaCasa.get(suCasa) ?? [])
+        : []
 
     let titulo: string | null = null
     let cuerpo = ''

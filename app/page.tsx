@@ -11,6 +11,7 @@ import { Ico, Logo, Pastilla, pintaDe } from './iconos'
 import Avatar from './avatar'
 import { cuando, type Recordatorio } from '@/lib/tablon'
 import { leerPerfil } from '@/lib/perfil'
+import { miHogar } from '@/lib/hogar'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,6 +62,10 @@ export default async function Inicio({
   dentroDe60.setDate(dentroDe60.getDate() + 60)
 
   const admin = clienteServidor()
+
+  /* La conexión con Drive es la de SU casa. */
+  const hogarId = await miHogar(supabase, user.id)
+
   const CAMPOS =
     'id, titulo, tipo, asignado_a, creado_por, fecha, hora, estado, nota, documento_origen_id'
 
@@ -101,7 +106,9 @@ export default async function Inicio({
         .order('fecha', { ascending: true })
         .limit(3),
 
-      admin.from('conexion_drive').select('estado').eq('id', 1).maybeSingle(),
+      hogarId
+        ? admin.from('conexion_drive').select('estado').eq('hogar_id', hogarId).maybeSingle()
+        : Promise.resolve({ data: null }),
 
       /* Cuántas cosas faltan. Solo el número: la lista entera se ve
          al entrar, y el inicio no es una lista. */

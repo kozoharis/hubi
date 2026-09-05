@@ -9,6 +9,7 @@ import Cabecera from '../cabecera'
 import { Ico, Pastilla, Volver, type Icono } from '../iconos'
 import SelectorTema from '../tema'
 import { leerPerfil } from '@/lib/perfil'
+import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
 import { estadoGuardado } from '@/lib/google/calendario'
 import TuPerfil from './foto'
 import PrepararCalendario from './calendario'
@@ -31,12 +32,18 @@ export default async function Ajustes() {
 
   const perfil = await leerPerfil(supabase, user.id, user.email)
 
+  /* De qué casa es quien mira esta pantalla. Todo lo de Google —el
+     Drive conectado, el calendario— es de SU casa, no «el» de HUBI. */
+  const hogarId = await miHogar(supabase, user.id)
+
   const admin = clienteServidor()
-  const { data: conexion } = await admin
-    .from('conexion_drive')
-    .select('estado, email_cuenta')
-    .eq('id', 1)
-    .single()
+  const { data: conexion } = hogarId
+    ? await admin
+        .from('conexion_drive')
+        .select('estado, email_cuenta')
+        .eq('hogar_id', hogarId)
+        .maybeSingle()
+    : { data: null }
 
   const nombre = perfil.nombre
 
@@ -51,8 +58,13 @@ export default async function Ajustes() {
 
   /* Con quién se compartiría. Si vive solo, el interruptor no se
      enseña: un ajuste para compartir con nadie es una pregunta sin
-     sentido. */
-  const { data: otros } = await admin
+     sentido.
+
+     Va con la SESIÓN y no con la clave de servidor. Con la clave de
+     servidor no hay políticas: el «otro» que salía aquí podía ser
+     cualquiera de HUBI, y esta pantalla le habría enseñado a alguien
+     el nombre de pila de un desconocido. */
+  const { data: otros } = await supabase
     .from('perfiles')
     .select('id, nombre')
     .neq('id', user.id)
@@ -122,10 +134,11 @@ export default async function Ajustes() {
 
   const conectado = conexion?.estado === 'activa'
 
-  // Solo se le enseña a Juan Miguel: el calendario vive en su cuenta.
-  const calendario = perfil.es_propietario_drive
-    ? await estadoGuardado()
-    : { permiso: false, creado: false }
+  /* Solo a quien conectó Google en su casa: el calendario vive en su
+     cuenta, y quien no lo conectó no tiene nada que preparar ahí. */
+  const manda = await mandaEnSuCasa(supabase, user.id)
+  const calendario =
+    manda && hogarId ? await estadoGuardado(hogarId) : { permiso: false, creado: false }
 
   return (
     <main className="min-h-screen pb-40">
@@ -179,7 +192,7 @@ export default async function Ajustes() {
             titulo="Los papeles"
             pie="Ver todo lo guardado y sus carpetas"
           />
-          {perfil.es_propietario_drive ? (
+          {manda ? (
             <>
               <Opcion
                 href="/comprobacion"
@@ -229,7 +242,15 @@ export default async function Ajustes() {
               color="#64748B"
               fondo="#EEF2F7"
               titulo="Google Drive"
-              pie={conectado ? 'Conectado por Juan Miguel' : 'Todavía sin conectar'}
+              /* Antes decía «Conectado por Juan Miguel», escrito a
+                 mano. En otra casa eso sería el nombre de otra
+                 persona, así que se dice quién es de verdad: la cuenta
+                 con la que se conectó. */
+              pie={
+                conectado
+                  ? `Conectado · ${conexion?.email_cuenta ?? 'la cuenta de tu casa'}`
+                  : 'Todavía sin conectar'
+              }
               bien={conectado}
             />
           )}

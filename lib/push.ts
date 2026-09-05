@@ -1,5 +1,6 @@
 import webpush from 'web-push'
 import { clienteServidor } from '@/lib/supabase/servidor'
+import { hogarDe, losDeLaCasa } from '@/lib/hogar'
 
 export type Aviso = {
   titulo: string
@@ -90,7 +91,15 @@ export async function avisarA(perfilId: string, aviso: Aviso): Promise<number> {
 export async function avisarDeCompra(quienLoApunta: string, cuantas: number): Promise<void> {
   const admin = clienteServidor()
 
-  const { data: perfiles } = await admin.from('perfiles').select('id, nombre')
+  /* Solo los de SU casa. Con la clave de servidor no hay políticas
+     que filtren: «todos los perfiles» son todos los de HUBI, de todas
+     las familias. */
+  const casa = await hogarDe(admin, quienLoApunta)
+  if (!casa) return
+
+  const suyos = await losDeLaCasa(admin, casa)
+
+  const { data: perfiles } = await admin.from('perfiles').select('id, nombre').in('id', suyos)
   const yo = (perfiles ?? []).find((p) => p.id === quienLoApunta)
   const otros = (perfiles ?? []).filter((p) => p.id !== quienLoApunta)
 

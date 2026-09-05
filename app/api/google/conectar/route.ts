@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import crypto from 'crypto'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { mandaEnSuCasa } from '@/lib/hogar'
 import { urlDeConsentimiento } from '@/lib/google/oauth'
 
 export const dynamic = 'force-dynamic'
@@ -19,13 +20,9 @@ export async function GET(peticion: NextRequest) {
     return NextResponse.redirect(new URL('/entrar', peticion.url))
   }
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('es_propietario_drive')
-    .eq('id', user.id)
-    .single()
-
-  if (!perfil?.es_propietario_drive) {
+  /* Quien manda en SU casa, no una casilla global: si no, el fundador
+     de una casa nueva no podría conectar nunca su propio Drive. */
+  if (!(await mandaEnSuCasa(supabase, user.id))) {
     return NextResponse.redirect(new URL('/?drive=no-eres-tu', peticion.url))
   }
 

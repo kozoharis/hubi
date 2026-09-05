@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar, SIN_CASA } from '@/lib/hogar'
 import { accesoDrive, idDeCarpeta, moverYRenombrar, aLaPapelera } from '@/lib/google/drive'
 import {
   cadena,
@@ -100,11 +101,8 @@ export async function PATCH(
     return NextResponse.json({ error: 'Esa carpeta ya no existe.' }, { status: 400 })
   }
 
-  const { data: miMiembro } = await supabase
-    .from('miembros')
-    .select('hogar_id')
-    .eq('perfil_id', user.id)
-    .maybeSingle()
+  const hogarId = await miHogar(supabase, user.id)
+  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   // ── Mover el archivo en Drive, ANTES de tocar la base de datos ──
   const cuando = new Date(fecha + 'T12:00:00')
@@ -120,15 +118,10 @@ export async function PATCH(
 
   if (cambiaNombre) {
     try {
-      const { acceso, raiz } = await accesoDrive()
+      const { acceso, raiz } = await accesoDrive(hogarId)
 
       if (cambiaSitio) {
-        carpetaId = await idDeCarpeta(
-          acceso,
-          raiz,
-          rutaDeCarpetas(camino, cuando),
-          miMiembro?.hogar_id ?? null
-        )
+        carpetaId = await idDeCarpeta(acceso, raiz, rutaDeCarpetas(camino, cuando), hogarId)
       }
 
       nombre = nombreDeArchivo({
@@ -360,7 +353,14 @@ export async function DELETE(
   // Y el archivo, a la papelera de Drive.
   let enPapelera = false
   try {
-    const { acceso } = await accesoDrive()
+    /* Si no se sabe de qué casa es, no se toca ningún Drive: la ficha
+       ya está borrada de HUBI y dejar un archivo huérfano en Drive es
+       infinitamente mejor que mandar a la papelera el de otra
+       familia. */
+    const casa = await miHogar(supabase, user.id)
+    if (!casa) throw new Error('SIN_CASA')
+
+    const { acceso } = await accesoDrive(casa)
     enPapelera = await aLaPapelera(acceso, papel.drive_file_id)
   } catch (e) {
     console.error('[HUBI] No se ha podido enviar a la papelera de Drive:', e)

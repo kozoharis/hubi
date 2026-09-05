@@ -1,6 +1,7 @@
 import { NextResponse, after, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar } from '@/lib/hogar'
 import { deducirTipo, cuando } from '@/lib/tablon'
 import { avisarA } from '@/lib/push'
 import { ponerCita } from '@/lib/google/calendario'
@@ -117,6 +118,12 @@ export async function POST(peticion: NextRequest) {
     Lo que no cambia: si Google falla, la tarea ya está guardada. Esa
     regla sigue mandando.
   */
+  /* De qué casa es esta tarea, resuelto AQUÍ y no dentro del `after`.
+     Dentro ya no hay sesión garantizada, y el calendario al que va la
+     cita es el de esta casa: sin el dato, la cita se escribiría en el
+     calendario de quien fuera. */
+  const hogarId = await miHogar(supabase, user.id)
+
   after(async () => {
     for (const fila of data) {
       try {
@@ -126,17 +133,22 @@ export async function POST(peticion: NextRequest) {
       }
     }
 
+    if (!hogarId) return
+
     const enGoogle = clienteServidor()
     for (const fila of data) {
       if (!fila.fecha) continue
       try {
-        const evento = await ponerCita({
-          titulo: fila.titulo,
-          fecha: fila.fecha,
-          hora: fila.hora,
-          nota: fila.nota,
-          hecho: false,
-        })
+        const evento = await ponerCita(
+          {
+            titulo: fila.titulo,
+            fecha: fila.fecha,
+            hora: fila.hora,
+            nota: fila.nota,
+            hecho: false,
+          },
+          hogarId
+        )
         if (evento) {
           await enGoogle.from('recordatorios').update({ evento_google: evento }).eq('id', fila.id)
         }

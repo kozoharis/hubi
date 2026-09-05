@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar } from '@/lib/hogar'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import Formulario from './formulario'
 import type { Categoria } from '@/lib/rutas'
@@ -21,12 +22,19 @@ export default async function Guardar() {
     .eq('activa', true)
     .order('orden')
 
+  /* El Drive de SU casa. Preguntar por «la» conexión enseñaría a una
+     familia el estado de la de al lado — y peor, la dejaría entrar a
+     guardar creyendo que tiene Drive cuando el conectado es otro. */
+  const hogarId = await miHogar(supabase, user.id)
+
   const admin = clienteServidor()
-  const { data: conexion } = await admin
-    .from('conexion_drive')
-    .select('estado')
-    .eq('id', 1)
-    .single()
+  const { data: conexion } = hogarId
+    ? await admin
+        .from('conexion_drive')
+        .select('estado')
+        .eq('hogar_id', hogarId)
+        .maybeSingle()
+    : { data: null }
 
   if (conexion?.estado !== 'activa') {
     return (

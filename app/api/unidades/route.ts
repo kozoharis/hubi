@@ -1,6 +1,7 @@
 import { NextResponse, after, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar } from '@/lib/hogar'
 import { accesoDrive, asegurarRaiz, idDeCarpeta, moverYRenombrar } from '@/lib/google/drive'
 import { limpiar } from '@/lib/rutas'
 
@@ -102,8 +103,14 @@ async function carpetaDeLaUnidad(
   nombreUnidad: string,
   hogarId: string | null
 ): Promise<string | null> {
+  /* Sin saber de qué casa es, no se abre ningún Drive. La unidad se
+     crea igual en HUBI y su carpeta aparecerá con el primer documento
+     que se guarde dentro; abrir «el» Drive a ciegas sería abrir el de
+     otra familia. */
+  if (!hogarId) return null
+
   try {
-    const { acceso, raiz } = await accesoDrive()
+    const { acceso, raiz } = await accesoDrive(hogarId)
     if (!acceso) return null
 
     /* La raíz viene ya resuelta de la conexión guardada. Pedirla otra
@@ -233,6 +240,11 @@ export async function PATCH(peticion: NextRequest) {
   const id = String(cuerpo.id ?? '')
   if (!id) return NextResponse.json({ error: 'Falta la unidad.' }, { status: 400 })
 
+  /* El hogar se resuelve AQUÍ, no dentro del `after` de abajo: allí la
+     sesión ya no está garantizada, y una consulta que falle ahí no la
+     ve nadie. */
+  const hogarId = await miHogar(supabase, user.id)
+
   const { data: antes } = await supabase
     .from('unidades')
     .select('id, nombre, seccion_id, carpeta_drive_id')
@@ -288,11 +300,12 @@ export async function PATCH(peticion: NextRequest) {
     porque Google no contesta sí sería perderlo.
   */
   const nuevoNombre = cambios.nombre as string | undefined
-  if (nuevoNombre && antes.carpeta_drive_id && nuevoNombre !== antes.nombre) {
+  if (nuevoNombre && antes.carpeta_drive_id && nuevoNombre !== antes.nombre && hogarId) {
     const carpeta = antes.carpeta_drive_id as string
+    const casa = hogarId
     after(async () => {
       try {
-        const { acceso } = await accesoDrive()
+        const { acceso } = await accesoDrive(casa)
         if (!acceso) return
         /* Misma carpeta de origen y destino: esto solo renombra. Mandar
            padres distintos aquí dejaría la carpeta suelta en el Drive. */

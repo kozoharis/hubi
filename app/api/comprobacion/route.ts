@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar } from '@/lib/hogar'
 import { descifrar } from '@/lib/cifrado'
 import { accesoDesdePermiso } from '@/lib/google/oauth'
 import { accesoDrive } from '@/lib/google/drive'
@@ -31,9 +32,16 @@ export const dynamic = 'force-dynamic'
 */
 export async function GET() {
   const sesion = await clienteSesion()
-  if (!(await quien(sesion))) {
+  const yoMismo = await quien(sesion)
+  if (!yoMismo) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
+
+  /* Esta pantalla comprueba LA CASA DE QUIEN LA ABRE, no «la» casa.
+     Sin esto, la comprobación de la segunda familia iría a mirar el
+     Drive y el calendario de la primera y diría que todo está bien
+     enseñándole datos que no son suyos. */
+  const miCasa = await miHogar(sesion, yoMismo.id)
 
   const resultado = {
     variables: {
@@ -338,9 +346,11 @@ export async function GET() {
     const ultimo = vistos.find((d) => d.drive_file_id)
     if (!ultimo) {
       resultado.papeles.driveDiagnostico = 'Todavía no hay ningún papel que probar.'
+    } else if (!miCasa) {
+      resultado.papeles.driveDiagnostico = 'Tu cuenta todavía no está en ninguna casa.'
     } else {
       try {
-        const { acceso } = await accesoDrive()
+        const { acceso } = await accesoDrive(miCasa)
         const r = await fetch(
           `https://www.googleapis.com/drive/v3/files/${ultimo.drive_file_id}?fields=id,name,trashed`,
           { headers: { Authorization: `Bearer ${acceso}` } }
@@ -431,11 +441,17 @@ export async function GET() {
   // ── Drive: los tres eslabones, por separado ────────────────
   try {
     const supa = clienteServidor()
+    /* Nunca `.eq('hogar_id', miCasa ?? '')`: la cadena vacía no es un
+       identificador válido y Postgres rechazaría la consulta entera,
+       en silencio, dejando este bloque diciendo «sin fila» sin que se
+       vea por qué. */
+    if (!miCasa) throw new Error('Tu cuenta todavía no está en ninguna casa.')
+
     const { data: conexion } = await supa
       .from('conexion_drive')
       .select('estado, refresh_token_cifrado, carpeta_raiz_id, alcances')
-      .eq('id', 1)
-      .single()
+      .eq('hogar_id', miCasa)
+      .maybeSingle()
 
     resultado.drive.estado = conexion?.estado ?? 'sin_fila'
 
@@ -479,7 +495,7 @@ export async function GET() {
   // Aparte del bloque de Drive a propósito: si la columna
   // `calendario_id` todavía no existe, esto falla solo y no se lleva
   // por delante el diagnóstico de Drive.
-  const cal = await estadoGuardado()
+  const cal = miCasa ? await estadoGuardado(miCasa) : { permiso: false, creado: false }
   resultado.calendario.permisoConcedido =
     resultado.calendario.permisoConcedido || cal.permiso
   resultado.calendario.creado = cal.creado
@@ -502,7 +518,7 @@ export async function GET() {
 
       Ahora se le pregunta a Google.
     */
-    const real = await comprobarCalendario()
+    const real = await comprobarCalendario(miCasa as string)
     resultado.calendario.existeEnGoogle = real.existe
     resultado.calendario.enLaLista = real.enLaLista
     resultado.calendario.diagnostico = real.diagnostico

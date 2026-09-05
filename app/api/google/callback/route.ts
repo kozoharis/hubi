@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { clienteServidor } from '@/lib/supabase/servidor'
+import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
 import { canjearCodigo, correoDeLaCuenta } from '@/lib/google/oauth'
-import { asegurarRaiz } from '@/lib/google/drive'
+import { asegurarRaiz, guardarConexion } from '@/lib/google/drive'
 import { cifrar } from '@/lib/cifrado'
 
 export const dynamic = 'force-dynamic'
@@ -36,13 +36,19 @@ export async function GET(peticion: NextRequest) {
 
   if (!user) return NextResponse.redirect(new URL('/entrar', peticion.url))
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('es_propietario_drive')
-    .eq('id', user.id)
-    .single()
+  /*
+    ¿PUEDE ESTA PERSONA CONECTAR EL DRIVE DE SU CASA?
 
-  if (!perfil?.es_propietario_drive) return volver('no-eres-tu')
+    Antes esto lo decidía `perfiles.es_propietario_drive`, una casilla
+    de la PERSONA. Con una familia era correcto; con dos deja fuera al
+    fundador de la segunda —esa casilla no la tiene— y por tanto NADIE
+    en la casa nueva podría conectar su Drive. Ahora manda el papel
+    dentro de su hogar, con la casilla vieja de respaldo.
+  */
+  const hogarId = await miHogar(supabase, user.id)
+  if (!hogarId) return volver('sin-casa')
+
+  if (!(await mandaEnSuCasa(supabase, user.id))) return volver('no-eres-tu')
 
   try {
     const tokens = await canjearCodigo(codigo)
@@ -54,22 +60,20 @@ export async function GET(peticion: NextRequest) {
     const correo = await correoDeLaCuenta(tokens.access_token)
     const raiz = await asegurarRaiz(tokens.access_token)
 
-    const admin = clienteServidor()
-    const { error } = await admin
-      .from('conexion_drive')
-      .update({
-        refresh_token_cifrado: cifrar(tokens.refresh_token),
-        email_cuenta: correo,
-        // Qué nos dio Google exactamente. Sin guardarlo no hay forma de
-        // saber si este permiso incluye el calendario o es uno viejo.
-        alcances: tokens.scope ?? null,
-        carpeta_raiz_id: raiz,
-        estado: 'activa',
-        actualizado_en: new Date().toISOString(),
-      })
-      .eq('id', 1)
-
-    if (error) throw error
+    /* Una fila por casa: se actualiza la suya, y si es la primera vez
+       que conecta, se crea. `guardarConexion` hace las dos cosas sin
+       `upsert`, para que esto funcione igual antes y después de que se
+       ejecute sql/29. */
+    await guardarConexion(hogarId, {
+      refresh_token_cifrado: cifrar(tokens.refresh_token),
+      email_cuenta: correo,
+      // Qué nos dio Google exactamente. Sin guardarlo no hay forma de
+      // saber si este permiso incluye el calendario o es uno viejo.
+      alcances: tokens.scope ?? null,
+      carpeta_raiz_id: raiz,
+      estado: 'activa',
+      actualizado_en: new Date().toISOString(),
+    })
 
     const respuesta = volver('conectado')
     respuesta.cookies.delete('fh_estado')

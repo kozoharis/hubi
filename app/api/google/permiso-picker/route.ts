@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar, mandaEnSuCasa, SIN_CASA } from '@/lib/hogar'
 import { descifrar } from '@/lib/cifrado'
 import { accesoDesdePermiso } from '@/lib/google/oauth'
 
@@ -40,15 +41,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const { data: perfil } = await supabase
-    .from('perfiles')
-    .select('es_propietario_drive')
-    .eq('id', user.id)
-    .maybeSingle()
+  const hogarId = await miHogar(supabase, user.id)
+  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
-  if (!perfil?.es_propietario_drive) {
+  if (!(await mandaEnSuCasa(supabase, user.id))) {
     return NextResponse.json(
-      { error: 'Solo Juan Miguel puede buscar en el Drive: la cuenta es suya.' },
+      { error: 'Solo puede buscar en el Drive quien lo conectó: la cuenta de Google es suya.' },
       { status: 403 }
     )
   }
@@ -57,7 +55,7 @@ export async function GET() {
   const { data: conexion } = await admin
     .from('conexion_drive')
     .select('refresh_token_cifrado, estado')
-    .eq('id', 1)
+    .eq('hogar_id', hogarId)
     .maybeSingle()
 
   if (conexion?.estado !== 'activa' || !conexion.refresh_token_cifrado) {
