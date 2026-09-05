@@ -5,6 +5,78 @@ export const dynamic = 'force-dynamic'
 
 /*
   ═══════════════════════════════════════════════════════════════
+  MIRAR CON QUÉ BASE DE DATOS HABLA HUBI DE VERDAD
+  ═══════════════════════════════════════════════════════════════
+
+  Esto está aquí porque nos hemos pasado tres intentos discutiendo
+  algo que se contesta mirando: la aplicación decía que una cuenta se
+  había creado y el panel de Supabase no la tenía. Una de las dos
+  estaba hablando de otro sitio, y desde fuera no hay forma de saber
+  cuál.
+
+  No devuelve NINGÚN secreto. Devuelve:
+
+  · `proyecto` — el nombre del proyecto de Supabase, que está en la
+    dirección `https://XXXX.supabase.co` y es público de por sí: viaja
+    en cada petición del navegador.
+  · `clave` — la FORMA de la clave de servidor, no la clave. Sirve
+    para ver de un vistazo si es la secreta o si alguien pegó la
+    pública por error, que es un fallo que no da ningún síntoma
+    claro.
+  · `cuentas` — cuántas ve, y si ve la que se está buscando.
+
+  Va detrás de la palabra de invitación. Y aun así: **cambia la
+  palabra cuando terminemos**, porque una palabra que ha viajado en la
+  barra de direcciones queda escrita en los registros del servidor.
+*/
+export async function GET(peticion: NextRequest) {
+  const esperada = process.env.PALABRA_DE_ALTA
+  const url = new URL(peticion.url)
+  const palabra = (url.searchParams.get('palabra') ?? '').trim()
+
+  if (!esperada || palabra.toLowerCase() !== esperada.trim().toLowerCase()) {
+    return NextResponse.json({ error: 'No.' }, { status: 403 })
+  }
+
+  const direccion = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+  const secreta = process.env.SUPABASE_SECRET_KEY ?? ''
+  const buscado = (url.searchParams.get('correo') ?? '').trim().toLowerCase()
+
+  const respuesta: Record<string, unknown> = {
+    proyecto: direccion.replace(/^https?:\/\//, '').replace(/\.supabase\.co.*$/, '') || null,
+    clave: !secreta
+      ? 'NO ESTÁ PUESTA'
+      : secreta.startsWith('sb_secret_')
+        ? 'sb_secret_… (secreta, forma nueva)'
+        : secreta.startsWith('sb_publishable_')
+          ? '⚠ sb_publishable_… ¡ES LA PÚBLICA, NO LA SECRETA!'
+          : secreta.startsWith('eyJ')
+            ? 'eyJ… (forma antigua: puede ser la service_role o la anon)'
+            : 'forma desconocida',
+  }
+
+  try {
+    const admin = clienteServidor()
+    const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 })
+
+    if (error) {
+      respuesta.cuentas = `no se pueden leer: ${error.message}`
+    } else {
+      const correos = (data?.users ?? []).map((u) => (u.email ?? '').toLowerCase())
+      respuesta.cuentas = correos.length
+      if (buscado) respuesta.estaEsaCuenta = correos.includes(buscado)
+    }
+  } catch (e) {
+    respuesta.cuentas = `error: ${e instanceof Error ? e.message : 'desconocido'}`
+  }
+
+  return NextResponse.json(respuesta, {
+    headers: { 'Cache-Control': 'no-store, private' },
+  })
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
   DARSE DE ALTA
   ═══════════════════════════════════════════════════════════════
 
