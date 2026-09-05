@@ -87,13 +87,34 @@ export default function Entrar() {
       body: JSON.stringify({ correo: email, palabra }),
     })
 
-    if (!r.ok) {
-      const d = (await r.json().catch(() => ({}))) as { error?: string; detalle?: string }
+    const d = (await r.json().catch(() => null)) as {
+      bien?: boolean
+      error?: string
+      detalle?: string
+    } | null
+
+    /*
+      NO BASTA CON QUE LA RESPUESTA SEA «CORRECTA».
+
+      Aquí sólo se miraba `r.ok`, y eso escondió el fallo una tarde
+      entera: el proxy redirigía esta llamada a `/entrar`, el navegador
+      seguía la redirección sin avisar, y lo que volvía era la PÁGINA
+      DE ENTRAR con un 200 impecable. `r.ok` decía que sí sobre una
+      cuenta que nadie había creado.
+
+      Un 200 sólo dice que algo contestó. Lo que hay que exigir es que
+      conteste LO QUE SE ESPERABA — y esta ruta contesta `bien: true`.
+      Si viene otra cosa, es que no ha contestado ella.
+    */
+    if (!r.ok || d?.bien !== true) {
       setOcupado(false)
-      /* El detalle se enseña cuando viene. Sin él, un fallo de
-         configuración parece un fallo del correo de quien entra, y se
-         pasa media hora buscando donde no hay nada. */
-      setAviso([d.error ?? 'No se ha podido crear la cuenta.', d.detalle].filter(Boolean).join(' · '))
+      setAviso(
+        d
+          ? [d.error ?? 'No se ha podido crear la cuenta.', d.detalle]
+              .filter(Boolean)
+              .join(' · ')
+          : 'HUBI no ha llegado a intentar crear la cuenta. No es cosa tuya: avisa a quien lo mantiene.'
+      )
       return
     }
 

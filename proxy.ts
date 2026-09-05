@@ -23,6 +23,29 @@ const RUTAS_ABIERTAS = [
   // No queda desprotegido: esa ruta comprueba su propia llave (CRON_SECRET)
   // y rechaza a quien no la traiga.
   '/api/push/diario',
+
+  /*
+    ═══════════════════════════════════════════════════════════
+    EL ALTA, POR DEFINICIÓN, LA PIDE ALGUIEN SIN SESIÓN
+    ═══════════════════════════════════════════════════════════
+
+    Esto faltaba, y costó una tarde. Sin esta línea, la llamada a
+    `/api/alta` no llegaba nunca a la ruta: el proxy la redirigía a
+    `/entrar`, y lo que volvía era LA PÁGINA DE ENTRAR con un 200
+    perfectamente correcto.
+
+    Y ahí está lo venenoso: el navegador sigue las redirecciones sin
+    avisar, así que desde la pantalla la respuesta parecía buena. Se
+    daba la cuenta por creada, se pedía el número, y Supabase decía la
+    verdad —«ese usuario no existe»— sobre una cuenta que nadie había
+    intentado crear.
+
+    Tres pantallas de error distintas, ninguna señalando aquí.
+
+    Como la de arriba, no queda desprotegida: comprueba su propia
+    palabra (PALABRA_DE_ALTA) y rechaza a quien no la traiga.
+  */
+  '/api/alta',
 ]
 
 export async function proxy(peticion: NextRequest) {
