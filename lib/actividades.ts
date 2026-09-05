@@ -41,37 +41,29 @@ export type Actividad = {
 type Cliente = SupabaseClient<any, any, any>
 
 /*
-  LA RED DE SEGURIDAD.
+  ═══════════════════════════════════════════════════════════════
+  AQUÍ HABÍA UNA LISTA DE RESPALDO, Y SE HA QUITADO
+  ═══════════════════════════════════════════════════════════════
 
-  Son las dos de Juan Miguel y Conchita, con sus colores exactos. No
-  es una lista «por si acaso» decorativa: mientras el SQL 27 no esté
-  ejecutado, esto es lo que hace que la barra de abajo siga
-  funcionando igual que ayer.
+  Decía: «si esto falla, devuelve La Finca y Los Helechos escritas a
+  mano, y así la barra de abajo sigue funcionando». Y el propio
+  comentario avisaba de su fecha de caducidad: «desaparece cuando la
+  primera familia distinta entre en HUBI».
 
-  Desaparece cuando la primera familia distinta entre en HUBI: para
-  entonces, una lista escrita a mano con las secciones de una casa
-  concreta sería directamente un error.
+  Esa familia entró, y pasó exactamente lo previsto. Una casa recién
+  creada no tiene ninguna actividad con cuentas, así que la consulta
+  devolvía cero filas —que es la respuesta CORRECTA— y el respaldo se
+  activaba: en la barra de esa casa aparecían **la Finca y Los
+  Helechos de Juan Miguel**. Con sus nombres y sus colores.
+
+  No se filtraba ni un dato —las pestañas no llevaban a ninguna parte
+  real—, pero enseñar a una familia el nombre de las cosas de otra ya
+  es bastante malo. Y sobre todo enseña por qué esta clase de red de
+  seguridad es traicionera: no distingue entre «ha fallado algo» y «la
+  respuesta es que no hay nada», y trata las dos igual.
+
+  Cero actividades es un resultado legítimo. Se devuelve cero.
 */
-const LAS_DE_SIEMPRE: Actividad[] = [
-  {
-    id: 'finca',
-    nombre: 'La Finca',
-    icono: '🌿',
-    color: '#14B8A6',
-    fondo: '#DFF7F3',
-    segmento: 'FINCA',
-    ruta: '/finca',
-  },
-  {
-    id: 'helechos',
-    nombre: 'Los Helechos',
-    icono: '🔑',
-    color: '#F59E0B',
-    fondo: '#FEF1DC',
-    segmento: 'HELECHOS',
-    ruta: '/helechos',
-  },
-]
 
 export async function actividadesDe(supabase: Cliente): Promise<Actividad[]> {
   try {
@@ -83,7 +75,9 @@ export async function actividadesDe(supabase: Cliente): Promise<Actividad[]> {
       .eq('lleva_cuentas', true)
       .order('orden')
 
-    if (error || !data || data.length === 0) return LAS_DE_SIEMPRE
+    /* La barra no se rompe con una lista vacía: sus tres pestañas
+       fijas —Inicio, Papeles, Agenda— no dependen de esto. */
+    if (error || !data || data.length === 0) return []
 
     return data.map((c) => ({
       id: c.id as string,
@@ -98,7 +92,7 @@ export async function actividadesDe(supabase: Cliente): Promise<Actividad[]> {
       ruta: `/seccion/${c.id}`,
     }))
   } catch {
-    return LAS_DE_SIEMPRE
+    return []
   }
 }
 

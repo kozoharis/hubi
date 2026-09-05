@@ -11,7 +11,7 @@ import { Ico, Logo, Pastilla, pintaDe } from './iconos'
 import Avatar from './avatar'
 import { cuando, type Recordatorio } from '@/lib/tablon'
 import { leerPerfil } from '@/lib/perfil'
-import { miHogar } from '@/lib/hogar'
+import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +33,16 @@ function hoyEnPalabras() {
 const AVISOS: Record<string, { texto: string; bien: boolean }> = {
   conectado: { texto: 'Google Drive conectado correctamente.', bien: true },
   cancelado: { texto: 'No se ha dado el permiso. Puedes intentarlo otra vez.', bien: false },
-  'no-eres-tu': { texto: 'Solo Juan Miguel puede conectar el Drive de la familia.', bien: false },
+  /* Sin nombres escritos a mano: quien conecta el Drive es distinto
+     en cada casa, y en la de al lado «Juan Miguel» no significa nada. */
+  'no-eres-tu': {
+    texto: 'El Drive lo conecta quien creó esta casa: la cuenta de Google es suya.',
+    bien: false,
+  },
+  'sin-casa': {
+    texto: 'Tu cuenta todavía no está en ninguna casa. Avisa a quien te invitó.',
+    bien: false,
+  },
   'sin-permiso': {
     texto:
       'Google no ha devuelto un permiso duradero. Entra en la cuenta de Google, quita el acceso de HUBI y vuelve a conectarlo.',
@@ -135,7 +144,16 @@ export default async function Inicio({
 
   const nombre = perfil.nombre
 
-  const esJuanMiguel = perfil.es_propietario_drive
+  /*
+    QUIÉN MANDA AQUÍ, Y CÓMO SE LLAMA.
+
+    Antes era `perfil.es_propietario_drive`, una casilla global que
+    solo tiene Juan Miguel — así que en cualquier otra casa NADIE veía
+    el botón de conectar Drive, y a todos les salía el aviso de
+    esperar a que lo conectara él.
+  */
+  const manda = await mandaEnSuCasa(supabase, user.id)
+  const elJefe = manda || !hogarId ? null : await quienManda(supabase, hogarId)
   const conectado = conexion?.estado === 'activa'
   const caducado = conexion?.estado === 'caducada'
 
@@ -265,7 +283,7 @@ export default async function Inicio({
         </Link>
 
         {/* ── Conectar Drive ── */}
-        {!conectado && esJuanMiguel && (
+        {!conectado && manda && (
           <div className="mt-6">
             <a
               href="/api/google/conectar"
@@ -281,10 +299,10 @@ export default async function Inicio({
           </div>
         )}
 
-        {!conectado && !esJuanMiguel && (
+        {!conectado && !manda && (
           <p className="mt-6 rounded-2xl bg-superficie px-5 py-4 text-[17px] leading-snug text-tinta-suave">
-            Guardar documentos estará disponible cuando Juan Miguel conecte el Drive de la
-            familia.
+            Guardar documentos estará disponible cuando{' '}
+            {elJefe ?? 'quien creó esta casa'} conecte su Google Drive.
           </p>
         )}
 

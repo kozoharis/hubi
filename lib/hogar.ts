@@ -78,6 +78,43 @@ export async function losDeLaCasa(
   return (data ?? []).map((m: { perfil_id: string }) => m.perfil_id)
 }
 
+/*
+  ─────────────────────────────────────────────────────────────
+  QUIÉN MANDA EN ESTA CASA, POR SU NOMBRE
+
+  Hace falta para una frase que estaba escrita a mano: «Guardar
+  documentos estará disponible cuando Juan Miguel conecte el Drive de
+  la familia». En la casa de Juan Miguel era verdad. En cualquier otra
+  es el nombre de un desconocido, y quien la lea no va a entender nada.
+*/
+export async function quienManda(
+  supabase: SupabaseClient,
+  hogarId: string
+): Promise<string | null> {
+  try {
+    const { data: jefe } = await supabase
+      .from('miembros')
+      .select('perfil_id')
+      .eq('hogar_id', hogarId)
+      .eq('papel', 'propietario')
+      .limit(1)
+      .maybeSingle()
+
+    if (!jefe?.perfil_id) return null
+
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('nombre')
+      .eq('id', jefe.perfil_id)
+      .maybeSingle()
+
+    const nombre = (perfil?.nombre as string | null) ?? null
+    return nombre ? nombre.split(' ')[0] : null
+  } catch {
+    return null
+  }
+}
+
 /** El hogar de alguien, leído con la clave de servidor (sin sesión). */
 export async function hogarDe(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
