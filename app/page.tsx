@@ -17,7 +17,9 @@ import { cuantasNotas } from '@/lib/notas'
 import { gastadoEnCasa } from '@/lib/gastos-casa'
 import { queVeEnInicio } from '@/lib/roles'
 import { eurosRedondo } from '@/lib/periodos'
+import { loDeHoy } from '@/lib/rutinas'
 import Casas from './casas'
+import RutinasHoy, { type Deber } from './rutinas-hoy'
 
 export const dynamic = 'force-dynamic'
 
@@ -227,6 +229,60 @@ export default async function Inicio({
   const ve = queVeEnInicio(rol)
 
   /*
+    ── LO DE HOY: EL PLAN DE LA SEMANA ──
+
+    Lo que toca hoy según lo que se programó una vez. A quien ayuda en
+    casa se le enseña SOLO lo suyo —y lo de la casa que no tiene dueño,
+    porque «sacar la basura» sin nombre es de quien esté—; a la familia
+    se le enseña todo lo de hoy, con el nombre de quien lo tiene.
+
+    Envuelto por dentro: sin las tablas del SQL 38, `loDeHoy` devuelve
+    una lista vacía y aquí no sale la sección. Ninguna pantalla se
+    rompe por eso.
+  */
+  const deberes: Deber[] = []
+  let puedoMarcar = false
+
+  try {
+    const mias = rol === 'ayuda'
+    const filas = await loDeHoy(supabase, mias ? user.id : null)
+
+    if (filas.length > 0) {
+      /* Los nombres, de una vez. Un viaje por cada rutina para poner
+         «Marta» debajo de cada línea son seis viajes para pintar seis
+         renglones. */
+      const deQuienes = [...new Set(filas.map((r) => r.para).filter(Boolean))] as string[]
+
+      const nombreDe = new Map<string, string>()
+      if (!mias && deQuienes.length > 0) {
+        const { data: quienes } = await supabase
+          .from('perfiles')
+          .select('id, nombre')
+          .in('id', deQuienes)
+        for (const p of quienes ?? []) {
+          nombreDe.set(p.id as string, ((p.nombre as string) ?? '').split(' ')[0])
+        }
+      }
+
+      for (const r of filas) {
+        deberes.push({
+          id: r.id,
+          que: r.que,
+          hora: r.hora,
+          hecha: r.hecha,
+          deQuien: r.para ? (nombreDe.get(r.para) ?? null) : null,
+        })
+      }
+    }
+
+    /* Quien solo mira no marca. Y el asesor tampoco ve esto siquiera:
+       el plan de trabajo de una casa no es asunto suyo. */
+    puedoMarcar = rol !== 'mirar' && rol !== 'asesor'
+  } catch {
+    /* Sin las tablas todavía. El Inicio sigue entero. */
+  }
+
+  /*
     QUIÉN MANDA AQUÍ, Y CÓMO SE LLAMA.
 
     Antes era `perfil.es_propietario_drive`, una casilla global que
@@ -238,6 +294,33 @@ export default async function Inicio({
   const elJefe = manda || !hogarId ? null : await quienManda(supabase, hogarId)
   const conectado = conexion?.estado === 'activa'
   const caducado = conexion?.estado === 'caducada'
+
+  /*
+    ── DÓNDE VA «LO DE HOY» ──
+
+    Se pinta una sola vez, pero no en el mismo sitio para todos, y ésa
+    es toda la idea de los roles:
+
+      · Quien ayuda en casa lo ve ARRIBA. Es a lo que viene. Debajo de
+        la agenda de la familia sería pedirle que se desplace por
+        cosas que no son suyas para llegar a las que sí.
+
+      · La familia lo ve ABAJO, después de lo suyo. Que hoy toque
+        planchar no puede quedar por encima del médico de las diez.
+
+    Ordenar por rol y no por importancia general: para cada uno lo
+    importante es otra cosa, y eso es exactamente lo que HUBI tiene
+    que saber.
+  */
+  const bloqueDeHoy =
+    ve.agenda && deberes.length > 0 ? (
+      <RutinasHoy
+        rutinas={deberes}
+        puedeMarcar={puedoMarcar}
+        soloMias={rol === 'ayuda'}
+        titulo={rol === 'ayuda' ? 'Lo de hoy' : 'La casa hoy'}
+      />
+    ) : null
 
   return (
     <main className="relative min-h-screen pb-40">
@@ -577,6 +660,8 @@ export default async function Inicio({
           </p>
         )}
 
+        {rol === 'ayuda' && bloqueDeHoy}
+
         {/* ── Hoy ── */}
         {ve.agenda && hoy.length > 0 && (
           <section className="mt-6">
@@ -643,11 +728,17 @@ export default async function Inicio({
           </section>
         )}
 
-        {ve.agenda && hoy.length === 0 && proximos.length === 0 && conectado && (
-          <p className="mt-6 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
-            Hoy no hay nada apuntado.
-          </p>
-        )}
+        {rol !== 'ayuda' && bloqueDeHoy}
+
+        {ve.agenda &&
+          hoy.length === 0 &&
+          proximos.length === 0 &&
+          deberes.length === 0 &&
+          conectado && (
+            <p className="mt-6 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
+              Hoy no hay nada apuntado.
+            </p>
+          )}
       </div>
 
       <Barra activa="inicio" voz={false} />

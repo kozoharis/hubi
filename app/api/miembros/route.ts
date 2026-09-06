@@ -306,7 +306,22 @@ export async function POST(peticion: NextRequest) {
     repartido = false
   }
 
-  return NextResponse.json({ bien: true, correo, nombre, papel, rol, hasta, repartido, pendiente: true })
+  /* Se devuelve también QUIÉN es. Lo pide la pantalla de invitar: al
+     terminar con una «Ayuda en casa» ofrece montarle la semana ahí
+     mismo, y para eso necesita su identificador. Mandar a quien invita
+     a buscarla otra vez en la lista es la manera segura de que el plan
+     se quede sin montar. */
+  return NextResponse.json({
+    bien: true,
+    id,
+    correo,
+    nombre,
+    papel,
+    rol,
+    hasta,
+    repartido,
+    pendiente: true,
+  })
 }
 
 /*

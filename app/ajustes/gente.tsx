@@ -4,7 +4,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import QuienVe, { type CarpetaPermiso } from './quien-ve'
+import Semana from './semana'
 import { ROLES, nombreDelRol, type Rol } from '@/lib/roles'
+import type { Rutina } from '@/lib/rutinas'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -46,14 +48,18 @@ export type Vecino = {
 export default function Gente({
   gente,
   puedoInvitar,
+  plan = [],
 }: {
   gente: Vecino[]
   puedoInvitar: boolean
+  /** Todo el plan semanal de la casa. Cada persona ve el suyo. */
+  plan?: Rutina[]
 }) {
   const router = useRouter()
 
   const [repartiendo, setRepartiendo] = useState<string | null>(null)
   const [cambiando, setCambiando] = useState<string | null>(null)
+  const [programando, setProgramando] = useState<{ id: string; nombre: string } | null>(null)
   const [invitando, setInvitando] = useState(false)
   const [nombre, setNombre] = useState('')
   const [correo, setCorreo] = useState('')
@@ -90,6 +96,7 @@ export default function Gente({
 
     const d = (await r.json().catch(() => null)) as {
       bien?: boolean
+      id?: string
       correo?: string
       nombre?: string
       error?: string
@@ -107,8 +114,24 @@ export default function Gente({
       return
     }
 
+    const comoSeLlama = (d.nombre ?? nombre.trim()).split(' ')[0]
     setHecho({ nombre: d.nombre ?? nombre.trim(), correo: d.correo ?? correo.trim() })
+
+    /*
+      Y si es quien ayuda en casa, se le monta la semana AQUÍ MISMO.
+
+      No es una comodidad: es el único momento en que quien invita está
+      pensando en eso. Dejarlo para «entra luego en su ficha y
+      prográmaselo» es dejarlo sin montar — y entonces ella entra el
+      primer día y su HUBI está vacío, que es justo lo que no puede
+      pasar.
+
+      Se puede cerrar sin tocar nada, y volver cuando quiera desde el
+      botón del calendario de su fila.
+    */
+    const eraAyuda = rol === 'ayuda'
     cerrarInvitacion()
+    if (eraAyuda && d.id) setProgramando({ id: d.id, nombre: comoSeLlama })
     router.refresh()
   }
 
@@ -198,6 +221,33 @@ export default function Gente({
                       .join(' · ')}
               </span>
             </span>
+            {/*
+              ── SU SEMANA ──
+
+              Solo a quien ayuda en casa. Para la familia no tiene
+              sentido —nadie le programa la semana a su mujer— y ponerlo
+              en todas las filas obligaría a descartarlo cada vez.
+
+              Se llega también desde aquí, y no solo al invitar: la
+              semana cambia. Empieza viniendo tres días y acaba
+              viniendo dos, o se le añade planchar en invierno.
+            */}
+            {puedoInvitar && !v.manda && v.rol === 'ayuda' && (
+              <button
+                onClick={() =>
+                  setProgramando(
+                    programando?.id === v.id
+                      ? null
+                      : { id: v.id, nombre: v.nombre.split(' ')[0] }
+                  )
+                }
+                aria-label={`La semana de ${v.nombre}`}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-tinta-suave"
+              >
+                <Ico nombre="calendario" tam={19} grosor={2.2} />
+              </button>
+            )}
+
             {/* Cambiar quién es. Hacía falta y no estaba: se elegía al
                 invitar y ya no había manera de rectificar — que es
                 justo lo que pasa en la vida real. */}
@@ -269,6 +319,21 @@ export default function Gente({
             </div>
           )
         })()}
+
+      {programando && (
+        /* La `key` con el identificador: sin ella, abrir la semana de
+           Marta después de la de Carmen reutilizaría el mismo trozo de
+           pantalla y saldrían las casillas de Carmen con el nombre de
+           Marta encima. Y como solo cambia al cambiar de persona, un
+           refresco de fondo no borra lo que se esté tocando. */
+        <Semana
+          key={programando.id}
+          quienEs={programando.nombre}
+          para={programando.id}
+          plan={plan.filter((r) => r.para === programando.id)}
+          alCerrar={() => setProgramando(null)}
+        />
+      )}
 
       {repartiendo &&
         (() => {

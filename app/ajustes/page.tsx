@@ -10,6 +10,7 @@ import { Ico, Pastilla, Volver, type Icono } from '../iconos'
 import SelectorTema from '../tema'
 import { leerPerfil } from '@/lib/perfil'
 import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
+import { planDeLaCasa, type Rutina } from '@/lib/rutinas'
 import TuPerfil from './foto'
 import NuevaActividad from './nueva-actividad'
 import Gente, { type Vecino } from './gente'
@@ -367,6 +368,18 @@ export default async function Ajustes() {
      Google desde su propia pantalla. */
   const manda = await mandaEnSuCasa(supabase, user.id)
 
+  /*
+    ── El plan de la semana de la casa ──
+
+    Se lee entero y una vez, y cada persona verá el suyo dentro de su
+    ficha. Pedirlo al abrir cada semana sería un viaje a la base de
+    datos por cada toque en el calendario de una fila.
+
+    `planDeLaCasa` ya viene envuelto: sin las tablas del SQL 38
+    devuelve una lista vacía y nadie se queda sin Ajustes por eso.
+  */
+  const plan: Rutina[] = manda ? await planDeLaCasa(supabase) : []
+
 
   return (
     <main className="min-h-screen pb-40">
@@ -394,7 +407,7 @@ export default async function Ajustes() {
           <>
             <h2 className="rotulo mt-5">Quién vive aquí</h2>
             <div className="mt-2.5">
-              <Gente gente={gente} puedoInvitar={manda} />
+              <Gente gente={gente} puedoInvitar={manda} plan={plan} />
             </div>
           </>
         )}
