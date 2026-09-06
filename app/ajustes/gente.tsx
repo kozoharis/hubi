@@ -53,6 +53,7 @@ export default function Gente({
   const router = useRouter()
 
   const [repartiendo, setRepartiendo] = useState<string | null>(null)
+  const [cambiando, setCambiando] = useState<string | null>(null)
   const [invitando, setInvitando] = useState(false)
   const [nombre, setNombre] = useState('')
   const [correo, setCorreo] = useState('')
@@ -111,6 +112,37 @@ export default function Gente({
     router.refresh()
   }
 
+  async function cambiarRol(id: string, nuevo: Rol) {
+    setFallo(null)
+    setOcupado(true)
+
+    const r = await fetch('/api/miembros', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, rol: nuevo }),
+    })
+
+    const d = (await r.json().catch(() => null)) as {
+      bien?: boolean
+      error?: string
+      detalle?: string
+    } | null
+
+    setOcupado(false)
+
+    if (!r.ok || d?.bien !== true) {
+      setFallo(
+        d
+          ? [d.error ?? 'No se ha podido.', d.detalle].filter(Boolean).join(' · ')
+          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+      )
+      return
+    }
+
+    setCambiando(null)
+    router.refresh()
+  }
+
   async function sacar(v: Vecino) {
     if (
       !window.confirm(
@@ -166,6 +198,19 @@ export default function Gente({
                       .join(' · ')}
               </span>
             </span>
+            {/* Cambiar quién es. Hacía falta y no estaba: se elegía al
+                invitar y ya no había manera de rectificar — que es
+                justo lo que pasa en la vida real. */}
+            {puedoInvitar && !v.manda && (
+              <button
+                onClick={() => setCambiando(cambiando === v.id ? null : v.id)}
+                aria-label={`Cambiar quién es ${v.nombre}`}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-tinta-suave"
+              >
+                <Ico nombre="lapiz" tam={19} grosor={2.2} />
+              </button>
+            )}
+
             {puedoInvitar && !v.manda && (
               <button
                 onClick={() => setRepartiendo(repartiendo === v.id ? null : v.id)}
@@ -189,6 +234,41 @@ export default function Gente({
           </li>
         ))}
       </ul>
+
+      {cambiando &&
+        (() => {
+          const v = gente.find((g) => g.id === cambiando)
+          if (!v) return null
+          return (
+            <div className="rounded-[20px] border border-borde bg-superficie px-4 py-4">
+              <p className="text-[17px] font-extrabold leading-snug">
+                ¿Quién es {v.nombre.split(' ')[0]}?
+              </p>
+              <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
+                Cambiarlo vuelve a repartirle los permisos desde cero. Lo que le hayas abierto
+                a mano se pierde.
+              </p>
+              <div className="mt-3 space-y-2.5">
+                {ROLES.map((r) => (
+                  <Papel
+                    key={r.valor}
+                    puesto={(v.rol ?? 'familia') === r.valor}
+                    alPulsar={() => cambiarRol(v.id, r.valor)}
+                    titulo={r.nombre}
+                    pie={r.pie}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={() => setCambiando(null)}
+                disabled={ocupado}
+                className="mt-3 h-[52px] w-full rounded-[14px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
+              >
+                Dejarlo como está
+              </button>
+            </div>
+          )
+        })()}
 
       {repartiendo &&
         (() => {

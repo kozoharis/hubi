@@ -367,3 +367,109 @@ export async function DELETE(peticion: NextRequest) {
 
   return NextResponse.json({ bien: true })
 }
+
+/*
+  ─────────────────────────────────────────────────────────────
+  CAMBIAR EL ROL DE ALGUIEN, O SU FECHA DE FIN
+
+  Hacía falta y no estaba: se elegía al invitar y ya no había manera
+  de rectificar. Y rectificar es justo lo que pasa en la vida real —
+  quien entró para ayudar con la compra acaba llevando también los
+  papeles, o al revés.
+
+  El rol lo pone `poner_rol`, que es quien reparte los permisos por
+  carpeta. Aquí no se toca `miembros` a mano para eso: si el reparto
+  viviera en dos sitios, un día uno de los dos se quedaría sin
+  actualizar y alguien tendría un rol puesto y los permisos de otro.
+*/
+export async function PATCH(peticion: NextRequest) {
+  const supabase = await clienteSesion()
+  const user = await quien(supabase)
+  if (!user) {
+    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
+  }
+
+  const hogarId = await miHogar(supabase, user.id)
+  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
+
+  if (!(await mandaEnSuCasa(supabase, user.id))) {
+    return NextResponse.json(
+      { error: 'Solo quien creó esta casa reparte los accesos.' },
+      { status: 403 }
+    )
+  }
+
+  let cuerpo: { id?: string; rol?: string; hasta?: string | null }
+  try {
+    cuerpo = (await peticion.json()) as { id?: string; rol?: string; hasta?: string | null }
+  } catch {
+    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
+  }
+
+  const id = String(cuerpo.id ?? '')
+  if (!id) return NextResponse.json({ error: 'Falta la persona.' }, { status: 400 })
+
+  if (id === user.id) {
+    return NextResponse.json(
+      { error: 'No puedes cambiarte el rol a ti mismo: el Drive de la casa es tuyo.' },
+      { status: 400 }
+    )
+  }
+
+  // ── El rol, con todo lo que arrastra ──────────────────────
+  if (cuerpo.rol !== undefined) {
+    if (!esRol(cuerpo.rol)) {
+      return NextResponse.json({ error: 'Ese rol no existe.' }, { status: 400 })
+    }
+
+    const { error } = await supabase.rpc('poner_rol', { a_quien: id, el_rol: cuerpo.rol })
+
+    if (error) {
+      console.error('[HUBI] No se ha podido cambiar el rol:', error)
+      return NextResponse.json(
+        {
+          error: 'No se ha podido cambiar el rol.',
+          detalle: error.message ?? 'Puede que falte ejecutar el SQL 37.',
+        },
+        { status: 500 }
+      )
+    }
+  }
+
+  // ── Y hasta cuándo entra ──────────────────────────────────
+  /*
+    `undefined` es «no lo toques»; `null` es «quítale la fecha». Son
+    dos cosas distintas y confundirlas aquí borraría fechas de fin sin
+    que nadie lo pidiera.
+  */
+  if (cuerpo.hasta !== undefined) {
+    const hoy = new Date().toISOString().slice(0, 10)
+    const hasta =
+      typeof cuerpo.hasta === 'string' &&
+      /^\d{4}-\d{2}-\d{2}$/.test(cuerpo.hasta) &&
+      cuerpo.hasta > hoy
+        ? cuerpo.hasta
+        : null
+
+    const admin = clienteServidor()
+    const { data, error } = await admin
+      .from('miembros')
+      .update({ acceso_hasta: hasta })
+      .eq('hogar_id', hogarId)
+      .eq('perfil_id', id)
+      .select('perfil_id')
+
+    if (error || !data || data.length === 0) {
+      console.error('[HUBI] No se ha podido cambiar la fecha de fin:', error)
+      return NextResponse.json(
+        {
+          error: 'No se ha podido cambiar la fecha.',
+          detalle: error?.message ?? 'Puede que falte ejecutar el SQL 37.',
+        },
+        { status: 500 }
+      )
+    }
+  }
+
+  return NextResponse.json({ bien: true })
+}

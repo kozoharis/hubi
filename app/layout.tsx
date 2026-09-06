@@ -114,8 +114,68 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   let actividades: Actividad[] = []
+  let rol: string | null = null
+  let usaCompra = true
+
   try {
-    actividades = await actividadesDe(await clienteSesion())
+    const supabase = await clienteSesion()
+    actividades = await actividadesDe(supabase)
+
+    /*
+      QUIÉN ESTÁ ENTRANDO, Y SI ESTA CASA HACE LA COMPRA.
+
+      Las dos cosas las necesita la barra de abajo para saber qué
+      pestañas poner. Se leen aquí, una vez, y no en cada pantalla:
+      quince sitios donde acordarse es quince sitios donde olvidarse.
+
+      Todo dentro del mismo `try`. Si algo de esto fallara —la
+      columna `rol` sin crear, la base caída— se navega con la barra
+      de siempre. Que falte no puede dejar a nadie sin poder moverse.
+    */
+    const { data: user } = await supabase.auth.getUser()
+    const yo = user?.user?.id ?? null
+
+    if (yo) {
+      /*
+        LA CASA QUE ESTÁ MIRANDO, preguntándoselo a la base de datos.
+
+        Se le pide a `mi_hogar()` y no se coge «la primera fila de
+        miembros»: quien está en dos casas tiene dos filas con dos
+        roles distintos —familia en la suya, ayuda en la de al lado— y
+        coger una al azar le pondría la barra equivocada la mitad de
+        las veces.
+
+        Y así dice exactamente lo mismo que las políticas, que es la
+        única manera de que la pantalla y los permisos no se
+        contradigan.
+      */
+      const { data: casaActiva } = await supabase.rpc('mi_hogar')
+
+      const { data: mio } = casaActiva
+        ? await supabase
+            .from('miembros')
+            .select('rol, hogar_id')
+            .eq('perfil_id', yo)
+            .eq('hogar_id', casaActiva as string)
+            .maybeSingle()
+        : await supabase
+            .from('miembros')
+            .select('rol, hogar_id')
+            .eq('perfil_id', yo)
+            .limit(1)
+            .maybeSingle()
+
+      rol = (mio?.rol as string | null) ?? null
+
+      if (mio?.hogar_id) {
+        const { data: casa } = await supabase
+          .from('hogares')
+          .select('usa_compra')
+          .eq('id', mio.hogar_id)
+          .maybeSingle()
+        if (casa && casa.usa_compra === false) usaCompra = false
+      }
+    }
   } catch {
     /* Sin sesión —la pantalla de entrar— o con la base caída. La barra
        tira de su lista de respaldo y se navega igual. */
@@ -138,7 +198,7 @@ export default async function RootLayout({
         />
       </head>
       <body>
-        <ProveedorActividades actividades={actividades}>
+        <ProveedorActividades casa={{ actividades, rol, usaCompra }}>
           {children}
         </ProveedorActividades>
       </body>

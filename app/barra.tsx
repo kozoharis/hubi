@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Ico, iconoDeEmoji, type Icono } from './iconos'
-import { useActividades } from './actividades-contexto'
+import { useCasa } from './actividades-contexto'
 import { nombreCorto } from '@/lib/actividades'
 
 /*
@@ -80,6 +80,29 @@ const FIJAS: Pestana[] = [
 ]
 
 
+/*
+  ═══════════════════════════════════════════════════════════════
+  Y LA BARRA NO ES LA MISMA PARA TODOS
+  ═══════════════════════════════════════════════════════════════
+
+  Hasta ahora sí lo era, y quedaba mal en cuanto entraba alguien que
+  no es de la familia. A quien ayuda en casa le salían Papeles y las
+  actividades: la base de datos le vaciaba el contenido —eso funciona—
+  pero se pasaba el día viendo dos pestañas que no llevan a nada. Y
+  una pestaña vacía no se lee como «esto no es para ti»: se lee como
+  «esto está roto».
+
+  Cada uno ve las suyas, y de paso le caben más anchas:
+
+    Ayuda en casa   Inicio · Agenda · La compra
+    Asesor          Inicio · Papeles · sus actividades
+    Familia         todo, como siempre
+
+  ESTO NO PROTEGE NADA, y conviene repetirlo. Quitar la pestaña de
+  Papeles no impide abrir `/documentos` escribiéndolo — eso lo impiden
+  las políticas de la base de datos. Aquí solo se decide qué se
+  ofrece: no esconder, sino que cada uno encuentre lo suyo.
+*/
 export default function Barra({
   activa = null,
   voz = true,
@@ -87,36 +110,60 @@ export default function Barra({
   activa?: Seccion
   voz?: boolean
 }) {
-  const actividades = useActividades()
+  const { actividades, rol, usaCompra } = useCasa()
 
   /* Tres o más no caben: se juntan detrás de una sola pestaña. Dos o
      menos van directas, que es lo que ahorra un toque diario a quien
      las usa. */
   const sueltas = actividades.length <= 2
 
-  const PESTANAS: Pestana[] = [
-    ...FIJAS,
-    ...(sueltas
-      ? actividades.map((a) => ({
-          clave: a.id,
-          texto: nombreCorto(a.nombre),
-          icono: iconoDeEmoji(a.icono),
-          href: a.ruta,
-        }))
-      : [
-          {
-            clave: 'actividades',
-            texto: 'Actividades',
-            icono: 'euro' as Icono,
-            href: '/actividades',
-          },
-        ]),
-  ]
+  const DE_ACTIVIDADES: Pestana[] = sueltas
+    ? actividades.map((a) => ({
+        clave: a.id,
+        texto: nombreCorto(a.nombre),
+        icono: iconoDeEmoji(a.icono),
+        href: a.ruta,
+      }))
+    : [
+        {
+          clave: 'actividades',
+          texto: 'Actividades',
+          icono: 'euro' as Icono,
+          href: '/actividades',
+        },
+      ]
+
+  /* La voz sirve para APUNTAR y para preguntar. A quien no puede
+     escribir nada —el asesor, quien solo mira— le daría un botón
+     grande que falla en cuanto lo use. */
+  const puedeHablar = rol !== 'asesor' && rol !== 'mirar'
+
+  const INICIO = FIJAS[0]
+  const PAPELES = FIJAS[1]
+  const AGENDA = FIJAS[2]
+
+  const PESTANAS: Pestana[] =
+    rol === 'ayuda'
+      ? /* Lo suyo y nada más. La compra sube a pestaña porque para ella
+           es lo del día a día, y aquí hay sitio de sobra: con tres
+           botones cada uno mide el doble. */
+        [
+          INICIO,
+          AGENDA,
+          ...(usaCompra
+            ? [{ clave: 'compra', texto: 'La compra', icono: 'bolsa' as Icono, href: '/compra' }]
+            : []),
+        ]
+      : rol === 'asesor'
+        ? /* Viene a las cuentas y a los papeles de las actividades. La
+             agenda de una familia que no es la suya no pinta nada. */
+          [INICIO, PAPELES, ...DE_ACTIVIDADES]
+        : [INICIO, PAPELES, AGENDA, ...DE_ACTIVIDADES]
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40">
       <div className="pointer-events-none relative mx-auto max-w-md">
-        {voz && (
+        {voz && puedeHablar && (
           <Link
             href="/hablar"
             aria-label="Hablar con HUBI"
