@@ -56,10 +56,12 @@ export default async function Lista({
   ver,
   semana,
   de,
+  dia,
 }: {
   ver?: string
   semana?: string
   de?: string
+  dia?: string
 }) {
   const viendoHechas = ver === 'hechas'
   const viendoAdelante = ver === 'adelante'
@@ -120,13 +122,48 @@ export default async function Lista({
   const dueno = de && calendarios.some((c) => c.id === de) ? de : null
   const suyas = await citasDeLaFamilia(user.id, desde, hasta, dueno)
 
-  const dias = Array.from({ length: 7 }, (_, i) => iso(sumar(lunes, i)))
-    .map((f) => ({
-      fecha: f,
-      lista: deLaSemana.filter((r) => r.fecha === f),
-      google: suyas.filter((c) => c.fecha === f),
-    }))
-    .filter((d) => d.lista.length > 0 || d.google.length > 0)
+  /*
+    LOS SIETE DÍAS, TODOS. También los vacíos.
+
+    Antes se quitaban los días sin nada —cuatro renglones diciendo
+    «nada» ocupaban media pantalla para no contar nada— y eso valía
+    cuando la pantalla era una lista corrida. Con la tira de arriba ya
+    no: la tira ES los siete días, y un lunes que no aparece en una
+    semana deja un hueco donde debería haber un lunes.
+
+    Los vacíos siguen sin ocupar espacio: en la tira son una casilla
+    sin puntos.
+  */
+  const dias = Array.from({ length: 7 }, (_, i) => iso(sumar(lunes, i))).map((f) => ({
+    fecha: f,
+    lista: deLaSemana.filter((r) => r.fecha === f),
+    google: suyas.filter((c) => c.fecha === f),
+  }))
+
+  /*
+    ── QUÉ DÍA SE ESTÁ MIRANDO ──
+
+    Toda la semana de un vistazo arriba, y debajo UN día entero. Antes
+    era la semana entera abierta en una lista corrida: se lee de
+    arriba abajo, pero para saber si el jueves hay algo hay que
+    recorrerla — que es justo lo que una agenda de papel contesta sin
+    leer nada.
+
+    Si no se ha elegido ninguno, se abre en el que interesa: hoy si
+    estamos en esta semana, y si no el primer día que tenga algo. Una
+    semana futura que se abriera vacía en su lunes haría pensar que no
+    hay nada en toda la semana.
+  */
+  const conAlgo = dias.filter((d) => d.lista.length > 0 || d.google.length > 0)
+
+  const elegido =
+    dia && dias.some((d) => d.fecha === dia)
+      ? dia
+      : enEstaSemana && dias.some((d) => d.fecha === hoyISO)
+        ? hoyISO
+        : (conAlgo[0]?.fecha ?? desde)
+
+  const abierto = dias.find((d) => d.fecha === elegido) ?? dias[0]
 
   // Lo que viene después de la semana que se está mirando.
   const adelante = pendientes.filter((r) => r.fecha && r.fecha > hasta)
@@ -260,28 +297,35 @@ export default async function Lista({
             </Link>
           </div>
 
-          {dias.length === 0 ? (
-            <Vacio
-              texto={
-                enEstaSemana
-                  ? 'Nada más esta semana.'
-                  : 'Nada esta semana.'
-              }
-            />
-          ) : (
-            dias.map((d) => (
-              <section key={d.fecha} className="mt-5">
-                <h2 className="rotulo">{diaEnPalabras(d.fecha, hoyISO)}</h2>
+          {/* ── La semana entera, en una fila ── */}
+          <Tira dias={dias} elegido={elegido} hoyISO={hoyISO} desde={desde} de={dueno} />
+
+          {/* ── Y debajo, el día que se esté mirando ── */}
+          {abierto && (
+            <section className="mt-5">
+              <h2 className="rotulo">{diaEnPalabras(abierto.fecha, hoyISO)}</h2>
+
+              {abierto.lista.length === 0 && abierto.google.length === 0 ? (
+                <Vacio
+                  texto={
+                    conAlgo.length === 0
+                      ? enEstaSemana
+                        ? 'Nada más esta semana.'
+                        : 'Nada esta semana.'
+                      : 'Este día no tienes nada.'
+                  }
+                />
+              ) : (
                 <ul className="mt-2.5 space-y-2.5">
-                  {d.lista.map((r) => (
+                  {abierto.lista.map((r) => (
                     <Tarjeta key={r.id} r={r} nombres={nombres} yo={user.id} />
                   ))}
-                  {d.google.map((c) => (
+                  {abierto.google.map((c) => (
                     <DeGoogle key={c.uid} c={c} conVarios={calendarios.length > 1} />
                   ))}
                 </ul>
-              </section>
-            ))
+              )}
+            </section>
           )}
 
           {/* Lo que queda más allá NO se esconde: se dice cuánto hay. */}
@@ -305,6 +349,118 @@ export default async function Lista({
         Apuntar algo
       </Link>
     </>
+  )
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  LA TIRA DE LA SEMANA
+  ═══════════════════════════════════════════════════════════════
+
+  Los siete días en una fila, como en una agenda de papel: la letra
+  arriba, el número debajo, y unos puntos que dicen cuánto hay ese
+  día. Se toca uno y debajo sale lo suyo.
+
+  ─────────────────────────────────────────────────────────────
+  POR QUÉ PUNTOS Y NO EL NÚMERO
+
+  Un «3» pequeño dentro de una casilla de 44 px hay que leerlo. Tres
+  puntos se ven sin leer, incluso de reojo — y el reojo es como se
+  mira una agenda. A partir de cuatro cosas los puntos dejarían de
+  distinguirse, así que a partir de ahí se ponen tres y se ensancha
+  el tercero: la diferencia que importa es «hay poco» / «hay lío», no
+  si son cinco o seis.
+
+  ─────────────────────────────────────────────────────────────
+  LA CASILLA ENTERA ES EL BOTÓN
+
+  44 px de ancho por 62 de alto. Está por encima del mínimo que nos
+  hemos puesto para lo que hay que pulsar, y sobre todo no exige
+  puntería: el dedo cae en la casilla, no en el número.
+
+  Y el día elegido no se marca SOLO con color: lleva el fondo relleno
+  y el número en negrita. Quien no distinga bien los colores tiene que
+  poder saber igualmente en qué día está.
+*/
+function Tira({
+  dias,
+  elegido,
+  hoyISO,
+  desde,
+  de,
+}: {
+  dias: { fecha: string; lista: Recordatorio[]; google: CitaDeAlguien[] }[]
+  elegido: string
+  hoyISO: string
+  desde: string
+  de: string | null
+}) {
+  const LETRAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+
+  return (
+    <div className="mt-4 flex justify-between gap-1">
+      {dias.map((d, i) => {
+        const puesto = d.fecha === elegido
+        const esHoy = d.fecha === hoyISO
+        const cuantos = d.lista.length + d.google.length
+        const numero = Number(d.fecha.slice(8, 10))
+
+        return (
+          <Link
+            key={d.fecha}
+            href={`/agenda?semana=${desde}&dia=${d.fecha}${de ? `&de=${de}` : ''}`}
+            aria-current={puesto ? 'date' : undefined}
+            aria-label={`${SEMANA[(i + 1) % 7]} ${numero}${
+              cuantos === 0 ? ', sin nada' : cuantos === 1 ? ', 1 cosa' : `, ${cuantos} cosas`
+            }`}
+            className="flex h-[62px] min-w-0 flex-1 flex-col items-center justify-center gap-[3px] rounded-[14px]"
+            style={
+              puesto
+                ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
+                : {
+                    background: 'var(--t-superficie)',
+                    color: 'var(--t-tinta-suave)',
+                    border: '1px solid var(--t-borde)',
+                  }
+            }
+          >
+            <span className="text-[12px] font-bold uppercase tracking-wider opacity-70">
+              {LETRAS[i]}
+            </span>
+            <span
+              className="text-[17px] font-extrabold leading-none"
+              /* Hoy va subrayado por debajo del número, no de otro
+                 color: el color ya lo usa el día elegido y dos cosas
+                 distintas del mismo color no se distinguen. */
+              style={
+                esHoy && !puesto
+                  ? { color: 'var(--t-tinta)', textDecoration: 'underline', textUnderlineOffset: 3 }
+                  : undefined
+              }
+            >
+              {numero}
+            </span>
+
+            {/* El renglón de los puntos existe siempre, con o sin
+                puntos: si apareciera solo en los días con algo, las
+                casillas tendrían alturas distintas y la fila bailaría. */}
+            <span className="flex h-[6px] items-center gap-[3px]" aria-hidden>
+              {Array.from({ length: Math.min(cuantos, 3) }, (_, k) => (
+                <span
+                  key={k}
+                  className="h-[5px] rounded-full"
+                  style={{
+                    width: k === 2 && cuantos > 3 ? 11 : 5,
+                    background: puesto ? 'var(--t-boton-texto)' : '#F59E0B',
+                    opacity: puesto ? 0.75 : 1,
+                  }}
+                />
+              ))}
+            </span>
+          </Link>
+        )
+      })}
+    </div>
   )
 }
 

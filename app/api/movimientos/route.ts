@@ -89,7 +89,7 @@ export async function POST(peticion: NextRequest) {
         { status: 409 }
       )
     }
-    console.error('[Family Hub] Fallo apuntando movimiento:', error)
+    console.error('[HUBI] Fallo apuntando movimiento:', error)
     return NextResponse.json({ error: 'No se ha podido apuntar.' }, { status: 500 })
   }
 

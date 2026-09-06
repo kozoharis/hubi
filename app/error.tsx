@@ -18,7 +18,7 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('[Family Hub] Fallo en pantalla:', error)
+    console.error('[HUBI] Fallo en pantalla:', error)
   }, [error])
 
   return (

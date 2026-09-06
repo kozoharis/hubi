@@ -146,11 +146,11 @@ export async function POST(peticion: NextRequest) {
     )
   } catch (e) {
     const motivo = e instanceof Error ? e.message : ''
-    console.error('[Family Hub] Fallo subiendo a Drive:', e)
+    console.error('[HUBI] Fallo subiendo a Drive:', e)
 
     if (motivo === 'DRIVE_SIN_CONECTAR') {
       return NextResponse.json(
-        { error: 'Google Drive todavía no está conectado. Juan Miguel debe conectarlo.' },
+        { error: 'El Google Drive de esta casa todavía no está conectado. Tiene que hacerlo quien la creó.' },
         { status: 409 }
       )
     }
@@ -158,7 +158,7 @@ export async function POST(peticion: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'El permiso de Google Drive ha caducado. Juan Miguel tiene que volver a conectarlo.',
+            'El permiso de Google Drive ha caducado. Quien creó esta casa tiene que volver a conectarlo.',
         },
         { status: 409 }
       )
@@ -220,7 +220,7 @@ export async function POST(peticion: NextRequest) {
     .single()
 
   if (error) {
-    console.error('[Family Hub] Subido a Drive pero no registrado:', error)
+    console.error('[HUBI] Subido a Drive pero no registrado:', error)
     return NextResponse.json(
       {
         error:
@@ -259,7 +259,7 @@ export async function POST(peticion: NextRequest) {
        eso hay que DECIRLO — es la diferencia entre "ya lo tenías" y
        un ingreso que se pierde en silencio. */
     if (fallo) {
-      console.error('[Family Hub] Documento guardado sin apunte:', fallo)
+      console.error('[HUBI] Documento guardado sin apunte:', fallo)
       if (fallo.code === '23505' && referencia) repetida = referencia
     }
   }

@@ -16,7 +16,7 @@ export async function POST() {
 
   try {
     const entregados = await avisarA(user.id, {
-      titulo: 'Family Hub',
+      titulo: 'HUBI',
       cuerpo: 'Los avisos funcionan. Así te llegarán los recordatorios.',
       url: '/',
       tag: 'prueba',
@@ -37,7 +37,7 @@ export async function POST() {
         { status: 503 }
       )
     }
-    console.error('[Family Hub] Fallo enviando aviso de prueba:', e)
+    console.error('[HUBI] Fallo enviando aviso de prueba:', e)
     return NextResponse.json({ error: 'No se ha podido enviar.' }, { status: 500 })
   }
 }

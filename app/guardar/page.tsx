@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar } from '@/lib/hogar'
+import { miHogar, quienManda } from '@/lib/hogar'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import Formulario from './formulario'
 import type { Categoria } from '@/lib/rutas'
@@ -43,6 +43,8 @@ export default async function Guardar({
     : { data: null }
 
   if (conexion?.estado !== 'activa') {
+    const elJefe = hogarId ? await quienManda(supabase, hogarId) : null
+
     return (
       <main className="techo-holgado min-h-screen px-6 pb-12">
         <div className="mx-auto w-full max-w-md">
@@ -52,9 +54,11 @@ export default async function Guardar({
           <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
             Todavía no se pueden guardar documentos
           </h1>
+          {/* El nombre sale de la casa, no está escrito aquí: en la casa
+              de al lado «Juan Miguel» es un desconocido. */}
           <p className="mt-5 text-lg leading-relaxed text-tinta-suave">
-            Juan Miguel tiene que conectar el Google Drive de la familia antes de
-            que los documentos tengan dónde guardarse.
+            {elJefe ?? 'Quien creó esta casa'} tiene que conectar su Google Drive
+            antes de que los documentos tengan dónde guardarse.
           </p>
         </div>
       </main>

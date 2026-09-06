@@ -238,6 +238,44 @@ export async function hogarDe(
 
 /*
   ─────────────────────────────────────────────────────────────
+  ¿PUEDE ESCRIBIR, O SOLO MIRAR?
+
+  La base de datos ya lo impide —`puedo_escribir()` está en las
+  políticas del 31— pero eso no basta: la pantalla le seguía
+  ofreciendo el botón. Y un botón que falla al pulsarlo es peor que
+  no tener botón. Quien solo mira no ha hecho nada mal; se le enseña
+  lo que hay, sin botones que no van a funcionar.
+
+  Devuelve `true` cuando algo va mal a propósito. Ésta es la mitad
+  bonita del permiso: si fallara hacia el otro lado, alguien con todo
+  el derecho a apuntar se quedaría mirando una pantalla sin botones y
+  pensaría que HUBI está roto. Quien de verdad no puede se topa con
+  la base de datos, que no falla nunca.
+*/
+export async function puedeEscribir(
+  supabase: SupabaseClient,
+  perfilId: string,
+  hogarId?: string | null
+): Promise<boolean> {
+  try {
+    const casa = hogarId ?? (await miHogar(supabase, perfilId))
+    if (!casa) return false
+
+    const { data } = await supabase
+      .from('miembros')
+      .select('papel')
+      .eq('perfil_id', perfilId)
+      .eq('hogar_id', casa)
+      .maybeSingle()
+
+    return data?.papel !== 'lector'
+  } catch {
+    return true
+  }
+}
+
+/*
+  ─────────────────────────────────────────────────────────────
   ¿MANDA EN SU CASA?
 
   Quien conecta Google es el dueño del Drive donde se guarda todo. En

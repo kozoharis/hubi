@@ -210,7 +210,7 @@ export async function POST(peticion: NextRequest) {
     })
   } catch (e) {
     const motivo = e instanceof Error ? e.message : ''
-    console.error('[Family Hub] Fallo leyendo el documento:', e)
+    console.error('[HUBI] Fallo leyendo el documento:', e)
 
     if (motivo === 'SIN_CLAVE_OCR') {
       return NextResponse.json(

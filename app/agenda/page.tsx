@@ -55,7 +55,11 @@ export default async function Agenda({
         {/* Las dos formas de mirar lo mismo. Con texto, no solo icono:
             un dibujo suelto obliga a adivinar. */}
         <div className="mt-2 flex gap-2" role="group" aria-label="Cómo verlo">
-          <Ojo texto="Lista" icono="check" puesto={!enMes} href="/agenda" />
+          {/* «Semana» y no «Lista»: las dos vistas acaban enseñando una
+              lista —al tocar un día del Mes también sale una—, así que
+              «Lista» no distinguía nada. Lo que las diferencia es
+              cuánto abarcan. */}
+          <Ojo texto="Semana" icono="check" puesto={!enMes} href="/agenda" />
           <Ojo texto="Mes" icono="calendario" puesto={enMes} href="/agenda?vista=mes" />
         </div>
       </Cabecera>
@@ -64,7 +68,7 @@ export default async function Agenda({
         {enMes ? (
           <Mes mes={p.mes} dia={p.dia} de={p.de} />
         ) : (
-          <Lista ver={p.ver} semana={p.semana} de={p.de} />
+          <Lista ver={p.ver} semana={p.semana} de={p.de} dia={p.dia} />
         )}
       </div>
 

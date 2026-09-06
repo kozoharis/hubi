@@ -482,7 +482,7 @@ export async function GET() {
           const motivo = e instanceof Error ? e.message : ''
           resultado.drive.diagnostico =
             motivo === 'PERMISO_CADUCADO'
-              ? 'Google ha rechazado el permiso. Juan Miguel debe volver a conectarlo.'
+              ? 'Google ha rechazado el permiso. Quien creó la casa debe volver a conectarlo.'
               : 'Google no devuelve acceso. Revisa GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET.'
         }
       }
@@ -502,7 +502,7 @@ export async function GET() {
 
   if (!resultado.calendario.permisoConcedido) {
     resultado.calendario.diagnostico =
-      'Este permiso es anterior al calendario. Juan Miguel tiene que volver a conectar.'
+      'Este permiso es anterior al calendario. Quien creó la casa tiene que volver a conectar.'
   } else if (!cal.creado) {
     resultado.calendario.diagnostico =
       'Permiso concedido. Falta pulsar «Calendario en Google» en Ajustes.'

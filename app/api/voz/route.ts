@@ -583,7 +583,7 @@ export async function POST(peticion: NextRequest) {
     })
   } catch (e) {
     const motivo = e instanceof Error ? e.message : ''
-    console.error('[Family Hub] Fallo escuchando:', e)
+    console.error('[HUBI] Fallo escuchando:', e)
 
     if (motivo === 'SIN_CLAVE_OCR') {
       return NextResponse.json({ error: 'La voz no está configurada todavía.' }, { status: 503 })

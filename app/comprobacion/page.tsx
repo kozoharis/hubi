@@ -62,13 +62,13 @@ export default function Comprobacion() {
     <main className="min-h-screen bg-[#F1F5F9] px-6 py-12 text-[#0F172A]">
       <div className="mx-auto max-w-xl">
         <p className="text-sm uppercase tracking-[0.2em] text-[#8A7F73]">
-          J+C · Family Hub
+          HUBI
         </p>
         <h1 className="mt-3 text-4xl font-semibold leading-tight">
           Comprobación del sistema
         </h1>
         <p className="mt-3 text-lg text-[#6B6157]">
-          Esta pantalla no forma parte de Family Hub. Solo sirve para verificar
+          Esta pantalla no forma parte de HUBI. Solo sirve para verificar
           que las piezas están realmente conectadas.
         </p>
 

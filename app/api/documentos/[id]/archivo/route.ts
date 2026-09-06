@@ -57,7 +57,7 @@ export async function GET(
       },
     })
   } catch (e) {
-    console.error('[Family Hub] Fallo descargando de Drive:', e)
+    console.error('[HUBI] Fallo descargando de Drive:', e)
     return new NextResponse('No se ha podido abrir el documento.', { status: 502 })
   }
 }

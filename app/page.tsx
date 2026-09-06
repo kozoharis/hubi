@@ -13,6 +13,7 @@ import { cuando, type Recordatorio } from '@/lib/tablon'
 import { leerPerfil } from '@/lib/perfil'
 import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
 import { casasDe } from '@/lib/casas'
+import { cuantasNotas } from '@/lib/notas'
 import Casas from './casas'
 
 export const dynamic = 'force-dynamic'
@@ -110,6 +111,7 @@ export default async function Inicio({
     { data: siguientes },
     { data: conexion },
     { count: porComprar },
+    notasPuestas,
   ] =
     await Promise.all([
       leerPerfil(supabase, user.id, user.email),
@@ -143,6 +145,9 @@ export default async function Inicio({
         .select('id', { count: 'exact', head: true })
         .eq('comprado', false)
         .is('archivado_en', null),
+
+      /* Las notas del corcho, y cuántas te están esperando a ti. */
+      cuantasNotas(supabase, user.id),
     ])
 
   /* ¿Esta casa usa la lista de la compra? Envuelto: la columna es
@@ -315,6 +320,57 @@ export default async function Inicio({
           </span>
         </Link>
         )}
+
+        {/*
+          ── Las notas ──
+
+          El corcho de la cocina. Va aquí, con Guardar documento y La
+          compra, y no en la barra de abajo: cinco pestañas es el tope
+          —con seis, cada botón baja de los 48 px que protegen a un
+          dedo de 75 años—.
+
+          Y sale SIEMPRE, también con el corcho vacío. Las otras dos
+          tarjetas son cosas que ya sabes que existen; ésta es nueva, y
+          una función que solo aparece cuando ya la has usado no la
+          descubre nadie. Con cero notas dice que no hay ninguna, que
+          es una respuesta, no un hueco.
+        */}
+        <Link
+          href="/notas"
+          className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
+          style={{
+            background: 'color-mix(in srgb, #F59E0B 12%, transparent)',
+            border: '1px solid color-mix(in srgb, #F59E0B 30%, transparent)',
+          }}
+        >
+          <span
+            className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] bg-superficie"
+            style={{ color: '#F59E0B' }}
+          >
+            <Ico nombre="chincheta" tam={24} grosor={2.1} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block whitespace-nowrap text-[18.5px] font-extrabold tracking-tight">
+              Notas
+            </span>
+            <span className="block text-[14.5px] font-bold" style={{ color: '#F59E0B' }}>
+              {/* Lo que es PARA TI manda sobre el recuento. «Hay 6 notas
+                  puestas» no dice que una de ellas te está esperando. */}
+              {notasPuestas.paraMi === 1
+                ? 'Te han dejado una nota'
+                : notasPuestas.paraMi > 1
+                  ? `Te han dejado ${notasPuestas.paraMi} notas`
+                  : notasPuestas.puestas === 0
+                    ? 'Deja un recado a los de casa'
+                    : notasPuestas.puestas === 1
+                      ? 'Hay 1 nota puesta'
+                      : `Hay ${notasPuestas.puestas} notas puestas`}
+            </span>
+          </span>
+          <span className="shrink-0" style={{ color: '#F59E0B' }}>
+            <Ico nombre="flecha" tam={22} grosor={2.2} />
+          </span>
+        </Link>
 
         {/* ── Conectar Drive ── */}
         {!conectado && manda && (

@@ -64,7 +64,15 @@ type Oido = {
    medidor de sonido. Solo es forma. */
 const BARRAS = [0.35, 0.6, 0.85, 1, 0.85, 0.6, 0.35]
 
-export default function Grabar() {
+export default function Grabar({
+  otro = null,
+  actividad = null,
+}: {
+  /** Alguien de esta casa que no sea quien está mirando. */
+  otro?: string | null
+  /** Una actividad de esta casa: la Finca, las Obras, Los Helechos… */
+  actividad?: string | null
+} = {}) {
   const [estado, setEstado] = useState<Estado>('listo')
   const [segundos, setSegundos] = useState(0)
   const [oido, setOido] = useState<Oido | null>(null)
@@ -692,10 +700,24 @@ export default function Grabar() {
                 */}
                 {estado === 'listo' && (
                   <ul className="mt-11 w-full space-y-2.5 text-left">
-                    <Ejemplo que="Apuntar" frase="Recuérdale a Conchita que mañana llame al médico" />
-                    <Ejemplo que="Gastar" frase="Un gasto de 85 euros de productos" />
-                    <Ejemplo que="Preguntar" frase="¿Cuánto hemos gastado este trimestre en agua?" />
-                    <Ejemplo que="Buscar" frase="Enséñame las facturas de la finca" />
+                    <Ejemplo
+                      que="Apuntar"
+                      frase={
+                        otro
+                          ? `Recuérdale a ${otro} que mañana llame al médico`
+                          : 'Recuérdame mañana que llame al médico'
+                      }
+                    />
+                    <Ejemplo que="Gastar" frase="Un gasto de 85 euros en la ferretería" />
+                    <Ejemplo que="Preguntar" frase="¿Cuánto hemos gastado este trimestre en luz?" />
+                    <Ejemplo
+                      que="Buscar"
+                      frase={
+                        actividad
+                          ? `Enséñame las facturas de ${conArticulo(actividad)}`
+                          : 'Enséñame las facturas de la luz'
+                      }
+                    />
                   </ul>
                 )}
               </>
@@ -1295,6 +1317,27 @@ function cadaCuanto(r: string | null): string | null {
   if (r === 'mensual') return 'Todos los meses'
   if (r === 'anual') return 'Todos los años'
   return null
+}
+
+/*
+  El nombre de una actividad metido dentro de una frase.
+
+  Las actividades se llaman como cada uno quiera: «La Finca», «Los
+  Helechos», «Obras». Pegar «de » delante a secas da «de La Finca»,
+  que se lee raro, o «de El Molino», que directamente está mal escrito.
+
+  Se arregla lo justo: se baja el artículo a minúscula y «de el» se
+  convierte en «del». Lo que no lleva artículo se deja en paz.
+*/
+function conArticulo(nombre: string): string {
+  const [primera, ...resto] = nombre.split(' ')
+  const art = primera.toLowerCase()
+
+  if (art === 'el') return ['del', ...resto].join(' ')
+  if (art === 'la' || art === 'los' || art === 'las') {
+    return `de ${[art, ...resto].join(' ')}`
+  }
+  return `de ${nombre}`
 }
 
 /* Un ejemplo de lo que se puede pedir. Lo primero es QUÉ hace; la

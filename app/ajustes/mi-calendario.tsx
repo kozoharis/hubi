@@ -185,7 +185,7 @@ export default function MiCalendario({
 
             <ol className="mt-3 space-y-2.5">
               <Paso n={1}>
-                Entra en <b>calendar.google.com</b> con la cuenta de Juan Miguel.
+                Entra en <b>calendar.google.com</b> con tu cuenta de Google.
               </Paso>
               <Paso n={2}>
                 A la izquierda, pon el ratón encima de tu calendario (el que lleva
