@@ -3,12 +3,13 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { leerDocumento } from '@/lib/ocr'
 import { entenderPapel, type Conocido } from '@/lib/entender'
+import { tipoDe, TIPOS_BUENOS } from '@/lib/archivos'
 import { cadena, type Categoria } from '@/lib/rutas'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const TIPOS = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+
 
 /**
  * Lee un documento y devuelve lo que ha entendido.
@@ -61,10 +62,15 @@ export async function POST(peticion: NextRequest) {
     if (!(subido instanceof File) || subido.size === 0) {
       return NextResponse.json({ error: 'No hay archivo.' }, { status: 400 })
     }
-    if (!TIPOS.includes(subido.type)) {
+    /* Por lo que ES: un PDF elegido desde el selector de archivos de
+       Android llega muchas veces sin etiqueta. Ver lib/archivos.ts. */
+    const suTipo = tipoDe(subido)
+    if (!suTipo || !TIPOS_BUENOS.includes(suTipo)) {
       return NextResponse.json({ error: 'Formato no admitido.' }, { status: 400 })
     }
-    archivo = subido
+    /* Se guarda ya con su tipo bueno: quien lo lea más abajo no tiene
+       que volver a preguntárselo. */
+    archivo = new File([subido], subido.name || 'documento', { type: suTipo })
   }
 
   /*

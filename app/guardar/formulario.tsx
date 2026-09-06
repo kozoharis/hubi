@@ -6,7 +6,8 @@ import { cadena, type Categoria } from '@/lib/rutas'
 import { Ico } from '../iconos'
 import BuscarEnDrive, { hayBuscadorDrive } from './buscar-en-drive'
 import { leerAqui } from './leer-aqui'
-import { leerPdf } from './leer-pdf'
+import { leerPdf, primeraPagina } from './leer-pdf'
+import { esPdf, tipoDe, conSuTipo, TIPOS_BUENOS } from '@/lib/archivos'
 import CamposEstancia, { ESTANCIA_VACIA, type Estancia } from '../estancia'
 import type { Reserva } from '@/lib/reservas'
 
@@ -190,7 +191,12 @@ export default function Formulario({
   function recibirArchivo(e: React.ChangeEvent<HTMLInputElement>) {
     const original = e.target.files?.[0]
     e.target.value = '' // permite volver a elegir la misma foto
-    if (original) admitir(original)
+    /* `conSuTipo` arregla aquí, en la puerta, los archivos que llegan
+       sin decir lo que son — que es como llegan casi todos los PDF
+       elegidos desde Drive o Descargas en Android. A partir de este
+       punto el resto del formulario no se entera de que hubo nada
+       raro. Ver lib/archivos.ts. */
+    if (original) admitir(conSuTipo(original))
   }
 
   /*
@@ -205,12 +211,21 @@ export default function Formulario({
     setDetalle(null)
 
     // Un PDF ya es un documento completo: no hay páginas que juntar.
-    if (original.type === 'application/pdf') {
+    if (esPdf(original)) {
       if (original.size > MAXIMO) {
         setAviso('Ese PDF pesa demasiado. El máximo son 4 MB.')
         return
       }
       arrancarLectura(original)
+      return
+    }
+
+    /* Y lo que no es ni PDF ni imagen se dice AQUÍ, con su nombre.
+       Antes se colaba, se intentaba encoger, y fallaba más adelante
+       con un mensaje que no señalaba al archivo. */
+    if (!tipoDe(original)) {
+      setAviso('Ese archivo no se puede guardar. Solo fotos (JPG, PNG) o documentos PDF.')
+      setDetalle(original.name ? `Has elegido: ${original.name}` : null)
       return
     }
 
@@ -258,7 +273,27 @@ export default function Formulario({
   function arrancarLectura(f: File, paraLeer?: File[]) {
     setAvance(0)
     setArchivo(f)
-    setVista(f.type === 'application/pdf' ? null : URL.createObjectURL(f))
+    /*
+      LA VISTA PREVIA TAMBIÉN PARA LOS PDF.
+
+      Antes un PDF no enseñaba nada: pantalla en blanco mientras se
+      leía. Y ahí, con un archivo que además fallaba, era imposible
+      saber si HUBI lo había cogido siquiera.
+
+      Se dibuja su primera página, que es lo que uno reconoce de un
+      vistazo. Va sin esperar a nadie: si tarda o falla, la lectura
+      sigue su camino y como mucho no hay foto.
+    */
+    if (esPdf(f)) {
+      setVista(null)
+      primeraPagina(f)
+        .then((url) => {
+          if (url && !abandonado.current) setVista(url)
+        })
+        .catch(() => {})
+    } else {
+      setVista(URL.createObjectURL(f))
+    }
     abandonado.current = false
     setPaso('leyendo')
     analizar(f, paraLeer)
@@ -304,11 +339,28 @@ export default function Formulario({
       let textoDelMovil = ''
       let digital = false
 
-      if (!paraLeer?.length && f.type === 'application/pdf') {
-        const pdf = await leerPdf(f, (p) => setAvance(Math.round(p * 60)))
-        if (abandonado.current) return
-        textoDelMovil = pdf.texto
-        digital = pdf.digital
+      if (!paraLeer?.length && esPdf(f)) {
+        /*
+          ── SI EL LECTOR DE PDF SE ATRAGANTA, NO SE ACABA AQUÍ ──
+
+          Antes esta llamada estaba suelta dentro del `try` grande, así
+          que un PDF que pdf.js no supiera abrir —protegido, con una
+          fuente rara, medio corrupto— tiraba TODA la lectura al fallo
+          general. Y con ella la segunda oportunidad: mandárselo al
+          modelo, que lee PDF de sobra.
+
+          Perder la lectura barata es un incordio. Perder también la
+          buena por haber intentado la barata es un fallo.
+        */
+        try {
+          const pdf = await leerPdf(f, (p) => setAvance(Math.round(p * 60)))
+          if (abandonado.current) return
+          textoDelMovil = pdf.texto
+          digital = pdf.digital
+        } catch (e) {
+          console.error('[HUBI] El PDF no se ha podido leer aquí:', e)
+          /* Se sigue: abajo va al modelo como cualquier otro papel. */
+        }
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -381,7 +433,7 @@ export default function Formulario({
               if (abandonado.current) return
             }
             textoDelMovil = trozos.join('\n').trim()
-          } else if (f.type !== 'application/pdf') {
+          } else if (!esPdf(f)) {
             textoDelMovil = await leerAqui(f, (p) => setAvance(Math.round(p * 100)))
           }
         }
@@ -1083,11 +1135,10 @@ function bastante(l: {
 
 /* Solo se manda lo que el servidor admite y cabe en una petición. */
 function archivoSirve(f: File): boolean {
-  return (
-    f.size > 0 &&
-    f.size <= MAXIMO &&
-    ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'].includes(f.type)
-  )
+  /* Por lo que ES, no por lo que dice ser: la lista cerrada de tipos
+     dejaba fuera cualquier PDF que llegara sin su etiqueta. */
+  const tipo = tipoDe(f)
+  return f.size > 0 && f.size <= MAXIMO && tipo !== null && TIPOS_BUENOS.includes(tipo)
 }
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {

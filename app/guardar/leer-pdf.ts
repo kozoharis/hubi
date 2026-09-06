@@ -193,3 +193,45 @@ function enLineas(items: unknown[]): string {
     .filter(Boolean)
     .join('\n')
 }
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  LA PRIMERA PÁGINA, PARA VERLA
+  ═══════════════════════════════════════════════════════════════
+
+  Nada que ver con leer: esto es para que la persona RECONOZCA lo que
+  ha elegido. Un PDF no enseñaba nada mientras se leía —pantalla en
+  blanco— y con un archivo que además fallara era imposible saber si
+  HUBI lo había cogido siquiera.
+
+  Escala 1,2: suficiente para reconocer una factura en un recuadro de
+  móvil, y una décima parte del trabajo que cuesta la escala 2 que usa
+  la lectura de verdad. Esto solo tiene que verse, no leerse.
+
+  Devuelve null en vez de lanzar: es un adorno, y un adorno no puede
+  tumbar el camino de guardar un documento.
+*/
+export async function primeraPagina(archivo: File): Promise<string | null> {
+  try {
+    const lib = await pdfjs()
+    const doc = await lib.getDocument({ data: new Uint8Array(await archivo.arrayBuffer()) })
+      .promise
+
+    const pagina = await doc.getPage(1)
+    const vista = pagina.getViewport({ scale: 1.2 })
+
+    const lienzo = document.createElement('canvas')
+    lienzo.width = Math.round(vista.width)
+    lienzo.height = Math.round(vista.height)
+
+    await pagina.render({
+      canvas: lienzo,
+      canvasContext: lienzo.getContext('2d')!,
+      viewport: vista,
+    }).promise
+
+    return lienzo.toDataURL('image/jpeg', 0.8)
+  } catch {
+    return null
+  }
+}

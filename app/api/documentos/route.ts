@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { miHogar, SIN_CASA } from '@/lib/hogar'
+import { tipoDe, TIPOS_BUENOS } from '@/lib/archivos'
 import { accesoDrive, idDeCarpeta, subirArchivo } from '@/lib/google/drive'
 import {
   cadena,
@@ -14,7 +15,6 @@ import {
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-const TIPOS = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
 const MAXIMO = 4 * 1024 * 1024
 
 function fechaOnula(valor: string | null): string | null {
@@ -68,7 +68,17 @@ export async function POST(peticion: NextRequest) {
   if (!(archivo instanceof File) || archivo.size === 0) {
     return NextResponse.json({ error: 'No has elegido ningún archivo.' }, { status: 400 })
   }
-  if (!TIPOS.includes(archivo.type)) {
+  /*
+    POR LO QUE ES, NO POR LO QUE DICE SER.
+
+    Antes se comparaba `archivo.type` contra una lista cerrada, y eso
+    rechazaba cualquier PDF que llegara sin su etiqueta — que es como
+    llegan muchos desde el selector de archivos de Android. La
+    pantalla ya lo arregla en la puerta, pero esta comprobación es la
+    de verdad y no puede depender de que la otra lo haya hecho bien.
+  */
+  const tipoReal = tipoDe(archivo)
+  if (!tipoReal || !TIPOS_BUENOS.includes(tipoReal)) {
     return NextResponse.json(
       { error: 'Solo se pueden guardar fotos (JPG, PNG) o documentos PDF.' },
       { status: 400 }
@@ -121,14 +131,17 @@ export async function POST(peticion: NextRequest) {
       titulo: titulo || null,
       proveedor,
       importe,
-      extension: extensionDe(archivo.type, archivo.name),
+      /* `tipoReal` y no `archivo.type`: si llegó sin etiqueta, la
+         extensión saldría vacía y el archivo acabaría en Drive sin
+         extensión — sin poder abrirse de un doble clic. */
+      extension: extensionDe(tipoReal, archivo.name),
     })
 
     driveFileId = await subirArchivo(
       acceso,
       carpetaId,
       nombre,
-      archivo.type,
+      tipoReal,
       await archivo.arrayBuffer()
     )
   } catch (e) {
@@ -171,7 +184,7 @@ export async function POST(peticion: NextRequest) {
       drive_file_id: driveFileId,
       drive_folder_id: carpetaId,
       nombre_archivo: nombre,
-      tipo_mime: archivo.type,
+      tipo_mime: tipoReal,
       tamano_bytes: archivo.size,
       fecha_documento: fechaDocumento,
       fecha_vencimiento: vencimiento,
