@@ -14,6 +14,7 @@ export type Icono =
   | 'pastilla' | 'reloj' | 'euro' | 'mas' | 'chincheta'
   | 'ojo' | 'lapiz' | 'gente' | 'candado' | 'bolsa' | 'aviso' | 'llave'
   | 'refrescar' | 'casco' | 'maleta' | 'herramienta' | 'barco' | 'mascota'
+  | 'rueda'
 
 const TRAZOS: Record<Icono, string> = {
   casa:      'M3 10.5 12 3l9 7.5M5.5 9.5V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5',
@@ -24,6 +25,10 @@ const TRAZOS: Record<Icono, string> = {
   casco:     'M4 15.5a8 8 0 0 1 16 0M9.2 15.2V8.4a2.8 2.8 0 0 1 5.6 0v6.8M2.5 15.5h19a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-19a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1Z',
   maleta:    'M3.5 8.5h17a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-17a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1ZM9 8.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v2.5M2.5 13h19',
   herramienta: 'M14.7 6.3a3.8 3.8 0 0 0 5 5l-8.4 8.4a2.1 2.1 0 0 1-3-3ZM14.7 6.3 17.2 3.8M6 18h.01',
+  /* La rueda de los ajustes. Ocho dientes y no doce: a 20 píxeles los
+     doce se juntan y el borde se convierte en una pelusa. Ocho siguen
+     leyéndose como dientes. */
+  rueda:     'M10.40 2.43 L13.60 2.43 L13.68 5.00 L15.76 5.86 L17.63 4.10 L19.90 6.37 L18.14 8.24 L19.00 10.32 L21.57 10.40 L21.57 13.60 L19.00 13.68 L18.14 15.76 L19.90 17.63 L17.63 19.90 L15.76 18.14 L13.68 19.00 L13.60 21.57 L10.40 21.57 L10.32 19.00 L8.24 18.14 L6.37 19.90 L4.10 17.63 L5.86 15.76 L5.00 13.68 L2.43 13.60 L2.43 10.40 L5.00 10.32 L5.86 8.24 L4.10 6.37 L6.37 4.10 L8.24 5.86 L10.32 5.00 Z M8.70 12.00a3.30 3.30 0 1 0 6.60 0a3.30 3.30 0 1 0 -6.60 0',
   barco:      'M3 15.5h18l-2.4 4.2a1 1 0 0 1-.9.5H6.3a1 1 0 0 1-.9-.5ZM5.5 15.5V8.2l6.5-4 6.5 4v7.3M12 4.2v11.3',
   mascota:    'M5.5 11.5a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6ZM18.5 11.5a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6ZM9 7.6a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6ZM15 7.6a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6ZM12 11.5c2.6 0 4.6 2.2 4.6 4.4 0 2-1.6 3.1-3.2 3.1-.7 0-1 .3-1.4.3s-.7-.3-1.4-.3c-1.6 0-3.2-1.1-3.2-3.1 0-2.2 2-4.4 4.6-4.4Z',
   /* Los Helechos es una casa de alquiler: una llave lo dice mejor que

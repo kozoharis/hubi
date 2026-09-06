@@ -207,14 +207,48 @@ export default async function Inicio({
 
       {/* ── Cabecera, clavada arriba ── */}
       <Cabecera>
-        <div className="flex h-14 items-center justify-between">
-          <span className="flex items-center gap-2">
+        {/*
+          ── ARRIBA: QUIÉN ERES, Y AJUSTES ──
+
+          Antes la foto ERA el botón de ajustes, y eso no lo adivina
+          nadie: una foto de perfil dice «este eres tú», no «toca aquí
+          para configurar». Quien no lo supiera de antemano no
+          encontraba los ajustes en toda la aplicación.
+
+          Ahora son dos cosas distintas:
+
+            · La foto solo dice quién está usando HUBI. Ya no se puede
+              tocar, porque no llevaba a ningún sitio que se pudiera
+              adivinar.
+            · Al lado, un botón con la rueda Y la palabra «Ajustes».
+
+          Con la palabra, no solo el dibujo. Es el punto 5 —«iconos
+          siempre acompañados por texto»— y aquí se nota especialmente:
+          la rueda la reconoce cualquiera que use el móvil a diario,
+          pero no todo el mundo usa el móvil a diario.
+
+          Se descartó la otra idea, la de animar la foto para que
+          girase y enseñara una rueda de vez en cuando: un botón que
+          solo se entiende si lo miras en el segundo correcto es un
+          botón que a veces no existe. Y en una pantalla pensada para
+          ir con prisa, eso es peor que no tener nada.
+        */}
+        <div className="flex h-14 items-center justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-2">
             <Logo tam={36} />
             <span className="text-[22px] font-extrabold tracking-[0.09em]">HUBI</span>
           </span>
-          <Link href="/ajustes" aria-label="Ajustes">
-            <Avatar nombre={nombre} foto={perfil.foto} tam={44} />
-          </Link>
+
+          <span className="flex shrink-0 items-center gap-2">
+            <Avatar nombre={nombre} foto={perfil.foto} tam={40} />
+            <Link
+              href="/ajustes"
+              className="flex h-11 items-center gap-1.5 rounded-full border border-borde bg-superficie pl-3 pr-3.5 text-[15.5px] font-extrabold text-tinta"
+            >
+              <Ico nombre="rueda" tam={18} grosor={2} />
+              Ajustes
+            </Link>
+          </span>
         </div>
       </Cabecera>
 
