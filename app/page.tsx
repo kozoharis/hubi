@@ -340,21 +340,52 @@ export default async function Inicio({
           </p>
         )}
 
-        {/* ── Lo único grande de la pantalla ── */}
+        {/*
+          ═══════════════════════════════════════════════════════
+          EL MOSAICO
+          ═══════════════════════════════════════════════════════
+
+          Eran cuatro filas idénticas de 74 px. Se entendían —eso
+          nunca fue el problema— pero pesaban todas lo mismo, y en una
+          pantalla donde todo pesa igual no hay nada que mirar
+          primero: hay que leerse las cuatro.
+
+          Ahora la FORMA dice la importancia, que es lo que hace un
+          mosaico bien hecho:
+
+            ancha    Guardar documento — el punto 6 la quiere sola
+            cuadrado La compra · Notas — dos cosas del día a día
+            ancha    Cuentas de casa — para que el número sea grande
+
+          ─────────────────────────────────────────────────────
+          Y LOS CUADRADOS SE TOCAN MEJOR, NO PEOR
+
+          Es lo primero que preocupa al pensar en manos de 75 años, y
+          sale al revés: en una pantalla de móvil cada cuadrado mide
+          unos 170 × 150 px. Las filas de antes tenían 74 de alto. El
+          dedo tiene el doble de sitio donde caer, y encima ya no hay
+          que apuntar a una franja fina.
+
+          Se pasa de unos 340 px de alto a unos 270, y eso sube «Hoy»
+          hasta donde se ve sin arrastrar la pantalla — que era lo
+          único que de verdad se quedaba abajo.
+        */}
+
+        {/* ── La grande: hacer una foto ── */}
         {conectado && ve.guardarDocumento && (
           <Link
             href="/guardar"
-            className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
+            className="mt-2.5 flex h-[76px] items-center gap-3.5 rounded-[22px] px-4"
             style={{
               background: 'color-mix(in srgb, #14B8A6 12%, transparent)',
               border: '1px solid color-mix(in srgb, #14B8A6 30%, transparent)',
             }}
           >
-            <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] bg-superficie text-verde">
-              <Ico nombre="foto" tam={24} grosor={2.1} />
+            <span className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[15px] bg-superficie text-verde">
+              <Ico nombre="foto" tam={25} grosor={2.1} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block whitespace-nowrap text-[18.5px] font-extrabold tracking-tight">
+              <span className="block whitespace-nowrap text-[19px] font-extrabold tracking-tight">
                 Guardar documento
               </span>
               <span className="block text-[14.5px] font-bold text-verde">
@@ -365,157 +396,98 @@ export default async function Inicio({
           </Link>
         )}
 
-        {/*
-          ── La compra ──
+        {/* ── Los dos cuadrados ── */}
+        {(usaCompra && ve.compra) || ve.notas ? (
+          <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+            {usaCompra && ve.compra && (
+              <Cuadro
+                href="/compra"
+                icono="bolsa"
+                color="#0EA5E9"
+                titulo="La compra"
+                /* Con cifra, el pie dice QUÉ son. Sin cifra, dice
+                   cómo está la lista. Poner «3» y debajo «Faltan 3
+                   cosas» sería decir lo mismo dos veces en un sitio
+                   donde no sobra ni una palabra. */
+                pie={
+                  !porComprar
+                    ? 'La lista está vacía'
+                    : porComprar === 1
+                      ? 'cosa por coger'
+                      : 'cosas por coger'
+                }
+                /* El número, grande, solo cuando hay algo que contar.
+                   Un «0» enorme en la pantalla de inicio es un
+                   reproche por algo que no has hecho mal. */
+                cifra={porComprar && porComprar > 0 ? String(porComprar) : null}
+              />
+            )}
 
-          Va aquí arriba, con Guardar documento, y no en la barra de
-          abajo. Cinco pestañas es el tope: con seis, cada botón baja
-          de los 48 px que protegen a un dedo de 75 años.
+            {ve.notas && (
+              <Cuadro
+                href="/notas"
+                icono="chincheta"
+                color="#F59E0B"
+                titulo="Notas"
+                pie={
+                  notasPuestas.paraMi > 0
+                    ? notasPuestas.paraMi === 1
+                      ? 'una es para ti'
+                      : `${notasPuestas.paraMi} son para ti`
+                    : notasPuestas.puestas === 0
+                      ? 'Deja un recado'
+                      : notasPuestas.puestas === 1
+                        ? 'puesta en el corcho'
+                        : 'puestas en el corcho'
+                }
+                cifra={notasPuestas.puestas > 0 ? String(notasPuestas.puestas) : null}
+                /* Lo que es PARA TI se ve desde el otro lado de la
+                   habitación. Es lo único del Inicio que te está
+                   esperando a ti en concreto. */
+                avisa={notasPuestas.paraMi > 0}
+              />
+            )}
+          </div>
+        ) : null}
 
-          Y va arriba porque es lo que más se usa. Un papel se guarda
-          una vez por semana; la compra es todos los días. El punto 6
-          dice que el inicio es para lo relevante, y lo relevante es
-          lo que se toca a diario.
-
-          Pero solo si esta casa la usa. A quien no hace la compra con
-          el móvil le salía aquí cada día una tarjeta que no iba a
-          tocar nunca — y éste es el sitio más caro de la aplicación.
-          Se apaga desde Ajustes y la lista se queda guardada.
-        */}
-        {usaCompra && ve.compra && (
-        <Link
-          href="/compra"
-          className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
-          style={{
-            background: 'color-mix(in srgb, #0EA5E9 12%, transparent)',
-            border: '1px solid color-mix(in srgb, #0EA5E9 30%, transparent)',
-          }}
-        >
-          <span
-            className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] bg-superficie"
-            style={{ color: '#0EA5E9' }}
-          >
-            <Ico nombre="bolsa" tam={24} grosor={2.1} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block whitespace-nowrap text-[18.5px] font-extrabold tracking-tight">
-              La compra
-            </span>
-            <span className="block text-[14.5px] font-bold" style={{ color: '#0EA5E9' }}>
-              {porComprar === 0
-                ? 'La lista está vacía'
-                : porComprar === 1
-                  ? 'Falta 1 cosa por coger'
-                  : `Faltan ${porComprar} cosas por coger`}
-            </span>
-          </span>
-          <span className="shrink-0" style={{ color: '#0EA5E9' }}>
-            <Ico nombre="flecha" tam={22} grosor={2.2} />
-          </span>
-        </Link>
-        )}
-
-        {/*
-          ── Las notas ──
-
-          El corcho de la cocina. Va aquí, con Guardar documento y La
-          compra, y no en la barra de abajo: cinco pestañas es el tope
-          —con seis, cada botón baja de los 48 px que protegen a un
-          dedo de 75 años—.
-
-          Y sale SIEMPRE, también con el corcho vacío. Las otras dos
-          tarjetas son cosas que ya sabes que existen; ésta es nueva, y
-          una función que solo aparece cuando ya la has usado no la
-          descubre nadie. Con cero notas dice que no hay ninguna, que
-          es una respuesta, no un hueco.
-        */}
-        {ve.notas && (
-        <Link
-          href="/notas"
-          className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
-          style={{
-            background: 'color-mix(in srgb, #F59E0B 12%, transparent)',
-            border: '1px solid color-mix(in srgb, #F59E0B 30%, transparent)',
-          }}
-        >
-          <span
-            className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] bg-superficie"
-            style={{ color: '#F59E0B' }}
-          >
-            <Ico nombre="chincheta" tam={24} grosor={2.1} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block whitespace-nowrap text-[18.5px] font-extrabold tracking-tight">
-              Notas
-            </span>
-            <span className="block text-[14.5px] font-bold" style={{ color: '#F59E0B' }}>
-              {/* Lo que es PARA TI manda sobre el recuento. «Hay 6 notas
-                  puestas» no dice que una de ellas te está esperando. */}
-              {notasPuestas.paraMi === 1
-                ? 'Te han dejado una nota'
-                : notasPuestas.paraMi > 1
-                  ? `Te han dejado ${notasPuestas.paraMi} notas`
-                  : notasPuestas.puestas === 0
-                    ? 'Deja un recado a los de casa'
-                    : notasPuestas.puestas === 1
-                      ? 'Hay 1 nota puesta'
-                      : `Hay ${notasPuestas.puestas} notas puestas`}
-            </span>
-          </span>
-          <span className="shrink-0" style={{ color: '#F59E0B' }}>
-            <Ico nombre="flecha" tam={22} grosor={2.2} />
-          </span>
-        </Link>
-        )}
-
-        {/*
-          ── Las cuentas de casa ──
-
-          Lo que se va fuera de las actividades: la compra, las
-          reparaciones, el restaurante, el taller, los seguros.
-
-          CON EL NÚMERO PUESTO, y ésa es toda la diferencia. Una
-          tarjeta que dijera «Cuentas de casa ·  Mira lo que se gasta»
-          no la toca nadie: no dice nada que no supieras. La que pone
-          «1.240 € este trimestre» se toca el primer día, porque la
-          cifra o te tranquiliza o te sorprende, y las dos cosas
-          invitan a entrar.
-
-          Y hasta hoy ese número no existía en ninguna parte: los
-          gastos de casa se venían apuntando desde el principio y no
-          había una sola pantalla que los sumara.
-        */}
+        {/* ── Y las cuentas, anchas, con el número de protagonista ── */}
         {ve.cuentasCasa && (
-        <Link
-          href="/gastos"
-          className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
-          style={{
-            background: 'color-mix(in srgb, #8B5CF6 12%, transparent)',
-            border: '1px solid color-mix(in srgb, #8B5CF6 30%, transparent)',
-          }}
-        >
-          <span
-            className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] bg-superficie"
-            style={{ color: '#8B5CF6' }}
+          <Link
+            href="/gastos"
+            className="mt-2.5 flex h-[76px] items-center gap-3.5 rounded-[22px] px-4"
+            style={{
+              background: 'color-mix(in srgb, #8B5CF6 12%, transparent)',
+              border: '1px solid color-mix(in srgb, #8B5CF6 30%, transparent)',
+            }}
           >
-            <Ico nombre="euro" tam={24} grosor={2.1} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block whitespace-nowrap text-[18.5px] font-extrabold tracking-tight">
-              Cuentas de casa
+            <span
+              className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[15px] bg-superficie"
+              style={{ color: '#8B5CF6' }}
+            >
+              <Ico nombre="euro" tam={25} grosor={2.1} />
             </span>
-            <span className="block text-[14.5px] font-bold" style={{ color: '#8B5CF6' }}>
-              {gastoCasa > 0
-                ? `${eurosRedondo(gastoCasa)} este trimestre`
-                : 'Todavía no hay nada apuntado'}
+            <span className="min-w-0 flex-1">
+              <span className="block whitespace-nowrap text-[15px] font-bold text-tenue">
+                Cuentas de casa
+              </span>
+              {gastoCasa > 0 ? (
+                <span className="block text-[24px] font-extrabold leading-tight tracking-tight">
+                  {eurosRedondo(gastoCasa)}
+                  <span className="ml-1.5 text-[14.5px] font-bold text-tenue">
+                    este trimestre
+                  </span>
+                </span>
+              ) : (
+                <span className="block text-[18px] font-extrabold leading-snug tracking-tight">
+                  Todavía no hay nada apuntado
+                </span>
+              )}
             </span>
-          </span>
-          <span className="shrink-0" style={{ color: '#8B5CF6' }}>
-            <Ico nombre="flecha" tam={22} grosor={2.2} />
-          </span>
-        </Link>
+            <span className="shrink-0" style={{ color: '#8B5CF6' }}>
+              <Ico nombre="flecha" tam={22} grosor={2.2} />
+            </span>
+          </Link>
         )}
-
         {/* ── Conectar Drive ── */}
         {!conectado && manda && (
           <div className="mt-6">
@@ -615,6 +587,81 @@ export default async function Inicio({
 
       <Barra activa="inicio" voz={false} />
     </main>
+  )
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  UN CUADRADO DEL MOSAICO
+  ═══════════════════════════════════════════════════════════════
+
+  El icono arriba, la cifra en grande en medio, y abajo qué es y qué
+  hay. Es el orden en que se mira un mosaico: primero el color y la
+  forma, luego el número, y solo si hace falta se lee la letra.
+
+  ─────────────────────────────────────────────────────────────
+  LA CIFRA NO SALE SIEMPRE, Y ES LO IMPORTANTE
+
+  Un «0» enorme en la pantalla de inicio es un reproche por algo que
+  no has hecho mal. Cuando no hay nada, el cuadrado dice qué es y para
+  qué sirve —«Deja un recado»— y ya está: invita en vez de regañar.
+
+  Y el número es UN dato, no una tabla. «3» y debajo «Faltan 3 cosas»
+  sería decir lo mismo dos veces, así que el pie cambia: con cifra
+  dice lo que son, sin cifra dice para qué vale.
+*/
+function Cuadro({
+  href,
+  icono,
+  color,
+  titulo,
+  pie,
+  cifra,
+  avisa = false,
+}: {
+  href: string
+  icono: 'bolsa' | 'chincheta'
+  color: string
+  titulo: string
+  pie: string
+  /** El número, si hay algo que contar. */
+  cifra: string | null
+  /** Algo te está esperando a ti: se ve desde lejos. */
+  avisa?: boolean
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-[152px] flex-col justify-between rounded-[22px] p-4"
+      style={{
+        background: `color-mix(in srgb, ${color} ${avisa ? 20 : 12}%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${color} ${avisa ? 55 : 30}%, transparent)`,
+      }}
+    >
+      <span
+        className="flex h-[44px] w-[44px] items-center justify-center rounded-[14px] bg-superficie"
+        style={{ color }}
+      >
+        <Ico nombre={icono} tam={23} grosor={2.1} />
+      </span>
+
+      <span className="mt-3 block">
+        {cifra && (
+          <span
+            className="block text-[34px] font-extrabold leading-none tracking-tight"
+            style={{ color }}
+          >
+            {cifra}
+          </span>
+        )}
+        <span className="mt-1.5 block text-[17.5px] font-extrabold leading-tight tracking-tight">
+          {titulo}
+        </span>
+        <span className="mt-0.5 block text-[14px] font-bold leading-snug" style={{ color }}>
+          {pie}
+        </span>
+      </span>
+    </Link>
   )
 }
 

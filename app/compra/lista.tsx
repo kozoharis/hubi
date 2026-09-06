@@ -118,7 +118,25 @@ export default function Pantalla({
   */
   const [listaActiva, setListaActiva] = useState<string | null>(null)
 
-  const etiquetables = secciones.filter((x) => !NO_ETIQUETA.includes(x.segmento.toUpperCase()))
+  /*
+    ── LA COMPRA ES DE LA CASA ──
+
+    Salían tres destinos —Casa, Alquileres, Obras— y era una decisión
+    que nadie quiere tomar con el móvil en una mano: se apunta pan y no
+    se piensa «¿pan de quién?». Tres pastillas que hay que leer enteras
+    cada vez para no darle a la equivocada, todos los días, a cambio de
+    algo que casi nunca hace falta.
+
+    Ahora solo sale la de la casa. PERO la fila reaparece sola si
+    alguna sección tiene algo apuntado: lo que ya se etiquetó no puede
+    desaparecer de la vista porque hayamos cambiado de idea — eso es
+    perder la compra de alguien sin decírselo.
+  */
+  const conAlgo = new Set(cosas.map((c) => c.seccion_id).filter(Boolean) as string[])
+
+  const etiquetables = secciones.filter(
+    (x) => !NO_ETIQUETA.includes(x.segmento.toUpperCase()) && conAlgo.has(x.id)
+  )
   const nombreSeccion = (id: string | null) =>
     id ? (secciones.find((x) => x.id === id)?.nombre ?? null) : null
 
