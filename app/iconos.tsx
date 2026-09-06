@@ -145,16 +145,39 @@ export function Pastilla({
   hay aquí es su botón, no una versión mía de su botón.
 
   ─────────────────────────────────────────────────────────────
+  PEQUEÑO DE VER, GRANDE DE TOCAR
+
+  La píldora mide 34 px de alto. Lo que responde al dedo son 48: el
+  enlace que la envuelve lleva un margen invisible arriba y abajo.
+
+  No es un truco — es la única manera de tener las dos cosas. Un botón
+  que se toca una vez al mes no debe pesar en la pantalla, y ninguna
+  pantalla de HUBI puede tener algo pulsable por debajo de 48 px.
+
+  ─────────────────────────────────────────────────────────────
   EL ICONO SALE DE SU PROPIO ARCHIVO
 
-  `public/ajustes-mando.png` está recortado del PNG que mandó, con el
-  fondo quitado píxel a píxel: a cada punto se le restó el color del
-  fondo y lo que quedó se convirtió en color + transparencia.
+  `public/ajustes-mando.png` es el archivo que mandó él, con su propia
+  transparencia. No se ha recortado de ningún fondo ni reconstruido:
+  se ha ajustado al dibujo y se ha bajado de tamaño, nada más.
 
-  Eso importa por algo concreto: si se hubiera recortado sin más, el
-  icono llevaría pegado un rectángulo azul marino y solo valdría sobre
-  fondo oscuro. Así vale también en modo claro, que es la mitad de las
-  veces que se abre HUBI.
+  Antes se intentó sacarlo del PNG de la píldora restándole el fondo
+  punto a punto, y salieron los dos fallos típicos de esos recortes:
+  el círculo del mando de abajo quedaba cortado —plano en vez de
+  redondo— y el resplandor interior dejaba un velo que sobre otro
+  fondo se veía como una caja sucia detrás del icono.
+
+  Ninguna de las dos cosas se nota a 18 px, que es exactamente cómo
+  acaban colándose. El archivo suyo no tiene ni una ni otra.
+
+  ─────────────────────────────────────────────────────────────
+  EL BORDE SÍ SE DIBUJA, Y NO ES CAPRICHO
+
+  También mandó el botón entero como imagen. No se usa, y el motivo es
+  que una imagen no se estira: el ancho de esta píldora lo decide la
+  palabra que lleva dentro, y en cuanto se estirase un PNG los extremos
+  redondeados se deformarían. Dibujado, se adapta y se ve nítido en
+  cualquier pantalla.
 
   ─────────────────────────────────────────────────────────────
   Y LOS COLORES DEL BORDE ESTÁN MEDIDOS, NO ELEGIDOS
@@ -189,14 +212,14 @@ export function Pastilla({
 export function BotonAjustes() {
   return (
     <span
-      className="block rounded-full p-[1.5px]"
+      className="block rounded-full p-[1.2px]"
       style={{
         background: 'linear-gradient(102deg, #00F4FC 0%, #628BFC 55%, #AE62F7 100%)',
-        boxShadow: '0 0 16px -2px rgba(0,244,252,.30), 0 0 16px -2px rgba(174,98,247,.28)',
+        boxShadow: '0 0 14px -3px rgba(0,244,252,.28), 0 0 14px -3px rgba(174,98,247,.26)',
       }}
     >
       <span
-        className="flex h-[43px] items-center gap-2.5 rounded-full pl-3 pr-2"
+        className="flex h-[34px] items-center gap-1.5 rounded-full pl-2.5 pr-1.5"
         style={{
           background: 'color-mix(in srgb, var(--t-fondo) 80%, transparent)',
           backdropFilter: 'blur(8px)',
@@ -207,12 +230,14 @@ export function BotonAjustes() {
         <img
           src="/ajustes-mando.png"
           alt=""
-          width={24}
-          height={24}
-          style={{ width: 24, height: 24, display: 'block' }}
+          width={18}
+          height={18}
+          style={{ width: 18, height: 18, display: 'block' }}
         />
-        <span className="text-[16px] font-extrabold tracking-tight text-tinta">Ajustes</span>
-        <Ico nombre="flecha" tam={18} grosor={2.2} className="text-tenue" />
+        <span className="text-[14px] font-extrabold tracking-tight text-tinta">Ajustes</span>
+        {/* Blanca y con el trazo algo más grueso, como en su dibujo.
+            No es la flecha gris de las listas: aquí es parte del botón. */}
+        <Ico nombre="flecha" tam={15} grosor={2.6} className="text-tinta" />
       </span>
     </span>
   )

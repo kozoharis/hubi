@@ -309,7 +309,11 @@ export default async function Inicio({
             El dibujo del botón está en `iconos.tsx`, con el porqué de
             cada pieza.
           */}
-          <Link href="/ajustes" className="shrink-0">
+          {/* El margen invisible arriba y abajo: la píldora se ve de 34
+              px y se toca de 48. Ninguna pantalla de HUBI tiene algo
+              pulsable por debajo de esa medida, y este botón no iba a
+              ser la excepción por quedar más fino. */}
+          <Link href="/ajustes" className="-mr-1 shrink-0 py-[7px] pl-2">
             <BotonAjustes />
           </Link>
         </div>
