@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
+import QuienVe, { type CarpetaPermiso } from './quien-ve'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -28,6 +29,11 @@ export type Vecino = {
   manda: boolean
   soloMira: boolean
   soyYo: boolean
+  /** ¿Ve toda la casa, o solo lo que se le ha concedido? */
+  veTodo: boolean
+  escribeTodo: boolean
+  /** Las carpetas de la casa, con lo que tiene concedido en cada una. */
+  carpetas: CarpetaPermiso[]
 }
 
 export default function Gente({
@@ -39,6 +45,7 @@ export default function Gente({
 }) {
   const router = useRouter()
 
+  const [repartiendo, setRepartiendo] = useState<string | null>(null)
   const [invitando, setInvitando] = useState(false)
   const [nombre, setNombre] = useState('')
   const [correo, setCorreo] = useState('')
@@ -134,13 +141,19 @@ export default function Gente({
                 {v.soyYo && <span className="text-tenue"> · tú</span>}
               </span>
               <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
-                {v.manda
-                  ? 'Creó la casa · su Google Drive'
-                  : v.soloMira
-                    ? 'Solo mira · no puede cambiar nada'
-                    : 'Ve y apunta todo lo de la casa'}
+                {v.manda ? 'Creó la casa · su Google Drive' : loQuePuede(v)}
               </span>
             </span>
+            {puedoInvitar && !v.manda && (
+              <button
+                onClick={() => setRepartiendo(repartiendo === v.id ? null : v.id)}
+                aria-label={`Qué puede ver ${v.nombre}`}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-tinta-suave"
+              >
+                <Ico nombre="ojo" tam={19} grosor={2.2} />
+              </button>
+            )}
+
             {puedoInvitar && !v.manda && (
               <button
                 onClick={() => sacar(v)}
@@ -154,6 +167,22 @@ export default function Gente({
           </li>
         ))}
       </ul>
+
+      {repartiendo &&
+        (() => {
+          const v = gente.find((g) => g.id === repartiendo)
+          if (!v) return null
+          return (
+            <QuienVe
+              perfilId={v.id}
+              nombre={v.nombre.split(' ')[0]}
+              veTodo={v.veTodo}
+              escribeTodo={v.escribeTodo}
+              carpetas={v.carpetas}
+              alCerrar={() => setRepartiendo(null)}
+            />
+          )
+        })()}
 
       {puedoInvitar &&
         (invitando ? (
@@ -313,4 +342,29 @@ function Papel({
       </span>
     </button>
   )
+}
+
+/*
+  Lo que puede esta persona, en una línea.
+
+  Se dice el número de carpetas y no «acceso limitado», que no dice
+  nada: quien mira esta lista quiere saber de un vistazo si Marta ve
+  dos cosas o catorce.
+*/
+function loQuePuede(v: Vecino): string {
+  if (v.soloMira && v.veTodo) return 'Ve toda la casa · no cambia nada'
+  if (v.soloMira) return `Ve ${cuantasVe(v)} · no cambia nada`
+  if (v.veTodo && v.escribeTodo) return 'Ve y apunta todo lo de la casa'
+  if (v.veTodo) return `Ve toda la casa · guarda en ${dondeGuarda(v)}`
+  return `Ve ${cuantasVe(v)} · guarda en ${v.escribeTodo ? 'todas ellas' : dondeGuarda(v)}`
+}
+
+function cuantasVe(v: Vecino): string {
+  const n = v.carpetas.filter((c) => c.ver).length
+  return n === 0 ? 'ninguna carpeta' : n === 1 ? '1 carpeta' : `${n} carpetas`
+}
+
+function dondeGuarda(v: Vecino): string {
+  const n = v.carpetas.filter((c) => c.escribir).length
+  return n === 0 ? 'ninguna' : n === 1 ? '1 carpeta' : `${n} carpetas`
 }

@@ -74,6 +74,40 @@ export default async function Ajustes() {
   const elOtro = otros?.[0]?.nombre?.split(' ')[0] ?? null
 
   /*
+    ── Las carpetas raíz de la casa, leídas UNA vez ──
+
+    Las usan dos bloques de esta pantalla: el reparto de permisos, que
+    necesita TODAS —también las actividades y las apagadas, porque una
+    carpeta apagada sigue teniendo papeles dentro—, y la lista de «Tus
+    carpetas», que enseña solo las que archivan.
+
+    Leerlas dos veces serían dos viajes a la base de datos para pintar
+    la misma pantalla.
+  */
+  const todasLasRaices: { id: string; nombre: string; icono: string; activa: boolean; cuentas: boolean }[] =
+    []
+
+  try {
+    const { data: raices } = await supabase
+      .from('categorias')
+      .select('id, nombre, icono, activa, lleva_cuentas')
+      .is('padre_id', null)
+      .order('orden')
+
+    for (const c of raices ?? []) {
+      todasLasRaices.push({
+        id: c.id as string,
+        nombre: c.nombre as string,
+        icono: (c.icono as string) || '📁',
+        activa: c.activa !== false,
+        cuentas: c.lleva_cuentas === true,
+      })
+    }
+  } catch {
+    /* Sin `lleva_cuentas` todavía. El resto de Ajustes sigue entero. */
+  }
+
+  /*
     ── Quién vive en esta casa ──
 
     Se lee con la SESIÓN: las políticas por hogar son justamente lo
@@ -86,12 +120,26 @@ export default async function Ajustes() {
   const gente: Vecino[] = []
 
   try {
-    const { data: filas } = await supabase
+    /* `ve_todo` y `escribe_todo` son columnas nuevas. Si el SQL 33 no
+       se ha ejecutado, Postgres rechaza la consulta ENTERA en vez de
+       decir «esa columna no existe» — así que se pide aparte y con su
+       propio respaldo. La misma trampa de siempre. */
+    let filas: { perfil_id: string; papel: string; ve_todo?: boolean; escribe_todo?: boolean }[] =
+      []
+
+    const conPermisos = await supabase
       .from('miembros')
-      .select('perfil_id, papel')
+      .select('perfil_id, papel, ve_todo, escribe_todo')
       .order('unido_en')
 
-    const ids = (filas ?? []).map((m) => m.perfil_id as string)
+    if (conPermisos.error) {
+      const basico = await supabase.from('miembros').select('perfil_id, papel').order('unido_en')
+      filas = (basico.data ?? []) as typeof filas
+    } else {
+      filas = (conPermisos.data ?? []) as typeof filas
+    }
+
+    const ids = filas.map((m) => m.perfil_id as string)
 
     if (ids.length > 0) {
       const { data: quienes } = await supabase
@@ -101,7 +149,29 @@ export default async function Ajustes() {
 
       const nombreDe = new Map((quienes ?? []).map((p) => [p.id as string, p.nombre as string]))
 
-      for (const m of filas ?? []) {
+      /* Lo concedido carpeta a carpeta. Envuelto aparte: la tabla es
+         nueva y su ausencia no puede dejar sin Ajustes a nadie. */
+      const concedido = new Map<string, { ver: boolean; escribir: boolean }>()
+      try {
+        const { data: permisos } = await supabase
+          .from('permisos_carpeta')
+          .select('perfil_id, categoria_id, ver, escribir')
+
+        for (const p of permisos ?? []) {
+          concedido.set(`${p.perfil_id}·${p.categoria_id}`, {
+            ver: p.ver === true,
+            escribir: p.escribir === true,
+          })
+        }
+      } catch {
+        /* Sin la tabla todavía: todo el mundo lo ve todo, como hasta hoy. */
+      }
+
+      /* TODAS las raíces, también las apagadas: una carpeta apagada
+         sigue teniendo papeles dentro y su permiso sigue contando. */
+      const raices = todasLasRaices
+
+      for (const m of filas) {
         const id = m.perfil_id as string
         gente.push({
           id,
@@ -109,6 +179,18 @@ export default async function Ajustes() {
           manda: m.papel === 'propietario',
           soloMira: m.papel === 'lector',
           soyYo: id === user.id,
+          veTodo: m.ve_todo !== false,
+          escribeTodo: m.escribe_todo !== false,
+          carpetas: raices.map((r) => {
+            const suyo = concedido.get(`${id}·${r.id}`)
+            return {
+              id: r.id,
+              nombre: r.nombre,
+              icono: r.icono,
+              ver: suyo?.ver ?? false,
+              escribir: suyo?.escribir ?? false,
+            }
+          }),
         })
       }
     }
@@ -181,13 +263,7 @@ export default async function Ajustes() {
   const carpetas: Carpeta[] = []
 
   try {
-    const { data: raices } = await supabase
-      .from('categorias')
-      .select('id, nombre, icono, activa, lleva_cuentas')
-      .is('padre_id', null)
-      .order('orden')
-
-    const soloPapeles = (raices ?? []).filter((c) => c.lleva_cuentas !== true)
+    const soloPapeles = todasLasRaices.filter((c) => !c.cuentas)
 
     /* Cuántos papeles tiene cada una. De una vez para todas: con ocho
        carpetas, una consulta por cada una serían ocho viajes a la base
@@ -218,11 +294,11 @@ export default async function Ajustes() {
 
     for (const c of soloPapeles) {
       carpetas.push({
-        id: c.id as string,
-        nombre: c.nombre as string,
-        icono: (c.icono as string) || '📁',
-        activa: c.activa !== false,
-        papeles: cuenta.get(c.id as string) ?? 0,
+        id: c.id,
+        nombre: c.nombre,
+        icono: c.icono,
+        activa: c.activa,
+        papeles: cuenta.get(c.id) ?? 0,
       })
     }
   } catch {
