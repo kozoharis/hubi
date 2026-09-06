@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { genteDeLaCasa } from '@/lib/gente'
 import { miHogar, puedeEscribir } from '@/lib/hogar'
 import { notasDe, conFecha } from '@/lib/notas'
 import Cabecera from '../cabecera'
@@ -51,27 +52,15 @@ export default async function PaginaNotas({
     políticas dejen ver: quien tenga dos casas se vería a sí mismo en
     la lista de la otra.
   */
-  let gente: { id: string; nombre: string }[] = []
+  /* Con su color: es lo que deja saber de quién es cada nota sin leer
+     la firma. `genteDeLaCasa` ya viene envuelto y con respaldo si
+     falta la columna del SQL 39. */
+  let gente: { id: string; nombre: string; color: string }[] = []
 
   try {
-    if (hogarId) {
-      const { data: dentro } = await supabase
-        .from('miembros')
-        .select('perfil_id')
-        .eq('hogar_id', hogarId)
-
-      const ids = (dentro ?? []).map((m: { perfil_id: string }) => m.perfil_id)
-
-      if (ids.length > 0) {
-        const { data: perfiles } = await supabase
-          .from('perfiles')
-          .select('id, nombre')
-          .in('id', ids)
-          .order('nombre')
-
-        gente = (perfiles ?? []) as { id: string; nombre: string }[]
-      }
-    }
+    gente = (await genteDeLaCasa(supabase, hogarId))
+      .map((g) => ({ id: g.id, nombre: g.nombre, color: g.color }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
   } catch {
     /* Sin nombres, las notas salen igual y se firman con «Alguien».
        Una nota sin firmar sigue sirviendo; una pantalla que no carga,

@@ -56,7 +56,7 @@ export const ROLES: {
     nombre: 'Asesor o gestor',
     pie: 'Las cuentas de tus actividades. No toca nada.',
     detalle:
-      'Entra, mira y se descarga lo que necesite de la finca, las obras o los pisos. No puede cambiar ni borrar nada, ni ve lo de casa.',
+      'Entra, mira y se descarga lo que necesite de la finca, las obras o los pisos. No puede subir papeles, ni apuntar gastos, ni tocar las cuentas. Sí puede dejarte avisos y ponerte tareas, y VE VUESTRA AGENDA ENTERA —también las citas del médico—: es lo que hace falta para que os pongáis de acuerdo en las fechas.',
   },
   {
     valor: 'mirar',
@@ -112,14 +112,28 @@ export function queVeEnInicio(rol: string | null | undefined): Inicio {
       }
 
     case 'asesor':
-      /* Viene a las cuentas. Ni la compra ni las notas ni la agenda de
-         una familia que no es la suya. */
+      /*
+        Viene a las cuentas, pero no solo a mirarlas.
+
+        Antes tenía la agenda y el corcho apagados, y con eso su Inicio
+        se quedaba SIN UNA SOLA TARJETA: una pantalla con el saludo y
+        nada debajo, que no se lee como «lo tuyo está abajo» sino como
+        «esto está roto».
+
+        Y sobre todo, faltaba la mitad de la relación. Un gestor no
+        solo mira: te dice que falta la factura de septiembre, que el
+        día 20 hay un pago, que lo que subiste no vale. Sin sitio donde
+        dejarlo, eso acaba en un WhatsApp que se pierde.
+
+        La compra no: la lista del súper de una familia que no es la
+        suya no pinta nada.
+      */
       return {
         guardarDocumento: false,
         compra: false,
-        notas: false,
+        notas: true,
         cuentasCasa: false,
-        agenda: false,
+        agenda: true,
       }
 
     case 'mirar':

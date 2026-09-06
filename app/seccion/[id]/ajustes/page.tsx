@@ -7,6 +7,7 @@ import { Pastilla, Volver, iconoDeEmoji } from '../../../iconos'
 import Unidades, { type UnidadDeLaLista } from '../../../ajustes/unidades'
 import Dividir from './dividir'
 import Partidas, { type Partida } from './partidas'
+import Quitar from './quitar'
 
 export const dynamic = 'force-dynamic'
 
@@ -117,6 +118,43 @@ export default async function AjustesDeLaSeccion({
     partidasDe(supabase, deIngreso?.id as string | undefined),
   ])
 
+  /*
+    ── LO QUE TIENE DENTRO, PARA PODER DECIRLO ANTES DE QUITARLA ──
+
+    Quitar una actividad vacía la borra; quitar una que ya tiene
+    cuentas la retira. Y eso hay que decírselo a quien va a pulsar,
+    con el número delante: entre «tiene datos» y «tiene 214 apuntes y
+    38 papeles» hay toda la diferencia a la hora de decidir.
+
+    Los apuntes ya están contados partida a partida —se hizo arriba
+    para la lista—, así que aquí solo se suman. Los papeles sí hay que
+    pedirlos, y se piden de una vez para todo el árbol.
+  */
+  const apuntes =
+    gastos.reduce((n, p) => n + p.apuntes, 0) + ingresos.reduce((n, p) => n + p.apuntes, 0)
+
+  let papeles = 0
+  try {
+    const bajoEsta = [
+      id,
+      ...(hijas ?? []).map((c) => c.id as string),
+      ...gastos.map((p) => p.id),
+      ...ingresos.map((p) => p.id),
+    ]
+
+    const { count } = await supabase
+      .from('documentos')
+      .select('id', { count: 'exact', head: true })
+      .in('categoria_id', bajoEsta)
+      .is('eliminado_en', null)
+
+    papeles = count ?? 0
+  } catch {
+    /* Sin recuento se enseña cero y la ruta decide igualmente qué
+       hacer: la cuenta de verdad la vuelve a hacer el servidor antes
+       de tocar nada. */
+  }
+
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
@@ -159,6 +197,10 @@ export default async function AjustesDeLaSeccion({
         )}
 
         <Partidas seccionId={id} gastos={gastos} ingresos={ingresos} />
+
+        {/* Al final del todo: es lo que se hace una vez, y en medio
+            del camino sería un botón peligroso donde no toca. */}
+        <Quitar seccionId={id} nombre={nombre} apuntes={apuntes} papeles={papeles} />
       </div>
 
       <Barra activa={id} voz={false} />

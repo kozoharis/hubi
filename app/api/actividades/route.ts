@@ -356,6 +356,152 @@ export async function POST(peticion: NextRequest) {
   return NextResponse.json({ bien: true, id: raiz })
 }
 
+/*
+  ═══════════════════════════════════════════════════════════════
+  QUITAR UNA ACTIVIDAD
+  ═══════════════════════════════════════════════════════════════
+
+  Faltaba, y era de las cosas que más rabia dan: te equivocas al
+  crearla —el nombre mal, el tipo que no era— y se queda ahí para
+  siempre, ocupando una pestaña abajo.
+
+  ─────────────────────────────────────────────────────────────
+  Y HACE DOS COSAS DISTINTAS SEGÚN LO QUE TENGA DENTRO
+
+  · **Vacía** → se borra de verdad. Es el caso de la equivocación de
+    hace dos minutos, y ahí «retirarla» sería dejar basura escondida
+    que dentro de un año nadie sabe qué es. Con ella se van sus
+    partidas y sus partes, que tampoco tienen nada.
+
+  · **Con apuntes o papeles** → se retira. Borrarla de verdad
+    agujerearía las cuentas de años anteriores: el total de 2025 dejaría
+    de cuadrar y nadie entendería por qué. Se esconde, y volver a
+    crearla con el mismo nombre la devuelve entera.
+
+  La diferencia se le DICE a quien pulsa, antes de pulsar. Un botón
+  que unas veces borra y otras no, sin avisar, es un botón en el que
+  no se puede confiar.
+*/
+export async function DELETE(peticion: NextRequest) {
+  const supabase = await clienteSesion()
+  const user = await quien(supabase)
+  if (!user) {
+    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
+  }
+
+  const id = new URL(peticion.url).searchParams.get('id') ?? ''
+  if (!id) return NextResponse.json({ error: 'Falta la actividad.' }, { status: 400 })
+
+  /* Que sea una actividad de verdad y no una partida: `padre_id` nulo
+     y con cuentas. Sin esto, un identificador escrito a mano borraría
+     la carpeta Salud desde esta misma ruta. */
+  const { data: suya } = await supabase
+    .from('categorias')
+    .select('id, nombre, padre_id, lleva_cuentas')
+    .eq('id', id)
+    .is('padre_id', null)
+    .maybeSingle()
+
+  if (!suya) {
+    return NextResponse.json({ error: 'Esa actividad no existe.' }, { status: 404 })
+  }
+
+  if (suya.lleva_cuentas !== true) {
+    return NextResponse.json(
+      { error: 'Eso es una carpeta, no una actividad. Se apaga desde Ajustes.' },
+      { status: 400 }
+    )
+  }
+
+  /* Todo lo que cuelga de ella: los dos grupos y sus partidas. Se
+     necesita para contar, porque los apuntes no cuelgan de la raíz
+     sino de las partidas. */
+  const dentro = [id]
+  try {
+    const { data: todas } = await supabase.from('categorias').select('id, padre_id')
+    const hijasDe = new Map<string, string[]>()
+    for (const c of todas ?? []) {
+      const p = (c.padre_id as string | null) ?? ''
+      if (!p) continue
+      hijasDe.set(p, [...(hijasDe.get(p) ?? []), c.id as string])
+    }
+    /* Anchura y con tope: un ciclo en los datos —una categoría que
+       fuera hija de sí misma— colgaría el servidor para siempre. */
+    for (let i = 0; i < dentro.length && dentro.length < 400; i++) {
+      for (const h of hijasDe.get(dentro[i]) ?? []) {
+        if (!dentro.includes(h)) dentro.push(h)
+      }
+    }
+  } catch {
+    /* Si esto falla se sigue con la raíz sola: el recuento saldrá bajo
+       y lo peor que puede pasar es que el borrado lo impida la clave
+       ajena de los documentos. Nunca al revés. */
+  }
+
+  const [{ count: apuntes }, { count: papeles }] = await Promise.all([
+    supabase
+      .from('movimientos')
+      .select('id', { count: 'exact', head: true })
+      .in('categoria_id', dentro),
+    supabase
+      .from('documentos')
+      .select('id', { count: 'exact', head: true })
+      .in('categoria_id', dentro)
+      .is('eliminado_en', null),
+  ])
+
+  const cuantos = (apuntes ?? 0) + (papeles ?? 0)
+
+  // ── Con cosas dentro: se retira ──────────────────────────
+  if (cuantos > 0) {
+    const { data, error } = await supabase
+      .from('categorias')
+      .update({ activa: false })
+      .eq('id', id)
+      .select('id')
+
+    if (error || !data || data.length === 0) {
+      return NextResponse.json(
+        { error: 'No se ha podido retirar.', detalle: error?.message },
+        { status: error ? 500 : 409 }
+      )
+    }
+
+    return NextResponse.json({
+      bien: true,
+      retirada: true,
+      apuntes: apuntes ?? 0,
+      papeles: papeles ?? 0,
+    })
+  }
+
+  // ── Vacía: se va de verdad ───────────────────────────────
+  /* Las hijas se van solas: `padre_id` tiene `on delete cascade`, y
+     `unidades.seccion_id` también. Borrarlas a mano antes sería
+     repetir a medias lo que la base de datos ya hace entero. */
+  const { data, error } = await supabase
+    .from('categorias')
+    .delete()
+    .eq('id', id)
+    .is('padre_id', null)
+    .select('id')
+
+  if (error || !data || data.length === 0) {
+    console.error('[HUBI] No se ha podido borrar la actividad:', error)
+    return NextResponse.json(
+      {
+        error: 'No se ha podido borrar.',
+        detalle:
+          error?.message ??
+          'Puede que tenga algo enganchado. Prueba a retirarla desde Ajustes.',
+      },
+      { status: error ? 500 : 409 }
+    )
+  }
+
+  return NextResponse.json({ bien: true, retirada: false })
+}
+
 // ── Cambiar cómo se lleva ────────────────────────────────────
 export async function PATCH(peticion: NextRequest) {
   const supabase = await clienteSesion()

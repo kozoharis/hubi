@@ -11,6 +11,7 @@ import SelectorTema from '../tema'
 import { leerPerfil } from '@/lib/perfil'
 import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
 import { planDeLaCasa, type Rutina } from '@/lib/rutinas'
+import { colorDeRol } from '@/lib/gente'
 import TuPerfil from './foto'
 import NuevaActividad from './nueva-actividad'
 import Gente, { type Vecino } from './gente'
@@ -133,6 +134,7 @@ export default async function Ajustes() {
       aceptado_en?: string | null
       rol?: string | null
       acceso_hasta?: string | null
+      color?: string | null
     }[] = []
 
     /*
@@ -146,7 +148,7 @@ export default async function Ajustes() {
     const conPermisos = hogarId
       ? await supabase
           .from('miembros')
-          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en, rol, acceso_hasta')
+          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en, rol, acceso_hasta, color')
           .eq('hogar_id', hogarId)
           .order('unido_en')
       : { data: [], error: null }
@@ -210,6 +212,10 @@ export default async function Ajustes() {
           pendiente: m.aceptado_en === null,
           rol: m.rol ?? null,
           hasta: m.acceso_hasta ?? null,
+          /* Sin la columna del SQL 39, el de su papel. Se pierde poder
+             distinguir a dos personas del mismo papel, pero la lista
+             sale con color igual. */
+          color: m.color ?? colorDeRol(m.rol),
           veTodo: m.ve_todo !== false,
           escribeTodo: m.escribe_todo !== false,
           carpetas: raices.map((r) => {

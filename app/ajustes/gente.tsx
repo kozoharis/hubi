@@ -6,6 +6,7 @@ import { Ico } from '../iconos'
 import QuienVe, { type CarpetaPermiso } from './quien-ve'
 import Semana from './semana'
 import { ROLES, nombreDelRol, type Rol } from '@/lib/roles'
+import { COLORES } from '@/lib/gente'
 import type { Rutina } from '@/lib/rutinas'
 
 /*
@@ -38,6 +39,8 @@ export type Vecino = {
   rol: string | null
   /** Último día con acceso, si se le puso fecha de fin. */
   hasta: string | null
+  /** El suyo en esta casa. Con él se le reconoce en la agenda y el corcho. */
+  color: string
   /** ¿Ve toda la casa, o solo lo que se le ha concedido? */
   veTodo: boolean
   escribeTodo: boolean
@@ -166,6 +169,40 @@ export default function Gente({
     router.refresh()
   }
 
+  /* Aparte de cambiar el papel a propósito: cambiar un color no puede
+     obligar a volver a repartirle todos los permisos. */
+  async function cambiarColor(id: string, color: string) {
+    setFallo(null)
+    setOcupado(true)
+
+    const r = await fetch('/api/miembros', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, color }),
+    })
+
+    const d = (await r.json().catch(() => null)) as {
+      bien?: boolean
+      error?: string
+      detalle?: string
+    } | null
+
+    setOcupado(false)
+
+    if (!r.ok || d?.bien !== true) {
+      setFallo(
+        d
+          ? [d.error ?? 'No se ha podido cambiar el color.', d.detalle]
+              .filter(Boolean)
+              .join(' · ')
+          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+      )
+      return
+    }
+
+    router.refresh()
+  }
+
   async function sacar(v: Vecino) {
     if (
       !window.confirm(
@@ -199,8 +236,11 @@ export default function Gente({
             className="flex items-center gap-3 rounded-[20px] border border-borde bg-superficie px-4 py-3.5"
           >
             <span
+              /* Su color, no uno según si manda o no. Es el mismo con
+                 el que sale en la agenda y en el corcho: verlo aquí es
+                 lo que enseña a leerlo allí. */
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
-              style={{ background: v.manda ? '#14B8A6' : '#3B82F6' }}
+              style={{ background: v.color }}
             >
               {v.nombre.charAt(0).toUpperCase()}
             </span>
@@ -309,10 +349,52 @@ export default function Gente({
                   />
                 ))}
               </div>
+              {/*
+                ── Y DE QUÉ COLOR ──
+
+                Va aquí, debajo del papel, porque el color SALE del
+                papel: se elige «Asesor» y ya viene con el suyo. Esto
+                es para el caso en que haya dos del mismo papel, o
+                simplemente porque el naranja le pega más.
+
+                Los que ya tiene otro no se ofrecen: dos personas del
+                mismo color en la agenda es exactamente lo que el
+                color venía a evitar.
+              */}
+              <p className="mt-5 text-[16px] font-extrabold leading-snug">Su color</p>
+              <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
+                Con el que se le reconoce en la agenda y en el corcho.
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {COLORES.filter(
+                  (c) => c === v.color || !gente.some((g) => g.id !== v.id && g.color === c)
+                ).map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => cambiarColor(v.id, c)}
+                    disabled={ocupado}
+                    aria-pressed={v.color?.toUpperCase() === c.toUpperCase()}
+                    aria-label={`Ponerle el color ${c}`}
+                    className="flex h-11 w-11 items-center justify-center rounded-full text-white disabled:opacity-50"
+                    style={{
+                      background: c,
+                      boxShadow:
+                        v.color?.toUpperCase() === c.toUpperCase()
+                          ? `0 0 0 3px var(--t-superficie), 0 0 0 5px ${c}`
+                          : undefined,
+                    }}
+                  >
+                    {v.color?.toUpperCase() === c.toUpperCase() && (
+                      <Ico nombre="check" tam={19} grosor={2.8} />
+                    )}
+                  </button>
+                ))}
+              </div>
+
               <button
                 onClick={() => setCambiando(null)}
                 disabled={ocupado}
-                className="mt-3 h-[52px] w-full rounded-[14px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
+                className="mt-4 h-[52px] w-full rounded-[14px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
               >
                 Dejarlo como está
               </button>

@@ -414,9 +414,14 @@ export async function PATCH(peticion: NextRequest) {
     )
   }
 
-  let cuerpo: { id?: string; rol?: string; hasta?: string | null }
+  let cuerpo: { id?: string; rol?: string; hasta?: string | null; color?: string }
   try {
-    cuerpo = (await peticion.json()) as { id?: string; rol?: string; hasta?: string | null }
+    cuerpo = (await peticion.json()) as {
+      id?: string
+      rol?: string
+      hasta?: string | null
+      color?: string
+    }
   } catch {
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
   }
@@ -424,7 +429,10 @@ export async function PATCH(peticion: NextRequest) {
   const id = String(cuerpo.id ?? '')
   if (!id) return NextResponse.json({ error: 'Falta la persona.' }, { status: 400 })
 
-  if (id === user.id) {
+  /* Solo para el ROL. Antes cortaba la petición entera, y con eso
+     quien creó la casa tampoco podía cambiarse su propio color —que
+     no arrastra ningún permiso y es tan suyo como el de los demás. */
+  if (id === user.id && cuerpo.rol !== undefined) {
     return NextResponse.json(
       { error: 'No puedes cambiarte el rol a ti mismo: el Drive de la casa es tuyo.' },
       { status: 400 }
@@ -445,6 +453,40 @@ export async function PATCH(peticion: NextRequest) {
         {
           error: 'No se ha podido cambiar el rol.',
           detalle: error.message ?? 'Puede que falte ejecutar el SQL 37.',
+        },
+        { status: 500 }
+      )
+    }
+  }
+
+  /*
+    ── Y de qué color es ──
+
+    Va por su propia función y no metiéndolo en `poner_rol`: cambiar
+    un color no puede obligar a volver a repartirle todos los permisos
+    a esa persona. Son dos cosas distintas y ésta no arrastra nada.
+
+    La comprobación de que es un color de verdad se hace también en el
+    SQL. Aquí por educación —para dar un mensaje que se entienda— y
+    allí porque es donde tiene que estar: esto acaba dentro de un
+    `style` en la pantalla.
+  */
+  if (cuerpo.color !== undefined) {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(String(cuerpo.color))) {
+      return NextResponse.json({ error: 'Eso no es un color.' }, { status: 400 })
+    }
+
+    const { error } = await supabase.rpc('poner_color', {
+      a_quien: id,
+      el_color: String(cuerpo.color),
+    })
+
+    if (error) {
+      console.error('[HUBI] No se ha podido cambiar el color:', error)
+      return NextResponse.json(
+        {
+          error: 'No se ha podido cambiar el color.',
+          detalle: error.message ?? 'Puede que falte ejecutar el SQL 39.',
         },
         { status: 500 }
       )

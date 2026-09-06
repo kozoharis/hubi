@@ -18,6 +18,7 @@ import { gastadoEnCasa } from '@/lib/gastos-casa'
 import { queVeEnInicio } from '@/lib/roles'
 import { eurosRedondo } from '@/lib/periodos'
 import { loDeHoy } from '@/lib/rutinas'
+import { genteDeLaCasa, elAsesor } from '@/lib/gente'
 import Casas from './casas'
 import RutinasHoy, { type Deber } from './rutinas-hoy'
 
@@ -294,6 +295,68 @@ export default async function Inicio({
   const elJefe = manda || !hogarId ? null : await quienManda(supabase, hogarId)
   const conectado = conexion?.estado === 'activa'
   const caducado = conexion?.estado === 'caducada'
+
+  /*
+    ── EL ASESOR ──
+
+    Si en esta casa hay un gestor, tiene su propio sitio en el Inicio.
+    No es una tarjeta más: es la única persona de fuera con la que hay
+    una conversación de ida y vuelta —«falta la factura de
+    septiembre», «te la he subido»— y sin un sitio propio eso acaba en
+    un WhatsApp que se pierde.
+
+    Lo que se cuenta en la tarjeta es lo que TE ESTÁ ESPERANDO: sus
+    avisos sin ver y las tareas que te ha puesto sin hacer. Un número
+    que no baja nunca deja de mirarse.
+
+    Y por el otro lado igual: cuando quien entra ES el asesor, la
+    tarjeta le lleva al mismo sitio con el nombre de la casa.
+  */
+  let deLaGestoria: { nombre: string; color: string; esperando: number } | null = null
+
+  try {
+    const gente = await genteDeLaCasa(supabase, hogarId)
+    const yoSoy = gente.find((g) => g.id === user.id)
+
+    const conQuien =
+      yoSoy?.rol === 'asesor'
+        ? (gente.find((g) => g.id !== user.id && g.rol !== 'asesor') ?? null)
+        : elAsesor(gente)
+
+    if (conQuien) {
+      let esperando = 0
+
+      /* Sus avisos que todavía no has abierto. Envuelto aparte: sin la
+         tabla `notas` la tarjeta sale igual, con cero. */
+      try {
+        const { count } = await supabase
+          .from('notas')
+          .select('id', { count: 'exact', head: true })
+          .eq('escrita_por', conQuien.id)
+          .is('guardada_en', null)
+          .is('vista_en', null)
+        esperando += count ?? 0
+      } catch {
+        /* Sin notas: solo cuentan las tareas. */
+      }
+
+      const { count: suyas } = await supabase
+        .from('recordatorios')
+        .select('id', { count: 'exact', head: true })
+        .eq('creado_por', conQuien.id)
+        .eq('estado', 'pendiente')
+
+      esperando += suyas ?? 0
+
+      deLaGestoria = {
+        nombre: conQuien.nombre.split(' ')[0],
+        color: conQuien.color,
+        esperando,
+      }
+    }
+  } catch {
+    /* Sin la columna `rol` todavía, o sin gente. El Inicio sigue entero. */
+  }
 
   /*
     ── DÓNDE VA «LO DE HOY» ──
@@ -585,6 +648,49 @@ export default async function Inicio({
             )}
           </div>
         ) : null}
+
+        {/* ── El asesor, con su color ── */}
+        {deLaGestoria && (
+          <Link
+            href="/asesor"
+            className="mt-2.5 flex h-[76px] items-center gap-3.5 rounded-[22px] px-4"
+            style={{
+              background: `color-mix(in srgb, ${deLaGestoria.color} ${
+                deLaGestoria.esperando > 0 ? 18 : 11
+              }%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${deLaGestoria.color} ${
+                deLaGestoria.esperando > 0 ? 50 : 28
+              }%, transparent)`,
+            }}
+          >
+            {/* Su inicial y su color, no un icono genérico: es una
+                persona, y aquí es la única tarjeta que lo es. */}
+            <span
+              className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[15px] text-[20px] font-extrabold text-white"
+              style={{ background: deLaGestoria.color }}
+            >
+              {deLaGestoria.nombre.charAt(0).toUpperCase()}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[19px] font-extrabold tracking-tight">
+                {deLaGestoria.nombre}
+              </span>
+              <span
+                className="block truncate text-[14.5px] font-bold"
+                style={{ color: deLaGestoria.color }}
+              >
+                {deLaGestoria.esperando === 0
+                  ? 'Nada nuevo por ahora'
+                  : deLaGestoria.esperando === 1
+                    ? 'Te ha dejado una cosa'
+                    : `Te ha dejado ${deLaGestoria.esperando} cosas`}
+              </span>
+            </span>
+            <span className="shrink-0" style={{ color: deLaGestoria.color }}>
+              <Ico nombre="flecha" tam={22} grosor={2.2} />
+            </span>
+          </Link>
+        )}
 
         {/* ── Y las cuentas, anchas, con el número de protagonista ── */}
         {ve.cuentasCasa && (

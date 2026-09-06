@@ -33,7 +33,7 @@ import type { NotaVista } from '@/lib/notas'
   quien deja una nota tiene que saberlo ANTES de escribirla.
 */
 
-type Quien = { id: string; nombre: string }
+type Quien = { id: string; nombre: string; color?: string }
 
 export default function Notas({
   notas,
@@ -60,6 +60,10 @@ export default function Notas({
 
   const otros = gente.filter((g) => g.id !== yo)
   const nombreDe = new Map(gente.map((g) => [g.id, g.nombre]))
+  /* El color de quien la escribió. Con cuatro personas en la casa,
+     saber de quién es cada nota obliga hoy a leerse la firma de cada
+     una; una barra de color a la izquierda lo contesta de reojo. */
+  const colorDe = new Map(gente.map((g) => [g.id, g.color ?? '#64748B']))
 
   async function pedir(cuerpo: object, metodo: 'POST' | 'PATCH') {
     setFallo(null)
@@ -192,6 +196,7 @@ export default function Notas({
             const paraMi = n.para === yo
             const autor = nombreDe.get(n.escrita_por)?.split(' ')[0] ?? 'Alguien'
             const destino = n.para ? (nombreDe.get(n.para)?.split(' ')[0] ?? 'alguien') : null
+            const suColor = colorDe.get(n.escrita_por) ?? '#64748B'
 
             return (
               <li
@@ -199,11 +204,23 @@ export default function Notas({
                 className="rounded-[20px] border border-borde bg-superficie px-4 py-3.5"
                 style={
                   /* Una nota que es PARA TI se ve distinta desde el otro
-                     lado de la habitación. Es lo único de esta pantalla
-                     que exige algo de quien la lee. */
+                     lado de la habitación: es lo único de esta pantalla
+                     que exige algo de quien la lee, y por eso se lleva
+                     el borde entero.
+
+                     El resto solo lleva una barra a la izquierda con el
+                     color de quien la escribió. Es suficiente para
+                     saber de quién es sin leer la firma, y no compite
+                     con lo que sí te está esperando. */
                   paraMi && !n.vista_en
-                    ? { borderColor: '#14B8A6', background: 'color-mix(in srgb, #14B8A6 8%, var(--t-superficie))' }
-                    : undefined
+                    ? {
+                        borderColor: '#14B8A6',
+                        background: 'color-mix(in srgb, #14B8A6 8%, var(--t-superficie))',
+                        borderLeft: `4px solid ${suColor}`,
+                      }
+                    : mia
+                      ? undefined
+                      : { borderLeft: `4px solid ${suColor}` }
                 }
               >
                 {editando === n.id ? (

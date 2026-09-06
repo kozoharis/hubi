@@ -155,9 +155,20 @@ export default function Barra({
             : []),
         ]
       : rol === 'asesor'
-        ? /* Viene a las cuentas y a los papeles de las actividades. La
-             agenda de una familia que no es la suya no pinta nada. */
-          [INICIO, PAPELES, ...DE_ACTIVIDADES]
+        ? /*
+             Las cuentas, los papeles de las actividades… y la agenda.
+
+             La agenda estaba fuera —«la de una familia que no es la
+             suya no pinta nada»— y era verdad mientras el asesor solo
+             podía mirar. Desde que puede dejar avisos y poner fechas,
+             quitársela es quitarle el sitio donde hace su trabajo:
+             «el día 20 hay un pago» va en un calendario, no en un
+             WhatsApp.
+
+             Con las actividades sueltas serían cinco pestañas, que es
+             el tope. Cuando hay tres o más, ya se juntan solas.
+          */
+          [INICIO, PAPELES, AGENDA, ...DE_ACTIVIDADES]
         : [INICIO, PAPELES, AGENDA, ...DE_ACTIVIDADES]
 
   return (
