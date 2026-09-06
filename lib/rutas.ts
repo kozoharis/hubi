@@ -22,7 +22,7 @@ export function cadena(categorias: Categoria[], hojaId: string): Categoria[] {
 }
 
 /**
- * Construye la ruta de carpetas dentro de J+C · FAMILY HUB.
+ * Construye la ruta de carpetas dentro de la carpeta HUBI del Drive.
  *
  *   Finca → Gastos → Luz    →   FINCA/GASTOS/2026/T3/LUZ
  *   Vehículos → Seguro      →   VEHICULOS/SEGURO/2026

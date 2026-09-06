@@ -107,6 +107,7 @@ export default async function Ajustes() {
           id,
           nombre: nombreDe.get(id) ?? 'Alguien',
           manda: m.papel === 'propietario',
+          soloMira: m.papel === 'lector',
           soyYo: id === user.id,
         })
       }

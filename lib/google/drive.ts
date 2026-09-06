@@ -6,7 +6,20 @@ const API = 'https://www.googleapis.com/drive/v3'
 const SUBIDA = 'https://www.googleapis.com/upload/drive/v3'
 const CARPETA = 'application/vnd.google-apps.folder'
 
-export const NOMBRE_RAIZ = 'J+C · FAMILY HUB'
+export const NOMBRE_RAIZ = 'HUBI'
+
+/*
+  Cómo se llamaba antes.
+
+  El producto se llamaba «J+C · Family Hub» y la carpeta también. Al
+  pasar a HUBI, la carpeta se quedó con el nombre viejo — que además
+  lleva las iniciales de una familia concreta dentro del Drive de
+  cualquier otra, que es directamente un error.
+
+  Esta constante NO es nostalgia: es lo que permite RENOMBRAR la que
+  ya existe en vez de crear una nueva al lado. Ver `asegurarRaiz`.
+*/
+const NOMBRE_VIEJO = 'J+C · FAMILY HUB'
 
 /**
  * Devuelve un acceso temporal al Drive DE ESTA CASA.
@@ -135,21 +148,59 @@ async function crearCarpeta(
   return datos.id
 }
 
-/** Crea la carpeta raíz de Family Hub, o encuentra la que ya existe. */
-export async function asegurarRaiz(acceso: string): Promise<string> {
-  const q = [
-    `name = '${seguro(NOMBRE_RAIZ)}'`,
-    `mimeType = '${CARPETA}'`,
-    'trashed = false',
-  ].join(' and ')
-
-  const r = await fetch(
-    `${API}/files?q=${encodeURIComponent(q)}&fields=files(id)&pageSize=1`,
-    { headers: { Authorization: `Bearer ${acceso}` } }
+/** Busca una carpeta suelta por su nombre, en cualquier parte del Drive. */
+async function buscarPorNombre(acceso: string, nombre: string): Promise<string | null> {
+  const q = [`name = '${seguro(nombre)}'`, `mimeType = '${CARPETA}'`, 'trashed = false'].join(
+    ' and '
   )
-  if (r.ok) {
-    const datos = (await r.json()) as { files?: { id: string }[] }
-    if (datos.files?.[0]) return datos.files[0].id
+
+  const r = await fetch(`${API}/files?q=${encodeURIComponent(q)}&fields=files(id)&pageSize=1`, {
+    headers: { Authorization: `Bearer ${acceso}` },
+  })
+  if (!r.ok) return null
+
+  const datos = (await r.json()) as { files?: { id: string }[] }
+  return datos.files?.[0]?.id ?? null
+}
+
+/**
+ * La carpeta raíz de HUBI: la que ya existe, o una nueva.
+ *
+ * ─────────────────────────────────────────────────────────────
+ * OJO CON EL CAMBIO DE NOMBRE
+ *
+ * La carpeta se llamaba «J+C · FAMILY HUB». Cambiar la constante y ya
+ * habría sido un desastre silencioso: al reconectar Google, esta
+ * función no habría encontrado ninguna carpeta llamada «HUBI» y
+ * habría CREADO UNA NUEVA, vacía, al lado de la que tiene todos los
+ * papeles. Los documentos viejos seguirían ahí, pero HUBI empezaría a
+ * guardar en la otra, y nadie entendería por qué faltan cosas.
+ *
+ * Así que si no hay ninguna «HUBI», se busca la del nombre viejo y se
+ * le CAMBIA EL NOMBRE. Misma carpeta, mismo identificador, mismos
+ * documentos dentro: solo el rótulo.
+ */
+export async function asegurarRaiz(acceso: string): Promise<string> {
+  const actual = await buscarPorNombre(acceso, NOMBRE_RAIZ)
+  if (actual) return actual
+
+  const antigua = await buscarPorNombre(acceso, NOMBRE_VIEJO)
+  if (antigua) {
+    const r = await fetch(`${API}/files/${antigua}?fields=id`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${acceso}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: NOMBRE_RAIZ }),
+    })
+
+    /* Si Google no deja renombrarla, se sigue usando la de siempre con
+       su nombre viejo. Un rótulo que no cambia es un detalle; crear
+       una carpeta nueva y partir los documentos en dos, no. */
+    if (!r.ok) console.error('[HUBI] Carpeta encontrada pero no renombrada:', await r.text())
+
+    return antigua
   }
 
   return crearCarpeta(acceso, NOMBRE_RAIZ, null)

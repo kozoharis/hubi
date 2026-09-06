@@ -26,6 +26,7 @@ export type Vecino = {
   id: string
   nombre: string
   manda: boolean
+  soloMira: boolean
   soyYo: boolean
 }
 
@@ -39,10 +40,20 @@ export default function Gente({
   const router = useRouter()
 
   const [invitando, setInvitando] = useState(false)
+  const [nombre, setNombre] = useState('')
   const [correo, setCorreo] = useState('')
+  const [papel, setPapel] = useState<'miembro' | 'lector'>('miembro')
   const [ocupado, setOcupado] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
-  const [hecho, setHecho] = useState<string | null>(null)
+  const [hecho, setHecho] = useState<{ nombre: string; correo: string } | null>(null)
+
+  function cerrarInvitacion() {
+    setInvitando(false)
+    setNombre('')
+    setCorreo('')
+    setPapel('miembro')
+    setFallo(null)
+  }
 
   async function invitar() {
     setFallo(null)
@@ -52,12 +63,13 @@ export default function Gente({
     const r = await fetch('/api/miembros', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correo: correo.trim() }),
+      body: JSON.stringify({ correo: correo.trim(), nombre: nombre.trim(), papel }),
     })
 
     const d = (await r.json().catch(() => null)) as {
       bien?: boolean
       correo?: string
+      nombre?: string
       error?: string
       detalle?: string
     } | null
@@ -73,9 +85,8 @@ export default function Gente({
       return
     }
 
-    setHecho(d.correo ?? correo.trim())
-    setCorreo('')
-    setInvitando(false)
+    setHecho({ nombre: d.nombre ?? nombre.trim(), correo: d.correo ?? correo.trim() })
+    cerrarInvitacion()
     router.refresh()
   }
 
@@ -123,7 +134,11 @@ export default function Gente({
                 {v.soyYo && <span className="text-tenue"> · tú</span>}
               </span>
               <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
-                {v.manda ? 'Creó la casa · su Google Drive' : 'Ve y apunta todo lo de la casa'}
+                {v.manda
+                  ? 'Creó la casa · su Google Drive'
+                  : v.soloMira
+                    ? 'Solo mira · no puede cambiar nada'
+                    : 'Ve y apunta todo lo de la casa'}
               </span>
             </span>
             {puedoInvitar && !v.manda && (
@@ -143,27 +158,68 @@ export default function Gente({
       {puedoInvitar &&
         (invitando ? (
           <div className="rounded-[20px] border border-borde bg-superficie px-4 py-4">
-            <p className="text-[17px] font-extrabold leading-snug">
-              ¿Cuál es su correo?
-            </p>
-            <p className="mt-1 text-[15px] font-semibold leading-snug text-tenue">
-              Verá <strong className="text-tinta">todo</strong> lo de esta casa: los papeles, las
-              cuentas y la agenda. Y podrá guardar documentos en tu Google Drive, sin conectar
-              nada suyo.
-            </p>
-
+            {/* Primero quién es. Invitar un correo a secas es invitar a
+                ciegas: hasta que esa persona se pusiera nombre, en toda
+                la aplicación salía el trozo de delante de la arroba —
+                «Para kozoharis», «kozoharis te ha dejado una tarea». */}
+            <label htmlFor="quien" className="block text-[17px] font-extrabold leading-snug">
+              ¿Cómo se llama?
+            </label>
             <input
+              id="quien"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Marta"
+              className="entrada mt-2.5"
+              autoFocus
+              maxLength={40}
+            />
+
+            <label htmlFor="sucorreo" className="mt-4 block text-[17px] font-extrabold leading-snug">
+              ¿Y su correo?
+            </label>
+            <input
+              id="sucorreo"
               value={correo}
               onChange={(e) => setCorreo(e.target.value)}
               type="email"
               inputMode="email"
               autoComplete="off"
-              placeholder="nombre@gmail.com"
-              className="entrada mt-3"
-              autoFocus
+              placeholder="marta@gmail.com"
+              className="entrada mt-2.5"
             />
 
-            <p className="mt-2 text-[14.5px] font-semibold leading-snug text-tenue">
+            {/* ── Qué va a poder hacer ── */}
+            <p className="mt-5 text-[17px] font-extrabold leading-snug">
+              ¿Qué quieres que pueda hacer?
+            </p>
+            <div className="mt-2.5 space-y-2.5">
+              <Papel
+                puesto={papel === 'miembro'}
+                alPulsar={() => setPapel('miembro')}
+                titulo="Todo, como tú"
+                pie="Guardar papeles, apuntar gastos, dejar recados. Para quien vive contigo."
+              />
+              <Papel
+                puesto={papel === 'lector'}
+                alPulsar={() => setPapel('lector')}
+                titulo="Solo mirar"
+                pie="Lo ve todo pero no puede cambiar ni borrar nada. Para un hijo o un gestor."
+              />
+            </div>
+
+            {/*
+              Se dice ANTES de escribir nada, no después: quien invita
+              tiene que saber qué está dando. Hoy en HUBI no hay papeles
+              privados — todo lo que se guarda es de la casa.
+            */}
+            <p className="mt-4 rounded-[14px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
+              En los dos casos <strong className="text-tinta">lo verá todo</strong>: los papeles,
+              las cuentas y la agenda, también lo de Salud. Todavía no se puede guardar nada
+              como privado.
+            </p>
+
+            <p className="mt-2.5 text-[14.5px] font-semibold leading-snug text-tenue">
               No le llega ningún correo de nuestra parte. Dile tú que entre en HUBI con ese
               correo y le llegará su número, como a ti.
             </p>
@@ -171,17 +227,14 @@ export default function Gente({
             <div className="mt-3 flex gap-2">
               <button
                 onClick={invitar}
-                disabled={ocupado || correo.trim().length < 5}
+                disabled={ocupado || correo.trim().length < 5 || nombre.trim().length < 2}
                 className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
               >
                 <Ico nombre="check" tam={19} grosor={2.3} />
                 {ocupado ? 'Invitando…' : 'Invitar'}
               </button>
               <button
-                onClick={() => {
-                  setInvitando(false)
-                  setFallo(null)
-                }}
+                onClick={cerrarInvitacion}
                 disabled={ocupado}
                 className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
               >
@@ -204,8 +257,9 @@ export default function Gente({
 
       {hecho && (
         <p className="rounded-[16px] border border-borde px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
-          Listo. Dile a <strong className="text-tinta">{hecho}</strong> que entre en HUBI con ese
-          correo: le llegará su número y aparecerá directamente en esta casa.
+          Listo. Dile a <strong className="text-tinta">{hecho.nombre}</strong> que entre en HUBI
+          con <strong className="text-tinta">{hecho.correo}</strong>: le llegará su número y
+          aparecerá directamente en esta casa.
         </p>
       )}
 
@@ -215,5 +269,48 @@ export default function Gente({
         </p>
       )}
     </div>
+  )
+}
+
+/*
+  Las dos opciones de qué puede hacer.
+
+  Con texto debajo, no solo el título: «Solo mirar» a secas deja la
+  duda de si verá o no las cosas. La frase de abajo la quita.
+*/
+function Papel({
+  puesto,
+  alPulsar,
+  titulo,
+  pie,
+}: {
+  puesto: boolean
+  alPulsar: () => void
+  titulo: string
+  pie: string
+}) {
+  return (
+    <button
+      onClick={alPulsar}
+      aria-pressed={puesto}
+      className="w-full rounded-[16px] px-4 py-3.5 text-left"
+      style={
+        puesto
+          ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
+          : {
+              background: 'var(--t-fondo)',
+              color: 'var(--t-tinta-suave)',
+              border: '1px solid var(--t-borde)',
+            }
+      }
+    >
+      <span className="block text-[17px] font-extrabold leading-snug">
+        {puesto ? '✓ ' : ''}
+        {titulo}
+      </span>
+      <span className="mt-0.5 block text-[14.5px] font-semibold leading-snug opacity-80">
+        {pie}
+      </span>
+    </button>
   )
 }

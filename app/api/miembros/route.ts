@@ -58,9 +58,9 @@ export async function POST(peticion: NextRequest) {
     )
   }
 
-  let cuerpo: { correo?: string }
+  let cuerpo: { correo?: string; nombre?: string; papel?: string }
   try {
-    cuerpo = (await peticion.json()) as { correo?: string }
+    cuerpo = (await peticion.json()) as { correo?: string; nombre?: string; papel?: string }
   } catch {
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
   }
@@ -69,6 +69,36 @@ export async function POST(peticion: NextRequest) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
     return NextResponse.json({ error: 'Ese correo no parece correcto.' }, { status: 400 })
   }
+
+  /*
+    EL NOMBRE, DESDE EL PRINCIPIO.
+
+    Sin esto, la persona invitada aparecía en toda la aplicación como
+    el trozo de delante de la arroba —«kozoharis»— hasta que ella
+    misma se pusiera nombre. Y eso sale en sitios donde importa:
+    «Para kozoharis», «kozoharis te ha dejado una tarea». Quien invita
+    sabe cómo se llama; solo hay que preguntárselo.
+
+    Es lo que se ve, no una identidad: si luego ella lo cambia en su
+    perfil, manda el suyo.
+  */
+  const nombre = String(cuerpo.nombre ?? '').trim().replace(/\s+/g, ' ').slice(0, 40)
+  if (nombre.length < 2) {
+    return NextResponse.json({ error: '¿Cómo se llama?' }, { status: 400 })
+  }
+
+  /*
+    QUÉ VA A PODER HACER.
+
+    Solo dos, y a propósito. Una tabla de permisos por sección es
+    justo la complejidad empresarial que el punto 28 descarta, y estas
+    dos cubren lo que la gente pide de verdad: la pareja entra
+    completa, un hijo o un gestor solo mira.
+
+    Lo que no esté en la lista es 'miembro'. Nunca se pasa a la base
+    de datos algo que venga del navegador sin comprobarlo.
+  */
+  const papel = cuerpo.papel === 'lector' ? 'lector' : 'miembro'
 
   const admin = clienteServidor()
 
@@ -135,9 +165,32 @@ export async function POST(peticion: NextRequest) {
     )
   }
 
+  /*
+    El nombre va ANTES de meterla en la casa. Si esto falla, no ha
+    entrado todavía y quien invita ve un error honesto; al revés,
+    tendríamos a alguien dentro llamándose «kozoharis» y un error que
+    parece decir que no ha entrado.
+
+    `nombre` es obligatorio en `perfiles`, así que la fila ya existe:
+    la crea un disparador al nacer la cuenta. Aquí solo se cambia.
+  */
+  const { error: alNombrar } = await admin
+    .from('perfiles')
+    .update({ nombre })
+    .eq('id', id)
+    .select('id')
+
+  if (alNombrar) {
+    console.error('[HUBI] No se ha podido ponerle nombre:', alNombrar)
+    return NextResponse.json(
+      { error: 'No se ha podido invitar.', detalle: alNombrar.message },
+      { status: 500 }
+    )
+  }
+
   const { data: metida, error: alMeter } = await admin
     .from('miembros')
-    .insert({ hogar_id: hogarId, perfil_id: id, papel: 'miembro' })
+    .insert({ hogar_id: hogarId, perfil_id: id, papel })
     .select('perfil_id')
 
   /* Con el `.select()`: sin él, una inserción que no entre devuelve
@@ -150,7 +203,7 @@ export async function POST(peticion: NextRequest) {
     )
   }
 
-  return NextResponse.json({ bien: true, correo })
+  return NextResponse.json({ bien: true, correo, nombre, papel })
 }
 
 /*
