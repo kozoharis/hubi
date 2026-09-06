@@ -154,7 +154,9 @@ export async function POST(peticion: NextRequest) {
   cosas.length = 0
   cosas.push(...buenas)
 
-  let { data, error } = await supabase.from('compra').insert(cosas).select('id, que')
+  const CAMPOS = 'id, que, cantidad, comprado, seccion_id, lista_id'
+
+  let { data, error } = await supabase.from('compra').insert(cosas).select(CAMPOS)
 
   /*
     ÚLTIMA RED. Si aun así la rechaza por la columna nueva, se apunta
@@ -164,7 +166,7 @@ export async function POST(peticion: NextRequest) {
   if (error && /lista_id|listas_compra/.test(error.message)) {
     faltaElSql = true
     const sinLista = cosas.map(({ lista_id: _fuera, ...resto }) => resto)
-    ;({ data, error } = await supabase.from('compra').insert(sinLista).select('id, que'))
+    ;({ data, error } = await supabase.from('compra').insert(sinLista).select(CAMPOS))
   }
 
   if (error) {
@@ -195,6 +197,15 @@ export async function POST(peticion: NextRequest) {
     ok: true,
     cuantas: data?.length ?? cosas.length,
     lista_id: listaId,
+    /*
+      LAS FILAS DE VERDAD, CON SU IDENTIFICADOR.
+
+      Faltaban, y por eso no se podía tachar lo recién apuntado: la
+      pantalla pintaba la línea al instante con un identificador
+      inventado y no tenía con qué sustituirlo. El primer toque iba a
+      una dirección que no existía.
+    */
+    apuntadas: data ?? [],
     /* Si algo se ha caído por no ser un producto, se DICE cuántas: que
        alguien dicte cinco cosas, se apunten tres y no se entere es
        peor que apuntar las cinco. */
@@ -206,25 +217,58 @@ export async function POST(peticion: NextRequest) {
 }
 
 /*
-  "Ya he comprado": guardar lo tachado.
+  ═══════════════════════════════════════════════════════════════
+  "YA HE COMPRADO": SE CIERRA LA LISTA ENTERA
+  ═══════════════════════════════════════════════════════════════
 
-  No se borra. Deja de verse en la lista y sigue contando para saber
-  qué compráis a menudo — así, la próxima vez, HUBI puede ofrecer la
-  leche sin que nadie la escriba.
+  Antes esto archivaba lo tachado y ya está: la lista seguía viva y lo
+  comprado desaparecía sin dejar rastro. Se perdía la foto del
+  conjunto —qué se compró aquel día y cuánto costó— que es justo lo
+  que hace falta para poder mirar atrás.
+
+  Ahora, si no queda nada pendiente, la lista se CIERRA: queda
+  guardada con lo que llevaba dentro, se le puede enganchar el ticket
+  del súper, y se abre otra vacía con el mismo nombre.
+
+  ─────────────────────────────────────────────────────────────
+  Y SOLO SI NO QUEDA NADA
+
+  Si has tachado ocho de doce, la compra no ha terminado: se archivan
+  esas ocho y la lista sigue con las cuatro que faltan. Cerrarla ahí
+  sería dejar cuatro cosas sin comprar en un cajón que ya nadie mira.
+
+  Lo demás no se toca: los artículos archivados siguen contando para
+  saber qué compráis a menudo, que es de donde sale «lo que soléis
+  comprar».
 */
-export async function PATCH() {
+export async function PATCH(peticion: NextRequest) {
   const supabase = await clienteSesion()
   const user = await quien(supabase)
   if (!user) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const { data, error } = await supabase
+  let cuerpo: { lista_id?: string | null } = {}
+  try {
+    cuerpo = (await peticion.json()) as { lista_id?: string | null }
+  } catch {
+    /* Sin cuerpo se comporta como siempre: archiva lo tachado y no
+       cierra ninguna lista. La pantalla vieja sigue funcionando. */
+  }
+
+  const listaId = (cuerpo.lista_id || null) as string | null
+
+  /* Lo tachado, fuera de la vista. No se borra: sigue contando para
+     saber qué compráis a menudo. */
+  let archivar = supabase
     .from('compra')
     .update({ archivado_en: new Date().toISOString() })
     .eq('comprado', true)
     .is('archivado_en', null)
-    .select('id')
+
+  if (listaId) archivar = archivar.eq('lista_id', listaId)
+
+  const { data, error } = await archivar.select('id')
 
   if (error) {
     console.error('[HUBI] Fallo cerrando la compra:', error)
@@ -234,5 +278,64 @@ export async function PATCH() {
     )
   }
 
-  return NextResponse.json({ ok: true, cuantas: data?.length ?? 0 })
+  const cuantas = data?.length ?? 0
+
+  if (!listaId) return NextResponse.json({ ok: true, cuantas })
+
+  // ── ¿Queda algo por comprar en esta lista? ─────────────────
+  let cerrada: { id: string; nombre: string } | null = null
+  let nueva: { id: string; nombre: string } | null = null
+
+  try {
+    const { count } = await supabase
+      .from('compra')
+      .select('id', { count: 'exact', head: true })
+      .eq('lista_id', listaId)
+      .is('archivado_en', null)
+
+    if ((count ?? 0) === 0 && cuantas > 0) {
+      const { data: laLista } = await supabase
+        .from('listas_compra')
+        .select('id, nombre, seccion_id')
+        .eq('id', listaId)
+        .maybeSingle()
+
+      if (laLista) {
+        const { data: cerrandola } = await supabase
+          .from('listas_compra')
+          .update({ archivada_en: new Date().toISOString(), cerrada_por: user.id })
+          .eq('id', listaId)
+          .select('id, nombre')
+          .maybeSingle()
+
+        if (cerrandola) {
+          cerrada = { id: cerrandola.id as string, nombre: cerrandola.nombre as string }
+
+          /* Y otra vacía con el mismo nombre, para que mañana haya
+             dónde apuntar sin tener que crearla a mano. */
+          const { data: siguiente } = await supabase
+            .from('listas_compra')
+            .insert({
+              nombre: laLista.nombre,
+              seccion_id: laLista.seccion_id,
+              creada_por: user.id,
+            })
+            .select('id, nombre')
+            .maybeSingle()
+
+          if (siguiente) {
+            nueva = { id: siguiente.id as string, nombre: siguiente.nombre as string }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    /* Sin las columnas del SQL 40 no se cierra nada, y no pasa nada:
+       lo tachado YA está archivado, que es lo que se pidió. Una
+       función nueva a medio instalar no puede tumbar la que
+       funcionaba. */
+    console.error('[HUBI] Compra archivada, lista sin cerrar:', e)
+  }
+
+  return NextResponse.json({ ok: true, cuantas, cerrada, nueva })
 }

@@ -40,10 +40,20 @@ export default function Formulario({
   categorias,
   esPropietario = false,
   enCarpeta = null,
+  paraLista = null,
 }: {
   categorias: Categoria[]
   /* El buscador de Drive abre la cuenta de quien conectó Google. */
   esPropietario?: boolean
+  /*
+    LA COMPRA A LA QUE ENGANCHAR ESTE TICKET.
+
+    Viene de «Guardar el ticket» al cerrar una compra. Con ella, el
+    ticket deja de ser un papel suelto en una carpeta y pasa a ser EL
+    ticket de aquella compra: dentro de tres meses, la lista del 8 de
+    septiembre y lo que costó están en el mismo sitio.
+  */
+  paraLista?: string | null
   /*
     LA CARPETA DE DONDE VIENE.
 
@@ -565,6 +575,24 @@ export default function Formulario({
         repetida: respuesta.repetida ?? null,
       })
       setPaso('guardado')
+
+      /*
+        Y se engancha a la compra, si venía de ahí.
+
+        SIN ESPERARLO Y SIN QUE PUEDA ROMPER NADA: el documento ya está
+        guardado en Drive y en la base de datos. Si el enganche falla
+        —falta el SQL 40, se ha ido la conexión— lo peor que pasa es
+        que el ticket queda en su carpeta sin apuntar a la compra, que
+        es exactamente lo que pasaba antes. Lo que no puede pasar es
+        que un extra tumbe el guardado.
+      */
+      if (paraLista && respuesta.id) {
+        fetch('/api/compra/listas', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: paraLista, ticket_id: respuesta.id }),
+        }).catch(() => {})
+      }
     } catch {
       setAviso('No hay conexión. Comprueba tu internet e inténtalo otra vez.')
     }

@@ -4,7 +4,7 @@ import { quien } from '@/lib/supabase/quien'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
 import { Pastilla } from '../iconos'
-import Pantalla, { type ListaCompra } from './lista'
+import Pantalla, { type Cerrada, type ListaCompra } from './lista'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,6 +76,77 @@ export default async function Compra() {
     .select('id, nombre, seccion_id, fecha, hora, asignado_a')
     .is('archivada_en', null)
     .order('creada_en')
+
+  /*
+    ── LAS COMPRAS QUE YA SE HICIERON ──
+
+    Para poder recuperarlas: la de casa se repite casi igual todas las
+    semanas, y volver a escribirla entera es trabajo inventado — y es
+    donde se olvidan cosas, porque se escribe de memoria.
+
+    Seis, no todas. Con el histórico entero esto sería una pantalla
+    que hay que leer; con las seis últimas se contesta «la del lunes
+    pasado» de un vistazo.
+
+    Envuelto y con dos intentos: `cerrada_por` y `ticket_id` son del
+    SQL 40, y si no está, Postgres rechaza la consulta ENTERA en vez
+    de decir «esa columna no existe». La compra no puede dejar de
+    funcionar porque falte una función nueva.
+  */
+  const anteriores: Cerrada[] = []
+
+  try {
+    const columnasC = 'id, nombre, seccion_id, archivada_en'
+    const conTicket = await supabase
+      .from('listas_compra')
+      .select(`${columnasC}, ticket_id`)
+      .not('archivada_en', 'is', null)
+      .order('archivada_en', { ascending: false })
+      .limit(6)
+
+    const cerradas = conTicket.error
+      ? (
+          await supabase
+            .from('listas_compra')
+            .select(columnasC)
+            .not('archivada_en', 'is', null)
+            .order('archivada_en', { ascending: false })
+            .limit(6)
+        ).data
+      : conTicket.data
+
+    const ids = (cerradas ?? []).map((c) => c.id as string)
+
+    /* Cuántas cosas llevaba cada una. De una vez para todas: con seis
+       listas, una consulta por cada una serían seis viajes a la base
+       de datos para pintar una fila de botones. */
+    const cuantas = new Map<string, number>()
+    if (ids.length > 0) {
+      const { data: suyas } = await supabase
+        .from('compra')
+        .select('lista_id')
+        .in('lista_id', ids)
+
+      for (const c of suyas ?? []) {
+        const k = c.lista_id as string
+        cuantas.set(k, (cuantas.get(k) ?? 0) + 1)
+      }
+    }
+
+    for (const c of cerradas ?? []) {
+      anteriores.push({
+        id: c.id as string,
+        nombre: c.nombre as string,
+        seccion_id: (c.seccion_id as string | null) ?? null,
+        cerrada: (c.archivada_en as string | null) ?? null,
+        cosas: cuantas.get(c.id as string) ?? 0,
+        ticket_id: ((c as { ticket_id?: string | null }).ticket_id as string | null) ?? null,
+      })
+    }
+  } catch {
+    /* Sin la tabla o sin las columnas: no se ofrece recuperar nada y
+       la compra sigue funcionando igual. */
+  }
 
   /*
     ── LA COMPRA ──
@@ -191,6 +262,7 @@ export default async function Compra() {
           yo={user.id}
           habituales={habituales}
           listas={(listas ?? []) as ListaCompra[]}
+          anteriores={anteriores}
           secciones={(raices ?? []).map((r) => ({
             id: r.id,
             nombre: r.nombre,

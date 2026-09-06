@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { pasilloDe, PASILLOS } from '@/lib/comprables'
@@ -27,6 +27,20 @@ export type ListaCompra = {
 }
 
 type Seccion = { id: string; nombre: string; segmento: string }
+
+/*
+  Una compra que ya se hizo. Se guarda entera —con lo que llevaba
+  dentro y con su ticket— para dos cosas: mirar atrás, y volver a
+  usarla la semana siguiente sin escribirla de nuevo.
+*/
+export type Cerrada = {
+  id: string
+  nombre: string
+  seccion_id: string | null
+  cerrada: string | null
+  cosas: number
+  ticket_id: string | null
+}
 
 /*
   Qué secciones NO se ofrecen como destino de la compra.
@@ -69,6 +83,7 @@ export default function Pantalla({
   habituales,
   secciones,
   listas,
+  anteriores = [],
   ticketEn,
 }: {
   inicial: Cosa[]
@@ -77,6 +92,8 @@ export default function Pantalla({
   habituales: string[]
   secciones: Seccion[]
   listas: ListaCompra[]
+  /** Las compras ya cerradas, para poder recuperarlas. */
+  anteriores?: Cerrada[]
   /** La carpeta donde va el ticket del súper. Null si esta casa no la tiene. */
   ticketEn: string | null
 }) {
@@ -84,6 +101,51 @@ export default function Pantalla({
   const [, empezar] = useTransition()
 
   const [cosas, setCosas] = useState<Cosa[]>(inicial)
+
+  /*
+    ═══════════════════════════════════════════════════════════
+    LA LISTA SE VUELVE A LEER DEL SERVIDOR. ESTO FALTABA.
+    ═══════════════════════════════════════════════════════════
+
+    `useState(inicial)` copia lo que había AL ABRIR la pantalla y no
+    vuelve a mirar. Con `router.refresh()` el servidor mandaba la
+    lista nueva y aquí no entraba nunca — así que:
+
+      · lo recién apuntado se quedaba con su identificador
+        provisional, y al tocarlo para tacharlo el servidor contestaba
+        que esa cosa no existe;
+      · lo que apuntaba el otro desde su móvil no aparecía;
+      · y la lista solo se ponía al día saliendo y volviendo a entrar,
+        que es justo lo que se notaba como «hay que darle a guardar».
+
+    Se compara por CONTENIDO y no por identidad del array: React manda
+    un array nuevo en cada dibujado, y comparar la referencia haría
+    que esto se disparara siempre y pisara lo que se acaba de tocar.
+  */
+  const huella = inicial
+    .map((c) => `${c.id}:${c.comprado ? 1 : 0}:${c.que}:${c.lista_id ?? ''}`)
+    .join('|')
+  const ultimaHuella = useRef(huella)
+
+  /* Un contador para los identificadores provisionales. Antes iba con
+     `Date.now()`, que es impuro y además puede repetirse si se apuntan
+     dos cosas en el mismo milisegundo. */
+  const nuevos = useRef(0)
+
+  /* La compra que se acaba de cerrar, para ofrecer el ticket ahí
+     mismo. Se guarda en la pantalla y no viene del servidor: solo
+     tiene sentido en los segundos siguientes a cerrarla. */
+  const [recienCerrada, setReciencerrada] = useState<{ id: string; nombre: string } | null>(null)
+  const [recuperando, setRecuperando] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (ultimaHuella.current === huella) return
+    ultimaHuella.current = huella
+    setCosas(inicial)
+    /* `inicial` va fuera a propósito: lo que decide si hay que
+       recargar es la huella, no el array. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [huella])
   const [texto, setTexto] = useState('')
   const [aviso, setAviso] = useState<string | null>(null)
   const [cerrando, setCerrando] = useState(false)
@@ -170,6 +232,10 @@ export default function Pantalla({
 
     return c.lista_id === listaId
   })
+  /* Las compras cerradas de esta misma categoría. La de la finca no
+     se ofrece cuando estás en la de casa: son dos compras distintas. */
+  const anterioresDeAqui = anteriores.filter((c) => (c.seccion_id ?? null) === destino)
+
   const pendientes = deEstaLista.filter((c) => !c.comprado)
   const tachadas = deEstaLista.filter((c) => c.comprado)
 
@@ -220,7 +286,7 @@ export default function Pantalla({
       apuntó. Aparece ya; si falla, se quita y se dice.
     */
     const provisional: Cosa = {
-      id: `nuevo-${Date.now()}`,
+      id: `nuevo-${++nuevos.current}`,
       que: limpio,
       cantidad: null,
       comprado: false,
@@ -236,7 +302,33 @@ export default function Pantalla({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ que: limpio, seccion_id: destino, lista_id: listaId }),
       })
-      if (!r.ok) throw new Error((await r.json()).error)
+      const d = (await r.json().catch(() => null)) as {
+        ok?: boolean
+        error?: string
+        apuntadas?: { id: string; que: string; cantidad: string | null; lista_id: string | null }[]
+      } | null
+
+      if (!r.ok || d?.ok !== true) throw new Error(d?.error ?? 'No se ha podido apuntar.')
+
+      /*
+        SE CAMBIA EL PROVISIONAL POR EL DE VERDAD.
+
+        Sin esto, la línea se queda con un identificador inventado —
+        «nuevo-1757…»— y el primer toque para tacharla o quitarla va a
+        una dirección que no existe. Era exactamente lo que pasaba: se
+        apuntaba bien y luego no se podía tocar.
+      */
+      const real = d.apuntadas?.[0]
+      if (real) {
+        setCosas((c) =>
+          c.map((x) =>
+            x.id === provisional.id
+              ? { ...x, id: real.id, que: real.que, cantidad: real.cantidad, lista_id: real.lista_id }
+              : x
+          )
+        )
+        ultimaHuella.current = ''
+      }
       empezar(() => router.refresh())
     } catch (e) {
       setCosas((c) => c.filter((x) => x.id !== provisional.id))
@@ -255,6 +347,11 @@ export default function Pantalla({
         body: JSON.stringify({ comprado: !antes }),
       })
       if (!r.ok) throw new Error((await r.json()).error)
+      /* Se vuelve a leer para que el otro móvil y éste digan lo mismo.
+         La huella se limpia primero: si no, el efecto vería la misma
+         de antes y descartaría la recarga. */
+      ultimaHuella.current = ''
+      empezar(() => router.refresh())
     } catch (e) {
       setCosas((c) => c.map((x) => (x.id === cosa.id ? { ...x, comprado: antes } : x)))
       setAviso(e instanceof Error ? e.message : 'No se ha podido cambiar.')
@@ -268,24 +365,81 @@ export default function Pantalla({
     try {
       const r = await fetch(`/api/compra/${cosa.id}`, { method: 'DELETE' })
       if (!r.ok) throw new Error((await r.json()).error)
+      ultimaHuella.current = ''
+      empezar(() => router.refresh())
     } catch (e) {
       setCosas(copia)
       setAviso(e instanceof Error ? e.message : 'No se ha podido quitar.')
     }
   }
 
+  /*
+    ── YA HE COMPRADO ──
+
+    Archiva lo tachado y, si no queda nada pendiente, CIERRA la lista:
+    queda guardada entera y se abre otra vacía con el mismo nombre.
+
+    Así la compra de un día es una cosa con principio y final a la que
+    se le puede enganchar el ticket — y a la que se puede volver la
+    semana que viene sin escribirla de nuevo.
+  */
   async function yaHeComprado() {
     setCerrando(true)
     setAviso(null)
     try {
-      const r = await fetch('/api/compra', { method: 'PATCH' })
-      if (!r.ok) throw new Error((await r.json()).error)
+      const r = await fetch('/api/compra', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lista_id: listaId }),
+      })
+      const d = (await r.json().catch(() => null)) as {
+        ok?: boolean
+        error?: string
+        cerrada?: { id: string; nombre: string } | null
+      } | null
+
+      if (!r.ok || d?.ok !== true) throw new Error(d?.error ?? 'No se ha podido guardar.')
+
       setCosas((c) => c.filter((x) => !x.comprado))
+      /* Se recuerda cuál se acaba de cerrar para ofrecer el ticket
+         justo ahí: es el único momento en que la persona tiene el
+         papel en la mano. */
+      if (d.cerrada) setReciencerrada(d.cerrada)
+      ultimaHuella.current = ''
       empezar(() => router.refresh())
     } catch (e) {
       setAviso(e instanceof Error ? e.message : 'No se ha podido guardar.')
     }
     setCerrando(false)
+  }
+
+  /* Copiar una compra de otra semana a la de ahora. Se copia, no se
+     mueve: la vieja es el registro de lo que se compró aquel día. */
+  async function recuperar(deLista: Cerrada) {
+    setRecuperando(deLista.id)
+    setAviso(null)
+    try {
+      const r = await fetch('/api/compra/recuperar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ de: deLista.id, a: listaId }),
+      })
+      const d = (await r.json().catch(() => null)) as {
+        ok?: boolean
+        error?: string
+        cuantas?: number
+        aviso?: string
+      } | null
+
+      if (!r.ok || d?.ok !== true) throw new Error(d?.error ?? 'No se ha podido recuperar.')
+
+      if (d.aviso) setAviso(d.aviso)
+      ultimaHuella.current = ''
+      empezar(() => router.refresh())
+    } catch (e) {
+      setAviso(e instanceof Error ? e.message : 'No se ha podido recuperar.')
+    }
+    setRecuperando(null)
   }
 
   return (
@@ -571,6 +725,106 @@ export default function Pantalla({
         </>
       )}
 
+      {/*
+        ═══════════════════════════════════════════════════════
+        LA COMPRA QUE SE ACABA DE CERRAR
+        ═══════════════════════════════════════════════════════
+
+        Sale al terminar y no antes. Es el único momento en que la
+        persona tiene el papel del súper en la mano — dos minutos
+        después ya está en el bolsillo del abrigo y no vuelve a
+        aparecer hasta que se lava.
+
+        Y el ticket va enganchado A ESTA COMPRA, no suelto en una
+        carpeta: así, dentro de tres meses, «la compra del 8 de
+        septiembre» tiene su lista y su importe en el mismo sitio.
+      */}
+      {recienCerrada && (
+        <div
+          className="mt-5 rounded-[20px] px-4 py-4"
+          style={{
+            background: 'color-mix(in srgb, var(--color-verde) 12%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--color-verde) 32%, transparent)',
+          }}
+        >
+          <p className="flex items-center gap-2 text-[17.5px] font-extrabold tracking-tight">
+            <Ico nombre="check" tam={20} grosor={2.4} className="text-verde" />
+            Compra guardada
+          </p>
+          <p className="mt-1.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
+            «{recienCerrada.nombre}» queda guardada entera. La lista de arriba empieza
+            vacía, y puedes recuperar ésta cuando quieras.
+          </p>
+
+          {ticketEn && (
+            <Link
+              href={`/guardar?en=${ticketEn}&lista=${recienCerrada.id}`}
+              className="mt-3 flex h-[58px] w-full items-center justify-center gap-2.5 rounded-[18px] bg-boton text-[17px] font-extrabold text-boton-texto"
+            >
+              <Ico nombre="foto" tam={21} grosor={2.2} />
+              Guardar el ticket
+            </Link>
+          )}
+          <button
+            onClick={() => setReciencerrada(null)}
+            className="mt-2 h-[50px] w-full rounded-[16px] text-[16px] font-bold text-tinta-suave underline underline-offset-4"
+          >
+            Ahora no
+          </button>
+        </div>
+      )}
+
+      {/*
+        ═══════════════════════════════════════════════════════
+        ¿RECUPERAS UNA DE OTRA SEMANA?
+        ═══════════════════════════════════════════════════════
+
+        La compra de casa se repite casi igual: leche, pan, huevos,
+        fruta, papel. Escribirla entera cada semana es trabajo
+        inventado — y es donde se olvidan cosas, porque se escribe de
+        memoria en vez de mirar la de la semana pasada.
+
+        Sale solo con la lista VACÍA. Con cosas apuntadas ya se está
+        haciendo la de esta semana, y ofrecerlo ahí sería un botón que
+        estorba en la pantalla donde más prisa hay.
+
+        Y lo repetido no entra dos veces: la que se recupera se cruza
+        con lo que ya haya puesto.
+      */}
+      {pendientes.length === 0 && !recienCerrada && anterioresDeAqui.length > 0 && (
+        <section className="mt-6">
+          <h2 className="rotulo">¿Recuperas una de otra semana?</h2>
+          <p className="mt-1.5 text-[15px] font-semibold leading-snug text-tenue">
+            Se copian sus cosas aquí. La de aquel día se queda como está.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {anterioresDeAqui.map((c) => (
+              <li key={c.id}>
+                <button
+                  onClick={() => recuperar(c)}
+                  disabled={recuperando !== null || !listaId}
+                  className="flex w-full items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-3.5 text-left disabled:opacity-50"
+                >
+                  <span className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px] bg-fondo text-tinta-suave">
+                    <Ico nombre="bolsa" tam={21} grosor={2.1} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[17px] font-extrabold tracking-tight">
+                      {cuandoSeCerro(c.cerrada)}
+                    </span>
+                    <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
+                      {c.cosas === 1 ? '1 cosa' : `${c.cosas} cosas`}
+                      {c.ticket_id ? ' · con ticket' : ''}
+                    </span>
+                  </span>
+                  <Ico nombre="mas" tam={20} grosor={2.4} className="shrink-0 text-tinta-suave" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* ── Lo de siempre ── */}
       {habituales.length > 0 && (
         <>
@@ -709,4 +963,37 @@ function Linea({
       </button>
     </li>
   )
+}
+
+/*
+  «Hoy» · «Ayer» · «El lunes» · «El 28 de agosto»
+
+  En días y no en fecha: al buscar la compra de la semana pasada nadie
+  piensa «la del 1 de septiembre», piensa «la del lunes». La fecha
+  entera solo cuando ya está lejos y el día de la semana no ayuda.
+*/
+function cuandoSeCerro(iso: string | null): string {
+  if (!iso) return 'Una compra de antes'
+
+  const cuando = new Date(iso)
+  if (Number.isNaN(cuando.getTime())) return 'Una compra de antes'
+
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
+  const dia = new Date(cuando)
+  dia.setHours(0, 0, 0, 0)
+
+  const dias = Math.round((hoy.getTime() - dia.getTime()) / 86_400_000)
+
+  if (dias <= 0) return 'La de hoy'
+  if (dias === 1) return 'La de ayer'
+
+  const nombres = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+  if (dias < 7) return `La del ${nombres[dia.getDay()]}`
+
+  const meses = [
+    'enero','febrero','marzo','abril','mayo','junio',
+    'julio','agosto','septiembre','octubre','noviembre','diciembre',
+  ]
+  return `La del ${dia.getDate()} de ${meses[dia.getMonth()]}`
 }

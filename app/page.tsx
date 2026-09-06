@@ -20,7 +20,7 @@ import { eurosRedondo } from '@/lib/periodos'
 import { loDeHoy } from '@/lib/rutinas'
 import { genteDeLaCasa, elAsesor } from '@/lib/gente'
 import Casas from './casas'
-import RutinasHoy, { type Deber } from './rutinas-hoy'
+import { type Deber } from './rutinas-hoy'
 
 export const dynamic = 'force-dynamic'
 
@@ -242,7 +242,6 @@ export default async function Inicio({
     rompe por eso.
   */
   const deberes: Deber[] = []
-  let puedoMarcar = false
 
   try {
     const mias = rol === 'ayuda'
@@ -276,9 +275,6 @@ export default async function Inicio({
       }
     }
 
-    /* Quien solo mira no marca. Y el asesor tampoco ve esto siquiera:
-       el plan de trabajo de una casa no es asunto suyo. */
-    puedoMarcar = rol !== 'mirar' && rol !== 'asesor'
   } catch {
     /* Sin las tablas todavía. El Inicio sigue entero. */
   }
@@ -313,10 +309,17 @@ export default async function Inicio({
     tarjeta le lleva al mismo sitio con el nombre de la casa.
   */
   let deLaGestoria: { nombre: string; color: string; esperando: number } | null = null
+  /* Quien ayuda en casa, para poner su nombre y su color en la tarjeta
+     del día. Se saca de la misma lectura de gente: pedirla dos veces
+     sería un viaje de más para pintar la misma pantalla. */
+  let deLaAyuda: { nombre: string; color: string } | null = null
 
   try {
     const gente = await genteDeLaCasa(supabase, hogarId)
     const yoSoy = gente.find((g) => g.id === user.id)
+
+    const ayuda = gente.find((g) => g.rol === 'ayuda' && !g.pendiente)
+    if (ayuda) deLaAyuda = { nombre: ayuda.nombre.split(' ')[0], color: ayuda.color }
 
     const conQuien =
       yoSoy?.rol === 'asesor'
@@ -359,31 +362,33 @@ export default async function Inicio({
   }
 
   /*
-    ── DÓNDE VA «LO DE HOY» ──
+    ── «LA CASA HOY» ES UNA TARJETA, NO UNA LISTA ──
 
-    Se pinta una sola vez, pero no en el mismo sitio para todos, y ésa
-    es toda la idea de los roles:
+    Estaba entera aquí: cinco líneas con sus casillas, debajo de las
+    tarjetas. Y ocupaba media pantalla todos los días para decir algo
+    que casi siempre se resume en «0 de 4» — mientras empujaba hacia
+    abajo el médico de las diez, que es lo que de verdad hay que ver
+    al abrir.
 
-      · Quien ayuda en casa lo ve ARRIBA. Es a lo que viene. Debajo de
-        la agenda de la familia sería pedirle que se desplace por
-        cosas que no son suyas para llegar a las que sí.
+    Ahora es una tarjeta con el número, del color de quien tiene ese
+    trabajo, y dentro está todo: las tareas, sus horas y lo que quiera
+    contar del día. Cabe lo que necesite porque ya no compite con
+    nada.
 
-      · La familia lo ve ABAJO, después de lo suyo. Que hoy toque
-        planchar no puede quedar por encima del médico de las diez.
-
-    Ordenar por rol y no por importancia general: para cada uno lo
-    importante es otra cosa, y eso es exactamente lo que HUBI tiene
-    que saber.
+    Sigue arriba para quien ayuda en casa —es a lo que viene— y debajo
+    de lo suyo para la familia.
   */
-  const bloqueDeHoy =
-    ve.agenda && deberes.length > 0 ? (
-      <RutinasHoy
-        rutinas={deberes}
-        puedeMarcar={puedoMarcar}
-        soloMias={rol === 'ayuda'}
-        titulo={rol === 'ayuda' ? 'Lo de hoy' : 'La casa hoy'}
-      />
-    ) : null
+  const casaHoy =
+    ve.agenda && deberes.length > 0
+      ? {
+          hechas: deberes.filter((d) => d.hecha).length,
+          total: deberes.length,
+          /* De quién es el día. Con el color de esa persona, que es
+             el mismo con el que sale en la agenda y en el corcho. */
+          nombre: deLaAyuda?.nombre ?? null,
+          color: deLaAyuda?.color ?? '#0EA5E9',
+        }
+      : null
 
   return (
     <main className="relative min-h-screen pb-40">
@@ -768,7 +773,7 @@ export default async function Inicio({
           </p>
         )}
 
-        {rol === 'ayuda' && bloqueDeHoy}
+        {rol === 'ayuda' && casaHoy && <TarjetaCasa {...casaHoy} mia />}
 
         {/* ── Hoy ── */}
         {ve.agenda && hoy.length > 0 && (
@@ -836,7 +841,7 @@ export default async function Inicio({
           </section>
         )}
 
-        {rol !== 'ayuda' && bloqueDeHoy}
+        {rol !== 'ayuda' && casaHoy && <TarjetaCasa {...casaHoy} />}
 
         {ve.agenda &&
           hoy.length === 0 &&
@@ -962,4 +967,74 @@ function enCuanto(fecha: string | null): string {
   if (dias === 1) return 'mañana'
   if (dias < 45) return `en ${dias} días`
   return `en ${Math.round(dias / 30)} meses`
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  LA CASA HOY, EN UNA TARJETA
+  ═══════════════════════════════════════════════════════════════
+
+  El número grande y quién lo lleva. Nada más: lo que hay dentro se ve
+  entrando, y lo que se contesta desde aquí —«¿va bien la mañana?»— se
+  contesta con «2 de 5» sin abrir nada.
+
+  Cuando está todo hecho cambia de tono en vez de desaparecer: haberlo
+  terminado es una noticia, y quitarle la tarjeta a quien acaba de
+  terminar sería quitarle el acuse de recibo.
+*/
+function TarjetaCasa({
+  hechas,
+  total,
+  nombre,
+  color,
+  mia = false,
+}: {
+  hechas: number
+  total: number
+  nombre: string | null
+  color: string
+  /** Es mi día: entonces la tarjeta habla en segunda persona. */
+  mia?: boolean
+}) {
+  const todo = hechas === total
+
+  return (
+    <Link
+      href="/lacasa"
+      className="mt-2.5 flex h-[76px] items-center gap-3.5 rounded-[22px] px-4"
+      style={{
+        background: `color-mix(in srgb, ${color} ${todo ? 10 : 16}%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${color} ${todo ? 26 : 42}%, transparent)`,
+      }}
+    >
+      {/* El número, que es todo lo que hay que leer de un vistazo. */}
+      <span
+        className="flex h-[48px] w-[48px] shrink-0 flex-col items-center justify-center rounded-[15px] bg-superficie leading-none"
+        style={{ color }}
+      >
+        <span className="text-[19px] font-extrabold tracking-tight">{hechas}</span>
+        <span className="mt-0.5 text-[10.5px] font-bold opacity-70">de {total}</span>
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className="block whitespace-nowrap text-[19px] font-extrabold tracking-tight">
+          {mia ? 'Lo de hoy' : 'La casa hoy'}
+        </span>
+        <span className="block truncate text-[14.5px] font-bold" style={{ color }}>
+          {todo
+            ? mia
+              ? '¡Todo hecho!'
+              : `${nombre ?? 'Todo'} lo ha terminado`
+            : mia
+              ? `Te quedan ${total - hechas}`
+              : nombre
+                ? `${nombre} · faltan ${total - hechas}`
+                : `Faltan ${total - hechas}`}
+        </span>
+      </span>
+      <span className="shrink-0" style={{ color }}>
+        <Ico nombre="flecha" tam={22} grosor={2.2} />
+      </span>
+    </Link>
+  )
 }

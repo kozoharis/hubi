@@ -12,9 +12,9 @@ export const dynamic = 'force-dynamic'
 export default async function Guardar({
   searchParams,
 }: {
-  searchParams: Promise<{ en?: string }>
+  searchParams: Promise<{ en?: string; lista?: string }>
 }) {
-  const { en } = await searchParams
+  const { en, lista: laCompra } = await searchParams
 
   const supabase = await clienteSesion()
 
@@ -86,6 +86,11 @@ export default async function Guardar({
       categorias={lista}
       esPropietario={Boolean(perfil?.es_propietario_drive)}
       enCarpeta={enCarpeta}
+      /* La compra a la que engancharle este ticket, si se ha venido
+         desde ahí. Sin comprobar aquí que existe: si no existe, el
+         enganche falla en silencio y el documento se guarda igual —
+         que es lo único que no puede fallar. */
+      paraLista={laCompra ?? null}
     />
   )
 }

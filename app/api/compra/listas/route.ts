@@ -87,15 +87,52 @@ export async function PATCH(peticion: NextRequest) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  let cuerpo: Entrada & { id?: string }
+  let cuerpo: Entrada & { id?: string; ticket_id?: string | null }
   try {
-    cuerpo = (await peticion.json()) as Entrada & { id?: string }
+    cuerpo = (await peticion.json()) as Entrada & { id?: string; ticket_id?: string | null }
   } catch {
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
   }
 
   const id = String(cuerpo.id ?? '')
   if (!id) return NextResponse.json({ error: 'Falta la lista.' }, { status: 400 })
+
+  /*
+    ── ENGANCHAR EL TICKET ──
+
+    Un camino corto y aparte del resto: viene de la pantalla de
+    guardar un documento, justo después de subir el ticket del súper,
+    y no toca ni el nombre ni la fecha ni la tarea de la Agenda.
+
+    Mezclarlo con lo de abajo obligaría a mandar el resto de campos
+    para no borrarlos, desde una pantalla que no los conoce.
+
+    El ticket es un documento de los de siempre: aquí solo se guarda
+    la referencia. Duplicar el archivo sería tener dos sitios donde
+    mirar y uno de los dos quedaría desactualizado.
+  */
+  if (cuerpo.ticket_id !== undefined) {
+    const ticket = String(cuerpo.ticket_id ?? '') || null
+
+    const { data, error } = await supabase
+      .from('listas_compra')
+      .update({ ticket_id: ticket })
+      .eq('id', id)
+      .select('id')
+
+    if (error || !data || data.length === 0) {
+      console.error('[HUBI] No se ha podido enganchar el ticket:', error)
+      return NextResponse.json(
+        {
+          error: 'No se ha podido guardar el ticket en la lista.',
+          detalle: error?.message ?? 'Puede que falte ejecutar el SQL 40.',
+        },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ ok: true, ticket_id: ticket })
+  }
 
   const { data: antes } = await supabase
     .from('listas_compra')

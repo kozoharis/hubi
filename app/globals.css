@@ -117,9 +117,27 @@
   hay que apagarlo. Sigue habiendo una red debajo en `.barra-abajo`,
   para el navegador que no lo respete.
 */
+/*
+  ── Y NO BASTABA CON PEDIRLO ──
+
+  `overscroll-behavior-y: none` a secas no lo arregló: en Safari, el
+  rebote del DOCUMENTO se sigue produciendo, y con él se descolocan la
+  barra de abajo y la cabecera, que son las dos cosas clavadas.
+
+  El arreglo de verdad es que el documento no sea lo que se desliza.
+  El <body> pasa a ser el contenedor con altura de pantalla y desbordé
+  propio: el rebote ocurre AHÍ DENTRO, y lo que está `fixed` —que se
+  coloca respecto a la ventana, no respecto al body— se queda quieto.
+
+  `100dvh` y no `100vh`: con la barra del navegador apareciendo y
+  desapareciendo, `100vh` deja un hueco por abajo en iPhone. Se
+  mantiene `100vh` delante como respaldo para el navegador que no
+  entienda `dvh`.
+*/
 html {
   -webkit-text-size-adjust: 100%;
   background: var(--t-fondo);
+  height: 100%;
   overscroll-behavior-y: none;
 }
 
@@ -128,7 +146,13 @@ body {
   color: var(--t-tinta);
   font-family: var(--font-texto);
   -webkit-font-smoothing: antialiased;
+
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Nada importante depende de pasar el ratón por encima:
