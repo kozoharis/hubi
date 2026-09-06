@@ -6,6 +6,7 @@ import { actividadesDe } from '@/lib/actividades'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
 import { Ico, Pastilla, Volver, iconoDeEmoji } from '../iconos'
+import NuevaActividad from '../ajustes/nueva-actividad'
 
 export const dynamic = 'force-dynamic'
 
@@ -126,9 +127,16 @@ export default async function Actividades() {
 
         {actividades.length === 0 && (
           <p className="mt-4 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
-            Todavía no hay ninguna actividad. Se crean en Ajustes.
+            Todavía no llevas las cuentas de nada. Aquí abajo se empieza.
           </p>
         )}
+
+        {/* Crear una también desde aquí. Mandar a Ajustes a alguien que
+            está mirando justo la lista de sus actividades es hacerle
+            dar un rodeo para volver al mismo sitio. */}
+        <div className="mt-4">
+          <NuevaActividad />
+        </div>
       </div>
 
       <Barra activa="actividades" />

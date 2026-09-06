@@ -12,6 +12,7 @@ import { leerPerfil } from '@/lib/perfil'
 import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
 import { estadoGuardado } from '@/lib/google/calendario'
 import TuPerfil from './foto'
+import NuevaActividad from './nueva-actividad'
 import PrepararCalendario from './calendario'
 import MiCalendario from './mi-calendario'
 
@@ -283,24 +284,31 @@ export default async function Ajustes() {
           una decisión que alguien tiene que descartar cada vez que
           pasa por aquí.
         */}
-        {conUnidades.length > 0 && (
-          <>
-            <h2 className="rotulo mt-5">Tus actividades</h2>
-            <div className="mt-2.5 space-y-2.5">
-              {conUnidades.map((s) => (
-                <Opcion
-                  key={s.id}
-                  href={`/seccion/${s.id}/ajustes`}
-                  icono="euro"
-                  color={s.color}
-                  fondo={s.fondo}
-                  titulo={s.nombre}
-                  pie={s.pie}
-                />
-              ))}
-            </div>
-          </>
-        )}
+        {/*
+          Este apartado sale SIEMPRE, tenga o no actividades. Antes
+          solo aparecía si ya había alguna, y eso dejaba a una casa
+          recién creada sin ninguna forma de añadir la primera: para
+          tener una actividad había que tener ya una actividad.
+        */}
+        <h2 className="rotulo mt-5">Tus actividades</h2>
+        <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
+          Una finca, unas obras, unos pisos… lo que tenga sus propios gastos e
+          ingresos.
+        </p>
+        <div className="mt-2.5 space-y-2.5">
+          {conUnidades.map((s) => (
+            <Opcion
+              key={s.id}
+              href={`/seccion/${s.id}/ajustes`}
+              icono="euro"
+              color={s.color}
+              fondo={s.fondo}
+              titulo={s.nombre}
+              pie={s.pie}
+            />
+          ))}
+          <NuevaActividad />
+        </div>
 
         {/* ── Si algo no va ── */}
         <h2 className="rotulo mt-5">Si algo no va</h2>

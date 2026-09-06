@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { limpiar } from '@/lib/rutas'
 
 export const dynamic = 'force-dynamic'
 
@@ -77,6 +78,279 @@ function conArticulo(bruto: string): string | null {
     (!MASCULINOS.has(ultima) && (ultima.endsWith('a') || ultima.endsWith('ion')))
 
   return `${femenino ? 'la' : 'el'} ${texto}`
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  CREAR UNA ACTIVIDAD NUEVA
+  ═══════════════════════════════════════════════════════════════
+
+  Faltaba, y era un agujero grande: se podían crear partidas y partes
+  DENTRO de una actividad, pero no la actividad. O sea que la familia
+  se quedaba con lo que eligió el primer día, y para añadir «Obras» a
+  una casa que ya tenía «Finca» había que llamar a un programador —
+  justo lo que el punto 11 dice que no puede pasar.
+
+  ─────────────────────────────────────────────────────────────
+  LAS MISMAS PLANTILLAS QUE AL EMPEZAR
+
+  Finca, obras, alquileres o «otra cosa». Son las mismas cuatro que
+  se ofrecen al crear la casa, a propósito: dos vocabularios distintos
+  para lo mismo obligarían a la persona a traducir.
+
+  ─────────────────────────────────────────────────────────────
+  POR QUÉ ESTO NO ES UNA FUNCIÓN DE LA BASE DE DATOS
+
+  Crear la casa sí lo es —sql/30—, porque quedarse a medias allí deja
+  a alguien con hogar y sin nada dentro, y no se descubre hasta mucho
+  después. Aquí, quedarse a medias deja una actividad con menos
+  partidas de las previstas: se ve, y se arregla desde la propia
+  pantalla de partidas en diez segundos.
+
+  A cambio se gana algo que hoy vale más que la elegancia: **no hace
+  falta ejecutar ningún SQL nuevo para que esto funcione.**
+*/
+
+const PLANTILLAS: Record<
+  string,
+  {
+    icono: string
+    color: string
+    fondo: string
+    divide: boolean
+    palabra: string | null
+    reparte: boolean
+    gastos: string[]
+    ingresos: string[]
+  }
+> = {
+  finca: {
+    icono: '🌿',
+    color: '#14B8A6',
+    fondo: '#DFF7F3',
+    divide: false,
+    palabra: null,
+    reparte: false,
+    gastos: ['Agua', 'Luz', 'Productos', 'Obras y mejoras', 'Maquinaria', 'Mantenimiento', 'Otros'],
+    ingresos: ['Ventas', 'Otros ingresos'],
+  },
+  obra: {
+    icono: '🧱',
+    color: '#F59E0B',
+    fondo: '#FEF1DC',
+    divide: true,
+    palabra: 'la obra',
+    reparte: false,
+    gastos: [
+      'Albañilería',
+      'Estructura',
+      'Instalaciones',
+      'Carpintería',
+      'Materiales',
+      'Mano de obra',
+      'Otros',
+    ],
+    ingresos: ['Certificaciones', 'Otros ingresos'],
+  },
+  alquileres: {
+    icono: '🔑',
+    color: '#8B5CF6',
+    fondo: '#EEE8FE',
+    divide: true,
+    palabra: 'el piso',
+    /* Lo común se reparte solo aquí: pisos parecidos, luz partida a
+       partes iguales. Entre obras de tamaños distintos sería mentir. */
+    reparte: true,
+    gastos: ['Luz', 'Agua', 'Comunidad', 'Limpieza', 'Reparaciones', 'Otros'],
+    ingresos: ['Alquiler', 'Otros ingresos'],
+  },
+  otra: {
+    icono: '📁',
+    color: '#3B82F6',
+    fondo: '#E4EEFE',
+    divide: false,
+    palabra: null,
+    reparte: false,
+    /* Una sola partida de cada, para que se pueda apuntar algo desde
+       el primer minuto. Las suyas las pone él, que es el punto. */
+    gastos: ['Otros'],
+    ingresos: ['Otros ingresos'],
+  },
+}
+
+export async function POST(peticion: NextRequest) {
+  const supabase = await clienteSesion()
+  const user = await quien(supabase)
+  if (!user) {
+    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
+  }
+
+  let cuerpo: { nombre?: string; tipo?: string }
+  try {
+    cuerpo = (await peticion.json()) as { nombre?: string; tipo?: string }
+  } catch {
+    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
+  }
+
+  const nombre = String(cuerpo.nombre ?? '').trim().replace(/\s+/g, ' ').slice(0, 40)
+  if (nombre.length < 2) {
+    return NextResponse.json({ error: 'Ponle un nombre.' }, { status: 400 })
+  }
+
+  const plantilla = PLANTILLAS[String(cuerpo.tipo ?? '')] ?? PLANTILLAS.otra
+  const segmento = limpiar(nombre)
+
+  if (!segmento) {
+    return NextResponse.json(
+      { error: 'Ese nombre no sirve para una carpeta. Usa letras y números.' },
+      { status: 400 }
+    )
+  }
+
+  /*
+    ¿YA TIENE UNA ASÍ?
+
+    Se mira antes de intentarlo. La base de datos también lo impide
+    —la clave es (hogar, padre, nombre)— pero un choque de clave
+    devuelve un error técnico que no le dice nada a nadie, y sobre
+    todo: si la que existe está RETIRADA, lo correcto no es crear otra
+    igual sino devolverle la suya.
+  */
+  const { data: yaHay } = await supabase
+    .from('categorias')
+    .select('id, nombre, activa')
+    .is('padre_id', null)
+    .or(`nombre.ilike.${nombre},segmento_drive.eq.${segmento}`)
+
+  const misma = (yaHay ?? [])[0]
+
+  if (misma) {
+    if (misma.activa === false) {
+      const { data: revivida } = await supabase
+        .from('categorias')
+        .update({ activa: true, lleva_cuentas: true })
+        .eq('id', misma.id)
+        .select('id')
+
+      if (revivida && revivida.length > 0) {
+        return NextResponse.json({
+          bien: true,
+          id: misma.id,
+          aviso: `«${misma.nombre}» ya existía retirada y se ha vuelto a activar, con lo que tuviera dentro.`,
+        })
+      }
+    }
+
+    return NextResponse.json(
+      { error: `Ya tienes algo llamado «${misma.nombre}».` },
+      { status: 409 }
+    )
+  }
+
+  /* Dónde se coloca: detrás de lo que ya haya. */
+  const { data: ultimas } = await supabase
+    .from('categorias')
+    .select('orden')
+    .is('padre_id', null)
+    .order('orden', { ascending: false })
+    .limit(1)
+
+  const orden = ((ultimas?.[0]?.orden as number | null) ?? 0) + 1
+
+  /*
+    `hogar_id` NO se manda: la columna tiene `default mi_hogar()` y la
+    política de creación exige `hogar_id = mi_hogar()`. Mandarlo a mano
+    desde el navegador sería justo la puerta que esa política cierra.
+  */
+  const { data: creada, error } = await supabase
+    .from('categorias')
+    .insert({
+      nombre,
+      segmento_drive: segmento,
+      icono: plantilla.icono,
+      color: plantilla.color,
+      fondo: plantilla.fondo,
+      orden,
+      activa: true,
+      lleva_cuentas: true,
+      usa_unidades: plantilla.divide,
+      palabra_unidad: plantilla.palabra,
+      reparte_comunes: plantilla.reparte,
+    })
+    .select('id')
+    .maybeSingle()
+
+  /* Con seguridad por filas, un INSERT sin permiso no falla: no crea
+     nada y no dice nada. El `.select()` es lo que lo delata. */
+  if (error || !creada?.id) {
+    console.error('[HUBI] No se ha podido crear la actividad:', error)
+    return NextResponse.json(
+      { error: 'No se ha podido crear la actividad.', detalle: error?.message },
+      { status: 500 }
+    )
+  }
+
+  const raiz = creada.id as string
+
+  /*
+    Y lo de dentro. Si algo de esto falla, la actividad YA existe y se
+    ve: lo que faltará son partidas, y ésas se añaden desde su propia
+    pantalla. Por eso no se aborta ni se deshace nada — deshacerlo
+    sería borrarle algo que ya está viendo.
+  */
+  try {
+    const { data: grupos } = await supabase
+      .from('categorias')
+      .insert([
+        {
+          padre_id: raiz,
+          nombre: 'Gastos',
+          segmento_drive: 'GASTOS',
+          icono: '💸',
+          orden: 1,
+          naturaleza: 'gasto',
+        },
+        {
+          padre_id: raiz,
+          nombre: 'Ingresos',
+          segmento_drive: 'INGRESOS',
+          icono: '💰',
+          orden: 2,
+          naturaleza: 'ingreso',
+        },
+      ])
+      .select('id, segmento_drive')
+
+    const deGasto = (grupos ?? []).find((g) => g.segmento_drive === 'GASTOS')?.id
+    const deIngreso = (grupos ?? []).find((g) => g.segmento_drive === 'INGRESOS')?.id
+
+    const partidas = [
+      ...(deGasto
+        ? plantilla.gastos.map((n, i) => ({
+            padre_id: deGasto,
+            nombre: n,
+            segmento_drive: limpiar(n),
+            orden: i + 1,
+            naturaleza: 'gasto',
+          }))
+        : []),
+      ...(deIngreso
+        ? plantilla.ingresos.map((n, i) => ({
+            padre_id: deIngreso,
+            nombre: n,
+            segmento_drive: limpiar(n),
+            orden: i + 1,
+            naturaleza: 'ingreso',
+          }))
+        : []),
+    ]
+
+    if (partidas.length > 0) await supabase.from('categorias').insert(partidas)
+  } catch (e) {
+    console.error('[HUBI] Actividad creada, partidas a medias:', e)
+  }
+
+  return NextResponse.json({ bien: true, id: raiz })
 }
 
 // ── Cambiar cómo se lleva ────────────────────────────────────
