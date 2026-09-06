@@ -278,27 +278,41 @@ export default async function Inicio({
           </span>
 
           {/*
-            La rueda, suelta y con los colores de la H. Sin píldora:
-            ahí arriba no compite con nada y una caja la convertía en
-            «otro botón» al lado del logo.
+            ── AJUSTES ──
 
-            El hueco que responde al dedo son 48 px aunque el dibujo
-            mida 30 — sin borde no hay nada que diga dónde acaba, así
-            que tiene que perdonar la puntería.
+            Se lee como se leen las pestañas de abajo: el dibujo
+            arriba, la palabra debajo, sin caja. No es una decisión
+            estética suelta — toda la navegación de HUBI ya habla ese
+            idioma, y Ajustes ES lo mismo que ellas: un sitio al que
+            se va. Que se parezca es lo honesto.
 
-            Y se pierde la palabra «Ajustes», que no es gratis: para
-            quien no usa el móvil a diario, la palabra sobraba de
-            explicaciones y el dibujo hay que sabérselo. La apuesta es
-            que la rueda es de los dos o tres iconos que ha aprendido
-            todo el mundo, y que grande, con color y en la esquina de
-            siempre, se entiende sola.
+            Lo que lo hace distinto no es la forma, es el COLOR. Los
+            cinco de abajo van en gris o en verde; éste lleva el
+            degradado de la H, porque no es una sección de la casa: es
+            tuyo. Y con eso basta para que no se confunda con una
+            sexta pestaña que se ha subido de sitio.
+
+            La palabra en versalitas y con separación entre letras. Es
+            una firma tipográfica: se lee como una etiqueta puesta a
+            propósito, no como un botón al que se le ha caído la caja.
+            Y en mayúsculas aguanta el tamaño pequeño mucho mejor que
+            en minúsculas, que a 11 px empiezan a cerrarse.
+
+            48 px de hueco tocable aunque el conjunto mida menos: sin
+            borde no hay nada que diga dónde acaba, así que tiene que
+            perdonar la puntería.
           */}
           <Link
             href="/ajustes"
-            aria-label="Ajustes"
-            className="-mr-2 flex h-12 w-12 shrink-0 items-center justify-center"
+            className="-mr-2 flex min-h-[48px] w-[60px] shrink-0 flex-col items-center justify-center gap-[3px]"
           >
-            <Rueda tam={30} />
+            <Rueda tam={27} />
+            <span
+              className="whitespace-nowrap text-[10.5px] font-extrabold uppercase leading-none text-tenue"
+              style={{ letterSpacing: '0.11em' }}
+            >
+              Ajustes
+            </span>
           </Link>
         </div>
       </Cabecera>
