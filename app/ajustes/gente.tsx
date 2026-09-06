@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import QuienVe, { type CarpetaPermiso } from './quien-ve'
+import { ROLES, nombreDelRol, type Rol } from '@/lib/roles'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -31,6 +32,10 @@ export type Vecino = {
   soyYo: boolean
   /** Invitada, pero todavía no ha dicho que sí. */
   pendiente: boolean
+  /** Quién es en esta casa: familia, ayuda, asesor, solo mirar. */
+  rol: string | null
+  /** Último día con acceso, si se le puso fecha de fin. */
+  hasta: string | null
   /** ¿Ve toda la casa, o solo lo que se le ha concedido? */
   veTodo: boolean
   escribeTodo: boolean
@@ -51,7 +56,8 @@ export default function Gente({
   const [invitando, setInvitando] = useState(false)
   const [nombre, setNombre] = useState('')
   const [correo, setCorreo] = useState('')
-  const [papel, setPapel] = useState<'miembro' | 'lector'>('miembro')
+  const [rol, setRol] = useState<Rol>('familia')
+  const [hasta, setHasta] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
   const [hecho, setHecho] = useState<{ nombre: string; correo: string } | null>(null)
@@ -60,7 +66,8 @@ export default function Gente({
     setInvitando(false)
     setNombre('')
     setCorreo('')
-    setPapel('miembro')
+    setRol('familia')
+    setHasta('')
     setFallo(null)
   }
 
@@ -72,7 +79,12 @@ export default function Gente({
     const r = await fetch('/api/miembros', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ correo: correo.trim(), nombre: nombre.trim(), papel }),
+      body: JSON.stringify({
+        correo: correo.trim(),
+        nombre: nombre.trim(),
+        rol,
+        hasta: hasta || null,
+      }),
     })
 
     const d = (await r.json().catch(() => null)) as {
@@ -145,9 +157,13 @@ export default function Gente({
               <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
                 {v.manda
                   ? 'Creó la casa · su Google Drive'
-                  : v.pendiente
-                    ? 'Invitación hecha · todavía no ha entrado'
-                    : loQuePuede(v)}
+                  : [
+                      nombreDelRol(v.rol),
+                      v.pendiente ? 'todavía no ha entrado' : loQuePuede(v),
+                      v.hasta ? `hasta el ${enPalabras(v.hasta)}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
               </span>
             </span>
             {puedoInvitar && !v.manda && (
@@ -224,37 +240,69 @@ export default function Gente({
               className="entrada mt-2.5"
             />
 
-            {/* ── Qué va a poder hacer ── */}
+            {/*
+              ── QUIÉN ES ──
+
+              Antes eran dos: «todo, como tú» o «solo mirar». Y con eso
+              se resolvían mal los dos casos que la gente tiene de
+              verdad: a quien ayuda en casa le dabas de más, y a un
+              gestor le dabas de menos y acababa pidiéndotelo por
+              teléfono.
+
+              Elegir aquí rellena de golpe los permisos que ya existían
+              —el papel, lo que ve, y las carpetas una a una—. Se puede
+              afinar después desde el ojo de cada persona.
+            */}
             <p className="mt-5 text-[17px] font-extrabold leading-snug">
-              ¿Qué quieres que pueda hacer?
+              ¿Quién es?
             </p>
             <div className="mt-2.5 space-y-2.5">
-              <Papel
-                puesto={papel === 'miembro'}
-                alPulsar={() => setPapel('miembro')}
-                titulo="Todo, como tú"
-                pie="Guardar papeles, apuntar gastos, dejar recados. Para quien vive contigo."
-              />
-              <Papel
-                puesto={papel === 'lector'}
-                alPulsar={() => setPapel('lector')}
-                titulo="Solo mirar"
-                pie="Lo ve todo pero no puede cambiar ni borrar nada. Para un hijo o un gestor."
-              />
+              {ROLES.map((r) => (
+                <Papel
+                  key={r.valor}
+                  puesto={rol === r.valor}
+                  alPulsar={() => setRol(r.valor)}
+                  titulo={r.nombre}
+                  pie={r.pie}
+                />
+              ))}
             </div>
 
             {/*
               Se dice ANTES de escribir nada, no después: quien invita
-              tiene que saber qué está dando. Hoy en HUBI no hay papeles
-              privados — todo lo que se guarda es de la casa.
+              tiene que saber exactamente qué está dando.
             */}
             <p className="mt-4 rounded-[14px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
-              En los dos casos <strong className="text-tinta">lo verá todo</strong>: los papeles,
-              las cuentas y la agenda, también lo de Salud. Todavía no se puede guardar nada
-              como privado.
+              {ROLES.find((r) => r.valor === rol)?.detalle}
             </p>
 
-            <p className="mt-2.5 text-[14.5px] font-semibold leading-snug text-tenue">
+            {/*
+              ── HASTA CUÁNDO ──
+
+              Una empleada que se va, un asesor que deja de llevarte las
+              cuentas. Hoy hay que ACORDARSE de quitarles el acceso, y
+              nadie se acuerda: así es como se acumula gente mirando los
+              papeles de una casa donde ya no está.
+
+              Vacío es lo normal y no pasa nada por dejarlo así.
+            */}
+            <label htmlFor="hasta" className="mt-5 block text-[17px] font-extrabold leading-snug">
+              ¿Hasta cuándo? <span className="font-bold text-tenue">· si quieres</span>
+            </label>
+            <input
+              id="hasta"
+              type="date"
+              value={hasta}
+              onChange={(e) => setHasta(e.target.value)}
+              className="entrada mt-2.5"
+            />
+            <p className="mt-2 text-[14.5px] font-semibold leading-snug text-tenue">
+              {hasta
+                ? 'Ese día deja de entrar, sin que tengas que hacer nada.'
+                : 'Sin fecha, el acceso no caduca. Se le puede quitar cuando quieras.'}
+            </p>
+
+            <p className="mt-4 text-[14.5px] font-semibold leading-snug text-tenue">
               No le llega ningún correo de nuestra parte. Dile tú que entre en HUBI con ese
               correo y le llegará su número, como a ti.
             </p>
@@ -363,6 +411,18 @@ function loQuePuede(v: Vecino): string {
   if (v.veTodo && v.escribeTodo) return 'Ve y apunta todo lo de la casa'
   if (v.veTodo) return `Ve toda la casa · guarda en ${dondeGuarda(v)}`
   return `Ve ${cuantasVe(v)} · guarda en ${v.escribeTodo ? 'todas ellas' : dondeGuarda(v)}`
+}
+
+/** «2026-12-31» → «31 de diciembre». */
+function enPalabras(iso: string): string {
+  const meses = [
+    'enero','febrero','marzo','abril','mayo','junio',
+    'julio','agosto','septiembre','octubre','noviembre','diciembre',
+  ]
+  const [a, m, d] = iso.split('-').map(Number)
+  if (!a || !m || !d) return iso
+  const esteAnio = new Date().getFullYear()
+  return a === esteAnio ? `${d} de ${meses[m - 1]}` : `${d}/${m}/${a}`
 }
 
 function cuantasVe(v: Vecino): string {

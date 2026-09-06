@@ -130,6 +130,8 @@ export default async function Ajustes() {
       ve_todo?: boolean
       escribe_todo?: boolean
       aceptado_en?: string | null
+      rol?: string | null
+      acceso_hasta?: string | null
     }[] = []
 
     /*
@@ -143,7 +145,7 @@ export default async function Ajustes() {
     const conPermisos = hogarId
       ? await supabase
           .from('miembros')
-          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en')
+          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en, rol, acceso_hasta')
           .eq('hogar_id', hogarId)
           .order('unido_en')
       : { data: [], error: null }
@@ -205,6 +207,8 @@ export default async function Ajustes() {
              invita ve a Marta en la lista y da por hecho que ya está
              dentro — y luego se extraña de que no vea nada. */
           pendiente: m.aceptado_en === null,
+          rol: m.rol ?? null,
+          hasta: m.acceso_hasta ?? null,
           veTodo: m.ve_todo !== false,
           escribeTodo: m.escribe_todo !== false,
           carpetas: raices.map((r) => {

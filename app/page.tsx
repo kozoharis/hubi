@@ -15,6 +15,7 @@ import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
 import { casasDe } from '@/lib/casas'
 import { cuantasNotas } from '@/lib/notas'
 import { gastadoEnCasa } from '@/lib/gastos-casa'
+import { queVeEnInicio } from '@/lib/roles'
 import { eurosRedondo } from '@/lib/periodos'
 import Casas from './casas'
 
@@ -177,6 +178,37 @@ export default async function Inicio({
   const nombre = perfil.nombre
 
   /*
+    ── QUÉ LE ENSEÑA HUBI A ESTA PERSONA ──
+
+    Y esto es lo que de verdad cambia con los roles, más que los
+    permisos. A quien ayuda en casa, HUBI no le abre en «Cuentas de
+    casa» y «Papeles»: le abre en lo de hoy y la compra. El permiso
+    evita que vea algo; la pantalla hace que encuentre lo suyo en un
+    segundo.
+
+    OJO: esto es lo que se OFRECE, no lo que protege. Lo que no puede
+    ver sigue sin poder verlo aunque escriba la dirección a mano — de
+    eso se encargan las políticas de la base de datos, y así tiene que
+    seguir siendo. Esconder un botón nunca es una medida de seguridad.
+
+    Envuelto: `rol` es del SQL 37. Sin él, todo el mundo ve lo de
+    siempre.
+  */
+  let rol: string | null = null
+  try {
+    const { data: mio } = await supabase
+      .from('miembros')
+      .select('rol')
+      .eq('perfil_id', user.id)
+      .eq('hogar_id', hogarId)
+      .maybeSingle()
+    rol = (mio?.rol as string | null) ?? null
+  } catch {
+    /* Sin la columna: se comporta como antes. */
+  }
+  const ve = queVeEnInicio(rol)
+
+  /*
     QUIÉN MANDA AQUÍ, Y CÓMO SE LLAMA.
 
     Antes era `perfil.es_propietario_drive`, una casilla global que
@@ -274,6 +306,28 @@ export default async function Inicio({
           {nombre ? `${saludo()}, ${nombre}` : saludo()}
         </h1>
 
+        {/*
+          ── PARA QUÉ ESTÁS AQUÍ ──
+
+          Solo a quien no es de la familia. Una empleada o un gestor
+          entran en la casa de OTRO: sin una línea que lo diga, la
+          pantalla parece a medio cargar —«¿y lo demás?»— cuando en
+          realidad está completa.
+
+          Y al asesor le hace más falta que a nadie: su Inicio no lleva
+          ninguna tarjeta, porque lo suyo son las cuentas y ésas están
+          en las pestañas de abajo.
+        */}
+        {rol && rol !== 'familia' && (
+          <p className="mt-4 rounded-[18px] border border-borde bg-superficie px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
+            {rol === 'ayuda'
+              ? 'Aquí tienes lo que te han encargado y la lista de la compra. El ticket del súper se guarda desde la propia compra.'
+              : rol === 'asesor'
+                ? 'Tienes acceso a las cuentas y a los papeles de las actividades de esta casa. Están abajo. No puedes cambiar nada.'
+                : 'Puedes ver las cosas de esta casa, pero no cambiar nada.'}
+          </p>
+        )}
+
         {conectado && <Invitacion />}
 
         {aviso && (
@@ -287,7 +341,7 @@ export default async function Inicio({
         )}
 
         {/* ── Lo único grande de la pantalla ── */}
-        {conectado && (
+        {conectado && ve.guardarDocumento && (
           <Link
             href="/guardar"
             className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
@@ -328,7 +382,7 @@ export default async function Inicio({
           tocar nunca — y éste es el sitio más caro de la aplicación.
           Se apaga desde Ajustes y la lista se queda guardada.
         */}
-        {usaCompra && (
+        {usaCompra && ve.compra && (
         <Link
           href="/compra"
           className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
@@ -375,6 +429,7 @@ export default async function Inicio({
           descubre nadie. Con cero notas dice que no hay ninguna, que
           es una respuesta, no un hueco.
         */}
+        {ve.notas && (
         <Link
           href="/notas"
           className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
@@ -411,6 +466,7 @@ export default async function Inicio({
             <Ico nombre="flecha" tam={22} grosor={2.2} />
           </span>
         </Link>
+        )}
 
         {/*
           ── Las cuentas de casa ──
@@ -429,6 +485,7 @@ export default async function Inicio({
           gastos de casa se venían apuntando desde el principio y no
           había una sola pantalla que los sumara.
         */}
+        {ve.cuentasCasa && (
         <Link
           href="/gastos"
           className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
@@ -457,6 +514,7 @@ export default async function Inicio({
             <Ico nombre="flecha" tam={22} grosor={2.2} />
           </span>
         </Link>
+        )}
 
         {/* ── Conectar Drive ── */}
         {!conectado && manda && (
@@ -483,7 +541,7 @@ export default async function Inicio({
         )}
 
         {/* ── Hoy ── */}
-        {hoy.length > 0 && (
+        {ve.agenda && hoy.length > 0 && (
           <section className="mt-6">
             <h2 className="rotulo">Hoy</h2>
             <ul className="mt-2.5 space-y-2.5">
@@ -514,7 +572,7 @@ export default async function Inicio({
         )}
 
         {/* ── Próximamente ── */}
-        {proximos.length > 0 && (
+        {ve.agenda && proximos.length > 0 && (
           <section className="mt-6">
             <h2 className="rotulo">Próximamente</h2>
             <ul className="mt-1">
@@ -548,7 +606,7 @@ export default async function Inicio({
           </section>
         )}
 
-        {hoy.length === 0 && proximos.length === 0 && conectado && (
+        {ve.agenda && hoy.length === 0 && proximos.length === 0 && conectado && (
           <p className="mt-6 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
             Hoy no hay nada apuntado.
           </p>

@@ -3,6 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { quien } from '@/lib/supabase/quien'
 import { miHogar, mandaEnSuCasa, SIN_CASA } from '@/lib/hogar'
+import { esRol, type Rol } from '@/lib/roles'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,9 +59,15 @@ export async function POST(peticion: NextRequest) {
     )
   }
 
-  let cuerpo: { correo?: string; nombre?: string; papel?: string }
+  let cuerpo: { correo?: string; nombre?: string; papel?: string; rol?: string; hasta?: string }
   try {
-    cuerpo = (await peticion.json()) as { correo?: string; nombre?: string; papel?: string }
+    cuerpo = (await peticion.json()) as {
+      correo?: string
+      nombre?: string
+      papel?: string
+      rol?: string
+      hasta?: string
+    }
   } catch {
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
   }
@@ -88,17 +95,41 @@ export async function POST(peticion: NextRequest) {
   }
 
   /*
-    QUÉ VA A PODER HACER.
+    QUIÉN ES, Y HASTA CUÁNDO.
 
-    Solo dos, y a propósito. Una tabla de permisos por sección es
-    justo la complejidad empresarial que el punto 28 descarta, y estas
-    dos cubren lo que la gente pide de verdad: la pareja entra
-    completa, un hijo o un gestor solo mira.
+    Antes eran dos opciones —«todo, como tú» o «solo mirar»— y eso
+    deja fuera a casi todo el mundo real: quien ayuda en casa no
+    necesita las facturas del seguro, y un asesor necesita eso y nada
+    más.
 
-    Lo que no esté en la lista es 'miembro'. Nunca se pasa a la base
-    de datos algo que venga del navegador sin comprobarlo.
+    Ahora es un rol, que es un ATAJO: al ponerlo, `poner_rol` rellena
+    el papel, el ve_todo y los permisos carpeta a carpeta que ya
+    existían. Ninguna política pregunta por el rol — si lo hiciera,
+    habría dos fuentes de verdad y ahí se filtran las cosas.
+
+    Lo que no esté en la lista es 'familia'. Nunca se pasa a la base
+    de datos algo que venga del navegador sin comprobarlo. Y `papel`
+    se sigue admitiendo por si alguna pantalla vieja lo manda.
   */
-  const papel = cuerpo.papel === 'lector' ? 'lector' : 'miembro'
+  const rol: Rol = esRol(cuerpo.rol)
+    ? cuerpo.rol
+    : cuerpo.papel === 'lector'
+      ? 'mirar'
+      : 'familia'
+
+  const papel = rol === 'asesor' || rol === 'mirar' ? 'lector' : 'miembro'
+
+  /* Hasta cuándo. Una fecha suelta o nada: quien no la pone, no
+     caduca. Se comprueba que sea una fecha y que sea futura — una
+     fecha pasada dejaría a esa persona fuera desde el primer día sin
+     que nadie entendiera por qué. */
+  const hoy = new Date().toISOString().slice(0, 10)
+  const hasta =
+    typeof cuerpo.hasta === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(cuerpo.hasta) &&
+    cuerpo.hasta > hoy
+      ? cuerpo.hasta
+      : null
 
   const admin = clienteServidor()
 
@@ -213,10 +244,32 @@ export async function POST(peticion: NextRequest) {
     nadie tenía cuenta antes de ser invitado. Con gente que ya usa
     HUBI, no.
   */
-  const { data: metida, error: alMeter } = await admin
+  /*
+    El rol y la fecha de fin se piden APARTE del insert principal, en
+    dos intentos. Son columnas del SQL 37: si no se ha ejecutado,
+    meterlas aquí no falla esas columnas — hace que Postgres rechace
+    la fila ENTERA, y el resultado sería que no se puede invitar a
+    nadie. Una función a medio instalar no puede tumbar la que
+    funcionaba.
+  */
+  const fila: Record<string, unknown> = {
+    hogar_id: hogarId,
+    perfil_id: id,
+    papel,
+    aceptado_en: null,
+  }
+
+  let conRol = await admin
     .from('miembros')
-    .insert({ hogar_id: hogarId, perfil_id: id, papel, aceptado_en: null })
+    .insert({ ...fila, rol, acceso_hasta: hasta })
     .select('perfil_id')
+
+  if (conRol.error) {
+    console.error('[HUBI] Sin rol todavía (¿falta el SQL 37?):', conRol.error)
+    conRol = await admin.from('miembros').insert(fila).select('perfil_id')
+  }
+
+  const { data: metida, error: alMeter } = conRol
 
   /* Con el `.select()`: sin él, una inserción que no entre devuelve
      «todo bien» habiendo metido cero filas. */
@@ -228,7 +281,32 @@ export async function POST(peticion: NextRequest) {
     )
   }
 
-  return NextResponse.json({ bien: true, correo, nombre, papel, pendiente: true })
+  /*
+    Y ahora el rol de verdad: `poner_rol` reparte los permisos por
+    carpeta que le tocan. Va DESPUÉS de meterla —la función exige que
+    ya esté en la casa— y con la SESIÓN, porque comprueba que quien
+    llama sea quien creó la casa.
+
+    Si falla, la persona está invitada igualmente: se le queda el
+    permiso base y quien invita puede repartírselo a mano desde
+    «¿Qué puede ver?». Se dice, no se esconde.
+  */
+  let repartido = true
+  try {
+    const { error: alRepartir } = await supabase.rpc('poner_rol', {
+      a_quien: id,
+      el_rol: rol,
+    })
+    if (alRepartir) {
+      console.error('[HUBI] Invitada pero sin repartir el rol:', alRepartir)
+      repartido = false
+    }
+  } catch (e) {
+    console.error('[HUBI] Invitada pero sin repartir el rol:', e)
+    repartido = false
+  }
+
+  return NextResponse.json({ bien: true, correo, nombre, papel, rol, hasta, repartido, pendiente: true })
 }
 
 /*
