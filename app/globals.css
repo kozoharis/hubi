@@ -96,9 +96,31 @@
   --t-velo:         rgba(255, 255, 255, 0.06);
 }
 
+/*
+  ── EL REBOTE DEL FINAL, QUITADO ──────────────────────────
+
+  Al llegar abajo del todo y seguir arrastrando, iOS estira la página
+  —el «rubber band»— y ahí se rompen DOS cosas a la vez, porque las
+  dos están clavadas y el rebote mueve todo lo demás por debajo:
+
+    · la barra de abajo se despega y se queda flotando en mitad de la
+      pantalla, con contenido por debajo de ella;
+    · la cabecera deja de tapar, y el párrafo que pasa por detrás se
+      lee entero pegado al título.
+
+  Se veía bonito y no lo era: es un desperfecto, no un efecto. Y sobre
+  todo no es fiable — pasa en iPhone y no en Android, y en una pantalla
+  pensada para ir con prisa, algo que a veces se despega y a veces no
+  es algo en lo que no se puede confiar.
+
+  `overscroll-behavior-y: none` lo apaga en el navegador, que es donde
+  hay que apagarlo. Sigue habiendo una red debajo en `.barra-abajo`,
+  para el navegador que no lo respete.
+*/
 html {
   -webkit-text-size-adjust: 100%;
   background: var(--t-fondo);
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -106,6 +128,7 @@ body {
   color: var(--t-tinta);
   font-family: var(--font-texto);
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
 }
 
 /* Nada importante depende de pasar el ratón por encima:
@@ -409,4 +432,29 @@ input, textarea, select {
 .entrada::placeholder {
   color: var(--t-tenue);
   font-weight: 600;
+}
+
+
+/* ── La barra de abajo, clavada de verdad ──────────────────
+
+   La red por debajo del `overscroll-behavior`. Si algún navegador no
+   lo respeta y sigue rebotando, esto hace que lo que asome por debajo
+   de la barra sea SU PROPIO FONDO y no la pantalla: la barra parece
+   seguir pegada al borde en vez de flotar con contenido detrás.
+
+   200 px de sobra, que es más de lo que estira ningún rebote.
+*/
+.barra-abajo {
+  position: relative;
+}
+
+.barra-abajo::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: var(--t-superficie);
+  pointer-events: none;
 }

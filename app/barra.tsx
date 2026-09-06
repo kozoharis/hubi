@@ -199,7 +199,7 @@ export default function Barra({
       </div>
 
       <nav
-        className="pointer-events-auto border-t border-borde bg-superficie"
+        className="barra-abajo pointer-events-auto border-t border-borde bg-superficie"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="mx-auto flex h-[68px] max-w-md">
