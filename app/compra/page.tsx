@@ -35,6 +35,34 @@ export default async function Compra() {
     .is('padre_id', null)
     .eq('activa', true)
     .order('orden')
+
+  /*
+    ── DÓNDE VA EL TICKET ──
+
+    Al salir del súper tienes el papel en la mano y el móvil en la
+    otra. Ése es el momento, y hasta ahora había que salir de la
+    compra, entrar en Guardar documento y buscar la carpeta a mano:
+    cuatro pasos para algo que se hace cada semana.
+
+    Se resuelve aquí y no en el navegador porque la carpeta es
+    distinta en cada casa. Se busca Casa → Compras → Alimentación, y
+    si esa casa no tiene el desglose de Compras, la propia Compras.
+    Si no hay ni eso, el botón no sale — mejor que no exista a que
+    lleve a una carpeta inventada.
+  */
+  const { data: arbol } = await supabase
+    .from('categorias')
+    .select('id, padre_id, nombre, segmento_drive')
+    .eq('activa', true)
+
+  const cats = arbol ?? []
+  const casa = cats.find((c) => c.segmento_drive === 'CASA' && !c.padre_id)
+  const compras = casa ? cats.find((c) => c.padre_id === casa.id && c.segmento_drive === 'COMPRAS') : null
+  const alimentacion = compras
+    ? cats.find((c) => c.padre_id === compras.id && c.segmento_drive === 'ALIMENTACION')
+    : null
+
+  const ticketEn = alimentacion?.id ?? compras?.id ?? null
   const nombres = Object.fromEntries((perfiles ?? []).map((p) => [p.id, p.nombre]))
 
   /* Las listas vivas. Puede haber varias por categoría: la del lunes
@@ -168,6 +196,7 @@ export default async function Compra() {
             nombre: r.nombre,
             segmento: r.segmento_drive,
           }))}
+          ticketEn={ticketEn}
         />
       </div>
 

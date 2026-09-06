@@ -25,8 +25,15 @@ import { hoyAqui } from '@/lib/tablon'
 */
 
 export type Cuenta = {
-  /** El `segmento_drive` de la categoría raíz: FINCA, HELECHOS… */
-  raiz: string
+  /**
+   * El `segmento_drive` de la categoría raíz: FINCA, HELECHOS…
+   *
+   * O `null`, que significa **todo lo que no es una actividad**: la
+   * Casa, los Vehículos, los Seguros, lo Personal. Ésas no tienen una
+   * raíz propia que sumar —son varias— y hasta hoy no tenían cuentas
+   * de ninguna clase, aunque llevaran meses apuntando gastos.
+   */
+  raiz: string | null
   nombre: string
   icono: Icono
   color: string
@@ -88,25 +95,55 @@ export default async function Cuentas({
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
 
-  const { data: categorias } = await supabase
-    .from('categorias')
-    .select('id, padre_id, nombre, segmento_drive')
+  /*
+    `lleva_cuentas` es del SQL 27 y hace falta para saber cuáles son
+    las actividades. Como siempre: si la columna no está, Postgres no
+    dice «esa columna no existe», rechaza la consulta ENTERA — y esta
+    pantalla enseñaría cero euros con las cuentas del trimestre
+    intactas debajo. Se pide con ella, y si no puede ser, sin ella.
+  */
+  const campos = 'id, padre_id, nombre, segmento_drive'
+  type Cat = {
+    id: string
+    padre_id: string | null
+    nombre: string
+    segmento_drive: string
+    lleva_cuentas?: boolean
+  }
 
-  const todas = categorias ?? []
+  let todas: Cat[] = []
+  const conCuentas = await supabase.from('categorias').select(`${campos}, lleva_cuentas`)
+  if (conCuentas.error) {
+    const basico = await supabase.from('categorias').select(campos)
+    todas = (basico.data ?? []) as Cat[]
+  } else {
+    todas = (conCuentas.data ?? []) as Cat[]
+  }
+
   const porId = new Map(todas.map((c) => [c.id, c]))
+
+  /** La raíz de la que cuelga una categoría. */
+  function raizDe(c: Cat): Cat {
+    let actual = c
+    while (actual.padre_id) {
+      const padre = porId.get(actual.padre_id)
+      if (!padre) break
+      actual = padre
+    }
+    return actual
+  }
 
   // Solo cuenta lo que cuelga de esta sección: el seguro del coche es
   // un gasto de la casa, no de la finca ni de Los Helechos.
-  const raiz = todas.find((c) => c.segmento_drive === seccion.raiz && !c.padre_id)
+  const raiz = seccion.raiz
+    ? (todas.find((c) => c.segmento_drive === seccion.raiz && !c.padre_id) ?? null)
+    : null
+
   const deFinca = new Set<string>()
   for (const c of todas) {
-    let actual: (typeof todas)[number] | undefined = c
-    while (actual) {
-      if (actual.id === raiz?.id) {
-        deFinca.add(c.id)
-        break
-      }
-      actual = actual.padre_id ? porId.get(actual.padre_id) : undefined
+    const suRaiz = raizDe(c)
+    if (seccion.raiz ? suRaiz.id === raiz?.id : suRaiz.lleva_cuentas !== true) {
+      deFinca.add(c.id)
     }
   }
 
@@ -167,7 +204,27 @@ export default async function Cuentas({
   const gastos = suma(movimientos.filter((m) => m.tipo === 'gasto'))
   const balance = ingresos - gastos
 
-  const desglose = agrupar(movimientos.filter((m) => m.tipo === 'gasto'), porId)
+  /*
+    ── A QUÉ ALTURA SE DESGLOSA ──
+
+    Dentro de una actividad, por la carpeta final: Agua, Luz,
+    Productos. Son siete y se leen de un vistazo.
+
+    En las cuentas de casa no vale lo mismo. Ahí cuelgan cinco raíces
+    con sus hojas —Alimentación, Menaje, Limpieza, ITV, Impuestos,
+    Personales…— y saldrían treinta renglones de dos euros cada uno.
+    Lo que se quiere saber es en QUÉ se va: la compra, las
+    reparaciones, el restaurante, el coche. Eso es el segundo nivel.
+
+    Cuando dos coinciden de nombre —«Casa» es a la vez una raíz y un
+    seguro— se les pone delante de dónde vienen. Solo a ésos: poner
+    «Casa · Compras» en todas las líneas sería ruido en las diez que
+    no lo necesitan.
+  */
+  const desglose = seccion.raiz
+    ? agrupar(movimientos.filter((m) => m.tipo === 'gasto'), porId)
+    : porGrupo(movimientos.filter((m) => m.tipo === 'gasto'), porId)
+
   const mayor = desglose[0]?.total ?? 0
 
   /*
@@ -451,7 +508,7 @@ export default async function Cuentas({
         </section>
 
         <Link
-          href={`/finca/apuntar?seccion=${seccion.raiz}`}
+          href={`/finca/apuntar?seccion=${seccion.raiz ?? 'resto'}`}
           className="mt-5 flex h-[60px] items-center justify-center gap-2.5 rounded-[18px] bg-boton text-[18px] font-extrabold text-boton-texto"
         >
           <Ico nombre="mas" tam={22} grosor={2.3} />
@@ -569,6 +626,58 @@ function repartir(
   const tope = Math.max(...casas.map((c) => c.ingresos + c.gastos), 0)
 
   return { casas, comunes, tope, reparte, cuantas: unidades.length }
+}
+
+/*
+  El desglose de las cuentas de casa, por el segundo nivel.
+
+  Se sube desde la carpeta donde está el gasto hasta encontrar la que
+  cuelga directamente de una raíz. Un ticket en «Casa → Compras →
+  Alimentación» cuenta como **Compras**; la ITV cuenta como **ITV**,
+  porque ya está en el segundo nivel.
+
+  Y al final se desempata: dos grupos que se llamen igual llevan
+  delante su raíz. Solo ésos.
+*/
+function porGrupo(
+  lista: Movimiento[],
+  porId: Map<string, { id: string; padre_id: string | null; nombre: string }>
+): { nombre: string; total: number }[] {
+  const totales = new Map<string, { nombre: string; raiz: string; total: number }>()
+
+  for (const m of lista) {
+    let actual = m.categoria_id ? porId.get(m.categoria_id) : undefined
+    let raizNombre = actual?.nombre ?? 'Otros'
+
+    /* Subir hasta que el padre sea una raíz. Si el gasto está en la
+       propia raíz —cosa rara pero posible— se queda en ella. */
+    while (actual?.padre_id) {
+      const padre = porId.get(actual.padre_id)
+      if (!padre) break
+      raizNombre = padre.nombre
+      if (!padre.padre_id) break
+      actual = padre
+    }
+
+    const clave = actual?.id ?? 'otros'
+    const antes = totales.get(clave)
+    totales.set(clave, {
+      nombre: actual?.nombre ?? 'Otros',
+      raiz: raizNombre,
+      total: (antes?.total ?? 0) + Number(m.importe),
+    })
+  }
+
+  const filas = [...totales.values()]
+  const cuantos = new Map<string, number>()
+  for (const f of filas) cuantos.set(f.nombre, (cuantos.get(f.nombre) ?? 0) + 1)
+
+  return filas
+    .map((f) => ({
+      nombre: (cuantos.get(f.nombre) ?? 0) > 1 ? `${f.raiz} · ${f.nombre}` : f.nombre,
+      total: f.total,
+    }))
+    .sort((a, b) => b.total - a.total)
 }
 
 function agrupar(

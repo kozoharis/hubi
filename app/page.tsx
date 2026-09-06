@@ -14,6 +14,8 @@ import { leerPerfil } from '@/lib/perfil'
 import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
 import { casasDe } from '@/lib/casas'
 import { cuantasNotas } from '@/lib/notas'
+import { gastadoEnCasa } from '@/lib/gastos-casa'
+import { eurosRedondo } from '@/lib/periodos'
 import Casas from './casas'
 
 export const dynamic = 'force-dynamic'
@@ -112,6 +114,7 @@ export default async function Inicio({
     { data: conexion },
     { count: porComprar },
     notasPuestas,
+    gastoCasa,
   ] =
     await Promise.all([
       leerPerfil(supabase, user.id, user.email),
@@ -148,6 +151,9 @@ export default async function Inicio({
 
       /* Las notas del corcho, y cuántas te están esperando a ti. */
       cuantasNotas(supabase, user.id),
+
+      /* Lo que se va este trimestre fuera de las actividades. */
+      gastadoEnCasa(supabase),
     ])
 
   /* ¿Esta casa usa la lista de la compra? Envuelto: la columna es
@@ -402,6 +408,52 @@ export default async function Inicio({
             </span>
           </span>
           <span className="shrink-0" style={{ color: '#F59E0B' }}>
+            <Ico nombre="flecha" tam={22} grosor={2.2} />
+          </span>
+        </Link>
+
+        {/*
+          ── Las cuentas de casa ──
+
+          Lo que se va fuera de las actividades: la compra, las
+          reparaciones, el restaurante, el taller, los seguros.
+
+          CON EL NÚMERO PUESTO, y ésa es toda la diferencia. Una
+          tarjeta que dijera «Cuentas de casa ·  Mira lo que se gasta»
+          no la toca nadie: no dice nada que no supieras. La que pone
+          «1.240 € este trimestre» se toca el primer día, porque la
+          cifra o te tranquiliza o te sorprende, y las dos cosas
+          invitan a entrar.
+
+          Y hasta hoy ese número no existía en ninguna parte: los
+          gastos de casa se venían apuntando desde el principio y no
+          había una sola pantalla que los sumara.
+        */}
+        <Link
+          href="/gastos"
+          className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
+          style={{
+            background: 'color-mix(in srgb, #8B5CF6 12%, transparent)',
+            border: '1px solid color-mix(in srgb, #8B5CF6 30%, transparent)',
+          }}
+        >
+          <span
+            className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] bg-superficie"
+            style={{ color: '#8B5CF6' }}
+          >
+            <Ico nombre="euro" tam={24} grosor={2.1} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block whitespace-nowrap text-[18.5px] font-extrabold tracking-tight">
+              Cuentas de casa
+            </span>
+            <span className="block text-[14.5px] font-bold" style={{ color: '#8B5CF6' }}>
+              {gastoCasa > 0
+                ? `${eurosRedondo(gastoCasa)} este trimestre`
+                : 'Todavía no hay nada apuntado'}
+            </span>
+          </span>
+          <span className="shrink-0" style={{ color: '#8B5CF6' }}>
             <Ico nombre="flecha" tam={22} grosor={2.2} />
           </span>
         </Link>

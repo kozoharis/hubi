@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { pasilloDe, PASILLOS } from '@/lib/comprables'
 import { Ico } from '../iconos'
@@ -68,6 +69,7 @@ export default function Pantalla({
   habituales,
   secciones,
   listas,
+  ticketEn,
 }: {
   inicial: Cosa[]
   nombres: Record<string, string>
@@ -75,6 +77,8 @@ export default function Pantalla({
   habituales: string[]
   secciones: Seccion[]
   listas: ListaCompra[]
+  /** La carpeta donde va el ticket del súper. Null si esta casa no la tiene. */
+  ticketEn: string | null
 }) {
   const router = useRouter()
   const [, empezar] = useTransition()
@@ -523,6 +527,29 @@ export default function Pantalla({
           <p className="mt-2.5 text-center text-[15px] font-semibold leading-snug text-tenue">
             Quita de la lista lo que ya está en el carro.
           </p>
+
+          {/*
+            ── EL TICKET, AQUÍ Y NO EN OTRO SITIO ──
+
+            Justo debajo de «Ya he comprado», porque ése es el momento
+            exacto: acabas de salir del súper, tienes el papel en una
+            mano y el móvil en la otra. Ponerlo arriba, antes de
+            comprar, sería un botón que no sirve todavía.
+
+            Va con la carpeta ya elegida —Casa → Compras— así que son
+            dos toques: éste y la foto. Y se puede cambiar antes de
+            guardar, que hace falta el día que la compra sea para la
+            finca.
+          */}
+          {ticketEn && (
+            <Link
+              href={`/guardar?en=${ticketEn}`}
+              className="mt-3 flex h-[58px] w-full items-center justify-center gap-2.5 rounded-[18px] border border-borde bg-superficie text-[17px] font-extrabold text-tinta"
+            >
+              <Ico nombre="foto" tam={21} grosor={2.2} />
+              Guardar el ticket
+            </Link>
+          )}
         </>
       )}
 
