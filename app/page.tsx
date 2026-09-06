@@ -7,7 +7,7 @@ import Barra from './barra'
 import Arranque from './arranque'
 import Invitacion from './invitacion'
 import Cabecera from './cabecera'
-import { Ico, Logo, Pastilla, pintaDe } from './iconos'
+import { Ico, Logo, Pastilla, Rueda, pintaDe } from './iconos'
 import Avatar from './avatar'
 import { cuando, type Recordatorio } from '@/lib/tablon'
 import { leerPerfil } from '@/lib/perfil'
@@ -277,16 +277,29 @@ export default async function Inicio({
             <span className="text-[22px] font-extrabold tracking-[0.09em]">HUBI</span>
           </span>
 
-          <span className="flex shrink-0 items-center gap-2">
-            <Avatar nombre={nombre} foto={perfil.foto} tam={40} />
-            <Link
-              href="/ajustes"
-              className="flex h-11 items-center gap-1.5 rounded-full border border-borde bg-superficie pl-3 pr-3.5 text-[15.5px] font-extrabold text-tinta"
-            >
-              <Ico nombre="rueda" tam={18} grosor={2} />
-              Ajustes
-            </Link>
-          </span>
+          {/*
+            La rueda, suelta y con los colores de la H. Sin píldora:
+            ahí arriba no compite con nada y una caja la convertía en
+            «otro botón» al lado del logo.
+
+            El hueco que responde al dedo son 48 px aunque el dibujo
+            mida 30 — sin borde no hay nada que diga dónde acaba, así
+            que tiene que perdonar la puntería.
+
+            Y se pierde la palabra «Ajustes», que no es gratis: para
+            quien no usa el móvil a diario, la palabra sobraba de
+            explicaciones y el dibujo hay que sabérselo. La apuesta es
+            que la rueda es de los dos o tres iconos que ha aprendido
+            todo el mundo, y que grande, con color y en la esquina de
+            siempre, se entiende sola.
+          */}
+          <Link
+            href="/ajustes"
+            aria-label="Ajustes"
+            className="-mr-2 flex h-12 w-12 shrink-0 items-center justify-center"
+          >
+            <Rueda tam={30} />
+          </Link>
         </div>
       </Cabecera>
 
@@ -298,13 +311,27 @@ export default async function Inicio({
         <Casas casas={casas} />
 
         {/* ── Saludo ── */}
-        <p className="mt-2.5 text-[14.5px] font-bold text-tenue">{hoyEnPalabras()}</p>
-        {/* Nunca "Buenas tardes," a secas: si no hubiera nombre, se
-            saluda sin coma y punto. Una frase colgando hace dudar de
-            todo lo que viene debajo. */}
-        <h1 className="mt-0.5 text-[26px] font-extrabold leading-tight tracking-tight">
-          {nombre ? `${saludo()}, ${nombre}` : saludo()}
-        </h1>
+        {/*
+          ── EL SALUDO, CON LA FOTO ──
+
+          La foto estaba arriba, pegada al logo, y ahí no decía nada:
+          era un adorno al lado de una marca. Aquí sí — «Buenas tardes,
+          Haris» y su cara son la misma frase, y de un vistazo se sabe
+          con qué cuenta se ha entrado, que en una casa donde dos
+          personas comparten el mismo iPad no es un detalle.
+        */}
+        <div className="mt-2.5 flex items-center gap-3">
+          <Avatar nombre={nombre} foto={perfil.foto} tam={52} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[14.5px] font-bold text-tenue">{hoyEnPalabras()}</p>
+            {/* Nunca "Buenas tardes," a secas: si no hubiera nombre, se
+                saluda sin coma y punto. Una frase colgando hace dudar de
+                todo lo que viene debajo. */}
+            <h1 className="mt-0.5 text-[24px] font-extrabold leading-tight tracking-tight">
+              {nombre ? `${saludo()}, ${nombre}` : saludo()}
+            </h1>
+          </div>
+        </div>
 
         {/*
           ── PARA QUÉ ESTÁS AQUÍ ──
