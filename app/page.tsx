@@ -455,11 +455,13 @@ export default async function Inicio({
             El dibujo del botón está en `iconos.tsx`, con el porqué de
             cada pieza.
           */}
-          {/* El margen invisible arriba y abajo: la píldora se ve de 34
+          {/* El margen invisible arriba y abajo: la píldora se ve de 30
               px y se toca de 48. Ninguna pantalla de HUBI tiene algo
               pulsable por debajo de esa medida, y este botón no iba a
-              ser la excepción por quedar más fino. */}
-          <Link href="/ajustes" className="-mr-1 shrink-0 py-[7px] pl-2">
+              ser la excepción por quedar más fino. Al bajar de 34 a 30
+              el relleno sube de 7 a 9: lo que encoge es el dibujo, no
+              la zona donde cae el dedo. */}
+          <Link href="/ajustes" className="-mr-1 shrink-0 py-[9px] pl-2">
             <BotonAjustes />
           </Link>
         </div>

@@ -202,8 +202,27 @@ export function Pastilla({
   Y LOS COLORES DEL BORDE ESTÁN MEDIDOS, NO ELEGIDOS
 
   #00F4FC en el extremo izquierdo, #628BFC arriba a la derecha,
-  #AE62F7 en el derecho. Son los píxeles de su archivo. Y el resplandor
-  de alrededor, en los dos colores de las puntas.
+  #AE62F7 en el derecho. Son los píxeles de su archivo.
+
+  ─────────────────────────────────────────────────────────────
+  SIN RESPLANDOR, Y SIN FLECHA
+
+  Tenía las dos cosas y las dos sobraban.
+
+  El halo —dos sombras de color alrededor— hacía que el botón
+  PARECIERA ENCENDIDO, como si estuviera avisando de algo. Y no avisa
+  de nada: es un sitio al que se va. En una pantalla donde lo único
+  que de verdad reclama la mirada es una nota que te han dejado o algo
+  que vence mañana, un botón que brilla por decoración está robando
+  esa atención.
+
+  La flecha sobraba por otra razón: la ponen las filas de las listas
+  para decir «esto se abre», y aquí ya lo dice la propia píldora. Con
+  una flecha dentro, el botón mide 34 px de alto y pide su sitio; sin
+  ella baja a 30 y se queda donde le toca —arriba a la derecha, a
+  mano, sin competir con nada.
+
+  Queda solo la línea del degradado, que es lo que él pidió.
 
   ─────────────────────────────────────────────────────────────
   POR QUÉ MANDOS Y NO UNA RUEDA
@@ -231,14 +250,13 @@ export function Pastilla({
 export function BotonAjustes() {
   return (
     <span
-      className="block rounded-full p-[1.2px]"
+      className="block rounded-full p-[1.1px]"
       style={{
         background: 'linear-gradient(102deg, #00F4FC 0%, #628BFC 55%, #AE62F7 100%)',
-        boxShadow: '0 0 14px -3px rgba(0,244,252,.28), 0 0 14px -3px rgba(174,98,247,.26)',
       }}
     >
       <span
-        className="flex h-[34px] items-center gap-1.5 rounded-full pl-2.5 pr-1.5"
+        className="flex h-[30px] items-center gap-1.5 rounded-full px-2.5"
         style={{
           background: 'color-mix(in srgb, var(--t-fondo) 80%, transparent)',
           backdropFilter: 'blur(8px)',
@@ -249,14 +267,11 @@ export function BotonAjustes() {
         <img
           src="/ajustes-mando.png"
           alt=""
-          width={18}
-          height={18}
-          style={{ width: 18, height: 18, display: 'block' }}
+          width={16}
+          height={16}
+          style={{ width: 16, height: 16, display: 'block' }}
         />
-        <span className="text-[14px] font-extrabold tracking-tight text-tinta">Ajustes</span>
-        {/* Blanca y con el trazo algo más grueso, como en su dibujo.
-            No es la flecha gris de las listas: aquí es parte del botón. */}
-        <Ico nombre="flecha" tam={15} grosor={2.6} className="text-tinta" />
+        <span className="text-[13.5px] font-extrabold tracking-tight text-tinta">Ajustes</span>
       </span>
     </span>
   )
