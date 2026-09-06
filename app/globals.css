@@ -458,6 +458,41 @@ input, textarea, select {
   font-weight: 600;
 }
 
+/*
+  ── LOS CAMPOS DE FECHA Y HORA SE SALÍAN DE SU CAJA ──
+
+  En iPhone, `input[type="time"]` y `type="date"` traen de fábrica su
+  propio ancho —el que necesita el reloj del sistema— y un relleno
+  interno que no es el nuestro. Con `width: 100%` el navegador se
+  quedaba con el suyo si era mayor, y la caja asomaba por la derecha
+  del panel donde vive. Se veía como si la pantalla estuviera rota.
+
+  `min-width: 0` es la línea que lo arregla: sin ella, el ancho de
+  fábrica funciona como un suelo que el 100% no puede bajar. Y
+  `appearance: none` quita el relleno propio para que el texto empiece
+  donde empieza el de los demás campos.
+*/
+/* El arreglo del ancho va a TODOS, tengan la clase o no: hay campos
+   de fecha por media aplicación —el tablón, la finca, los papeles— y
+   el problema es del navegador, no de una pantalla concreta. */
+input[type='time'],
+input[type='date'],
+input[type='datetime-local'] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Y lo demás solo a los nuestros, para no cambiarle la pinta a nada
+   que ya estuviera bien. */
+.entrada[type='time'],
+.entrada[type='date'],
+.entrada[type='datetime-local'] {
+  -webkit-appearance: none;
+  appearance: none;
+  /* Sin altura de línea propia el texto se pega arriba en Safari. */
+  line-height: 3.5rem;
+}
+
 
 /* ── La barra de abajo, clavada de verdad ──────────────────
 

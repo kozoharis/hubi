@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { avisarA } from '@/lib/push'
+import { deducirTipo } from '@/lib/tablon'
 
 export const dynamic = 'force-dynamic'
 
@@ -165,50 +167,93 @@ export async function PATCH(peticion: NextRequest) {
   const nota = `${cuantas} ${cuantas === 1 ? 'cosa' : 'cosas'} en la lista.`
 
   // ── La tarea de la Agenda ──
+  /*
+    ═══════════════════════════════════════════════════════════
+    LA TAREA DE LA AGENDA SE ESCRIBE AQUÍ, NO LLAMÁNDONOS A NOSOTROS
+    ═══════════════════════════════════════════════════════════
+
+    Aquí había un `fetch` a nuestra propia ruta `/api/recordatorios`,
+    reenviando la cookie de la sesión. Se veía elegante —reutilizar la
+    ruta que ya sabe crear tareas— y es de las cosas que fallan en
+    producción y no en el ordenador de uno:
+
+      · el servidor tiene que poder llamarse a sí mismo por HTTP, que
+        depende del despliegue y no de nuestro código;
+      · `peticion.url` en Vercel no siempre es la dirección pública;
+      · y si la cookie no viaja tal cual, la llamada vuelve como «no
+        has entrado» — sobre una petición que SÍ tiene sesión.
+
+    Y lo que veía la persona era «No se ha podido poner la compra en la
+    Agenda» sobre una compra perfectamente guardada. Pasó de verdad.
+
+    Ahora se escribe en la tabla directamente, con la misma sesión que
+    ya tenemos aquí: mismas políticas, mismo resultado, un viaje menos
+    y una manera menos de fallar.
+  */
   let recordatorioId = antes.recordatorio_id as string | null
 
   if (fecha) {
+    const laTarea = {
+      titulo,
+      /* El mismo que pondría la ruta de tareas: lo deduce del título
+         para que en la Agenda salga con su icono, como todo lo demás.
+         `'compra'` no es un tipo que HUBI conozca. */
+      tipo: deducirTipo(titulo),
+      asignado_a: asignado,
+      fecha,
+      hora,
+      nota,
+      aviso_previo: hora ? (cuerpo.aviso_previo ?? '1h') : 'sin_aviso',
+    }
+
     if (recordatorioId) {
       /* Ya tenía tarea: se CAMBIA. Aquí estaría el fallo de crear una
-         nueva cada vez que se toca la fecha. */
-      const r = await fetch(new URL(`/api/recordatorios/${recordatorioId}`, peticion.url), {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          cookie: peticion.headers.get('cookie') ?? '',
-        },
-        body: JSON.stringify({ titulo, fecha, hora, asignado_a: asignado, nota }),
-      })
-      /* Si la tarea se borró desde la Agenda, ya no está: se hace una
-         nueva en vez de dejar la lista con una fecha que no avisa. */
-      if (!r.ok) recordatorioId = null
+         nueva cada vez que se toca el día. */
+      const { data: cambiada } = await supabase
+        .from('recordatorios')
+        .update(laTarea)
+        .eq('id', recordatorioId)
+        .select('id')
+
+      /* Si se borró desde la Agenda ya no está: se hace una nueva en
+         vez de dejar la lista con una fecha que no avisa. */
+      if (!cambiada || cambiada.length === 0) recordatorioId = null
     }
 
     if (!recordatorioId) {
-      const r = await fetch(new URL('/api/recordatorios', peticion.url), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          cookie: peticion.headers.get('cookie') ?? '',
-        },
-        body: JSON.stringify({
-          titulo,
-          fecha,
-          hora,
-          asignado_a: asignado,
-          aviso_previo: hora ? (cuerpo.aviso_previo ?? '1h') : 'ninguno',
-          nota,
-        }),
-      })
-      if (r.ok) {
-        const d = (await r.json().catch(() => ({}))) as { ids?: string[]; id?: string }
-        recordatorioId = d.ids?.[0] ?? d.id ?? null
-      } else {
+      const { data: creada, error: alCrear } = await supabase
+        .from('recordatorios')
+        .insert({ ...laTarea, creado_por: user.id })
+        .select('id')
+        .maybeSingle()
+
+      if (alCrear || !creada?.id) {
+        console.error('[HUBI] No se ha podido poner la compra en la Agenda:', alCrear)
         return NextResponse.json(
-          { error: 'No se ha podido poner la compra en la Agenda.' },
-          { status: 502 }
+          {
+            error: 'No se ha podido poner la compra en la Agenda.',
+            /* El motivo de verdad. Sin él, esto era un cartel rojo sin
+               nada que investigar. */
+            detalle: alCrear?.message,
+          },
+          { status: 500 }
         )
       }
+
+      recordatorioId = creada.id as string
+    }
+
+    /*
+      Y se avisa a quien le toca ir. Sin esperarlo: la compra ya está
+      programada, y un aviso que no sale no puede tumbar lo que sí se
+      ha guardado.
+    */
+    if (asignado && asignado !== user.id) {
+      avisarA(asignado, {
+        titulo: 'La compra',
+        cuerpo: `${titulo} · ${cuandoEnPalabras(fecha, hora)}`,
+        url: '/compra',
+      }).catch((e) => console.error('[HUBI] Programada sin avisar:', e))
     }
   }
 
@@ -257,4 +302,15 @@ export async function DELETE(peticion: NextRequest) {
   }
 
   return NextResponse.json({ bien: true })
+}
+
+/** «mañana a las 10:00» · «el 12 de septiembre». Para el aviso. */
+function cuandoEnPalabras(fecha: string, hora: string | null): string {
+  const meses = [
+    'enero','febrero','marzo','abril','mayo','junio',
+    'julio','agosto','septiembre','octubre','noviembre','diciembre',
+  ]
+  const [a, m, d] = fecha.split('-').map(Number)
+  const cuando = a && m && d ? `${d} de ${meses[m - 1]}` : fecha
+  return hora ? `${cuando} a las ${hora}` : cuando
 }

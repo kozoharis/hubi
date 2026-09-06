@@ -138,6 +138,11 @@ export default function Programar({
       </div>
 
       {/* ── La hora ── */}
+      {/*
+        «Si quieres» y no «opcional»: la mitad de las compras no tienen
+        hora, y quien las programa no debe sentir que se está saltando
+        un campo.
+      */}
       <p className="rotulo mt-4">A qué hora (si quieres)</p>
       <input
         type="time"
@@ -198,14 +203,14 @@ export default function Programar({
           className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
         >
           <Ico nombre="check" tam={19} grosor={2.3} />
-          {guardando ? 'Guardando…' : 'Ponerlo en la Agenda'}
+          {guardando ? 'Guardando…' : 'Guardar'}
         </button>
         <button
           onClick={alCerrar}
           disabled={guardando}
           className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
         >
-          Ahora no
+          Dejarlo
         </button>
       </div>
     </div>
