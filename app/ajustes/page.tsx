@@ -13,6 +13,7 @@ import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
 import { estadoGuardado } from '@/lib/google/calendario'
 import TuPerfil from './foto'
 import NuevaActividad from './nueva-actividad'
+import Gente, { type Vecino } from './gente'
 import PrepararCalendario from './calendario'
 import MiCalendario from './mi-calendario'
 
@@ -71,6 +72,48 @@ export default async function Ajustes() {
     .neq('id', user.id)
     .limit(1)
   const elOtro = otros?.[0]?.nombre?.split(' ')[0] ?? null
+
+  /*
+    ── Quién vive en esta casa ──
+
+    Se lee con la SESIÓN: las políticas por hogar son justamente lo
+    que hace que aquí salgan los de tu casa y no los de otra.
+
+    Va envuelto porque `miembros` puede no existir todavía en una base
+    de datos vieja, y una lista de gente que falla no puede dejar sin
+    Ajustes —ni sin poder salir de la sesión— a quien entra.
+  */
+  const gente: Vecino[] = []
+
+  try {
+    const { data: filas } = await supabase
+      .from('miembros')
+      .select('perfil_id, papel')
+      .order('unido_en')
+
+    const ids = (filas ?? []).map((m) => m.perfil_id as string)
+
+    if (ids.length > 0) {
+      const { data: quienes } = await supabase
+        .from('perfiles')
+        .select('id, nombre')
+        .in('id', ids)
+
+      const nombreDe = new Map((quienes ?? []).map((p) => [p.id as string, p.nombre as string]))
+
+      for (const m of filas ?? []) {
+        const id = m.perfil_id as string
+        gente.push({
+          id,
+          nombre: nombreDe.get(id) ?? 'Alguien',
+          manda: m.papel === 'propietario',
+          soyYo: id === user.id,
+        })
+      }
+    }
+  } catch {
+    /* Sin la tabla todavía. El resto de Ajustes sigue entero. */
+  }
 
   /*
     ── Las secciones que se dividen, con lo que tienen dentro ──
@@ -155,6 +198,22 @@ export default async function Ajustes() {
         <div className="mt-3">
           <TuPerfil nombre={nombre} foto={perfil.foto} />
         </div>
+
+        {/* ── Quién vive aquí ── */}
+        {/*
+          Va arriba, justo debajo de quién eres. Es la respuesta a la
+          pregunta que más importa de toda esta pantalla: quién más ve
+          mis facturas y mis informes. Enterrarla debajo del tema
+          oscuro y de los avisos sería decir que importa menos.
+        */}
+        {gente.length > 0 && (
+          <>
+            <h2 className="rotulo mt-5">Quién vive aquí</h2>
+            <div className="mt-2.5">
+              <Gente gente={gente} puedoInvitar={manda} />
+            </div>
+          </>
+        )}
 
         {/* ── Cómo se ve ── */}
         <h2 className="rotulo mt-5">Cómo se ve</h2>

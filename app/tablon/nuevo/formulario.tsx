@@ -106,19 +106,45 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
           className="mt-3 w-full resize-none rounded-2xl border-2 border-borde bg-fondo px-5 py-4 text-xl leading-snug text-tinta placeholder:text-tenue focus:border-verde focus:outline-none"
         />
 
-        <p className="mt-8 text-xl font-medium text-tinta">¿Para quién?</p>
-        <div className="mt-3 space-y-3">
-          <Opcion activa={para === yo} onClick={() => setPara(yo)} texto="Para mí" />
-          {otros.map((p) => (
-            <Opcion
-              key={p.id}
-              activa={para === p.id}
-              onClick={() => setPara(p.id)}
-              texto={`Para ${p.nombre}`}
-            />
-          ))}
-          <Opcion activa={para === null} onClick={() => setPara(null)} texto="Para los dos" />
-        </div>
+        {/*
+          ═══════════════════════════════════════════════════════
+          SI VIVE SOLO, ESTA PREGUNTA NO EXISTE
+          ═══════════════════════════════════════════════════════
+
+          Antes salía siempre, con «Para mí» y «Para los dos» — y en
+          una casa de una sola persona, «los dos» son ella y nadie.
+          Preguntar a alguien a cuál de dos personas asigna algo
+          cuando solo hay una es hacerle descartar una opción cada vez
+          que apunta algo, y encima sembrarle la duda de si hay
+          alguien más ahí dentro que no conoce.
+
+          Con una sola persona, se apunta para ella y punto: es la
+          única respuesta posible, y una pregunta con una sola
+          respuesta no es una pregunta.
+        */}
+        {otros.length > 0 && (
+          <>
+            <p className="mt-8 text-xl font-medium text-tinta">¿Para quién?</p>
+            <div className="mt-3 space-y-3">
+              <Opcion activa={para === yo} onClick={() => setPara(yo)} texto="Para mí" />
+              {otros.map((p) => (
+                <Opcion
+                  key={p.id}
+                  activa={para === p.id}
+                  onClick={() => setPara(p.id)}
+                  texto={`Para ${p.nombre.split(' ')[0]}`}
+                />
+              ))}
+              {/* «Los dos» solo cuando son dos. Con cuatro personas en
+                  casa esa frase es sencillamente falsa. */}
+              <Opcion
+                activa={para === null}
+                onClick={() => setPara(null)}
+                texto={otros.length === 1 ? 'Para los dos' : 'Para todos'}
+              />
+            </div>
+          </>
+        )}
 
         <p className="mt-8 text-xl font-medium text-tinta">¿Cuándo?</p>
         <div className="mt-3 space-y-3">
