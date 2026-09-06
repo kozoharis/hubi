@@ -139,6 +139,21 @@ export default async function Inicio({
         .is('archivado_en', null),
     ])
 
+  /* ¿Esta casa usa la lista de la compra? Envuelto: la columna es
+     nueva y, si el SQL 32 no se ha ejecutado, Postgres rechaza la
+     consulta entera en vez de decir «esa columna no existe». */
+  let usaCompra = true
+  try {
+    const { data: casa } = await supabase
+      .from('hogares')
+      .select('usa_compra')
+      .eq('id', hogarId)
+      .maybeSingle()
+    if (casa && casa.usa_compra === false) usaCompra = false
+  } catch {
+    /* Sin la columna todavía: se comporta como siempre. */
+  }
+
   const hoy = (pendientes ?? []) as Recordatorio[]
   const proximos = (siguientes ?? []) as Recordatorio[]
 
@@ -250,7 +265,13 @@ export default async function Inicio({
           una vez por semana; la compra es todos los días. El punto 6
           dice que el inicio es para lo relevante, y lo relevante es
           lo que se toca a diario.
+
+          Pero solo si esta casa la usa. A quien no hace la compra con
+          el móvil le salía aquí cada día una tarjeta que no iba a
+          tocar nunca — y éste es el sitio más caro de la aplicación.
+          Se apaga desde Ajustes y la lista se queda guardada.
         */}
+        {usaCompra && (
         <Link
           href="/compra"
           className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
@@ -281,6 +302,7 @@ export default async function Inicio({
             <Ico nombre="flecha" tam={22} grosor={2.2} />
           </span>
         </Link>
+        )}
 
         {/* ── Conectar Drive ── */}
         {!conectado && manda && (

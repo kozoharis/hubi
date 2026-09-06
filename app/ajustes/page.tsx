@@ -10,11 +10,11 @@ import { Ico, Pastilla, Volver, type Icono } from '../iconos'
 import SelectorTema from '../tema'
 import { leerPerfil } from '@/lib/perfil'
 import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
-import { estadoGuardado } from '@/lib/google/calendario'
 import TuPerfil from './foto'
 import NuevaActividad from './nueva-actividad'
 import Gente, { type Vecino } from './gente'
-import PrepararCalendario from './calendario'
+import Carpetas, { type Carpeta } from './carpetas'
+import Compra from './compra'
 import MiCalendario from './mi-calendario'
 
 export const dynamic = 'force-dynamic'
@@ -171,6 +171,84 @@ export default async function Ajustes() {
     /* Sin unidades todavía. Ajustes sigue funcionando entero. */
   }
 
+  /*
+    ── Las carpetas que solo guardan papeles ──
+
+    Las de cuentas van aparte, en «Tus actividades». Aquí solo las que
+    archivan: Casa, Salud, Vehículos… Se leen APAGADAS TAMBIÉN, que es
+    lo único que permite volver a encenderlas.
+  */
+  const carpetas: Carpeta[] = []
+
+  try {
+    const { data: raices } = await supabase
+      .from('categorias')
+      .select('id, nombre, icono, activa, lleva_cuentas')
+      .is('padre_id', null)
+      .order('orden')
+
+    const soloPapeles = (raices ?? []).filter((c) => c.lleva_cuentas !== true)
+
+    /* Cuántos papeles tiene cada una. De una vez para todas: con ocho
+       carpetas, una consulta por cada una serían ocho viajes a la base
+       de datos para pintar una pantalla. */
+    const cuenta = new Map<string, number>()
+
+    if (soloPapeles.length > 0) {
+      const { data: todas } = await supabase.from('categorias').select('id, padre_id')
+      const { data: papeles } = await supabase.from('documentos').select('categoria_id')
+
+      /* De qué raíz cuelga cada categoría. */
+      const padre = new Map((todas ?? []).map((c) => [c.id as string, c.padre_id as string | null]))
+      const raizDe = (id: string): string | null => {
+        let actual: string | null = id
+        for (let i = 0; i < 8 && actual; i++) {
+          const arriba: string | null = padre.get(actual) ?? null
+          if (!arriba) return actual
+          actual = arriba
+        }
+        return actual
+      }
+
+      for (const d of papeles ?? []) {
+        const r = d.categoria_id ? raizDe(d.categoria_id as string) : null
+        if (r) cuenta.set(r, (cuenta.get(r) ?? 0) + 1)
+      }
+    }
+
+    for (const c of soloPapeles) {
+      carpetas.push({
+        id: c.id as string,
+        nombre: c.nombre as string,
+        icono: (c.icono as string) || '📁',
+        activa: c.activa !== false,
+        papeles: cuenta.get(c.id as string) ?? 0,
+      })
+    }
+  } catch {
+    /* Sin carpetas todavía. Ajustes sigue entero. */
+  }
+
+  /* ¿Usa la lista de la compra? Envuelto: la columna es nueva y, si
+     el SQL 32 no se ha ejecutado, Postgres rechaza la consulta entera
+     en vez de decir «esa columna no existe». */
+  let usaCompra = true
+  try {
+    /* Nunca `.eq('id', hogarId ?? '')`: la cadena vacía no es un
+       identificador válido y Postgres rechazaría la consulta entera,
+       en silencio. */
+    if (hogarId) {
+      const { data: casa } = await supabase
+        .from('hogares')
+        .select('usa_compra')
+        .eq('id', hogarId)
+        .maybeSingle()
+      if (casa && casa.usa_compra === false) usaCompra = false
+    }
+  } catch {
+    /* Sin la columna todavía: se comporta como siempre. */
+  }
+
   const icalDesde = mio?.ical_desde
     ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long' }).format(
         new Date(mio.ical_desde as string)
@@ -179,11 +257,10 @@ export default async function Ajustes() {
 
   const conectado = conexion?.estado === 'activa'
 
-  /* Solo a quien conectó Google en su casa: el calendario vive en su
-     cuenta, y quien no lo conectó no tiene nada que preparar ahí. */
+  /* Quien creó la casa: es quien puede invitar, y quien conecta
+     Google desde su propia pantalla. */
   const manda = await mandaEnSuCasa(supabase, user.id)
-  const calendario =
-    manda && hogarId ? await estadoGuardado(hogarId) : { permiso: false, creado: false }
+
 
   return (
     <main className="min-h-screen pb-40">
@@ -253,68 +330,59 @@ export default async function Ajustes() {
             titulo="Los papeles"
             pie="Ver todo lo guardado y sus carpetas"
           />
-          {manda ? (
-            <>
-              <Opcion
-                href="/comprobacion"
-                icono="escudo"
-                color="#64748B"
-                fondo="#EEF2F7"
-                titulo="Google Drive"
-                pie={
-                  conectado
-                    ? `Conectado · ${conexion?.email_cuenta ?? 'tu cuenta'} · comprobar`
-                    : 'Sin conectar'
-                }
-                bien={conectado}
-              />
+          {/*
+            UNA SOLA FILA PARA GOOGLE.
 
-              {/*
-                Volver a conectar tiene que estar SIEMPRE a la vista, no
-                solo cuando la conexión se rompe. Cada vez que HUBI pide
-                un permiso nuevo a Google —el del calendario, por
-                ejemplo— hay que pasar otra vez por esta pantalla, y sin
-                este botón no había manera de llegar.
-              */}
-              <a
-                href="/api/google/conectar"
-                className="flex items-center gap-3 rounded-[20px] border border-borde bg-superficie px-3.5 py-3"
-              >
-                <Pastilla nombre="escudo" color="#14B8A6" fondo="#DFF7F3" tam={44} icono={22} />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[17.5px] font-extrabold tracking-tight">
-                    {conectado ? 'Volver a conectar Google' : 'Conectar Google Drive'}
-                  </span>
-                  <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
-                    {conectado
-                      ? 'Hace falta al añadir permisos nuevos'
-                      : 'Para poder guardar documentos'}
-                  </span>
-                </span>
-                <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0 text-borde" />
-              </a>
+            Aquí había TRES seguidas —«Google Drive», «Volver a
+            conectar Google» y «Calendario en Google»— diciendo casi lo
+            mismo, y la primera llevaba a la pantalla de diagnóstico,
+            que es una herramienta de mantenimiento y no un ajuste.
 
-              <PrepararCalendario listo={calendario.creado} permiso={calendario.permiso} />
-            </>
-          ) : (
-            <Opcion
-              href="/"
-              icono="escudo"
-              color="#64748B"
-              fondo="#EEF2F7"
-              titulo="Google Drive"
-              /* Antes decía «Conectado por Juan Miguel», escrito a
-                 mano. En otra casa eso sería el nombre de otra
-                 persona, así que se dice quién es de verdad: la cuenta
-                 con la que se conectó. */
-              pie={
-                conectado
-                  ? `Conectado · ${conexion?.email_cuenta ?? 'la cuenta de tu casa'}`
-                  : 'Todavía sin conectar'
-              }
-              bien={conectado}
-            />
-          )}
+            Ajustes es donde alguien busca UNA cosa concreta. Con tres
+            filas hablando del mismo asunto hay que leerlas las tres
+            para saber cuál es. Ahora es una, y lo de dentro está
+            dentro.
+          */}
+          <Opcion
+            href="/ajustes/google"
+            icono="escudo"
+            color={conectado ? '#14B8A6' : '#64748B'}
+            fondo={conectado ? '#DFF7F3' : '#EEF2F7'}
+            titulo="Google"
+            pie={
+              conectado
+                ? `Conectado · ${conexion?.email_cuenta ?? 'la cuenta de tu casa'}`
+                : manda
+                  ? 'Sin conectar · hace falta para guardar papeles'
+                  : `Lo conecta ${elOtro ?? 'quien creó esta casa'}`
+            }
+            bien={conectado}
+          />
+        </div>
+
+        {/* ── Tus carpetas ── */}
+        {/*
+          Las que solo guardan papeles. Las actividades —con sus
+          cuentas— van más abajo y en su propio apartado: son dos cosas
+          distintas y mezclarlas obligaría a mirar dos veces cada
+          nombre para saber cuál es cuál.
+        */}
+        {carpetas.length > 0 && (
+          <>
+            <h2 className="rotulo mt-5">Tus carpetas</h2>
+            <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
+              Donde se guardan los papeles. Apaga las que no uses y añade las que te falten.
+            </p>
+            <div className="mt-2.5">
+              <Carpetas carpetas={carpetas} />
+            </div>
+          </>
+        )}
+
+        {/* ── Lo que además usas ── */}
+        <h2 className="rotulo mt-5">La lista de la compra</h2>
+        <div className="mt-2.5">
+          <Compra puesta={usaCompra} />
         </div>
 
         {/* ── Tu calendario de Google ── */}
@@ -368,19 +436,6 @@ export default async function Ajustes() {
             />
           ))}
           <NuevaActividad />
-        </div>
-
-        {/* ── Si algo no va ── */}
-        <h2 className="rotulo mt-5">Si algo no va</h2>
-        <div className="mt-2.5 space-y-2.5">
-          <Opcion
-            href="/comprobacion"
-            icono="aviso"
-            color="#8B5CF6"
-            fondo="#EEE8FE"
-            titulo="Comprobar la conexión"
-            pie="Mira si todo está en su sitio"
-          />
         </div>
 
         <div className="mt-5">

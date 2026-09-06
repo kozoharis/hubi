@@ -174,7 +174,33 @@ export default function Empezar({ nombre }: { nombre: string }) {
               ))}
             </div>
 
-            <p className="mt-5 text-center text-[15.5px] font-semibold leading-snug text-tenue">
+            {/*
+              ═══════════════════════════════════════════════════
+              SE LE DICE QUÉ VA A APARECER, NO SE LE PREGUNTA
+              ═══════════════════════════════════════════════════
+
+              Las cinco carpetas se crean solas. Se pensó en enseñarlas
+              aquí con casillas para desmarcar las que no use, y se
+              descartó: en este momento todavía no sabe qué es HUBI, y
+              pedirle que decida sobre cinco cosas que no ha visto
+              nunca es la peor decisión posible en el peor momento.
+
+              Se le AVISA en dos líneas —para que reconozca lo que
+              aparece luego en su HUBI y en su Drive— y se le dice
+              dónde se toca. Apagar «Vehículos» cuando descubra que no
+              tiene coche cuesta un toque y lo hará entendiendo lo que
+              hace.
+            */}
+            <p className="mt-6 rounded-[18px] border border-borde px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tenue">
+              Además tendrás carpetas para <strong className="text-tinta">Casa</strong>,{' '}
+              <strong className="text-tinta">Salud</strong>,{' '}
+              <strong className="text-tinta">Vehículos</strong>,{' '}
+              <strong className="text-tinta">Seguros</strong> y{' '}
+              <strong className="text-tinta">Documentos importantes</strong>. Las que no uses
+              se apagan en Ajustes, y puedes añadir las que te falten.
+            </p>
+
+            <p className="mt-4 text-center text-[15.5px] font-semibold leading-snug text-tenue">
               Elijas lo que elijas, se puede cambiar después.
             </p>
 

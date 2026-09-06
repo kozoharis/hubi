@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar, SIN_CASA } from '@/lib/hogar'
 
 export const dynamic = 'force-dynamic'
 
@@ -78,4 +79,68 @@ export async function POST(peticion: NextRequest) {
   }
 
   return NextResponse.json({ bien: true, hogar: data })
+}
+
+/*
+  ─────────────────────────────────────────────────────────────
+  LO QUE ESTA CASA USA Y LO QUE NO
+
+  Por ahora una sola cosa: si sale la lista de la compra. Va aquí y no
+  en una ruta propia porque es un ajuste DE LA CASA, igual que su
+  nombre, y una ruta por interruptor acabaría en veinte rutas que
+  hacen lo mismo.
+*/
+export async function PATCH(peticion: NextRequest) {
+  const supabase = await clienteSesion()
+  const user = await quien(supabase)
+  if (!user) {
+    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
+  }
+
+  const hogarId = await miHogar(supabase, user.id)
+  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
+
+  let cuerpo: { usa_compra?: boolean; nombre?: string }
+  try {
+    cuerpo = (await peticion.json()) as { usa_compra?: boolean; nombre?: string }
+  } catch {
+    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
+  }
+
+  const cambios: Record<string, unknown> = {}
+  if (typeof cuerpo.usa_compra === 'boolean') cambios.usa_compra = cuerpo.usa_compra
+  if (cuerpo.nombre !== undefined) {
+    const nombre = String(cuerpo.nombre).trim().slice(0, 60)
+    if (nombre.length < 2) {
+      return NextResponse.json({ error: 'La casa necesita un nombre.' }, { status: 400 })
+    }
+    cambios.nombre = nombre
+  }
+
+  if (Object.keys(cambios).length === 0) return NextResponse.json({ bien: true })
+
+  const { data, error } = await supabase
+    .from('hogares')
+    .update(cambios)
+    .eq('id', hogarId)
+    .select('id')
+
+  /*
+    `hogares` no tiene política de UPDATE: hasta hoy nadie cambiaba
+    nada de la casa. Así que esto puede devolver cero filas sin dar
+    ningún error, y hay que decirlo — con el nombre del archivo que
+    falta, para no mandar a nadie a buscar a ciegas.
+  */
+  if (error || !data || data.length === 0) {
+    console.error('[HUBI] No se ha podido cambiar la casa:', error)
+    return NextResponse.json(
+      {
+        error: 'No se ha podido guardar el cambio.',
+        detalle: error?.message ?? 'La base de datos no ha dejado (falta ejecutar el SQL 32).',
+      },
+      { status: error ? 500 : 409 }
+    )
+  }
+
+  return NextResponse.json({ bien: true })
 }

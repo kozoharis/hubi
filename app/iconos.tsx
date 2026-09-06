@@ -211,12 +211,32 @@ export const MORADO_CLARO = '#A78BFA'
    Un chip con borde y con la palabra al lado de la flecha. Una
    flecha suelta se puede fallar al tocarla y no se ve que sea un
    botón; esto se ve, se lee y ocupa 48 px de alto. */
+/*
+  ═══════════════════════════════════════════════════════════════
+  EL BOTÓN DE ATRÁS DICE SIEMPRE «VOLVER»
+  ═══════════════════════════════════════════════════════════════
+
+  Decía cosas distintas en cada pantalla: «Volver» en Ajustes,
+  «Inicio» en Actividades, «Documentos» en una carpeta, el nombre de
+  la sección en sus ajustes. Cada una tenía su razón — decir a dónde
+  vas parece más informativo que decir que vuelves.
+
+  Y es peor. El punto 5 pide «botón volver siempre evidente», y un
+  botón evidente es uno que se reconoce SIN LEERLO: misma flecha,
+  mismo sitio, misma palabra. Cuando el rótulo cambia, hay que leerlo
+  cada vez para confirmar que es el de atrás — y a los 75 años eso es
+  una pausa en cada pantalla.
+
+  El `texto` sigue aceptándose para no romper las llamadas que ya lo
+  pasan, pero no se usa. Es a propósito: si mañana alguien vuelve a
+  ponerle un rótulo distinto, no pasa nada.
+*/
 export function Volver({
   href,
-  texto = 'Volver',
   oscuro = false,
 }: {
   href: string
+  /** Ya no se usa: el botón dice siempre «Volver». */
   texto?: string
   oscuro?: boolean
 }) {
@@ -235,7 +255,7 @@ export function Volver({
       }
     >
       <Ico nombre="atras" tam={21} grosor={2.6} />
-      <span className="truncate">{texto}</span>
+      <span className="truncate">Volver</span>
     </Link>
   )
 }
