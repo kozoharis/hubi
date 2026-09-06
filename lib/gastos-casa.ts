@@ -32,17 +32,26 @@ import { hoyAqui } from './tablon'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Cliente = SupabaseClient<any, any, any>
 
-export async function gastadoEnCasa(supabase: Cliente): Promise<number> {
+export type Resumen = {
+  /** Lo gastado este trimestre fuera de las actividades. */
+  total: number
+  /** En qué se va más, si hay algo. «Compras», «Taller»… */
+  mayor: string | null
+}
+
+const NADA: Resumen = { total: 0, mayor: null }
+
+export async function gastadoEnCasa(supabase: Cliente): Promise<Resumen> {
   try {
     const periodo = calcular('trimestre', hoyAqui())
 
     const { data: cats, error } = await supabase
       .from('categorias')
-      .select('id, padre_id, lleva_cuentas')
+      .select('id, padre_id, nombre, lleva_cuentas')
 
-    if (error || !cats) return 0
+    if (error || !cats) return NADA
 
-    type Cat = { id: string; padre_id: string | null; lleva_cuentas?: boolean }
+    type Cat = { id: string; padre_id: string | null; nombre: string; lleva_cuentas?: boolean }
     const porId = new Map((cats as Cat[]).map((c) => [c.id, c]))
 
     /* Las que cuelgan de una raíz SIN cuentas propias. Se recorre
@@ -59,7 +68,7 @@ export async function gastadoEnCasa(supabase: Cliente): Promise<number> {
       if (actual.lleva_cuentas !== true) deCasa.add(c.id)
     }
 
-    if (deCasa.size === 0) return 0
+    if (deCasa.size === 0) return NADA
 
     const { data: movs } = await supabase
       .from('movimientos')
@@ -68,10 +77,41 @@ export async function gastadoEnCasa(supabase: Cliente): Promise<number> {
       .gte('fecha', periodo.desde)
       .lte('fecha', periodo.hasta)
 
-    return (movs ?? [])
-      .filter((m: { categoria_id: string | null }) => m.categoria_id && deCasa.has(m.categoria_id))
-      .reduce((suma: number, m: { importe: number }) => suma + Number(m.importe), 0)
+    const mios = (movs ?? []).filter(
+      (m: { categoria_id: string | null }) => m.categoria_id && deCasa.has(m.categoria_id)
+    )
+
+    const total = mios.reduce((suma: number, m: { importe: number }) => suma + Number(m.importe), 0)
+
+    /*
+      ── EN QUÉ SE VA MÁS ──
+
+      Por el segundo nivel: Compras, Reparaciones, Taller, ITV. Es la
+      misma altura a la que desglosa la pantalla de cuentas, y a
+      propósito — si la tarjeta dijera «Alimentación» y al entrar
+      pusiera «Compras», parecerían dos cifras distintas.
+
+      Un dato en una tarjeta vale por lo que ahorra: «1.240 €» te dice
+      cuánto, «lo que más, la compra» te dice si hay algo que mirar.
+    */
+    const grupos = new Map<string, number>()
+
+    for (const m of mios as { importe: number; categoria_id: string }[]) {
+      let actual = porId.get(m.categoria_id)
+      while (actual?.padre_id) {
+        const padre = porId.get(actual.padre_id)
+        if (!padre) break
+        if (!padre.padre_id) break
+        actual = padre
+      }
+      if (!actual) continue
+      grupos.set(actual.nombre, (grupos.get(actual.nombre) ?? 0) + Number(m.importe))
+    }
+
+    const mayor = [...grupos.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+
+    return { total, mayor }
   } catch {
-    return 0
+    return NADA
   }
 }

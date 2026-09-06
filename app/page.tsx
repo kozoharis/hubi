@@ -7,7 +7,7 @@ import Barra from './barra'
 import Arranque from './arranque'
 import Invitacion from './invitacion'
 import Cabecera from './cabecera'
-import { Ico, Logo, Pastilla, Rueda, pintaDe } from './iconos'
+import { Ico, Logo, Pastilla, pintaDe } from './iconos'
 import Avatar from './avatar'
 import { cuando, type Recordatorio } from '@/lib/tablon'
 import { leerPerfil } from '@/lib/perfil'
@@ -116,6 +116,7 @@ export default async function Inicio({
     { count: porComprar },
     notasPuestas,
     gastoCasa,
+    { data: ultimoPapel, count: cuantosPapeles },
   ] =
     await Promise.all([
       leerPerfil(supabase, user.id, user.email),
@@ -153,8 +154,25 @@ export default async function Inicio({
       /* Las notas del corcho, y cuántas te están esperando a ti. */
       cuantasNotas(supabase, user.id),
 
-      /* Lo que se va este trimestre fuera de las actividades. */
+      /* Lo que se va este trimestre fuera de las actividades, y en qué. */
       gastadoEnCasa(supabase),
+
+      /*
+        Cuántos papeles hay guardados y cuándo fue el último.
+
+        No es adorno: la tarjeta de «Guardar documento» era la única
+        del Inicio que no decía NADA de lo que hay dentro. Y es
+        justamente donde más tranquiliza saberlo — quien guarda una
+        factura y no vuelve a verla nunca acaba dudando de si se
+        guardó. «34 papeles · el último, hace 2 días» contesta esa
+        duda sin entrar.
+      */
+      supabase
+        .from('documentos')
+        .select('creado_en', { count: 'exact' })
+        .is('eliminado_en', null)
+        .order('creado_en', { ascending: false })
+        .limit(1),
     ])
 
   /* ¿Esta casa usa la lista de la compra? Envuelto: la columna es
@@ -286,33 +304,22 @@ export default async function Inicio({
             idioma, y Ajustes ES lo mismo que ellas: un sitio al que
             se va. Que se parezca es lo honesto.
 
-            Lo que lo hace distinto no es la forma, es el COLOR. Los
-            cinco de abajo van en gris o en verde; éste lleva el
-            degradado de la H, porque no es una sección de la casa: es
-            tuyo. Y con eso basta para que no se confunda con una
-            sexta pestaña que se ha subido de sitio.
+            Y con el MISMO trazo que ellas: línea fina, gris apagado,
+            25 px. Se probó con el degradado de la H y a ese tamaño
+            pesaba demasiado — una rueda de ocho dientes ya es un
+            dibujo denso, y en color vivo se comía la esquina entera.
+            Aquí lo que se quiere es que esté, no que llame.
 
-            La palabra en versalitas y con separación entre letras. Es
-            una firma tipográfica: se lee como una etiqueta puesta a
-            propósito, no como un botón al que se le ha caído la caja.
-            Y en mayúsculas aguanta el tamaño pequeño mucho mejor que
-            en minúsculas, que a 11 px empiezan a cerrarse.
-
-            48 px de hueco tocable aunque el conjunto mida menos: sin
-            borde no hay nada que diga dónde acaba, así que tiene que
+            48 px de hueco tocable aunque el dibujo mida menos: sin
+            caja no hay borde que diga dónde acaba, así que tiene que
             perdonar la puntería.
           */}
           <Link
             href="/ajustes"
-            className="-mr-2 flex min-h-[48px] w-[60px] shrink-0 flex-col items-center justify-center gap-[3px]"
+            className="-mr-2 flex min-h-[48px] w-[62px] shrink-0 flex-col items-center justify-center gap-1 text-[12px] font-bold text-apagado"
           >
-            <Rueda tam={27} />
-            <span
-              className="whitespace-nowrap text-[10.5px] font-extrabold uppercase leading-none text-tenue"
-              style={{ letterSpacing: '0.11em' }}
-            >
-              Ajustes
-            </span>
+            <Ico nombre="rueda" tam={25} grosor={1.9} />
+            <span>Ajustes</span>
           </Link>
         </div>
       </Cabecera>
@@ -429,8 +436,18 @@ export default async function Inicio({
               <span className="block whitespace-nowrap text-[19px] font-extrabold tracking-tight">
                 Guardar documento
               </span>
-              <span className="block text-[14.5px] font-bold text-verde">
-                Haz una foto y yo lo archivo
+              {/* Lo que hay dentro, en una línea. Era la única tarjeta
+                  del Inicio que no decía nada de sí misma — y es donde
+                  más tranquiliza saberlo: quien guarda una factura y no
+                  vuelve a verla nunca acaba dudando de si se guardó. */}
+              <span className="block truncate text-[14.5px] font-bold text-verde">
+                {cuantosPapeles && cuantosPapeles > 0
+                  ? `${cuantosPapeles} guardados${
+                      desdeElUltimo(ultimoPapel?.[0]?.creado_en as string | undefined)
+                        ? ` · ${desdeElUltimo(ultimoPapel?.[0]?.creado_en as string | undefined)}`
+                        : ''
+                    }`
+                  : 'Haz una foto y yo lo archivo'}
               </span>
             </span>
             <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-verde" />
@@ -511,13 +528,25 @@ export default async function Inicio({
               <span className="block whitespace-nowrap text-[15px] font-bold text-tenue">
                 Cuentas de casa
               </span>
-              {gastoCasa > 0 ? (
-                <span className="block text-[24px] font-extrabold leading-tight tracking-tight">
-                  {eurosRedondo(gastoCasa)}
-                  <span className="ml-1.5 text-[14.5px] font-bold text-tenue">
-                    este trimestre
+              {gastoCasa.total > 0 ? (
+                <>
+                  <span className="block text-[24px] font-extrabold leading-tight tracking-tight">
+                    {eurosRedondo(gastoCasa.total)}
+                    <span className="ml-1.5 text-[14.5px] font-bold text-tenue">
+                      este trimestre
+                    </span>
                   </span>
-                </span>
+                  {/* En qué se va más. «1.240 €» dice cuánto; esto dice
+                      si hay algo que mirar, que es lo que hace entrar. */}
+                  {gastoCasa.mayor && (
+                    <span
+                      className="mt-0.5 block truncate text-[13.5px] font-bold"
+                      style={{ color: '#8B5CF6' }}
+                    >
+                      Lo que más, {gastoCasa.mayor.toLowerCase()}
+                    </span>
+                  )}
+                </>
               ) : (
                 <span className="block text-[18px] font-extrabold leading-snug tracking-tight">
                   Todavía no hay nada apuntado
@@ -704,6 +733,27 @@ function Cuadro({
       </span>
     </Link>
   )
+}
+
+/*
+  «el último, hoy» · «hace 2 días» · «hace 3 semanas»
+
+  Se dice en tiempo transcurrido y no con la fecha: lo que se quiere
+  saber al mirar el Inicio no es qué día fue, es si esto sigue vivo.
+  «14/08/2026» obliga a restar mentalmente; «hace 3 semanas» ya es la
+  respuesta.
+*/
+function desdeElUltimo(iso: string | undefined): string | null {
+  if (!iso) return null
+  const cuando = new Date(iso)
+  if (Number.isNaN(cuando.getTime())) return null
+
+  const dias = Math.floor((Date.now() - cuando.getTime()) / 86_400_000)
+  if (dias <= 0) return 'el último, hoy'
+  if (dias === 1) return 'el último, ayer'
+  if (dias < 14) return `hace ${dias} días`
+  if (dias < 60) return `hace ${Math.round(dias / 7)} semanas`
+  return `hace ${Math.round(dias / 30)} meses`
 }
 
 /** "en 8 días", "mañana", "en 2 meses" */
