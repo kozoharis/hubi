@@ -32,16 +32,38 @@ export const dynamic = 'force-dynamic'
   nadie toca.
 */
 
-/** Encender, apagar o renombrar una carpeta. */
+/*
+  LOS ICONOS QUE HUBI SABE DIBUJAR.
+
+  Las carpetas guardan su icono como emoji —es lo que se puede elegir
+  desde una pantalla sin programar nada— pero en la aplicación se
+  pintan como iconos de línea, para que no se vean como un pegote de
+  otra aplicación y para que tomen el color de su sección.
+
+  Así que la lista no puede ser «cualquier emoji»: solo los que tienen
+  dibujo. Es la misma lista que entiende `iconoDeEmoji`, y tiene que
+  moverse con ella.
+*/
+const ICONOS = [
+  '📁', '🏠', '❤️', '🚗', '🛡', '📄', '💊', '🌿', '🔑',
+  '👷', '🧰', '💼', '⛵', '🐾', '🛒', '⏰', '👥', '🔒', '📌',
+]
+
+/** Encender, apagar, renombrar o cambiarle el icono a una carpeta. */
 export async function PATCH(peticion: NextRequest) {
   const supabase = await clienteSesion()
   if (!(await quien(supabase))) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  let cuerpo: { id?: string; activa?: boolean; nombre?: string }
+  let cuerpo: { id?: string; activa?: boolean; nombre?: string; icono?: string }
   try {
-    cuerpo = (await peticion.json()) as { id?: string; activa?: boolean; nombre?: string }
+    cuerpo = (await peticion.json()) as {
+      id?: string
+      activa?: boolean
+      nombre?: string
+      icono?: string
+    }
   } catch {
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
   }
@@ -51,6 +73,12 @@ export async function PATCH(peticion: NextRequest) {
 
   const cambios: Record<string, unknown> = {}
   if (typeof cuerpo.activa === 'boolean') cambios.activa = cuerpo.activa
+  /* Solo los que HUBI sabe dibujar. Cualquier otro emoji se pintaría
+     como una carpeta genérica y quien lo eligió no entendería por
+     qué; es más honesto no dejarle elegirlo. */
+  if (cuerpo.icono !== undefined && ICONOS.includes(String(cuerpo.icono))) {
+    cambios.icono = String(cuerpo.icono)
+  }
   if (cuerpo.nombre !== undefined) {
     const nombre = String(cuerpo.nombre).trim().replace(/\s+/g, ' ').slice(0, 40)
     if (nombre.length < 2) {
@@ -94,9 +122,9 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  let cuerpo: { nombre?: string }
+  let cuerpo: { nombre?: string; icono?: string }
   try {
-    cuerpo = (await peticion.json()) as { nombre?: string }
+    cuerpo = (await peticion.json()) as { nombre?: string; icono?: string }
   } catch {
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
   }
@@ -163,7 +191,7 @@ export async function POST(peticion: NextRequest) {
     .insert({
       nombre,
       segmento_drive: segmento,
-      icono: '📁',
+      icono: ICONOS.includes(String(cuerpo.icono ?? '')) ? String(cuerpo.icono) : '📁',
       orden,
       activa: true,
       lleva_cuentas: false,

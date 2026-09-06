@@ -49,7 +49,18 @@ create policy hogares_editar on hogares
   for update to authenticated using (id = mi_hogar() and puedo_escribir());
 
 
--- ── 2 · Comprobación ───────────────────────────────────────
+-- ── 3 · El icono de las obras: un casco ────────────────────
+/*
+  Un ladrillo, a tamaño de pestaña, se lee como una caja. El casco se
+  reconoce de un vistazo. Solo toca las que tengan el ladrillo: si
+  alguien ya le puso otro icono a su actividad, se respeta.
+*/
+update categorias
+set icono = '👷'
+where padre_id is null and icono = '🧱';
+
+
+-- ── 4 · Comprobación ───────────────────────────────────────
 /*
   Una fila por casa, todas con `usa_compra` en true. Si alguna sale
   vacía, la columna no se ha creado bien.

@@ -135,7 +135,10 @@ const PLANTILLAS: Record<
     ingresos: ['Ventas', 'Otros ingresos'],
   },
   obra: {
-    icono: '🧱',
+    /* Un casco, no un ladrillo. A tamaño de pestaña un ladrillo se
+       lee como una caja; el casco se reconoce de un vistazo y dice
+       «obra» sin que nadie tenga que interpretarlo. */
+    icono: '👷',
     color: '#F59E0B',
     fondo: '#FEF1DC',
     divide: true,

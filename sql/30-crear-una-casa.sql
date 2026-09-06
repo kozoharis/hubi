@@ -154,7 +154,7 @@ begin
       hogar_id, nombre, segmento_drive, icono, orden,
       lleva_cuentas, color, fondo, usa_unidades, palabra_unidad
     )
-    values (casa, 'Obras', 'OBRAS', '🧱', 0, true, '#F59E0B', '#FEF1DC', true, 'la obra')
+    values (casa, 'Obras', 'OBRAS', '👷', 0, true, '#F59E0B', '#FEF1DC', true, 'la obra')
     returning id into raiz;
 
   elsif actividad = 'alquileres' then

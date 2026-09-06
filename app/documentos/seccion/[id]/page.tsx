@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import Anadir from "../../anadir"
 import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
 import { Ico, Pastilla, Volver, seccionDe, tintaSobre, MORADO_CLARO } from '../../../iconos'
@@ -257,6 +258,10 @@ export default async function Seccion({
             </ul>
           </section>
         )}
+
+        {/* Sin carpeta concreta: desde una sección aún hay que elegir
+            dónde va, porque una sección tiene varias dentro. */}
+        <Anadir texto="Añadir documento aquí" />
       </div>
 
       <Barra activa="documentos" />

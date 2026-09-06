@@ -32,10 +32,23 @@ export type Carpeta = {
   papeles: number
 }
 
+/*
+  Los iconos que se pueden poner. Son los que HUBI sabe dibujar como
+  línea: cualquier otro emoji acabaría pintado como una carpeta
+  genérica y quien lo eligiera no entendería por qué. Es la misma
+  lista que valida la ruta.
+*/
+const ICONOS = [
+  '📁', '🏠', '❤️', '🚗', '🛡', '📄', '💊', '🌿', '🔑',
+  '👷', '🧰', '💼', '⛵', '🐾', '🛒', '⏰', '👥', '🔒', '📌',
+]
+
 export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
   const router = useRouter()
 
   const [creando, setCreando] = useState(false)
+  const [cambiandoIcono, setCambiandoIcono] = useState<string | null>(null)
+  const [icono, setIcono] = useState('📁')
   const [nombre, setNombre] = useState('')
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [fallo, setFallo] = useState<string | null>(null)
@@ -70,7 +83,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
     const r = await fetch('/api/carpetas', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre: nombre.trim() }),
+      body: JSON.stringify({ nombre: nombre.trim(), icono }),
     })
 
     const d = (await r.json().catch(() => null)) as {
@@ -93,7 +106,32 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
 
     if (d.aviso) setAviso(d.aviso)
     setNombre('')
+    setIcono('📁')
     setCreando(false)
+    router.refresh()
+  }
+
+  /* Cambiarle el icono a una que ya existe. Se toca el propio icono:
+     es donde iría el dedo de cualquiera que quiera cambiarlo, y así no
+     hace falta otro botón en una fila que ya tiene interruptor. */
+  async function ponerIcono(id: string, nuevo: string) {
+    setCambiandoIcono(null)
+    setFallo(null)
+    setOcupado(id)
+
+    const r = await fetch('/api/carpetas', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, icono: nuevo }),
+    })
+
+    const d = (await r.json().catch(() => null)) as { bien?: boolean; error?: string } | null
+    setOcupado(null)
+
+    if (!r.ok || d?.bien !== true) {
+      setFallo(d?.error ?? 'No se ha podido cambiar el icono.')
+      return
+    }
     router.refresh()
   }
 
@@ -106,7 +144,13 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
             className="flex items-center gap-3 rounded-[20px] border border-borde bg-superficie px-4 py-3"
             style={{ opacity: c.activa ? 1 : 0.55 }}
           >
-            <span className="text-[24px] leading-none">{c.icono || '📁'}</span>
+            <button
+              onClick={() => setCambiandoIcono(cambiandoIcono === c.id ? null : c.id)}
+              aria-label={`Cambiar el icono de ${c.nombre}`}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-borde text-[22px] leading-none"
+            >
+              {c.icono || '📁'}
+            </button>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[17px] font-extrabold tracking-tight">
                 {c.nombre}
@@ -142,6 +186,30 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
         ))}
       </ul>
 
+      {cambiandoIcono && (
+        <div className="rounded-[20px] border border-borde bg-superficie px-4 py-4">
+          <p className="text-[16px] font-extrabold">Elige un icono</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {ICONOS.map((e) => (
+              <button
+                key={e}
+                onClick={() => ponerIcono(cambiandoIcono, e)}
+                aria-label={`Poner ${e}`}
+                className="flex h-12 w-12 items-center justify-center rounded-[14px] border border-borde text-[24px]"
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setCambiandoIcono(null)}
+            className="mt-3 w-full py-3 text-[16px] font-bold text-tinta-suave underline underline-offset-4"
+          >
+            Dejarlo
+          </button>
+        </div>
+      )}
+
       <p className="px-1 text-[14.5px] font-semibold leading-snug text-tenue">
         Apagar una carpeta la esconde: deja de salir al guardar papeles. Lo que ya tenga dentro
         <strong className="text-tinta"> no se borra</strong>, ni en HUBI ni en tu Drive, y vuelve
@@ -151,6 +219,24 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
       {creando ? (
         <div className="rounded-[20px] border border-borde bg-superficie px-4 py-4">
           <p className="text-[17px] font-extrabold">¿Cómo se llama?</p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {ICONOS.map((e) => (
+              <button
+                key={e}
+                onClick={() => setIcono(e)}
+                aria-label={`Poner ${e}`}
+                aria-pressed={icono === e}
+                className="flex h-11 w-11 items-center justify-center rounded-[13px] text-[22px]"
+                style={
+                  icono === e
+                    ? { background: 'var(--t-boton)', border: '1px solid var(--t-boton)' }
+                    : { border: '1px solid var(--t-borde)' }
+                }
+              >
+                {e}
+              </button>
+            ))}
+          </div>
           <input
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}

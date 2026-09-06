@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import Anadir from "../../anadir"
 import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
 import { Ico, Pastilla, Volver, seccionDe } from '../../../iconos'
@@ -156,6 +157,8 @@ export default async function Carpeta({
             ))}
           </ul>
         )}
+
+        <Anadir carpetaId={carpeta.id as string} />
       </div>
 
       <Barra activa="documentos" />

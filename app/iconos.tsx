@@ -13,10 +13,19 @@ export type Icono =
   | 'campana' | 'escudo' | 'corazon' | 'coche' | 'papel'
   | 'pastilla' | 'reloj' | 'euro' | 'mas' | 'chincheta'
   | 'ojo' | 'lapiz' | 'gente' | 'candado' | 'bolsa' | 'aviso' | 'llave'
-  | 'refrescar'
+  | 'refrescar' | 'casco' | 'maleta' | 'herramienta' | 'barco' | 'mascota'
 
 const TRAZOS: Record<Icono, string> = {
   casa:      'M3 10.5 12 3l9 7.5M5.5 9.5V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5',
+  /* Un casco de obra. Media cúpula, la visera que sobresale por
+     delante y la cinta de la base — que es lo que hace que se lea
+     como casco y no como una seta. Un ladrillo, que era lo que había,
+     se confunde con una caja a tamaño de pestaña. */
+  casco:     'M4 15.5a8 8 0 0 1 16 0M9.2 15.2V8.4a2.8 2.8 0 0 1 5.6 0v6.8M2.5 15.5h19a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-19a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1Z',
+  maleta:    'M3.5 8.5h17a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-17a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1ZM9 8.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v2.5M2.5 13h19',
+  herramienta: 'M14.7 6.3a3.8 3.8 0 0 0 5 5l-8.4 8.4a2.1 2.1 0 0 1-3-3ZM14.7 6.3 17.2 3.8M6 18h.01',
+  barco:      'M3 15.5h18l-2.4 4.2a1 1 0 0 1-.9.5H6.3a1 1 0 0 1-.9-.5ZM5.5 15.5V8.2l6.5-4 6.5 4v7.3M12 4.2v11.3',
+  mascota:    'M5.5 11.5a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6ZM18.5 11.5a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6ZM9 7.6a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6ZM15 7.6a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6ZM12 11.5c2.6 0 4.6 2.2 4.6 4.4 0 2-1.6 3.1-3.2 3.1-.7 0-1 .3-1.4.3s-.7-.3-1.4-.3c-1.6 0-3.2-1.1-3.2-3.1 0-2.2 2-4.4 4.6-4.4Z',
   /* Los Helechos es una casa de alquiler: una llave lo dice mejor que
      otro tejado, que ya lo usa Inicio. Anillo arriba y paletón abajo. */
   llave:     'M15.5 3.5a5.5 5.5 0 1 1-3.9 9.4L4 20.5v-3h-1.5v-3H6l5.6-5.6A5.5 5.5 0 0 1 15.5 3.5M17 8.2h.01',
@@ -283,7 +292,19 @@ const POR_EMOJI: Record<string, Icono> = {
   '💊': 'pastilla',
   '📁': 'carpeta',
   '💰': 'euro',
-  '🧱': 'carpeta',
+  '👷': 'casco',
+  '🧱': 'casco',
+  '🧰': 'herramienta',
+  '💼': 'maleta',
+  '⛵': 'barco',
+  '🐾': 'mascota',
+  '🎓': 'maleta',
+  '🍽': 'bolsa',
+  '🛒': 'bolsa',
+  '⏰': 'reloj',
+  '👥': 'gente',
+  '🔒': 'candado',
+  '📌': 'chincheta',
 }
 
 export function iconoDeEmoji(emoji: string | null | undefined): Icono {

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import Anadir from "./anadir"
 import Barra from '../barra'
 import Cabecera from '../cabecera'
 import { Ico, Pastilla, seccionDe } from '../iconos'
@@ -374,6 +375,11 @@ export default async function Documentos({
             </Link>
           </div>
         )}
+
+        {/* El mismo botón que al final de cada carpeta, para que esté
+            siempre en el mismo sitio: abajo del todo. Aquí sin carpeta
+            puesta — desde la lista general aún hay que elegirla. */}
+        <Anadir />
       </div>
       <Barra activa="documentos" />
     </main>

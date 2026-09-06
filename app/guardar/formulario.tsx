@@ -38,10 +38,24 @@ const MAXIMO = 4 * 1024 * 1024
 export default function Formulario({
   categorias,
   esPropietario = false,
+  enCarpeta = null,
 }: {
   categorias: Categoria[]
-  /* El buscador de Drive abre la cuenta de Juan Miguel. Solo él. */
+  /* El buscador de Drive abre la cuenta de quien conectó Google. */
   esPropietario?: boolean
+  /*
+    LA CARPETA DE DONDE VIENE.
+
+    Cuando se entra desde una carpeta —«Añadir documento» al final de
+    Casa, o de Seguros— ya sabemos dónde va. Preguntárselo otra vez
+    sería hacerle repetir a mano el camino que acaba de recorrer con
+    el dedo, que es exactamente lo que el punto 29 dice que tiene que
+    hacer el sistema y no la persona.
+
+    Se preselecciona, no se impone: la pantalla de dónde guardarlo
+    sigue estando y se puede cambiar.
+  */
+  enCarpeta?: string | null
 }) {
   const [paso, setPaso] = useState<Paso>('archivo')
 
@@ -103,7 +117,7 @@ export default function Formulario({
 
   const [datos, setDatos] = useState<Datos>({
     titulo: '',
-    categoriaId: null,
+    categoriaId: enCarpeta,
     fecha: HOY(),
     importe: '',
     proveedor: '',

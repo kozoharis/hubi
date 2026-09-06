@@ -9,7 +9,13 @@ import type { Categoria } from '@/lib/rutas'
 
 export const dynamic = 'force-dynamic'
 
-export default async function Guardar() {
+export default async function Guardar({
+  searchParams,
+}: {
+  searchParams: Promise<{ en?: string }>
+}) {
+  const { en } = await searchParams
+
   const supabase = await clienteSesion()
 
   const user = await quien(supabase)
@@ -61,10 +67,21 @@ export default async function Guardar() {
     .eq('id', user.id)
     .maybeSingle()
 
+  /*
+    La carpeta de donde viene, si viene de una. Se comprueba que
+    exista Y QUE SEA SUYA —la consulta va con la sesión, así que las
+    políticas por hogar ya lo garantizan— antes de dársela al
+    formulario: un identificador escrito a mano en la dirección no
+    puede colar un documento en la carpeta de otra familia.
+  */
+  const lista = (categorias ?? []) as Categoria[]
+  const enCarpeta = en && lista.some((c) => c.id === en) ? en : null
+
   return (
     <Formulario
-      categorias={(categorias ?? []) as Categoria[]}
+      categorias={lista}
       esPropietario={Boolean(perfil?.es_propietario_drive)}
+      enCarpeta={enCarpeta}
     />
   )
 }
