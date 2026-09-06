@@ -34,11 +34,69 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 export const SIN_CASA =
   'Tu cuenta todavía no está en ninguna casa, así que no hay dónde guardar esto. Avisa a quien te invitó.'
 
-/** El hogar de esta persona, o null si todavía no tiene ninguno. */
+/*
+  ─────────────────────────────────────────────────────────────
+  ¿QUÉ CASA ESTÁ MIRANDO?
+
+  Esto tiene que contestar EXACTAMENTE lo mismo que la función
+  `mi_hogar()` de la base de datos. Si las dos discrepan, la pantalla
+  enseña una casa y las políticas dejan ver otra: se vería una carpeta
+  vacía sin explicación, o —peor— un botón de guardar que archiva en el
+  sitio equivocado.
+
+  La regla, en las dos:
+
+    1. La casa que ha elegido mirar (`perfiles.casa_activa`), siempre
+       que siga siendo miembro ACEPTADO de ella.
+    2. Si no ha elegido, o eligió una de la que ya no forma parte: la
+       primera casa aceptada, por antigüedad.
+
+  Las invitaciones sin contestar (`aceptado_en is null`) no cuentan:
+  que alguien te ofrezca su casa no te mete dentro.
+
+  ─────────────────────────────────────────────────────────────
+  Y VA EN DOS INTENTOS
+
+  `aceptado_en` y `casa_activa` son columnas del SQL 34. Pedir una
+  columna que no existe no devuelve «esa columna no existe»: Postgres
+  rechaza la consulta ENTERA, y esta consulta la hacen casi todas las
+  pantallas. Si el SQL no se ha ejecutado todavía, HUBI se queda sin
+  saber de quién es nada.
+
+  Así que si el primer intento falla, se pregunta como antes.
+*/
 export async function miHogar(
   supabase: SupabaseClient,
   perfilId: string
 ): Promise<string | null> {
+  try {
+    const { data: filas, error } = await supabase
+      .from('miembros')
+      .select('hogar_id, aceptado_en')
+      .eq('perfil_id', perfilId)
+      .order('unido_en')
+
+    if (!error && filas) {
+      const aceptadas = filas.filter((m: { aceptado_en: string | null }) => m.aceptado_en)
+      if (aceptadas.length === 0) return null
+
+      const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('casa_activa')
+        .eq('id', perfilId)
+        .maybeSingle()
+
+      const elegida = (perfil?.casa_activa as string | null) ?? null
+      if (elegida && aceptadas.some((m: { hogar_id: string }) => m.hogar_id === elegida)) {
+        return elegida
+      }
+
+      return (aceptadas[0]?.hogar_id as string | null) ?? null
+    }
+  } catch {
+    /* Cae al modo de antes. */
+  }
+
   try {
     const { data } = await supabase
       .from('miembros')
@@ -74,6 +132,20 @@ export async function losDeLaCasa(
   admin: any,
   hogarId: string
 ): Promise<string[]> {
+  /* Los que están DENTRO. A quien todavía no ha contestado a la
+     invitación no se le manda un aviso de una casa en la que no ha
+     entrado. */
+  const { data: dentro, error } = await admin
+    .from('miembros')
+    .select('perfil_id, aceptado_en')
+    .eq('hogar_id', hogarId)
+
+  if (!error && dentro) {
+    return dentro
+      .filter((m: { aceptado_en: string | null }) => m.aceptado_en)
+      .map((m: { perfil_id: string }) => m.perfil_id)
+  }
+
   const { data } = await admin.from('miembros').select('perfil_id').eq('hogar_id', hogarId)
   return (data ?? []).map((m: { perfil_id: string }) => m.perfil_id)
 }
@@ -121,6 +193,38 @@ export async function hogarDe(
   admin: any,
   perfilId: string
 ): Promise<string | null> {
+  /* Misma regla que `miHogar`, y por el mismo motivo: si el aviso se
+     manda a la casa equivocada, le suena el teléfono a gente que no
+     tiene nada que ver. En dos intentos, porque las columnas son del
+     SQL 34. */
+  try {
+    const { data: filas, error } = await admin
+      .from('miembros')
+      .select('hogar_id, aceptado_en')
+      .eq('perfil_id', perfilId)
+      .order('unido_en')
+
+    if (!error && filas) {
+      const aceptadas = filas.filter((m: { aceptado_en: string | null }) => m.aceptado_en)
+      if (aceptadas.length === 0) return null
+
+      const { data: perfil } = await admin
+        .from('perfiles')
+        .select('casa_activa')
+        .eq('id', perfilId)
+        .maybeSingle()
+
+      const elegida = (perfil?.casa_activa as string | null) ?? null
+      if (elegida && aceptadas.some((m: { hogar_id: string }) => m.hogar_id === elegida)) {
+        return elegida
+      }
+
+      return (aceptadas[0]?.hogar_id as string | null) ?? null
+    }
+  } catch {
+    /* Cae al modo de antes. */
+  }
+
   const { data } = await admin
     .from('miembros')
     .select('hogar_id')
@@ -153,15 +257,26 @@ export async function hogarDe(
 */
 export async function mandaEnSuCasa(
   supabase: SupabaseClient,
-  perfilId: string
+  perfilId: string,
+  hogarId?: string | null
 ): Promise<boolean> {
   try {
+    /*
+      En LA CASA QUE ESTÁ MIRANDO, no en la primera que tenga.
+
+      Quien tiene su propia casa y además ayuda en la de sus padres
+      manda en la suya y no en la de ellos. Preguntando por la primera
+      fila, mandaría en las dos: vería el botón de conectar el Drive de
+      una casa que no es suya, y podría invitar gente a ella.
+    */
+    const casa = hogarId ?? (await miHogar(supabase, perfilId))
+    if (!casa) return false
+
     const { data } = await supabase
       .from('miembros')
       .select('papel')
       .eq('perfil_id', perfilId)
-      .order('unido_en')
-      .limit(1)
+      .eq('hogar_id', casa)
       .maybeSingle()
 
     if (data?.papel === 'propietario') return true

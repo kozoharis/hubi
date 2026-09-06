@@ -124,16 +124,38 @@ export default async function Ajustes() {
        se ha ejecutado, Postgres rechaza la consulta ENTERA en vez de
        decir «esa columna no existe» — así que se pide aparte y con su
        propio respaldo. La misma trampa de siempre. */
-    let filas: { perfil_id: string; papel: string; ve_todo?: boolean; escribe_todo?: boolean }[] =
-      []
+    let filas: {
+      perfil_id: string
+      papel: string
+      ve_todo?: boolean
+      escribe_todo?: boolean
+      aceptado_en?: string | null
+    }[] = []
 
-    const conPermisos = await supabase
-      .from('miembros')
-      .select('perfil_id, papel, ve_todo, escribe_todo')
-      .order('unido_en')
+    /*
+      `.eq('hogar_id', …)` explícito, y no confiando en las políticas.
+
+      Las políticas dejan ver también TUS filas en otras casas —hacen
+      falta para que la pantalla de invitaciones funcione—, así que
+      quien tenga dos casas se vería a sí mismo dos veces en esta
+      lista. Aquí se pregunta por los de ESTA casa.
+    */
+    const conPermisos = hogarId
+      ? await supabase
+          .from('miembros')
+          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en')
+          .eq('hogar_id', hogarId)
+          .order('unido_en')
+      : { data: [], error: null }
 
     if (conPermisos.error) {
-      const basico = await supabase.from('miembros').select('perfil_id, papel').order('unido_en')
+      const basico = hogarId
+        ? await supabase
+            .from('miembros')
+            .select('perfil_id, papel')
+            .eq('hogar_id', hogarId)
+            .order('unido_en')
+        : { data: [] }
       filas = (basico.data ?? []) as typeof filas
     } else {
       filas = (conPermisos.data ?? []) as typeof filas
@@ -179,6 +201,10 @@ export default async function Ajustes() {
           manda: m.papel === 'propietario',
           soloMira: m.papel === 'lector',
           soyYo: id === user.id,
+          /* Invitado pero todavía sin contestar. Sin esto, quien
+             invita ve a Marta en la lista y da por hecho que ya está
+             dentro — y luego se extraña de que no vea nada. */
+          pendiente: m.aceptado_en === null,
           veTodo: m.ve_todo !== false,
           escribeTodo: m.escribe_todo !== false,
           carpetas: raices.map((r) => {

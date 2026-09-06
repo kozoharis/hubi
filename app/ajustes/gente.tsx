@@ -29,6 +29,8 @@ export type Vecino = {
   manda: boolean
   soloMira: boolean
   soyYo: boolean
+  /** Invitada, pero todavía no ha dicho que sí. */
+  pendiente: boolean
   /** ¿Ve toda la casa, o solo lo que se le ha concedido? */
   veTodo: boolean
   escribeTodo: boolean
@@ -141,7 +143,11 @@ export default function Gente({
                 {v.soyYo && <span className="text-tenue"> · tú</span>}
               </span>
               <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
-                {v.manda ? 'Creó la casa · su Google Drive' : loQuePuede(v)}
+                {v.manda
+                  ? 'Creó la casa · su Google Drive'
+                  : v.pendiente
+                    ? 'Invitación hecha · todavía no ha entrado'
+                    : loQuePuede(v)}
               </span>
             </span>
             {puedoInvitar && !v.manda && (
@@ -287,8 +293,8 @@ export default function Gente({
       {hecho && (
         <p className="rounded-[16px] border border-borde px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
           Listo. Dile a <strong className="text-tinta">{hecho.nombre}</strong> que entre en HUBI
-          con <strong className="text-tinta">{hecho.correo}</strong>: le llegará su número y
-          aparecerá directamente en esta casa.
+          con <strong className="text-tinta">{hecho.correo}</strong>: le llegará su número y verá
+          tu invitación nada más entrar, y tiene que aceptarla desde su HUBI.
         </p>
       )}
 

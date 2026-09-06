@@ -136,30 +136,29 @@ export async function POST(peticion: NextRequest) {
   }
 
   /*
-    ¿ESTÁ YA EN ALGUNA CASA?
+    ¿YA ESTÁ EN ESTA CASA?
 
-    Ésta es la comprobación que importa. Si esa persona ya pertenece a
-    otro hogar, meterla aquí le daría acceso a DOS casas a la vez, y
-    HUBI entero está construido sobre que cada uno tiene la suya: la
-    consulta que averigua tu hogar coge el primero que encuentra, así
-    que a partir de ahí esa persona vería una casa u otra según el
-    orden en que se hubiera apuntado. Un lío silencioso y muy difícil
-    de deshacer.
+    Solo en ÉSTA. Antes se rechazaba a cualquiera que estuviera en
+    otra —«cada persona pertenece a una sola»— y eso era una
+    limitación técnica disfrazada de regla: castigaba a quien hubiera
+    entrado en HUBI primero. El hijo que tiene su casa y además ayuda
+    con la de sus padres es un caso normal, no una excepción.
+
+    Desde sql/34 una persona puede estar en varias y elegir cuál mira.
   */
   const { data: yaEsta } = await admin
     .from('miembros')
-    .select('hogar_id')
+    .select('hogar_id, aceptado_en')
     .eq('perfil_id', id)
-    .limit(1)
+    .eq('hogar_id', hogarId)
     .maybeSingle()
 
   if (yaEsta) {
     return NextResponse.json(
       {
-        error:
-          yaEsta.hogar_id === hogarId
-            ? 'Esa persona ya está en tu casa.'
-            : 'Ese correo ya está usando HUBI en otra casa. Cada persona pertenece a una sola.',
+        error: yaEsta.aceptado_en
+          ? 'Esa persona ya está en tu casa.'
+          : 'Ya le invitaste. Está pendiente de que ella acepte.',
       },
       { status: 409 }
     )
@@ -174,11 +173,25 @@ export async function POST(peticion: NextRequest) {
     `nombre` es obligatorio en `perfiles`, así que la fila ya existe:
     la crea un disparador al nacer la cuenta. Aquí solo se cambia.
   */
-  const { error: alNombrar } = await admin
+  /*
+    El nombre solo si no tiene el suyo puesto.
+
+    Antes se sobrescribía siempre. Con gente que ya usa HUBI eso
+    significaría que invitar a alguien le CAMBIA el nombre en su
+    propia casa — donde lleva meses llamándose como él quiso.
+  */
+  const { data: comoSeLlama } = await admin
     .from('perfiles')
-    .update({ nombre })
+    .select('nombre')
     .eq('id', id)
-    .select('id')
+    .maybeSingle()
+
+  const suyoEsElCorreo =
+    !comoSeLlama?.nombre || comoSeLlama.nombre === correo.split('@')[0]
+
+  const { error: alNombrar } = suyoEsElCorreo
+    ? await admin.from('perfiles').update({ nombre }).eq('id', id).select('id')
+    : { error: null }
 
   if (alNombrar) {
     console.error('[HUBI] No se ha podido ponerle nombre:', alNombrar)
@@ -188,9 +201,21 @@ export async function POST(peticion: NextRequest) {
     )
   }
 
+  /*
+    SE INVITA, NO SE METE.
+
+    `aceptado_en` a nulo: la fila existe —así los permisos por carpeta
+    se pueden preparar desde ya— pero esa casa todavía no existe para
+    esa persona. Ni la ve, ni cuenta como suya, ni se le puede
+    activar, hasta que diga que sí.
+
+    Meter a alguien en tu casa sin preguntarle era aceptable cuando
+    nadie tenía cuenta antes de ser invitado. Con gente que ya usa
+    HUBI, no.
+  */
   const { data: metida, error: alMeter } = await admin
     .from('miembros')
-    .insert({ hogar_id: hogarId, perfil_id: id, papel })
+    .insert({ hogar_id: hogarId, perfil_id: id, papel, aceptado_en: null })
     .select('perfil_id')
 
   /* Con el `.select()`: sin él, una inserción que no entre devuelve
@@ -203,7 +228,7 @@ export async function POST(peticion: NextRequest) {
     )
   }
 
-  return NextResponse.json({ bien: true, correo, nombre, papel })
+  return NextResponse.json({ bien: true, correo, nombre, papel, pendiente: true })
 }
 
 /*

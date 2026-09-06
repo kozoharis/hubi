@@ -12,6 +12,8 @@ import Avatar from './avatar'
 import { cuando, type Recordatorio } from '@/lib/tablon'
 import { leerPerfil } from '@/lib/perfil'
 import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
+import { casasDe } from '@/lib/casas'
+import Casas from './casas'
 
 export const dynamic = 'force-dynamic'
 
@@ -85,6 +87,10 @@ export default async function Inicio({
   */
   const hogarId = await miHogar(supabase, user.id)
   if (!hogarId) redirect('/empezar')
+
+  /* En cuántas casas está, y si le han invitado a alguna. Con una sola
+     —o sea, casi siempre— esto no pinta nada en la pantalla. */
+  const casas = await casasDe(supabase, user.id)
 
   const CAMPOS =
     'id, titulo, tipo, asignado_a, creado_por, fecha, hora, estado, nota, documento_origen_id'
@@ -208,6 +214,12 @@ export default async function Inicio({
       </Cabecera>
 
       <div className="relative z-10 mx-auto w-full max-w-md px-5 pt-1">
+        {/* ── En qué casa estás, y las que te han ofrecido ── */}
+        {/* Va lo primero, encima del saludo del día: si alguien te ha
+            dado acceso a los papeles de su casa, eso no puede quedar
+            debajo de la lista de la compra. */}
+        <Casas casas={casas} />
+
         {/* ── Saludo ── */}
         <p className="mt-2.5 text-[14.5px] font-bold text-tenue">{hoyEnPalabras()}</p>
         {/* Nunca "Buenas tardes," a secas: si no hubiera nombre, se
