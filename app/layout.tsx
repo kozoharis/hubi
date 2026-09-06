@@ -4,6 +4,7 @@ import './globals.css'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { actividadesDe, type Actividad } from '@/lib/actividades'
 import { ProveedorActividades } from './actividades-contexto'
+import Marco from './marco'
 
 const fuente = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -198,8 +199,16 @@ export default async function RootLayout({
         />
       </head>
       <body>
+        {/*
+          TODO VA DENTRO DEL MARCO, y el marco es lo que se desliza.
+
+          El <body> se queda quieto —alto de pantalla y sin desbordé—
+          para que el rebote del final ocurra aquí dentro y no arrastre
+          consigo la barra de abajo ni la cabecera, que están clavadas
+          a la ventana. El porqué largo está en `globals.css`.
+        */}
         <ProveedorActividades casa={{ actividades, rol, usaCompra }}>
-          {children}
+          <Marco>{children}</Marco>
         </ProveedorActividades>
       </body>
     </html>

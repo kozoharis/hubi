@@ -101,6 +101,41 @@ export async function cuantasNotas(
 }
 
 /**
+ * Las notas que te están esperando A TI.
+ *
+ * Es lo único del Inicio que va dirigido a una persona en concreto, y
+ * hasta ahora solo salía como un número —«2 · una es para ti»—. Un
+ * número no dice qué te han dejado, así que había que entrar a
+ * mirarlo; y una nota que hay que ir a buscar es una nota que a veces
+ * no se lee.
+ *
+ * Solo las NO VISTAS: en cuanto dices que la has visto deja de
+ * reclamarte. Si siguiera saliendo, el Inicio acabaría con una lista
+ * fija que se deja de mirar en una semana.
+ */
+export async function paraMi(
+  supabase: Cliente,
+  perfilId: string,
+  cuantas = 3
+): Promise<Nota[]> {
+  try {
+    const { data, error } = await supabase
+      .from('notas')
+      .select('id, texto, para, escrita_por, creada_en, cambiada_en, vista_en, guardada_en')
+      .eq('para', perfilId)
+      .is('vista_en', null)
+      .is('guardada_en', null)
+      .order('creada_en', { ascending: false })
+      .limit(cuantas)
+
+    if (error || !data) return []
+    return data as Nota[]
+  } catch {
+    return []
+  }
+}
+
+/**
  * Una nota con su fecha ya escrita en palabras.
  *
  * El texto se calcula EN EL SERVIDOR y viaja hecho. Calcularlo en el

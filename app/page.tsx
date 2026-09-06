@@ -13,7 +13,7 @@ import { cuando, type Recordatorio } from '@/lib/tablon'
 import { leerPerfil } from '@/lib/perfil'
 import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
 import { casasDe } from '@/lib/casas'
-import { cuantasNotas } from '@/lib/notas'
+import { cuantasNotas, paraMi, cuandoSePuso } from '@/lib/notas'
 import { gastadoEnCasa } from '@/lib/gastos-casa'
 import { queVeEnInicio } from '@/lib/roles'
 import { eurosRedondo } from '@/lib/periodos'
@@ -313,6 +313,8 @@ export default async function Inicio({
      del día. Se saca de la misma lectura de gente: pedirla dos veces
      sería un viaje de más para pintar la misma pantalla. */
   let deLaAyuda: { nombre: string; color: string } | null = null
+  /** Las notas que te están esperando a ti, con quién las dejó. */
+  const tuyas: { id: string; texto: string; de: string; color: string; cuando: string }[] = []
 
   try {
     const gente = await genteDeLaCasa(supabase, hogarId)
@@ -320,6 +322,32 @@ export default async function Inicio({
 
     const ayuda = gente.find((g) => g.rol === 'ayuda' && !g.pendiente)
     if (ayuda) deLaAyuda = { nombre: ayuda.nombre.split(' ')[0], color: ayuda.color }
+
+    /*
+      ── LO QUE TE HAN DEJADO A TI ──
+
+      Hasta ahora solo salía el número —«2 · una es para ti»—. Y un
+      número no dice QUÉ te han dejado, así que había que entrar a
+      mirarlo: una nota que hay que ir a buscar es una nota que a veces
+      no se lee.
+
+      Se leen aquí porque ya tenemos los nombres y los colores de la
+      casa: pedirlos otra vez sería un viaje de más para pintar la
+      misma pantalla.
+    */
+    if (ve.notas) {
+      const suyas = await paraMi(supabase, user.id, 2)
+      for (const n of suyas) {
+        const dequien = gente.find((g) => g.id === n.escrita_por)
+        tuyas.push({
+          id: n.id,
+          texto: n.texto,
+          de: dequien?.nombre.split(' ')[0] ?? 'Alguien',
+          color: dequien?.color ?? '#64748B',
+          cuando: cuandoSePuso(n.creada_en),
+        })
+      }
+    }
 
     const conQuien =
       yoSoy?.rol === 'asesor'
@@ -522,6 +550,51 @@ export default async function Inicio({
                 ? 'Tienes acceso a las cuentas y a los papeles de las actividades de esta casa. Están abajo. No puedes cambiar nada.'
                 : 'Puedes ver las cosas de esta casa, pero no cambiar nada.'}
           </p>
+        )}
+
+        {/*
+          ═══════════════════════════════════════════════════════
+          PARA TI
+          ═══════════════════════════════════════════════════════
+
+          Va ARRIBA, antes que las tarjetas y antes que la agenda. Es
+          lo único de esta pantalla que alguien de tu casa te ha
+          dejado a ti en concreto — y lo que se pone debajo de seis
+          tarjetas se lee mañana.
+
+          Se enseña el texto, no un número: «2 · una es para ti»
+          obligaba a entrar para saber qué era, y una nota que hay que
+          ir a buscar es una nota que a veces no se lee.
+
+          Desaparece sola en cuanto dices que la has visto, desde
+          Notas. Si se quedara, el Inicio acabaría con una lista fija
+          que se deja de mirar en una semana.
+        */}
+        {tuyas.length > 0 && (
+          <section className="mt-4">
+            <h2 className="rotulo">Para ti</h2>
+            <ul className="mt-2 space-y-2">
+              {tuyas.map((n) => (
+                <li key={n.id}>
+                  <Link
+                    href="/notas"
+                    className="block rounded-[20px] border bg-superficie px-4 py-3.5"
+                    style={{
+                      borderColor: `color-mix(in srgb, ${n.color} 42%, transparent)`,
+                      borderLeft: `4px solid ${n.color}`,
+                    }}
+                  >
+                    <span className="block text-[16.5px] font-semibold leading-snug">
+                      {n.texto.length > 140 ? `${n.texto.slice(0, 140)}…` : n.texto}
+                    </span>
+                    <span className="mt-1 block text-[13.5px] font-bold text-tenue">
+                      {n.de} · {n.cuando.toLowerCase()}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         {conectado && <Invitacion />}

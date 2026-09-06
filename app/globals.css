@@ -118,27 +118,45 @@
   para el navegador que no lo respete.
 */
 /*
-  ── Y NO BASTABA CON PEDIRLO ──
+  ═══════════════════════════════════════════════════════════
+  LA BARRA DE ABAJO NO SE DESPEGA. TERCERA VEZ, Y AHORA BIEN.
+  ═══════════════════════════════════════════════════════════
 
-  `overscroll-behavior-y: none` a secas no lo arregló: en Safari, el
-  rebote del DOCUMENTO se sigue produciendo, y con él se descolocan la
-  barra de abajo y la cabecera, que son las dos cosas clavadas.
+  Al llegar al final y seguir arrastrando, iOS estira la página. La
+  barra y la cabecera están clavadas y se descolocan con ella.
 
-  El arreglo de verdad es que el documento no sea lo que se desliza.
-  El <body> pasa a ser el contenedor con altura de pantalla y desbordé
-  propio: el rebote ocurre AHÍ DENTRO, y lo que está `fixed` —que se
-  coloca respecto a la ventana, no respecto al body— se queda quieto.
+  Lo intentado, y por qué no bastó:
 
-  `100dvh` y no `100vh`: con la barra del navegador apareciendo y
-  desapareciendo, `100vh` deja un hueco por abajo en iPhone. Se
-  mantiene `100vh` delante como respaldo para el navegador que no
-  entienda `dvh`.
+  1 · `overscroll-behavior-y: none` en html y body.
+      Safari lo ignora para el rebote del DOCUMENTO. No cambió nada.
+
+  2 · Hacer del <body> el que se desliza, con `height: 100dvh`.
+      Salió PEOR: `100dvh` cambia cuando la barra del navegador
+      aparece y desaparece, así que el suelo del body se movía debajo
+      de una barra clavada a la ventana. Se despegaba más que antes.
+
+  Lo que sí funciona, y es lo que hace cualquier aplicación:
+  QUE EL DOCUMENTO NO SE DESLICE EN ABSOLUTO.
+
+      body     alto de pantalla, `overflow: hidden` — no se mueve
+      .marco   dentro, con el desbordé y todo el contenido
+
+  El rebote pasa a ocurrir DENTRO del marco, y lo que está `fixed`
+  —que se coloca respecto a la ventana, no respecto al marco— se queda
+  quieto pase lo que pase. No hay rebote del documento que descolocar.
+
+  `overscroll-behavior-y: contain` en el marco, y no `none`: `none`
+  también apagaría el «tirar para recargar» de Android, que ahí sí es
+  un gesto que la gente usa.
+
+  Y `100dvh` con `100vh` delante como respaldo: en un navegador que no
+  entienda `dvh` se queda con el de siempre, que es peor pero no está
+  roto.
 */
 html {
   -webkit-text-size-adjust: 100%;
   background: var(--t-fondo);
   height: 100%;
-  overscroll-behavior-y: none;
 }
 
 body {
@@ -149,9 +167,14 @@ body {
 
   height: 100vh;
   height: 100dvh;
+  overflow: hidden;
+}
+
+.marco {
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
 }
 
