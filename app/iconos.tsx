@@ -138,66 +138,83 @@ export function Pastilla({
 
 /*
   ═══════════════════════════════════════════════════════════════
-  LOS MANDOS DE AJUSTES
+  EL BOTÓN DE AJUSTES
   ═══════════════════════════════════════════════════════════════
 
-  Tres carriles con su botón, cada uno de un color de la H: turquesa,
-  naranja y rojo, en ese orden. Los mismos píxeles del logo, medidos.
+  Éste no lo dibujé yo: lo diseñó Haris y llegó como imagen. Lo que
+  hay aquí es su botón, no una versión mía de su botón.
+
+  ─────────────────────────────────────────────────────────────
+  EL ICONO SALE DE SU PROPIO ARCHIVO
+
+  `public/ajustes-mando.png` está recortado del PNG que mandó, con el
+  fondo quitado píxel a píxel: a cada punto se le restó el color del
+  fondo y lo que quedó se convirtió en color + transparencia.
+
+  Eso importa por algo concreto: si se hubiera recortado sin más, el
+  icono llevaría pegado un rectángulo azul marino y solo valdría sobre
+  fondo oscuro. Así vale también en modo claro, que es la mitad de las
+  veces que se abre HUBI.
+
+  ─────────────────────────────────────────────────────────────
+  Y LOS COLORES DEL BORDE ESTÁN MEDIDOS, NO ELEGIDOS
+
+  #00F4FC en el extremo izquierdo, #628BFC arriba a la derecha,
+  #AE62F7 en el derecho. Son los píxeles de su archivo. Y el resplandor
+  de alrededor, en los dos colores de las puntas.
 
   ─────────────────────────────────────────────────────────────
   POR QUÉ MANDOS Y NO UNA RUEDA
 
   Porque es lo que se hace ahí dentro. En Ajustes no se engrasa una
   máquina: se abre y se cierra el acceso de la gente, se encienden y
-  se apagan carpetas, se conecta o se desconecta Google. Todo son
-  cosas que se mueven de un lado a otro — y eso es exactamente lo que
-  dibuja un mando, no un engranaje.
-
-  La rueda además tenía un problema de forma: ocho dientes a 25 px es
-  un dibujo denso, y en color vivo se comía la esquina. Tres líneas
-  con un punto se leen enteras de un vistazo.
+  se apagan carpetas, se conecta o se desconecta Google. Cosas que se
+  mueven de un lado a otro — que es lo que dibuja un mando, no un
+  engranaje. Y la chispa dice la otra mitad: que ahí dentro hay cosas
+  que HUBI hace solo.
 
   ─────────────────────────────────────────────────────────────
-  ES UNA UNIDAD, NO UN ICONO CON UNA PALABRA DEBAJO
+  EL BORDE EN DEGRADADO, SIN TAPAR LO QUE HAY DETRÁS
 
-  Mide 56 de ancho por 22 de alto — más ancho que alto, como la
-  palabra que lleva debajo, y de la misma anchura que ella. Los tres
-  carriles van a 7,5 px uno de otro: lo justo para que se lean como un
-  grupo y no como tres cosas sueltas.
+  El truco habitual —dos capas y `background-clip`— exige que el
+  relleno sea OPACO, y aquí no puede serlo: el Inicio tiene manchas de
+  color moviéndose por detrás y una píldora opaca se vería como un
+  agujero recortado encima.
 
-  Esa es la diferencia entre poner un dibujo encima de un texto y
-  hacer una sola pieza.
+  Va al revés: el degradado es el fondo del botón entero, y encima se
+  pone otra capa con el fondo a medias y desenfoque por detrás. Del
+  degradado solo asoman los 1,5 px del borde, y lo de detrás se sigue
+  viendo a través.
 */
-export function Mandos({ ancho = 56 }: { ancho?: number }) {
-  const alto = Math.round((ancho * 22) / 56)
-
+export function BotonAjustes() {
   return (
-    <svg
-      width={ancho}
-      height={alto}
-      viewBox="0 0 56 22"
-      fill="none"
-      strokeWidth={1.9}
-      strokeLinecap="round"
-      aria-hidden
-      style={{ display: 'block' }}
+    <span
+      className="block rounded-full p-[1.5px]"
+      style={{
+        background: 'linear-gradient(102deg, #00F4FC 0%, #628BFC 55%, #AE62F7 100%)',
+        boxShadow: '0 0 16px -2px rgba(0,244,252,.30), 0 0 16px -2px rgba(174,98,247,.28)',
+      }}
     >
-      {/* El carril se corta a los lados del botón, no pasa por debajo:
-          es lo que hace que se lea como un mando que se desliza y no
-          como una línea con un lunar encima. */}
-      <g stroke="#02C1C0">
-        <path d="M1.6 3.5H14.4M23.6 3.5H54.4" />
-        <circle cx="19" cy="3.5" r="3.1" />
-      </g>
-      <g stroke="#FF7D20">
-        <path d="M1.6 11H33.4M42.6 11H54.4" />
-        <circle cx="38" cy="11" r="3.1" />
-      </g>
-      <g stroke="#FD4F4F">
-        <path d="M1.6 18.5H10.4M19.6 18.5H54.4" />
-        <circle cx="15" cy="18.5" r="3.1" />
-      </g>
-    </svg>
+      <span
+        className="flex h-[43px] items-center gap-2.5 rounded-full pl-3 pr-2"
+        style={{
+          background: 'color-mix(in srgb, var(--t-fondo) 80%, transparent)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/ajustes-mando.png"
+          alt=""
+          width={24}
+          height={24}
+          style={{ width: 24, height: 24, display: 'block' }}
+        />
+        <span className="text-[16px] font-extrabold tracking-tight text-tinta">Ajustes</span>
+        <Ico nombre="flecha" tam={18} grosor={2.2} className="text-tenue" />
+      </span>
+    </span>
   )
 }
 

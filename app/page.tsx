@@ -7,7 +7,7 @@ import Barra from './barra'
 import Arranque from './arranque'
 import Invitacion from './invitacion'
 import Cabecera from './cabecera'
-import { Ico, Logo, Mandos, Pastilla, pintaDe } from './iconos'
+import { BotonAjustes, Ico, Logo, Pastilla, pintaDe } from './iconos'
 import Avatar from './avatar'
 import { cuando, type Recordatorio } from '@/lib/tablon'
 import { leerPerfil } from '@/lib/perfil'
@@ -304,33 +304,13 @@ export default async function Inicio({
             idioma, y Ajustes ES lo mismo que ellas: un sitio al que
             se va. Que se parezca es lo honesto.
 
-            Y son MANDOS, no una rueda, porque es lo que se hace ahí
-            dentro: abrir y cerrar el acceso de la gente, encender y
-            apagar carpetas, conectar o desconectar Google. Cosas que
-            se mueven de un lado a otro. Un engranaje dibuja una
-            máquina que se engrasa; esto dibuja lo que hay.
-
-            Los tres carriles llevan los colores de la H en orden, y
-            de trazo fino como las pestañas de abajo: de este botón lo
-            que se quiere es que ESTÉ, no que llame — se toca una vez
-            al mes.
-
-            48 px de hueco tocable aunque el dibujo mida menos: sin
-            caja no hay borde que diga dónde acaba, así que tiene que
-            perdonar la puntería.
+            Una píldora con el borde en degradado, del turquesa de la
+            H al morado, y dentro los mandos, la palabra y la flecha.
+            El dibujo del botón está en `iconos.tsx`, con el porqué de
+            cada pieza.
           */}
-          <Link
-            href="/ajustes"
-            className="-mr-1 flex min-h-[48px] shrink-0 flex-col items-center justify-center gap-[5px] px-1"
-          >
-            <Mandos ancho={56} />
-            {/* La palabra justo debajo y de la misma anchura que el
-                dibujo. Las dos cosas ocupan el mismo rectángulo, y por
-                eso se leen como una sola pieza y no como un icono con
-                un texto puesto al lado. */}
-            <span className="block w-[56px] text-center text-[12px] font-bold leading-none text-apagado">
-              Ajustes
-            </span>
+          <Link href="/ajustes" className="shrink-0">
+            <BotonAjustes />
           </Link>
         </div>
       </Cabecera>
