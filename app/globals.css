@@ -145,7 +145,7 @@ input, textarea, select {
   top: 0;
   z-index: 30;
   padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
-  padding-bottom: 0.9rem;
+  padding-bottom: 1.1rem;
 
   /*
     Aquí había un `backdrop-filter: blur(16px)`. Se ve muy bien y es
@@ -159,10 +159,24 @@ input, textarea, select {
     Cuesta lo mismo que pintar un color plano —nada— y en un móvil
     corriente la diferencia al deslizar se nota con la mano.
   */
+  /*
+    El tramo opaco llega hasta el 84% y no hasta el 68%.
+
+    Con el 68%, el degradado empezaba a aclararse A LA ALTURA DEL
+    TÍTULO: lo que pasaba por detrás al deslizar se leía a medias
+    justo al lado de «Ajustes», y eso no se ve como un desvanecido —
+    se ve como dos textos encima del otro. Pasó tal cual: «QUIÉN VIVE
+    AQUÍ» apareció pegado debajo de «Ajustes» como si la pantalla
+    estuviera rota.
+
+    Ahora el degradado solo ocurre en el hueco de abajo, que es donde
+    tiene que ocurrir: el título va sobre fondo opaco de principio a
+    fin y lo que pasa por detrás se apaga por debajo de él.
+  */
   background: linear-gradient(
     to bottom,
     var(--t-fondo) 0%,
-    var(--t-fondo) 68%,
+    var(--t-fondo) 84%,
     transparent 100%
   );
 }

@@ -17,9 +17,9 @@ export type Tema = 'claro' | 'oscuro' | 'sistema'
 export const LLAVE = 'hubi-tema'
 
 const OPCIONES: { valor: Tema; texto: string; pie: string; icono: Icono }[] = [
-  { valor: 'claro', texto: 'Claro', pie: 'Fondo blanco', icono: 'ojo' },
-  { valor: 'oscuro', texto: 'Oscuro', pie: 'Fondo azul marino', icono: 'reloj' },
-  { valor: 'sistema', texto: 'El del teléfono', pie: 'Cambia solo', icono: 'gente' },
+  { valor: 'claro', texto: 'Claro', pie: 'Fondo blanco', icono: 'sol' },
+  { valor: 'oscuro', texto: 'Oscuro', pie: 'Fondo azul marino', icono: 'luna' },
+  { valor: 'sistema', texto: 'El del teléfono', pie: 'Cambia solo', icono: 'contraste' },
 ]
 
 export default function SelectorTema() {

@@ -14,8 +14,27 @@ export type Icono =
   | 'pastilla' | 'reloj' | 'euro' | 'mas' | 'chincheta'
   | 'ojo' | 'lapiz' | 'gente' | 'candado' | 'bolsa' | 'aviso' | 'llave'
   | 'refrescar' | 'casco' | 'maleta' | 'herramienta' | 'barco' | 'mascota'
+  | 'sol' | 'luna' | 'contraste'
 
 const TRAZOS: Record<Icono, string> = {
+  /*
+    ── EL TEMA ──
+
+    Aquí no había nada, y el selector de «Cómo se ve» tiraba de lo que
+    hubiera: un OJO para «Claro», un RELOJ para «Oscuro» y dos
+    PERSONAS para «El del teléfono». Ninguno de los tres significa
+    nada de lo que dice el botón, y el de las personas llegaba a
+    sugerir que aquello iba de quién usa el móvil.
+
+    Un sol, una luna y un círculo medio sombreado. Son los tres que
+    usa todo el mundo, y por eso no hay que explicarlos.
+  */
+  sol:       'M12 5.4V2.5M12 21.5v-2.9M5.4 12H2.5M21.5 12h-2.9M7.3 7.3 5.2 5.2M18.8 18.8l-2.1-2.1M16.7 7.3l2.1-2.1M5.2 18.8l2.1-2.1M12 8.2a3.8 3.8 0 1 1 0 7.6 3.8 3.8 0 0 1 0-7.6Z',
+  luna:      'M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1Z',
+  /* El círculo entero, y dentro tres rayas que van llenando media
+     esfera: es «a veces uno y a veces el otro» sin tener que rellenar
+     nada, que estos iconos son solo de línea. */
+  contraste: 'M12 3.4a8.6 8.6 0 1 1 0 17.2 8.6 8.6 0 0 1 0-17.2ZM12 3.6v16.8M14.6 5.4v13.2M17.2 8.1v7.8',
   casa:      'M3 10.5 12 3l9 7.5M5.5 9.5V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5',
   /* Un casco de obra. Media cúpula, la visera que sobresale por
      delante y la cinta de la base — que es lo que hace que se lea

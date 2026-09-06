@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Ico } from '../iconos'
+import { Ico, type Icono } from '../iconos'
 import QuienVe, { type CarpetaPermiso } from './quien-ve'
 import Semana from './semana'
 import { ROLES, nombreDelRol, type Rol } from '@/lib/roles'
@@ -233,93 +233,109 @@ export default function Gente({
         {gente.map((v) => (
           <li
             key={v.id}
-            className="flex items-center gap-3 rounded-[20px] border border-borde bg-superficie px-4 py-3.5"
+            className="rounded-[20px] border border-borde bg-superficie px-4 py-3.5"
           >
-            <span
-              /* Su color, no uno según si manda o no. Es el mismo con
-                 el que sale en la agenda y en el corcho: verlo aquí es
-                 lo que enseña a leerlo allí. */
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
-              style={{ background: v.color }}
-            >
-              {v.nombre.charAt(0).toUpperCase()}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[17.5px] font-extrabold tracking-tight">
-                {v.nombre}
-                {v.soyYo && <span className="text-tenue"> · tú</span>}
-              </span>
-              <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
-                {v.manda
-                  ? 'Creó la casa · su Google Drive'
-                  : [
-                      nombreDelRol(v.rol),
-                      v.pendiente ? 'todavía no ha entrado' : loQuePuede(v),
-                      v.hasta ? `hasta el ${enPalabras(v.hasta)}` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-              </span>
-            </span>
             {/*
-              ── SU SEMANA ──
+              ── ARRIBA, QUIÉN ES. DEBAJO, QUÉ SE LE PUEDE HACER ──
 
-              Solo a quien ayuda en casa. Para la familia no tiene
-              sentido —nadie le programa la semana a su mujer— y ponerlo
-              en todas las filas obligaría a descartarlo cada vez.
+              Estaba todo en una fila: la foto, el nombre, la frase de
+              lo que puede, y cuatro botones. Y en un móvil eso no cabe
+              — cuatro botones de 48 px más el avatar se comen 290 de
+              los 335 que hay, y al texto le quedaban cuarenta: «Ayuda
+              en casa · Ve 1 carpeta» salía a UNA PALABRA POR RENGLÓN y
+              el nombre se cortaba en «Ju…».
 
-              Se llega también desde aquí, y no solo al invitar: la
-              semana cambia. Empieza viniendo tres días y acaba
-              viniendo dos, o se le añade planchar en invierno.
+              El fallo no era de tamaños: era meter dos cosas distintas
+              en la misma línea. Quién es alguien se lee; lo que se le
+              puede hacer se pulsa. Ahora van una debajo de otra y cada
+              una tiene el ancho entero.
             */}
-            {puedoInvitar && !v.manda && v.rol === 'ayuda' && (
-              <button
-                onClick={() =>
-                  setProgramando(
-                    programando?.id === v.id
-                      ? null
-                      : { id: v.id, nombre: v.nombre.split(' ')[0] }
-                  )
-                }
-                aria-label={`La semana de ${v.nombre}`}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-tinta-suave"
+            <div className="flex items-center gap-3">
+              <span
+                /* Su color, no uno según si manda o no. Es el mismo con
+                   el que sale en la agenda y en el corcho: verlo aquí es
+                   lo que enseña a leerlo allí. */
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
+                style={{ background: v.color }}
               >
-                <Ico nombre="calendario" tam={19} grosor={2.2} />
-              </button>
-            )}
+                {v.nombre.charAt(0).toUpperCase()}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[17.5px] font-extrabold tracking-tight">
+                  {v.nombre}
+                  {v.soyYo && <span className="text-tenue"> · tú</span>}
+                </span>
+                <span className="mt-0.5 block text-[14.5px] font-bold leading-snug text-tenue">
+                  {v.manda
+                    ? 'Creó la casa · su Google Drive'
+                    : [
+                        nombreDelRol(v.rol),
+                        v.pendiente ? 'todavía no ha entrado' : loQuePuede(v),
+                        v.hasta ? `hasta el ${enPalabras(v.hasta)}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                </span>
+              </span>
+            </div>
 
-            {/* Cambiar quién es. Hacía falta y no estaba: se elegía al
-                invitar y ya no había manera de rectificar — que es
-                justo lo que pasa en la vida real. */}
-            {puedoInvitar && !v.manda && (
-              <button
-                onClick={() => setCambiando(cambiando === v.id ? null : v.id)}
-                aria-label={`Cambiar quién es ${v.nombre}`}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-tinta-suave"
-              >
-                <Ico nombre="lapiz" tam={19} grosor={2.2} />
-              </button>
-            )}
+            {/*
+              ── Y LOS BOTONES, CON SU PALABRA ──
 
-            {puedoInvitar && !v.manda && (
-              <button
-                onClick={() => setRepartiendo(repartiendo === v.id ? null : v.id)}
-                aria-label={`Qué puede ver ${v.nombre}`}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-tinta-suave"
-              >
-                <Ico nombre="ojo" tam={19} grosor={2.2} />
-              </button>
-            )}
+              Cuatro dibujos sueltos —un calendario, un lápiz, un ojo y
+              un triángulo— no dicen qué hacen. El punto 5 lo pide sin
+              matices: iconos siempre acompañados por texto. Y aquí no
+              es un capricho, porque uno de los cuatro SACA A ALGUIEN DE
+              LA CASA, y eso no puede depender de adivinar un dibujo.
 
+              Se leen como las pestañas de abajo —el dibujo arriba, la
+              palabra debajo— que es el idioma que ya habla toda la
+              navegación de HUBI.
+            */}
             {puedoInvitar && !v.manda && (
-              <button
-                onClick={() => sacar(v)}
-                disabled={ocupado}
-                aria-label={`Sacar a ${v.nombre} de la casa`}
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-tinta-suave disabled:opacity-50"
-              >
-                <Ico nombre="aviso" tam={19} grosor={2.2} />
-              </button>
+              <div className="mt-3 flex gap-1.5 border-t border-borde pt-2.5">
+                {v.rol === 'ayuda' && (
+                  <Accion
+                    icono="calendario"
+                    texto="Su semana"
+                    puesta={programando?.id === v.id}
+                    alPulsar={() =>
+                      setProgramando(
+                        programando?.id === v.id
+                          ? null
+                          : { id: v.id, nombre: v.nombre.split(' ')[0] }
+                      )
+                    }
+                  />
+                )}
+
+                {/* Cambiar quién es. Hacía falta y no estaba: se elegía
+                    al invitar y ya no había manera de rectificar — que
+                    es justo lo que pasa en la vida real. */}
+                <Accion
+                  icono="lapiz"
+                  texto="Quién es"
+                  puesta={cambiando === v.id}
+                  alPulsar={() => setCambiando(cambiando === v.id ? null : v.id)}
+                />
+
+                <Accion
+                  icono="ojo"
+                  texto="Qué ve"
+                  puesta={repartiendo === v.id}
+                  alPulsar={() => setRepartiendo(repartiendo === v.id ? null : v.id)}
+                />
+
+                {/* En coral, y con la palabra: es el único de los
+                    cuatro que quita algo. */}
+                <Accion
+                  icono="aviso"
+                  texto="Sacar"
+                  peligro
+                  ocupado={ocupado}
+                  alPulsar={() => sacar(v)}
+                />
+              </div>
             )}
           </li>
         ))}
@@ -579,6 +595,59 @@ export default function Gente({
         </p>
       )}
     </div>
+  )
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  UNO DE LOS BOTONES DE UNA PERSONA
+  ═══════════════════════════════════════════════════════════════
+
+  El dibujo arriba y la palabra debajo, como las pestañas de la barra.
+  Es el idioma que ya habla toda la navegación de HUBI, y repetirlo
+  aquí ahorra tener que aprenderse nada nuevo.
+
+  ─────────────────────────────────────────────────────────────
+  Y SE VE CUÁL ESTÁ ABIERTO
+
+  Los tres primeros abren un panel debajo. Sin marcar cuál está
+  abierto, quien toca «Qué ve» y luego «Quién es» ve cambiar el panel
+  sin saber por qué — y con dos personas en la lista, ni siquiera de
+  quién es el panel que está mirando.
+*/
+function Accion({
+  icono,
+  texto,
+  alPulsar,
+  puesta = false,
+  peligro = false,
+  ocupado = false,
+}: {
+  icono: Icono
+  texto: string
+  alPulsar: () => void
+  puesta?: boolean
+  /** Saca a alguien de la casa. Va en coral y no se marca. */
+  peligro?: boolean
+  ocupado?: boolean
+}) {
+  return (
+    <button
+      onClick={alPulsar}
+      disabled={ocupado}
+      aria-pressed={peligro ? undefined : puesta}
+      className={`flex min-h-[54px] flex-1 flex-col items-center justify-center gap-1 rounded-[14px] px-1 text-[12.5px] font-bold leading-none disabled:opacity-50 ${
+        peligro ? 'text-coral' : puesta ? 'text-verde' : 'text-tinta-suave'
+      }`}
+      style={
+        puesta && !peligro
+          ? { background: 'var(--t-verde-suave)' }
+          : undefined
+      }
+    >
+      <Ico nombre={icono} tam={19} grosor={2.2} />
+      <span className="truncate">{texto}</span>
+    </button>
   )
 }
 
