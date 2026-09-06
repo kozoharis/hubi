@@ -235,44 +235,71 @@ export function Pastilla({
   que HUBI hace solo.
 
   ─────────────────────────────────────────────────────────────
-  EL BORDE EN DEGRADADO, SIN TAPAR LO QUE HAY DETRÁS
+  EL BORDE EN DEGRADADO, Y EL RELLENO VACÍO DE VERDAD
 
-  El truco habitual —dos capas y `background-clip`— exige que el
-  relleno sea OPACO, y aquí no puede serlo: el Inicio tiene manchas de
-  color moviéndose por detrás y una píldora opaca se vería como un
-  agujero recortado encima.
+  Aquí había un apaño. El truco habitual —dos capas y
+  `background-clip`— exige que el relleno sea OPACO, así que se puso
+  el degradado de fondo y encima otra capa con el color del tema a un
+  80% y desenfoque por detrás. Funcionaba, pero el relleno seguía
+  estando: sobre las manchas de color del Inicio se notaba como una
+  pastilla velada, y encima el desenfoque cuesta caro en un Android
+  normal.
 
-  Va al revés: el degradado es el fondo del botón entero, y encima se
-  pone otra capa con el fondo a medias y desenfoque por detrás. Del
-  degradado solo asoman los 1,5 px del borde, y lo de detrás se sigue
-  viendo a través.
+  Ahora el relleno no existe. El degradado se pinta en una capa
+  aparte, por detrás del texto, y se le recorta el centro con una
+  máscara: queda LA LÍNEA Y NADA MÁS, y por dentro se ve lo que haya
+  detrás, moviéndose incluido.
+
+  La máscara va en esa capa suelta y no en el botón entero a
+  propósito: una máscara se aplica también a los hijos, y puesta
+  arriba se comería el icono y la palabra.
+
+  ─────────────────────────────────────────────────────────────
+  Y LA PALABRA, MÁS FINA
+
+  Estaba en 800, el peso de los títulos, y eso hacía que compitiera
+  con «Buenos días, Haris» —que es lo que se tiene que leer primero—.
+  En 500 se sigue leyendo perfectamente y deja de gritar. El punto 5
+  pide que los iconos lleven texto; no pide que ese texto pese como un
+  titular.
 */
 export function BotonAjustes() {
   return (
-    <span
-      className="block rounded-full p-[1.1px]"
-      style={{
-        background: 'linear-gradient(102deg, #00F4FC 0%, #628BFC 55%, #AE62F7 100%)',
-      }}
-    >
+    <span className="relative flex h-[30px] items-center gap-1.5 rounded-full px-2.5">
+      {/*
+        Solo la línea. `border` transparente + el degradado pintado
+        contra el borde, y la máscara quita el centro:
+
+          padding-box  ·  lo de dentro del borde
+          la otra      ·  el botón entero
+          exclude      ·  lo que queda es el marco
+
+        Sin `pointer-events` propios: es un adorno, y el que se toca
+        es el enlace de fuera.
+      */}
       <span
-        className="flex h-[30px] items-center gap-1.5 rounded-full px-2.5"
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-full"
         style={{
-          background: 'color-mix(in srgb, var(--t-fondo) 80%, transparent)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
+          border: '1px solid transparent',
+          background:
+            'linear-gradient(102deg, #00F4FC 0%, #628BFC 55%, #AE62F7 100%) border-box',
+          WebkitMask:
+            'linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0)',
+          WebkitMaskComposite: 'xor',
+          mask: 'linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0)',
+          maskComposite: 'exclude',
         }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/ajustes-mando.png"
-          alt=""
-          width={16}
-          height={16}
-          style={{ width: 16, height: 16, display: 'block' }}
-        />
-        <span className="text-[13.5px] font-extrabold tracking-tight text-tinta">Ajustes</span>
-      </span>
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/ajustes-mando.png"
+        alt=""
+        width={16}
+        height={16}
+        style={{ width: 16, height: 16, display: 'block' }}
+      />
+      <span className="text-[13.5px] font-medium tracking-tight text-tinta">Ajustes</span>
     </span>
   )
 }
