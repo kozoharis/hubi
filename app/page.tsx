@@ -562,9 +562,17 @@ export default async function Inicio({
           dejado a ti en concreto — y lo que se pone debajo de seis
           tarjetas se lee mañana.
 
-          Se enseña el texto, no un número: «2 · una es para ti»
-          obligaba a entrar para saber qué era, y una nota que hay que
-          ir a buscar es una nota que a veces no se lee.
+          Se enseña el texto, SIEMPRE. Hubo una versión que ponía «2 ·
+          una es para ti» y nada más: obligaba a entrar para saber qué
+          era, y una nota que hay que ir a buscar es una nota que a
+          veces no se lee.
+
+          El número de delante no vuelve atrás en eso — se suma. De
+          lejos y sin gafas contesta lo primero que se pregunta al
+          abrir («¿tengo algo?») y el texto sigue debajo contestando
+          lo segundo («¿el qué?»). Es la idea del widget del teléfono,
+          pero a 17 px y sin quitar nada: allí el número SUSTITUYE al
+          texto, y por eso allí hay que entrar.
 
           Desaparece sola en cuanto dices que la has visto, desde
           Notas. Si se quedara, el Inicio acabaría con una lista fija
@@ -572,8 +580,19 @@ export default async function Inicio({
         */}
         {tuyas.length > 0 && (
           <section className="mt-4">
-            <h2 className="rotulo">Para ti</h2>
-            <ul className="mt-2 space-y-2">
+            {/* El número y su rótulo, en una fila. `tabular-nums` para
+                que al pasar de 9 a 10 no baile lo de al lado. */}
+            <div className="flex items-center gap-3">
+              <span className="text-[44px] font-extrabold leading-none tracking-tight tabular-nums">
+                {tuyas.length}
+              </span>
+              <h2 className="rotulo leading-[1.3]">
+                {tuyas.length === 1 ? 'Nota que' : 'Notas que'}
+                <br />
+                te han dejado
+              </h2>
+            </div>
+            <ul className="mt-3 space-y-2">
               {tuyas.map((n) => (
                 <li key={n.id}>
                   <Link
