@@ -108,10 +108,7 @@ export default async function Documento({
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver
-          href={volver}
-          texto={camino.length > 1 ? camino[camino.length - 1].nombre : 'Documentos'}
-        />
+        <Volver href={volver} />
       </Cabecera>
 
       <div className="mx-auto w-full max-w-md px-5">
@@ -288,7 +285,7 @@ function NoSeHaPodido({ motivo }: { motivo: string }) {
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href="/documentos" texto="Documentos" />
+        <Volver href="/documentos" />
       </Cabecera>
       <div className="mx-auto w-full max-w-md px-5">
         <div className="rounded-[22px] border border-coral bg-coral-suave px-5 py-6">

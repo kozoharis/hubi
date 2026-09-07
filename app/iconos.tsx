@@ -408,31 +408,87 @@ export const MORADO_CLARO = '#A78BFA'
   pasan, pero no se usa. Es a propósito: si mañana alguien vuelve a
   ponerle un rótulo distinto, no pasa nada.
 */
+/*
+  ═══════════════════════════════════════════════════════════════
+  VOLVER
+  ═══════════════════════════════════════════════════════════════
+
+  Uno solo, y en todas las pantallas igual: una pastilla con borde, el
+  icono de la flecha, y la palabra **Volver**. Siempre la misma.
+
+  ─────────────────────────────────────────────────────────────
+  SIEMPRE «VOLVER», Y NUNCA «VOLVER A DONDE SEA»
+
+  Había de todo: «← Volver al tablón», «← Volver al inicio», «← Volver
+  al papel», «← Volver a la semana». Suena más informativo y es peor
+  por dos razones.
+
+  La primera: cambia de sitio y de largo en cada pantalla, así que el
+  ojo tiene que buscarlo cada vez en vez de encontrarlo donde estaba.
+  Para una persona mayor eso no es un detalle de estilo: es tener que
+  releer la esquina de arriba en cada pantalla.
+
+  La segunda: se queda mentiroso solo. Basta con que a esa pantalla se
+  llegue desde dos sitios —y a «Guardar documento» se llega desde el
+  Inicio, desde una carpeta y desde la compra— para que «Volver al
+  inicio» sea falso la mitad de las veces.
+
+  El punto 5 lo pide entero: *botón volver siempre evidente*. Evidente
+  quiere decir el mismo, en el mismo sitio, con la misma palabra.
+
+  ─────────────────────────────────────────────────────────────
+  Y POR QUÉ ES UNA PASTILLA Y NO UN «←» SUELTO
+
+  Las que quedaban por ahí eran texto pelado en gris. Contra el fondo
+  oscuro casi no se ven, y sobre todo no parecen tocables: un texto
+  gris de dieciséis puntos no dice «púlsame». La pastilla ocupa 48
+  puntos de alto —lo que hay que poder tocar con el pulgar sin
+  apuntar— y se lee como un botón porque lo es.
+*/
 export function Volver({
   href,
+  alPulsar,
   oscuro = false,
 }: {
-  href: string
-  /** Ya no se usa: el botón dice siempre «Volver». */
-  texto?: string
+  /** A dónde vuelve. Uno de los dos: `href` o `alPulsar`. */
+  href?: string
+  /** Para volver un paso DENTRO de una pantalla, sin cambiar de página. */
+  alPulsar?: () => void
+  /** Sobre fondo oscuro propio —la pantalla de hablar—, no el tema. */
   oscuro?: boolean
 }) {
-  return (
-    <Link
-      href={href}
-      className="mb-3 inline-flex h-12 max-w-full items-center gap-1.5 rounded-full py-0 pl-3 pr-5 text-[16.5px] font-extrabold"
-      style={
-        oscuro
-          ? { background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.18)', color: '#fff' }
-          : {
-              background: 'var(--t-superficie)',
-              border: '1px solid var(--t-borde)',
-              color: 'var(--t-tinta)',
-            }
+  const pinta = 'mb-3 inline-flex h-12 max-w-full items-center gap-1.5 rounded-full py-0 pl-3 pr-5 text-[16.5px] font-extrabold'
+
+  const traje = oscuro
+    ? { background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.18)', color: '#fff' }
+    : {
+        background: 'var(--t-superficie)',
+        border: '1px solid var(--t-borde)',
+        color: 'var(--t-tinta)',
       }
-    >
+
+  const dentro = (
+    <>
       <Ico nombre="atras" tam={21} grosor={2.6} />
       <span className="truncate">Volver</span>
+    </>
+  )
+
+  /* Sin `href` es un paso atrás dentro de la misma pantalla —el
+     formulario de guardar—, y eso es un botón, no un enlace. Se ve
+     idéntico a propósito: quien lo pulsa no tiene por qué saber si
+     cambia de página o no. */
+  if (!href) {
+    return (
+      <button type="button" onClick={alPulsar} className={pinta} style={traje}>
+        {dentro}
+      </button>
+    )
+  }
+
+  return (
+    <Link href={href} className={pinta} style={traje}>
+      {dentro}
     </Link>
   )
 }

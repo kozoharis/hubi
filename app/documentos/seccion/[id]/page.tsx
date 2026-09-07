@@ -108,7 +108,7 @@ export default async function Seccion({
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href="/documentos" texto="Documentos" />
+        <Volver href="/documentos" />
       </Cabecera>
 
       <div className="mx-auto w-full max-w-md px-5">

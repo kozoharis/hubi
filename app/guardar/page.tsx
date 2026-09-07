@@ -1,9 +1,9 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { miHogar, quienManda } from '@/lib/hogar'
 import { clienteServidor } from '@/lib/supabase/servidor'
+import { Volver } from '../iconos'
 import Formulario from './formulario'
 import type { Categoria } from '@/lib/rutas'
 
@@ -46,11 +46,9 @@ export default async function Guardar({
     const elJefe = hogarId ? await quienManda(supabase, hogarId) : null
 
     return (
-      <main className="techo-holgado min-h-screen px-6 pb-12">
+      <main className="techo-holgado min-h-screen px-5 pb-12">
         <div className="mx-auto w-full max-w-md">
-          <Link href="/" className="flex h-11 items-center gap-2 text-[16px] font-bold text-tinta-suave">
-            ← Volver al inicio
-          </Link>
+          <Volver href="/" />
           <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
             Todavía no se pueden guardar documentos
           </h1>

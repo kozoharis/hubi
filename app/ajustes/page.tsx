@@ -390,7 +390,7 @@ export default async function Ajustes() {
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href="/" texto="Volver" />
+        <Volver href="/" />
 
         <h1 className="text-[27px] font-extrabold tracking-tight">Ajustes</h1>
       </Cabecera>

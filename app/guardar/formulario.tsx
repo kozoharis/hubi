@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cadena, type Categoria } from '@/lib/rutas'
-import { Ico } from '../iconos'
+import { Ico, Volver } from '../iconos'
 import BuscarEnDrive, { hayBuscadorDrive } from './buscar-en-drive'
 import { leerAqui } from './leer-aqui'
 import { leerPdf, primeraPagina } from './leer-pdf'
@@ -712,7 +712,7 @@ export default function Formulario({
   }
 
   return (
-    <main className="techo-holgado min-h-screen px-6 pb-10">
+    <main className="techo-holgado min-h-screen px-5 pb-10">
       {/*
         Los dos campos de archivo viven aquí, fuera de las pantallas.
         Si se declararan dentro de cada paso, al cambiar de pantalla la
@@ -738,9 +738,7 @@ export default function Formulario({
 
       <div className="mx-auto w-full max-w-md">
         {paso !== 'leyendo' && (
-          <button onClick={atras} className="flex h-11 items-center gap-2 text-[16px] font-bold text-tinta-suave">
-            ← Volver
-          </button>
+          <Volver alPulsar={atras} />
         )}
 
         {/* ══ 1 · EL ARCHIVO ══ */}

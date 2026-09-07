@@ -6,6 +6,7 @@ import { cuando, iconoDe, atrasado, type Recordatorio } from '@/lib/tablon'
 import AccionHecho from './accion'
 import Editar from './editar'
 import Barra from '../../barra'
+import { Volver } from '../../iconos'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,11 +63,9 @@ export default async function Detalle({
   const tarde = atrasado(r)
 
   return (
-    <main className="techo-holgado min-h-screen px-6 pb-40">
+    <main className="techo-holgado min-h-screen px-5 pb-40">
       <div className="mx-auto w-full max-w-md">
-        <Link href="/tablon" className="flex h-11 items-center gap-2 text-[16px] font-bold text-tinta-suave">
-          ← Volver al tablón
-        </Link>
+        <Volver href="/tablon" />
 
         <p className="mt-8 flex items-start gap-3">
           <span className="text-4xl leading-none">{iconoDe(r.tipo)}</span>

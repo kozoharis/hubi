@@ -105,7 +105,7 @@ export default async function LaCasaHoy({
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href="/" texto="Inicio" />
+        <Volver href="/" />
         <div className="flex h-14 items-center gap-3">
           {laAyuda && (
             <span

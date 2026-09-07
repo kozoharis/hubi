@@ -81,7 +81,7 @@ export default async function Actividades() {
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href="/" texto="Inicio" />
+        <Volver href="/" />
         <h1 className="text-[27px] font-extrabold tracking-tight">Actividades</h1>
       </Cabecera>
 

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Tarjeta from '../tablon/tarjeta'
-import { Ico, pintaDe } from '../iconos'
+import { Ico, Volver, pintaDe } from '../iconos'
 import { atrasado, hoyAqui, type Recordatorio } from '@/lib/tablon'
 import { citasDeLaFamilia, calendariosVisibles, type CitaDeAlguien } from '@/lib/agenda-google'
 import Refrescar from './refrescar'
@@ -644,13 +644,9 @@ function MasAdelante({
 
   return (
     <>
-      <Link
-        href="/agenda"
-        className="mt-4 flex h-12 items-center gap-1.5 text-[16px] font-extrabold text-tinta"
-      >
-        <Ico nombre="atras" tam={20} grosor={2.4} />
-        Volver a la semana
-      </Link>
+      <div className="mt-4">
+        <Volver href="/agenda" />
+      </div>
 
       {meses.size === 0 && sinFecha.length === 0 && (
         <Vacio texto="No hay nada más apuntado." />

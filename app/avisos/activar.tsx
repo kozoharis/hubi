@@ -1,8 +1,8 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import Barra from '../barra'
+import { Volver } from '../iconos'
 
 type Estado = 'mirando' | 'instalar' | 'apagados' | 'encendidos' | 'bloqueados' | 'imposible'
 
@@ -125,11 +125,9 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
   }
 
   return (
-    <main className="techo-holgado min-h-screen px-6 pb-40">
+    <main className="techo-holgado min-h-screen px-5 pb-40">
       <div className="mx-auto w-full max-w-md">
-        <Link href="/" className="flex h-11 items-center gap-2 text-[16px] font-bold text-tinta-suave">
-          ← Volver
-        </Link>
+        <Volver href="/" />
 
         <h1 className="mt-8 text-[27px] font-extrabold leading-tight tracking-tight text-tinta">
           🔔 Avisos

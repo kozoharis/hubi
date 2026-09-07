@@ -115,7 +115,7 @@ export default function Apuntar({
   }
 
   return (
-    <main className="techo-holgado min-h-screen px-6 pb-10">
+    <main className="techo-holgado min-h-screen px-5 pb-10">
       <div className="mx-auto w-full max-w-md">
         <button
           onClick={() => (paso === 'datos' ? setPaso('tipo') : (window.location.href = volver))}

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import Repetir, { type Repeticion } from '../../repetir'
+import { Volver } from '../../iconos'
 
 type Perfil = { id: string; nombre: string }
 
@@ -83,11 +84,9 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
   }
 
   return (
-    <main className="techo-holgado min-h-screen px-6 pb-10">
+    <main className="techo-holgado min-h-screen px-5 pb-10">
       <div className="mx-auto w-full max-w-md">
-        <Link href="/tablon" className="text-lg font-medium text-tinta-suave underline underline-offset-4">
-          ← Volver
-        </Link>
+        <Volver href="/tablon" />
 
         <h1 className="mt-8 font-titulo text-[2.5rem] leading-tight text-tinta">
           Apuntar algo

@@ -43,7 +43,7 @@ export default async function EditarDocumento({
     return (
       <main className="min-h-screen pb-40">
         <Cabecera>
-          <Volver href={`/documentos/${id}`} texto="Volver" />
+          <Volver href={`/documentos/${id}`} />
         </Cabecera>
         <div className="mx-auto w-full max-w-md px-5">
           <div className="rounded-[22px] border border-coral bg-coral-suave px-5 py-6">
@@ -70,7 +70,7 @@ export default async function EditarDocumento({
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href={`/documentos/${id}`} texto="Volver al papel" />
+        <Volver href={`/documentos/${id}`} />
         <h1 className="text-[27px] font-extrabold tracking-tight">Corregir</h1>
       </Cabecera>
 

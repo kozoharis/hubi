@@ -93,7 +93,7 @@ export default async function Carpeta({
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href={volver} texto={seccion?.nombre ?? 'Documentos'} />
+        <Volver href={volver} />
       </Cabecera>
 
       <div className="mx-auto w-full max-w-md px-5">

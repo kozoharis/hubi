@@ -197,7 +197,7 @@ export default async function DelAsesor() {
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href="/" texto="Inicio" />
+        <Volver href="/" />
         <div className="flex h-14 items-center gap-3">
           <span
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"

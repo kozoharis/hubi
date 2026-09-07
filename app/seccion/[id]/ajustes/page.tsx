@@ -164,7 +164,7 @@ export default async function AjustesDeLaSeccion({
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href={`/seccion/${id}`} texto={nombre} />
+        <Volver href={`/seccion/${id}`} />
         <div className="flex h-14 items-center gap-3">
           <Pastilla
             nombre={iconoDeEmoji(fila.icono as string | null)}
