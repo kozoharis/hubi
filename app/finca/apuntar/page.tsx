@@ -86,10 +86,14 @@ export default async function PaginaApuntar({
   */
   const opciones = todas.filter((c) => {
     if (conHijas.has(c.id)) return false
+    /* Y lo de «solo las que mueven dinero» vale también DENTRO de una
+       actividad. Desde que cada una tiene su carpeta de Documentos
+       —Contratos, Seguros, Licencias—, ofrecerlas aquí sería ofrecer
+       un sitio donde el gasto se guarda y luego no aparece en ningún
+       balance, porque las 'neutro' no generan apunte a propósito. */
+    if (c.naturaleza === 'neutro') return false
     const suRaiz = raizDe(c)
-    if (deCasa) {
-      return suRaiz.lleva_cuentas !== true && c.naturaleza !== 'neutro'
-    }
+    if (deCasa) return suRaiz.lleva_cuentas !== true
     return suRaiz.id === raiz?.id
   })
 

@@ -111,6 +111,20 @@ function conArticulo(bruto: string): string | null {
   falta ejecutar ningún SQL nuevo para que esto funcione.**
 */
 
+/*
+  Los papeles NO llevan plantilla, y es a propósito.
+
+  Las partidas de gasto cambian mucho de una actividad a otra —una
+  finca gasta en productos y una obra en albañilería—. Los papeles no:
+  el contrato y el seguro los tiene una finca, un piso y una obra
+  igual. Inventar tres listas distintas de lo mismo solo daría tres
+  sitios donde arreglar la misma errata.
+
+  Las suyas las añade cada familia desde «Cómo la llevas», que es el
+  punto 11 del planteamiento. Esto es de dónde se parte, no la ley.
+*/
+const PAPELES = ['Contratos', 'Seguros', 'Otros papeles']
+
 const PLANTILLAS: Record<
   string,
   {
@@ -327,6 +341,48 @@ export async function POST(peticion: NextRequest) {
     const deGasto = (grupos ?? []).find((g) => g.segmento_drive === 'GASTOS')?.id
     const deIngreso = (grupos ?? []).find((g) => g.segmento_drive === 'INGRESOS')?.id
 
+    /*
+      ── Y LA TERCERA: LOS PAPELES ──
+
+      Contrato, póliza, licencia, escritura. No son dinero: no salen
+      ni entran, y por eso van en una carpeta 'neutro' —donde un
+      importe leído por la cámara se guarda con el papel pero NO se
+      apunta en el balance—.
+
+      Normalmente esto ya lo ha hecho el disparador del SQL 42 al
+      insertar la raíz, dos líneas más arriba. Se mira antes de crear
+      nada: si el SQL todavía no se ha ejecutado, la actividad nueva
+      tiene sus papeles igual; y si se ejecutó, aquí no pasa nada.
+    */
+    const { data: yaEstan } = await supabase
+      .from('categorias')
+      .select('id')
+      .eq('padre_id', raiz)
+      .eq('segmento_drive', 'DOCUMENTOS')
+      .maybeSingle()
+
+    let dePapeles = yaEstan?.id as string | undefined
+
+    if (!dePapeles) {
+      const { data: creado } = await supabase
+        .from('categorias')
+        .insert({
+          padre_id: raiz,
+          nombre: 'Documentos',
+          segmento_drive: 'DOCUMENTOS',
+          icono: '📄',
+          orden: 3,
+          naturaleza: 'neutro',
+        })
+        .select('id')
+        .maybeSingle()
+
+      dePapeles = creado?.id as string | undefined
+    } else {
+      /* Ya las puso el disparador con sus tres carpetas dentro. */
+      dePapeles = undefined
+    }
+
     const partidas = [
       ...(deGasto
         ? plantilla.gastos.map((n, i) => ({
@@ -344,6 +400,15 @@ export async function POST(peticion: NextRequest) {
             segmento_drive: limpiar(n),
             orden: i + 1,
             naturaleza: 'ingreso',
+          }))
+        : []),
+      ...(dePapeles
+        ? PAPELES.map((n, i) => ({
+            padre_id: dePapeles,
+            nombre: n,
+            segmento_drive: limpiar(n),
+            orden: i + 1,
+            naturaleza: 'neutro',
           }))
         : []),
     ]

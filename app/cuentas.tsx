@@ -102,12 +102,14 @@ export default async function Cuentas({
     pantalla enseñaría cero euros con las cuentas del trimestre
     intactas debajo. Se pide con ella, y si no puede ser, sin ella.
   */
-  const campos = 'id, padre_id, nombre, segmento_drive'
+  const campos = 'id, padre_id, nombre, segmento_drive, activa, naturaleza'
   type Cat = {
     id: string
     padre_id: string | null
     nombre: string
     segmento_drive: string
+    activa?: boolean | null
+    naturaleza?: string | null
     lleva_cuentas?: boolean
   }
 
@@ -244,6 +246,56 @@ export default async function Cuentas({
 
   const nombreDeUnidad = new Map(unidades.map((u) => [u.id, u.nombre]))
 
+  /*
+    ═══════════════════════════════════════════════════════════
+    LOS PAPELES DE LA ACTIVIDAD
+    ═══════════════════════════════════════════════════════════
+
+    El contrato de alquiler. La póliza del seguro de la finca. La
+    licencia de obra. La escritura.
+
+    Hasta ahora una actividad solo tenía dos cosas dentro —Gastos e
+    Ingresos— y las dos son dinero, así que estos papeles no tenían
+    dónde ir. El que los metía en Gastos para tener un sitio le sumaba
+    al balance un dinero que nunca salió.
+
+    Van en su propia carpeta, de naturaleza 'neutro', y por eso NO
+    tocan ninguno de los números de arriba: al guardar un papel con
+    importe solo se apunta un movimiento si la carpeta es de gasto o
+    de ingreso. Un contrato de 9.000 € se guarda entero y el balance
+    ni se entera.
+
+    ─────────────────────────────────────────────────────────
+    Y NO SE FILTRAN POR TRIMESTRE
+
+    Todo lo de arriba es del periodo elegido, porque el dinero es de
+    un mes. Un contrato no. El contrato firmado en 2019 sigue siendo
+    EL contrato en 2026, y esconderlo por estar mirando este trimestre
+    sería esconder justo lo que se venía a buscar.
+  */
+  const carpetaPapeles = raiz
+    ? (todas.find(
+        (c) =>
+          c.padre_id === raiz.id && c.segmento_drive === 'DOCUMENTOS' && c.activa !== false
+      ) ?? null)
+    : null
+
+  let cuantosPapeles = 0
+  if (carpetaPapeles) {
+    const dentro = [carpetaPapeles.id]
+    for (const c of todas) {
+      if (c.padre_id === carpetaPapeles.id && c.activa !== false) dentro.push(c.id)
+    }
+
+    const { count } = await supabase
+      .from('documentos')
+      .select('id', { count: 'exact', head: true })
+      .in('categoria_id', dentro)
+      .is('eliminado_en', null)
+
+    cuantosPapeles = count ?? 0
+  }
+
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
@@ -338,6 +390,36 @@ export default async function Cuentas({
             {eurosRedondo(balance, true)}
           </p>
         </div>
+
+        {/*
+          ── LOS PAPELES ──
+
+          Va aquí, justo debajo del balance y por encima de todo lo
+          demás, porque es el TERCER pilar de la actividad y no una
+          nota al pie: Gastos, Ingresos y los papeles que la actividad
+          tiene por ser lo que es.
+
+          Y no es una cifra más. Es una fila entera, con su icono y su
+          flecha, para que se lea como una puerta y no como un dato:
+          aquí no hay nada que sumar, hay algo que abrir.
+        */}
+        {carpetaPapeles && (
+          <Link
+            href={`/documentos/carpeta/${carpetaPapeles.id}`}
+            className="mt-2.5 flex items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-3.5"
+          >
+            <Pastilla nombre="papel" color={seccion.color} fondo={seccion.fondo} tam={44} icono={22} />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[18px] font-extrabold tracking-tight">Documentos</span>
+              <span className="block text-[14.5px] font-semibold text-tenue">
+                {cuantosPapeles === 0
+                  ? 'Contratos, seguros, licencias…'
+                  : `${cuantosPapeles} ${cuantosPapeles === 1 ? 'papel guardado' : 'papeles guardados'} · todos los años`}
+              </span>
+            </span>
+            <Ico nombre="flecha" tam={20} grosor={2.4} />
+          </Link>
+        )}
 
         {/* ── Cada unidad ── */}
         {casas && casas.casas.length > 0 && (

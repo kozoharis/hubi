@@ -112,10 +112,15 @@ export default async function AjustesDeLaSeccion({
 
   const deGasto = grupos.find((c) => c.segmento_drive === 'GASTOS')
   const deIngreso = grupos.find((c) => c.segmento_drive === 'INGRESOS')
+  const dePapeles = grupos.find((c) => c.segmento_drive === 'DOCUMENTOS')
 
-  const [gastos, ingresos] = await Promise.all([
+  const [gastos, ingresos, carpetasDePapel] = await Promise.all([
     partidasDe(supabase, deGasto?.id as string | undefined),
     partidasDe(supabase, deIngreso?.id as string | undefined),
+    /* Las carpetas de papeles se cuentan por DOCUMENTOS y no por
+       apuntes: en Contratos no hay ni un movimiento y sí está el
+       contrato. Decir «no tiene nada» sería mentira. */
+    partidasDe(supabase, dePapeles?.id as string | undefined, 'papeles'),
   ])
 
   /*
@@ -140,6 +145,7 @@ export default async function AjustesDeLaSeccion({
       ...(hijas ?? []).map((c) => c.id as string),
       ...gastos.map((p) => p.id),
       ...ingresos.map((p) => p.id),
+      ...carpetasDePapel.map((p) => p.id),
     ]
 
     const { count } = await supabase
@@ -196,7 +202,12 @@ export default async function AjustesDeLaSeccion({
           />
         )}
 
-        <Partidas seccionId={id} gastos={gastos} ingresos={ingresos} />
+        <Partidas
+          seccionId={id}
+          gastos={gastos}
+          ingresos={ingresos}
+          papeles={carpetasDePapel}
+        />
 
         {/* Al final del todo: es lo que se hace una vez, y en medio
             del camino sería un botón peligroso donde no toca. */}
@@ -219,7 +230,10 @@ export default async function AjustesDeLaSeccion({
 async function partidasDe(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
-  grupoId: string | undefined
+  grupoId: string | undefined,
+  /* Qué se cuenta en cada una. Las de dinero, apuntes. Las de papel
+     —Contratos, Seguros—, documentos: ahí no hay ni un movimiento. */
+  contar: 'apuntes' | 'papeles' = 'apuntes'
 ): Promise<Partida[]> {
   if (!grupoId) return []
 
@@ -233,13 +247,19 @@ async function partidasDe(
   const partidas = (data ?? []) as { id: string; nombre: string }[]
   if (partidas.length === 0) return []
 
-  const { data: movimientos } = await supabase
-    .from('movimientos')
-    .select('categoria_id')
-    .in('categoria_id', partidas.map((p) => p.id))
+  const ids = partidas.map((p) => p.id)
+
+  const { data: filas } =
+    contar === 'papeles'
+      ? await supabase
+          .from('documentos')
+          .select('categoria_id')
+          .in('categoria_id', ids)
+          .is('eliminado_en', null)
+      : await supabase.from('movimientos').select('categoria_id').in('categoria_id', ids)
 
   const cuenta = new Map<string, number>()
-  for (const m of movimientos ?? []) {
+  for (const m of filas ?? []) {
     const k = m.categoria_id as string
     cuenta.set(k, (cuenta.get(k) ?? 0) + 1)
   }

@@ -39,7 +39,13 @@ import { Ico } from '../../../iconos'
 export type Partida = {
   id: string
   nombre: string
-  /** Cuántos movimientos cuelgan de ella. Para avisar al retirarla. */
+  /**
+   * Cuántas cosas cuelgan de ella, para avisar antes de retirarla.
+   *
+   * En las de dinero son movimientos; en las de papel —Contratos,
+   * Seguros— son documentos, porque ahí no hay ni un movimiento. La
+   * pantalla lo llama de una u otra manera según cuál sea.
+   */
   apuntes: number
 }
 
@@ -47,10 +53,12 @@ export default function Partidas({
   seccionId,
   gastos,
   ingresos,
+  papeles,
 }: {
   seccionId: string
   gastos: Partida[]
   ingresos: Partida[]
+  papeles: Partida[]
 }) {
   return (
     <>
@@ -68,6 +76,24 @@ export default function Partidas({
         pie="Lo que cobras: certificaciones, ventas, alquileres…"
         partidas={ingresos}
       />
+      {/*
+        ── Y LA TERCERA, QUE NO ES DINERO ──
+
+        El contrato del piso, la póliza, la licencia de obra. Tienen
+        fecha y muchas veces tienen un importe escrito dentro, y aun
+        así no se gasta ni se cobra nada el día que los firmas.
+
+        Por eso son carpetas aparte y de naturaleza 'neutro': si el
+        contrato de alquiler viviera en Ingresos, un piso de 750 € al
+        mes tendría 9.000 € de más el día del alta.
+      */}
+      <Lista
+        seccionId={seccionId}
+        naturaleza="neutro"
+        titulo="Qué papeles guardas"
+        pie="Contratos, pólizas, licencias… lo que hay que tener aunque no sea dinero."
+        partidas={papeles}
+      />
     </>
   )
 }
@@ -80,12 +106,29 @@ function Lista({
   partidas,
 }: {
   seccionId: string
-  naturaleza: 'gasto' | 'ingreso'
+  naturaleza: 'gasto' | 'ingreso' | 'neutro'
   titulo: string
   pie: string
   partidas: Partida[]
 }) {
   const router = useRouter()
+
+  /*
+    LAS PALABRAS CAMBIAN, LA PANTALLA NO.
+
+    En una carpeta de papeles no hay apuntes: hay papeles. Decir «no
+    tiene nada apuntado» sobre Contratos —con el contrato dentro— es
+    falso, y quien lee eso retira la carpeta creyendo que está vacía.
+  */
+  const esPapel = naturaleza === 'neutro'
+  const cosa = esPapel
+    ? { uno: 'papel', varios: 'papeles', nueva: 'Nueva carpeta', ejemplo: 'Licencias' }
+    : {
+        uno: 'apunte',
+        varios: 'apuntes',
+        nueva: 'Nueva partida',
+        ejemplo: naturaleza === 'gasto' ? 'Carpintería' : 'Certificaciones',
+      }
 
   const [creando, setCreando] = useState(false)
   const [nombre, setNombre] = useState('')
@@ -150,10 +193,18 @@ function Lista({
     */
     const cuantas =
       p.apuntes === 0
-        ? 'No tiene nada apuntado.'
-        : `Tiene ${p.apuntes} ${p.apuntes === 1 ? 'apunte' : 'apuntes'}, y NO se pierden: siguen contando en las cuentas de siempre.`
+        ? esPapel
+          ? 'No tiene ningún papel dentro.'
+          : 'No tiene nada apuntado.'
+        : esPapel
+          ? `Tiene ${p.apuntes} ${p.apuntes === 1 ? 'papel' : 'papeles'}, y NO se pierden: siguen guardados y se siguen viendo.`
+          : `Tiene ${p.apuntes} ${p.apuntes === 1 ? 'apunte' : 'apuntes'}, y NO se pierden: siguen contando en las cuentas de siempre.`
 
-    if (!window.confirm(`¿Retirar «${p.nombre}»?\n\n${cuantas}\n\nDeja de salir al apuntar cosas nuevas.`)) {
+    const luego = esPapel
+      ? 'Deja de salir al guardar papeles nuevos.'
+      : 'Deja de salir al apuntar cosas nuevas.'
+
+    if (!window.confirm(`¿Retirar «${p.nombre}»?\n\n${cuantas}\n\n${luego}`)) {
       return
     }
 
@@ -209,7 +260,7 @@ function Lista({
                     <p className="truncate text-[17px] font-bold">{p.nombre}</p>
                     {p.apuntes > 0 && (
                       <p className="text-[14.5px] font-semibold text-tenue">
-                        {p.apuntes} {p.apuntes === 1 ? 'apunte' : 'apuntes'}
+                        {p.apuntes} {p.apuntes === 1 ? cosa.uno : cosa.varios}
                       </p>
                     )}
                   </div>
@@ -245,7 +296,7 @@ function Lista({
           <input
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
-            placeholder={naturaleza === 'gasto' ? 'Carpintería' : 'Certificaciones'}
+            placeholder={cosa.ejemplo}
             className="entrada mt-2"
             autoFocus
             maxLength={40}
@@ -280,7 +331,7 @@ function Lista({
           className="mt-3 flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
         >
           <Ico nombre="mas" tam={20} grosor={2.4} />
-          Nueva partida
+          {cosa.nueva}
         </button>
       )}
 

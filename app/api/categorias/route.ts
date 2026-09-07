@@ -40,9 +40,18 @@ type Entrada = {
   /** La actividad de la que cuelga: Finca, Obras… */
   seccion_id?: string
   nombre?: string
-  /** 'gasto' o 'ingreso'. Decide bajo qué grupo entra. */
+  /** 'gasto', 'ingreso' o 'neutro'. Decide bajo qué grupo entra. */
   naturaleza?: string
 }
+
+/** Los tres grupos de una actividad, y cómo se llaman por dentro. */
+const GRUPOS = {
+  gasto: { nombre: 'Gastos', segmento: 'GASTOS', orden: 1 },
+  ingreso: { nombre: 'Ingresos', segmento: 'INGRESOS', orden: 2 },
+  neutro: { nombre: 'Documentos', segmento: 'DOCUMENTOS', orden: 3 },
+} as const
+
+type Natura = keyof typeof GRUPOS
 
 function elNombre(v: unknown): string {
   return String(v ?? '')
@@ -52,23 +61,28 @@ function elNombre(v: unknown): string {
 }
 
 /*
-  El grupo GASTOS o INGRESOS de una actividad, creándolo si falta.
+  El grupo GASTOS, INGRESOS o DOCUMENTOS de una actividad, creándolo
+  si falta.
 
   El árbol de HUBI es siempre el mismo —actividad → GASTOS → partida—
   y esa forma es la que hace que las cuentas cuadren y que las
   carpetas de Drive salgan ordenadas. Una actividad recién creada
-  todavía no tiene esos dos grupos, así que se hacen aquí la primera
+  todavía no tiene esos grupos, así que se hacen aquí la primera
   vez que alguien añade una partida. Nadie tiene que saber que
   existen.
+
+  El tercero —DOCUMENTOS— es de naturaleza 'neutro', y eso es lo que
+  hace que el contrato de un piso no le sume 9.000 € al balance: al
+  guardar un papel con importe solo se apunta un movimiento si la
+  carpeta es de gasto o de ingreso.
 */
 async function grupoDe(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any,
   seccionId: string,
-  naturaleza: 'gasto' | 'ingreso'
+  naturaleza: Natura
 ): Promise<{ id: string } | { error: string }> {
-  const nombre = naturaleza === 'gasto' ? 'Gastos' : 'Ingresos'
-  const segmento = naturaleza === 'gasto' ? 'GASTOS' : 'INGRESOS'
+  const { nombre, segmento, orden } = GRUPOS[naturaleza]
 
   const { data: existe } = await supabase
     .from('categorias')
@@ -86,7 +100,7 @@ async function grupoDe(
       nombre,
       segmento_drive: segmento,
       naturaleza,
-      orden: naturaleza === 'gasto' ? 1 : 2,
+      orden,
     })
     .select('id')
     .maybeSingle()
@@ -117,7 +131,12 @@ export async function POST(peticion: NextRequest) {
 
   const nombre = elNombre(cuerpo.nombre)
   const seccionId = String(cuerpo.seccion_id ?? '')
-  const naturaleza = cuerpo.naturaleza === 'ingreso' ? 'ingreso' : 'gasto'
+  const naturaleza: Natura =
+    cuerpo.naturaleza === 'ingreso'
+      ? 'ingreso'
+      : cuerpo.naturaleza === 'neutro'
+        ? 'neutro'
+        : 'gasto'
 
   if (nombre.length < 2) {
     return NextResponse.json({ error: 'Ponle un nombre.' }, { status: 400 })
@@ -161,9 +180,18 @@ export async function POST(peticion: NextRequest) {
     .ilike('nombre', nombre)
     .maybeSingle()
 
+  /* «Partida» para el dinero, «carpeta» para los papeles: en la
+     pantalla de papeles nadie ha leído nunca la palabra partida, y un
+     error que usa un vocabulario que no está en la pantalla parece un
+     error de otra cosa. */
+  const comoSeLlama = naturaleza === 'neutro' ? 'carpeta' : 'partida'
+
   if (repetida) {
     if (repetida.activa) {
-      return NextResponse.json({ error: `Ya tienes una partida «${nombre}».` }, { status: 409 })
+      return NextResponse.json(
+        { error: `Ya tienes una ${comoSeLlama} «${nombre}».` },
+        { status: 409 }
+      )
     }
 
     const { data: revivida } = await supabase
@@ -206,7 +234,7 @@ export async function POST(peticion: NextRequest) {
 
   if (error || !data) {
     return NextResponse.json(
-      { error: 'No se ha podido crear la partida.', detalle: error?.message },
+      { error: `No se ha podido crear la ${comoSeLlama}.`, detalle: error?.message },
       { status: 500 }
     )
   }
@@ -297,14 +325,26 @@ export async function DELETE(peticion: NextRequest) {
   const id = new URL(peticion.url).searchParams.get('id') ?? ''
   if (!id) return NextResponse.json({ error: 'Falta la partida.' }, { status: 400 })
 
-  /* Cuántos apuntes se quedan colgando. No impide retirarla —es
+  /* Cuántas cosas se quedan colgando. No impide retirarla —es
      legítimo dejar de usar una partida— pero se cuenta para poder
      decirlo, que no es lo mismo retirar algo vacío que algo con
-     cuarenta facturas dentro. */
-  const { count } = await supabase
-    .from('movimientos')
-    .select('id', { count: 'exact', head: true })
-    .eq('categoria_id', id)
+     cuarenta facturas dentro.
+
+     Se cuentan las DOS. Una partida de gasto tiene apuntes; una
+     carpeta de papeles —Contratos, Seguros— no tiene ninguno y sí
+     tiene documentos, y contar solo los apuntes le diría a quien va
+     a retirarla que está vacía teniendo el contrato dentro. */
+  const [{ count }, { count: papeles }] = await Promise.all([
+    supabase
+      .from('movimientos')
+      .select('id', { count: 'exact', head: true })
+      .eq('categoria_id', id),
+    supabase
+      .from('documentos')
+      .select('id', { count: 'exact', head: true })
+      .eq('categoria_id', id)
+      .is('eliminado_en', null),
+  ])
 
   const { data, error } = await supabase
     .from('categorias')
@@ -319,5 +359,5 @@ export async function DELETE(peticion: NextRequest) {
     )
   }
 
-  return NextResponse.json({ bien: true, apuntes: count ?? 0 })
+  return NextResponse.json({ bien: true, apuntes: count ?? 0, papeles: papeles ?? 0 })
 }
