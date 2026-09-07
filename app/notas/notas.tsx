@@ -62,6 +62,9 @@ export default function Notas({
   const [fallo, setFallo] = useState<string | null>(null)
   const [editando, setEditando] = useState<string | null>(null)
   const [borrador, setBorrador] = useState('')
+  /* Qué montón se está mirando, y si la caja de escribir está abierta. */
+  const [mirando, setMirando] = useState<string>('todas')
+  const [escribiendo, setEscribiendo] = useState(false)
 
   const otros = gente.filter((g) => g.id !== yo)
 
@@ -88,6 +91,45 @@ export default function Notas({
      saber de quién es cada nota obliga hoy a leerse la firma de cada
      una; una barra de color a la izquierda lo contesta de reojo. */
   const colorDe = new Map(gente.map((g) => [g.id, g.color ?? '#64748B']))
+
+  /*
+    ═══════════════════════════════════════════════════════════
+    UN CORCHO SE MIRA POR MONTONES
+    ═══════════════════════════════════════════════════════════
+
+    Antes esto era una lista sola con todo mezclado, y para saber si
+    había algo para ti había que leerse las veinte y fijarse en la
+    letra pequeña de cada una. Un corcho de verdad tiene la parte de la
+    casa y la parte de cada uno.
+
+    ─────────────────────────────────────────────────────────
+    Y LOS MONTONES VACÍOS TAMBIÉN SE ENSEÑAN
+
+    «Para mí · 0» parece información inútil y es justo lo contrario:
+    es la respuesta a «¿por qué no me sale en el Inicio?». Escondiendo
+    el montón cuando está vacío, esa pregunta no tiene dónde
+    contestarse — y quien la hace acaba pensando que la aplicación
+    falla cuando lo que pasa es que la nota se puso para la casa.
+  */
+  const cuantasCon = (quien: string | null) =>
+    notas.filter((n) => n.para === quien).length
+
+  const montones = [
+    { clave: 'todas', etiqueta: 'Todas', cuantas: notas.length },
+    { clave: 'casa', etiqueta: 'De la casa', cuantas: cuantasCon(null) },
+    { clave: yo, etiqueta: 'Para mí', cuantas: cuantasCon(yo) },
+    ...otros.map((g) => ({
+      clave: g.id,
+      etiqueta: `Para ${g.nombre.split(' ')[0]}`,
+      cuantas: cuantasCon(g.id),
+    })),
+  ]
+
+  const visibles = notas.filter((n) =>
+    mirando === 'todas' ? true : mirando === 'casa' ? n.para === null : n.para === mirando
+  )
+
+  const comoSeLlama = montones.find((m) => m.clave === mirando)?.etiqueta ?? 'Todas'
 
   async function pedir(cuerpo: object, metodo: 'POST' | 'PATCH') {
     setFallo(null)
@@ -127,7 +169,12 @@ export default function Notas({
   async function poner() {
     if (await pedir({ texto: texto.trim(), para }, 'POST')) {
       setTexto('')
+      /* Se queda mirando el montón donde acaba de caer: si la pusiste
+         para Julia, quieres verla en el de Julia. Sin esto, la nota
+         «desaparece» al ponerla desde otro montón. */
+      setMirando(para ?? 'casa')
       setPara(null)
+      setEscribiendo(false)
     }
   }
 
@@ -145,56 +192,26 @@ export default function Notas({
         <Pestana texto="Guardadas" href="/notas?ver=guardadas" puesta={viendoGuardadas} />
       </div>
 
-      {/* ── Escribir una ── */}
-      {escribo && !viendoGuardadas && (
-        <div className="mt-4 rounded-[20px] border border-borde bg-superficie px-4 py-4">
-          <label htmlFor="nota" className="block text-[17px] font-extrabold leading-snug">
-            Deja una nota
-          </label>
-          <textarea
-            id="nota"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            rows={3}
-            maxLength={1200}
-            placeholder="La llave del garaje está en el cajón de la entrada"
-            className="mt-2.5 w-full resize-y rounded-[16px] border border-borde bg-fondo px-4 py-3.5 text-[18px] font-semibold leading-snug text-tinta outline-none placeholder:font-semibold placeholder:text-tenue focus:border-verde"
-          />
+      {/*
+        ── LOS MONTONES ──
 
-          {otros.length > 0 && (
-            <>
-              <p className="mt-4 text-[17px] font-extrabold leading-snug">¿Para quién?</p>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                {destinos.map((d) => (
-                  <Pastilla
-                    key={d.id ?? 'casa'}
-                    texto={d.etiqueta}
-                    puesta={para === d.id}
-                    alPulsar={() => setPara(d.id)}
-                  />
-                ))}
-              </div>
-              {/* Lo que va a pasar, dicho antes de pulsar. Los tres
-                  destinos hacen tres cosas distintas y ninguna se
-                  adivina mirando la pastilla. */}
-              <p className="mt-2.5 text-[14.5px] font-semibold leading-snug text-tenue">
-                {para === null
-                  ? 'La verá todo el mundo en casa. No suena ningún teléfono.'
-                  : para === yo
-                    ? 'Te saldrá en tu Inicio hasta que la marques como vista. No suena ningún teléfono.'
-                    : 'Le llega un aviso al móvil. La nota la sigue viendo toda la casa.'}
-              </p>
-            </>
-          )}
+        Van envueltas, no en una sola línea que se sale: con cuatro
+        personas en casa son seis pastillas, y una barra que se
+        desliza esconde justo la que buscas. Envolver no esconde nada.
 
-          <button
-            onClick={poner}
-            disabled={ocupado || texto.trim().length === 0}
-            className="mt-3 flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
-          >
-            <Ico nombre="chincheta" tam={19} grosor={2.3} />
-            {ocupado ? 'Poniendo…' : 'Poner la nota'}
-          </button>
+        Solo salen si hay más gente: viviendo solo en HUBI, «De la
+        casa» y «Para mí» son la misma cosa.
+      */}
+      {otros.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Qué notas ver">
+          {montones.map((m) => (
+            <Pastilla
+              key={m.clave}
+              texto={`${m.etiqueta} · ${m.cuantas}`}
+              puesta={mirando === m.clave}
+              alPulsar={() => setMirando(m.clave)}
+            />
+          ))}
         </div>
       )}
 
@@ -207,15 +224,20 @@ export default function Notas({
       )}
 
       {/* ── El corcho ── */}
-      {notas.length === 0 ? (
-        <p className="mt-4 rounded-[20px] bg-superficie px-6 py-10 text-center text-[17px] font-medium text-tinta-suave">
+      {visibles.length === 0 ? (
+        <p className="mt-4 rounded-[20px] bg-superficie px-6 py-10 text-center text-[17px] font-medium leading-snug text-tinta-suave">
           {viendoGuardadas
             ? 'No has guardado ninguna nota todavía.'
-            : 'No hay ninguna nota puesta.'}
+            : mirando === 'todas'
+              ? 'No hay ninguna nota puesta.'
+              : /* Y se dice DE QUÉ montón está hablando. «No hay
+                   ninguna» a secas, con las pestañas encima, se lee
+                   como «no hay ninguna en toda la casa». */
+                `Aquí no hay nada. ${comoSeLlama} está vacío.`}
         </p>
       ) : (
         <ul className="mt-4 space-y-2.5">
-          {notas.map((n) => {
+          {visibles.map((n) => {
             const mia = n.escrita_por === yo
             const paraMi = n.para === yo
             const autor = nombreDe.get(n.escrita_por)?.split(' ')[0] ?? 'Alguien'
@@ -349,6 +371,105 @@ export default function Notas({
             )
           })}
         </ul>
+      )}
+
+      {/*
+        ═══════════════════════════════════════════════════════════
+        ¿DEJAMOS OTRA NOTA?
+        ═══════════════════════════════════════════════════════════
+
+        Esto estaba ARRIBA y abierto de par en par, con su caja de
+        texto y sus pastillas ocupando media pantalla. Y el corcho
+        empezaba por debajo del pliegue: para leer lo que te han
+        dejado había que pasar antes por el formulario de dejar otra.
+
+        En un corcho se mira primero y se escribe después. Ahora eso
+        es lo que hace la pantalla.
+
+        ─────────────────────────────────────────────────────────
+        PERO NO ES UN «+» QUE ABRE OTRA PANTALLA
+
+        Ésa era la razón de tenerlo arriba, y sigue siendo buena: una
+        nota se pone en cinco segundos y esconderla detrás de dos
+        pantallas convierte cinco segundos en tres toques.
+
+        Por eso se despliega AQUÍ MISMO. Un toque, y la caja está
+        abierta debajo con el foco puesto. Se gana el orden de lectura
+        sin pagar el precio del «+».
+      */}
+      {escribo && !viendoGuardadas && (
+        escribiendo ? (
+          <div className="mt-4 rounded-[20px] border border-borde bg-superficie px-4 py-4">
+            <label htmlFor="nota" className="block text-[17px] font-extrabold leading-snug">
+              Deja una nota
+            </label>
+            <textarea
+              id="nota"
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              rows={3}
+              maxLength={1200}
+              autoFocus
+              placeholder="La llave del garaje está en el cajón de la entrada"
+              className="mt-2.5 w-full resize-y rounded-[16px] border border-borde bg-fondo px-4 py-3.5 text-[18px] font-semibold leading-snug text-tinta outline-none placeholder:font-semibold placeholder:text-tenue focus:border-verde"
+            />
+
+            {otros.length > 0 && (
+              <>
+                <p className="mt-4 text-[17px] font-extrabold leading-snug">¿Para quién?</p>
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  {destinos.map((d) => (
+                    <Pastilla
+                      key={d.id ?? 'casa'}
+                      texto={d.etiqueta}
+                      puesta={para === d.id}
+                      alPulsar={() => setPara(d.id)}
+                    />
+                  ))}
+                </div>
+                {/* Lo que va a pasar, dicho antes de pulsar. Los tres
+                    destinos hacen tres cosas distintas y ninguna se
+                    adivina mirando la pastilla. */}
+                <p className="mt-2.5 text-[14.5px] font-semibold leading-snug text-tenue">
+                  {para === null
+                    ? 'La verá todo el mundo en casa. No suena ningún teléfono.'
+                    : para === yo
+                      ? 'Te saldrá en tu Inicio hasta que la marques como vista. No suena ningún teléfono.'
+                      : 'Le llega un aviso al móvil. La nota la sigue viendo toda la casa.'}
+                </p>
+              </>
+            )}
+
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={poner}
+                disabled={ocupado || texto.trim().length === 0}
+                className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+              >
+                <Ico nombre="chincheta" tam={19} grosor={2.3} />
+                {ocupado ? 'Poniendo…' : 'Poner la nota'}
+              </button>
+              <button
+                onClick={() => {
+                  setEscribiendo(false)
+                  setFallo(null)
+                }}
+                disabled={ocupado}
+                className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+              >
+                Ahora no
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setEscribiendo(true)}
+            className="mt-4 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[18px] border border-borde bg-superficie text-[17.5px] font-extrabold text-tinta"
+          >
+            <Ico nombre="mas" tam={21} grosor={2.4} />
+            ¿Dejamos otra nota?
+          </button>
+        )
       )}
 
       {/* Se dice dónde va lo que se quita. «Quitar» a secas suena a
