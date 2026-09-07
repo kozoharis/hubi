@@ -7,6 +7,7 @@ import Cabecera from '../cabecera'
 import { Ico } from '../iconos'
 import Lista from './lista'
 import Mes from './mes'
+import Dia from './dia'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,7 +41,20 @@ export default async function Agenda({
   }>
 }) {
   const p = await searchParams
+
+  /*
+    ── TRES ESCALAS, Y SIEMPRE SE SABE EN CUÁL ESTÁS ──
+
+    Semana enseña los siete días resumidos. Mes, los treinta. Y se
+    entra a UN día para verlo hora a hora.
+
+    El día no es una tercera pestaña arriba: se llega tocando un día
+    en la semana o en el mes, que es como funciona cualquier agenda —
+    y poner tres pestañas para dos maneras de mirar y una de entrar
+    haría elegir entre cosas que no son comparables.
+  */
   const enMes = p.vista === 'mes'
+  const enDia = p.vista === 'dia'
 
   const supabase = await clienteSesion()
   if (!(await quien(supabase))) redirect('/entrar')
@@ -59,16 +73,29 @@ export default async function Agenda({
               lista —al tocar un día del Mes también sale una—, así que
               «Lista» no distinguía nada. Lo que las diferencia es
               cuánto abarcan. */}
-          <Ojo texto="Semana" icono="check" puesto={!enMes} href="/agenda" />
+          <Ojo texto="Semana" icono="check" puesto={!enMes && !enDia} href="/agenda" />
           <Ojo texto="Mes" icono="calendario" puesto={enMes} href="/agenda?vista=mes" />
+          {/* El día solo sale cuando estás dentro de uno: es una
+              escala a la que se entra, no una entre la que elegir. Y
+              así se puede volver a la semana de un toque. */}
+          {enDia && (
+            <Ojo
+              texto="El día"
+              icono="reloj"
+              puesto
+              href={`/agenda?vista=dia&dia=${p.dia ?? ''}`}
+            />
+          )}
         </div>
       </Cabecera>
 
       <div className="mx-auto w-full max-w-md px-5 pt-2">
-        {enMes ? (
+        {enDia ? (
+          <Dia dia={p.dia} de={p.de} />
+        ) : enMes ? (
           <Mes mes={p.mes} dia={p.dia} de={p.de} />
         ) : (
-          <Lista ver={p.ver} semana={p.semana} de={p.de} dia={p.dia} />
+          <Lista ver={p.ver} semana={p.semana} de={p.de} />
         )}
       </div>
 
@@ -84,7 +111,7 @@ function Ojo({
   href,
 }: {
   texto: string
-  icono: 'check' | 'calendario'
+  icono: 'check' | 'calendario' | 'reloj'
   puesto: boolean
   href: string
 }) {

@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Tarjeta from '../tablon/tarjeta'
-import { Ico } from '../iconos'
+import { Ico, pintaDe } from '../iconos'
 import { atrasado, hoyAqui, type Recordatorio } from '@/lib/tablon'
 import { citasDeLaFamilia, calendariosVisibles, type CitaDeAlguien } from '@/lib/agenda-google'
 import Refrescar from './refrescar'
@@ -56,15 +56,14 @@ export default async function Lista({
   ver,
   semana,
   de,
-  dia,
 }: {
   ver?: string
   semana?: string
   de?: string
-  dia?: string
 }) {
   const viendoHechas = ver === 'hechas'
   const viendoAdelante = ver === 'adelante'
+  const viendoVencidas = ver === 'vencidas'
 
   const supabase = await clienteSesion()
   const user = await quien(supabase)
@@ -103,8 +102,14 @@ export default async function Lista({
 
   const enEstaSemana = desde === iso(lunesEstaSemana)
 
-  // Lo que se pasó de fecha y sigue sin hacerse. Nunca se esconde.
+  // Lo que se pasó de fecha y sigue sin hacerse. Tiene pestaña propia.
   const tarde = pendientes.filter(atrasado)
+
+  /* Y lo que queda por hacer sin haberse pasado. La pestaña «Por
+     hacer» cuenta ESTO y no todos los pendientes: si contara los
+     vencidos también, los mismos seis estarían contados en dos
+     pestañas y los números no cuadrarían con lo que se ve. */
+  const enPlazo = pendientes.filter((r) => !atrasado(r))
 
   // Los siete días. Lo atrasado ya está arriba, así que no se repite.
   const deLaSemana = pendientes.filter(
@@ -140,30 +145,10 @@ export default async function Lista({
     google: suyas.filter((c) => c.fecha === f),
   }))
 
-  /*
-    ── QUÉ DÍA SE ESTÁ MIRANDO ──
-
-    Toda la semana de un vistazo arriba, y debajo UN día entero. Antes
-    era la semana entera abierta en una lista corrida: se lee de
-    arriba abajo, pero para saber si el jueves hay algo hay que
-    recorrerla — que es justo lo que una agenda de papel contesta sin
-    leer nada.
-
-    Si no se ha elegido ninguno, se abre en el que interesa: hoy si
-    estamos en esta semana, y si no el primer día que tenga algo. Una
-    semana futura que se abriera vacía en su lunes haría pensar que no
-    hay nada en toda la semana.
-  */
+  /* Los días que tienen algo. Los vacíos no se pintan abajo —cuatro
+     renglones diciendo «nada» ocupan media pantalla para no contar
+     nada— pero siguen en la tira, que es donde se ve el hueco. */
   const conAlgo = dias.filter((d) => d.lista.length > 0 || d.google.length > 0)
-
-  const elegido =
-    dia && dias.some((d) => d.fecha === dia)
-      ? dia
-      : enEstaSemana && dias.some((d) => d.fecha === hoyISO)
-        ? hoyISO
-        : (conAlgo[0]?.fecha ?? desde)
-
-  const abierto = dias.find((d) => d.fecha === elegido) ?? dias[0]
 
   // Lo que viene después de la semana que se está mirando.
   const adelante = pendientes.filter((r) => r.fecha && r.fecha > hasta)
@@ -172,30 +157,49 @@ export default async function Lista({
 
   return (
     <>
-      {/* ── Por hacer · Hechas ── */}
-      <div className="mt-1 flex gap-2">
-        <Link
+      {/*
+        ═══════════════════════════════════════════════════════
+        POR HACER · VENCIDAS · HECHAS, EN UNA SOLA LÍNEA
+        ═══════════════════════════════════════════════════════
+
+        Lo vencido estaba metido dentro de «Por hacer», en un bloque
+        rojo clavado arriba. Funcionaba, pero tenía dos problemas: se
+        comía la parte de arriba de la pantalla todos los días, y no
+        se podía mirar solo eso — que es justo lo que se quiere hacer
+        cuando te sientas a ponerte al día.
+
+        Ahora es su propia pestaña, y SOLO SALE SI HAY ALGO. Una
+        pestaña «Vencidas · 0» permanente sería un reproche fijo por
+        algo que no has hecho mal.
+
+        Las tres caben en una línea porque son cortas y el número va
+        pegado. Con dos filas de pestañas, la tira de la semana bajaba
+        tanto que había que deslizar para ver el lunes.
+      */}
+      <div className="mt-1 flex gap-1.5">
+        <Pestana
+          texto="Por hacer"
+          cuantas={enPlazo.length}
           href="/agenda"
-          className="flex h-11 flex-1 items-center justify-center rounded-full text-[15px] font-extrabold"
-          style={
-            viendoHechas
-              ? { background: 'var(--t-superficie)', color: 'var(--t-tinta-suave)', border: '1px solid var(--t-borde)' }
-              : { background: '#F59E0B', color: '#0F172A' }
-          }
-        >
-          Por hacer · {pendientes.length}
-        </Link>
-        <Link
+          puesta={!viendoHechas && !viendoVencidas}
+          color="#F59E0B"
+        />
+        {tarde.length > 0 && (
+          <Pestana
+            texto="Vencidas"
+            cuantas={tarde.length}
+            href="/agenda?ver=vencidas"
+            puesta={viendoVencidas}
+            color="#FF6B6B"
+          />
+        )}
+        <Pestana
+          texto="Hechas"
+          cuantas={null}
           href="/agenda?ver=hechas"
-          className="flex h-11 flex-1 items-center justify-center rounded-full text-[15px] font-extrabold"
-          style={
-            viendoHechas
-              ? { background: '#F59E0B', color: '#0F172A' }
-              : { background: 'var(--t-superficie)', color: 'var(--t-tinta-suave)', border: '1px solid var(--t-borde)' }
-          }
-        >
-          Hechas
-        </Link>
+          puesta={viendoHechas}
+          color="#F59E0B"
+        />
       </div>
 
       {viendoHechas ? (
@@ -209,6 +213,24 @@ export default async function Lista({
             ))}
           </ul>
         )
+      ) : viendoVencidas ? (
+        // ── VENCIDAS ──────────────────────────────────────────
+        /* Sin agrupar por día ni por semana: lo vencido no se mira
+           por fechas, se mira para ir tachando. */
+        tarde.length === 0 ? (
+          <Vacio texto="No hay nada vencido. Todo al día." />
+        ) : (
+          <>
+            <p className="mt-4 text-[15px] font-semibold leading-snug text-tenue">
+              Se pasó la fecha y sigue sin hacerse.
+            </p>
+            <ul className="mt-2.5 space-y-2.5">
+              {tarde.map((r) => (
+                <Tarjeta key={r.id} r={r} nombres={nombres} yo={user.id} />
+              ))}
+            </ul>
+          </>
+        )
       ) : viendoAdelante ? (
         // ── MÁS ADELANTE ──────────────────────────────────────
         <MasAdelante
@@ -220,19 +242,6 @@ export default async function Lista({
       ) : (
         // ── LA SEMANA ─────────────────────────────────────────
         <>
-          {tarde.length > 0 && (
-            <section className="mt-5">
-              <h2 className="rotulo" style={{ color: '#FF6B6B' }}>
-                Sin hacer · {tarde.length}
-              </h2>
-              <ul className="mt-2.5 space-y-2.5">
-                {tarde.map((r) => (
-                  <Tarjeta key={r.id} r={r} nombres={nombres} yo={user.id} />
-                ))}
-              </ul>
-            </section>
-          )}
-
           {/*
             DE QUIÉN SON LAS CITAS DE GOOGLE.
 
@@ -298,34 +307,87 @@ export default async function Lista({
           </div>
 
           {/* ── La semana entera, en una fila ── */}
-          <Tira dias={dias} elegido={elegido} hoyISO={hoyISO} desde={desde} de={dueno} />
+          <Tira dias={dias} hoyISO={hoyISO} de={dueno} />
 
-          {/* ── Y debajo, el día que se esté mirando ── */}
-          {abierto && (
-            <section className="mt-5">
-              <h2 className="rotulo">{diaEnPalabras(abierto.fecha, hoyISO)}</h2>
+          {/*
+            ═══════════════════════════════════════════════════
+            Y DEBAJO, LA SEMANA ENTERA
+            ═══════════════════════════════════════════════════
 
-              {abierto.lista.length === 0 && abierto.google.length === 0 ? (
-                <Vacio
-                  texto={
-                    conAlgo.length === 0
-                      ? enEstaSemana
-                        ? 'Nada más esta semana.'
-                        : 'Nada esta semana.'
-                      : 'Este día no tienes nada.'
-                  }
-                />
-              ) : (
-                <ul className="mt-2.5 space-y-2.5">
-                  {abierto.lista.map((r) => (
-                    <Tarjeta key={r.id} r={r} nombres={nombres} yo={user.id} />
-                  ))}
-                  {abierto.google.map((c) => (
-                    <DeGoogle key={c.uid} c={c} conVarios={calendarios.length > 1} />
-                  ))}
-                </ul>
-              )}
-            </section>
+            Antes salía UN día: el elegido en la tira. Y con eso la
+            semana no se veía nunca — para saber qué hay el jueves
+            había que tocar el jueves, y para compararlo con el viernes
+            tocar otra vez. Una agenda semanal que enseña un día es una
+            agenda diaria con una tira de adorno.
+
+            Ahora se enseñan los siete, resumidos: una línea por cosa,
+            con su hora si la tiene. Los días vacíos no se pintan —
+            cuatro renglones diciendo «nada» ocupan media pantalla para
+            no contar nada— pero siguen estando en la tira, que es
+            donde se ve el hueco.
+
+            Y el día se abre entrando: el título de cada día lleva a su
+            pantalla de horas.
+          */}
+          {conAlgo.length === 0 ? (
+            <Vacio
+              texto={enEstaSemana ? 'Nada más esta semana.' : 'Nada esta semana.'}
+            />
+          ) : (
+            <div className="mt-5 space-y-5">
+              {conAlgo.map((d) => (
+                <section key={d.fecha}>
+                  <Link
+                    href={`/agenda?vista=dia&dia=${d.fecha}${dueno ? `&de=${dueno}` : ''}`}
+                    className="flex items-baseline justify-between gap-3"
+                  >
+                    <h2
+                      className="rotulo"
+                      style={d.fecha === hoyISO ? { color: 'var(--color-verde)' } : undefined}
+                    >
+                      {diaEnPalabras(d.fecha, hoyISO)}
+                    </h2>
+                    <span className="flex items-center gap-1 text-[13.5px] font-bold text-tenue">
+                      Ver el día
+                      <Ico nombre="flecha" tam={14} grosor={2.6} />
+                    </span>
+                  </Link>
+
+                  <ul className="mt-2 space-y-1.5">
+                    {d.lista.map((r) => (
+                      <li key={r.id}>
+                        <Renglon
+                          href={`/tablon/${r.id}`}
+                          hora={r.hora}
+                          titulo={r.titulo}
+                          color={pintaDe(r.titulo).color}
+                          pie={
+                            r.asignado_a
+                              ? (nombres[r.asignado_a] ?? '').split(' ')[0]
+                              : null
+                          }
+                        />
+                      </li>
+                    ))}
+                    {d.google.map((c) => (
+                      <li key={c.uid}>
+                        <Renglon
+                          href={null}
+                          hora={c.hora}
+                          titulo={c.titulo}
+                          color={c.color}
+                          pie={
+                            [calendarios.length > 1 ? c.de.split(' ')[0] : null, c.lugar]
+                              .filter(Boolean)
+                              .join(' · ') || null
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
           )}
 
           {/* Lo que queda más allá NO se esconde: se dice cuánto hay. */}
@@ -349,6 +411,104 @@ export default async function Lista({
         Apuntar algo
       </Link>
     </>
+  )
+}
+
+/*
+  Una de las tres pestañas de arriba.
+
+  El número va DENTRO de la pestaña y no al lado: «Por hacer · 6» es
+  una sola cosa que se lee de una vez. Y «Hechas» no lleva número a
+  propósito — cuántas cosas has terminado no es algo que haya que
+  vigilar, y un contador ahí compite con los dos que sí importan.
+*/
+function Pestana({
+  texto,
+  cuantas,
+  href,
+  puesta,
+  color,
+}: {
+  texto: string
+  cuantas: number | null
+  href: string
+  puesta: boolean
+  color: string
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={puesta ? 'page' : undefined}
+      className="flex h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-full px-2 text-[14.5px] font-extrabold"
+      style={
+        puesta
+          ? { background: color, color: '#0F172A' }
+          : {
+              background: 'var(--t-superficie)',
+              color: 'var(--t-tinta-suave)',
+              border: '1px solid var(--t-borde)',
+            }
+      }
+    >
+      <span className="truncate">{texto}</span>
+      {cuantas != null && cuantas > 0 && (
+        <span className="shrink-0 tabular-nums opacity-80">· {cuantas}</span>
+      )}
+    </Link>
+  )
+}
+
+/*
+  Una cosa de la semana, en un renglón.
+
+  Resumida a propósito: la hora, el título y de quién es. Lo demás
+  —la nota, el documento del que salió, el botón de hecho— está al
+  entrar. Siete días con tarjetas enteras serían tres pantallas de
+  deslizar para ver una semana.
+
+  La hora, en columna fija a la izquierda: así todas las horas quedan
+  alineadas y el ojo puede bajar por ellas sin leer los títulos.
+*/
+function Renglon({
+  href,
+  hora,
+  titulo,
+  color,
+  pie,
+}: {
+  href: string | null
+  hora: string | null
+  titulo: string
+  color: string
+  pie: string | null
+}) {
+  const dentro = (
+    <span className="flex items-center gap-2.5 rounded-[14px] border border-borde bg-superficie px-3 py-2.5">
+      <span
+        className="w-[40px] shrink-0 text-[12.5px] font-extrabold tabular-nums"
+        style={{ color: hora ? color : 'var(--t-apagado)' }}
+      >
+        {hora ? hora.slice(0, 5) : '—'}
+      </span>
+      <span
+        className="h-[26px] w-[3px] shrink-0 rounded-full"
+        style={{ background: color }}
+        aria-hidden
+      />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[16px] font-bold leading-snug">{titulo}</span>
+        {pie && (
+          <span className="block truncate text-[13px] font-bold text-tenue">{pie}</span>
+        )}
+      </span>
+    </span>
+  )
+
+  if (!href) return <span className="block">{dentro}</span>
+  return (
+    <Link href={href} className="block">
+      {dentro}
+    </Link>
   )
 }
 
@@ -384,15 +544,11 @@ export default async function Lista({
 */
 function Tira({
   dias,
-  elegido,
   hoyISO,
-  desde,
   de,
 }: {
   dias: { fecha: string; lista: Recordatorio[]; google: CitaDeAlguien[] }[]
-  elegido: string
   hoyISO: string
-  desde: string
   de: string | null
 }) {
   const LETRAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
@@ -400,15 +556,17 @@ function Tira({
   return (
     <div className="mt-4 flex justify-between gap-1">
       {dias.map((d, i) => {
-        const puesto = d.fecha === elegido
-        const esHoy = d.fecha === hoyISO
+        /* Ya no hay «día elegido»: tocar un día ENTRA en él. Lo único
+           que se marca es hoy, que es el punto de referencia. */
+        const puesto = d.fecha === hoyISO
+        const esHoy = puesto
         const cuantos = d.lista.length + d.google.length
         const numero = Number(d.fecha.slice(8, 10))
 
         return (
           <Link
             key={d.fecha}
-            href={`/agenda?semana=${desde}&dia=${d.fecha}${de ? `&de=${de}` : ''}`}
+            href={`/agenda?vista=dia&dia=${d.fecha}${de ? `&de=${de}` : ''}`}
             aria-current={puesto ? 'date' : undefined}
             aria-label={`${SEMANA[(i + 1) % 7]} ${numero}${
               cuantos === 0 ? ', sin nada' : cuantos === 1 ? ', 1 cosa' : `, ${cuantos} cosas`
@@ -432,11 +590,7 @@ function Tira({
               /* Hoy va subrayado por debajo del número, no de otro
                  color: el color ya lo usa el día elegido y dos cosas
                  distintas del mismo color no se distinguen. */
-              style={
-                esHoy && !puesto
-                  ? { color: 'var(--t-tinta)', textDecoration: 'underline', textUnderlineOffset: 3 }
-                  : undefined
-              }
+              style={esHoy ? undefined : undefined}
             >
               {numero}
             </span>
@@ -527,39 +681,6 @@ function MasAdelante({
   )
 }
 
-/*
-  Una cita traída del Google de esta persona.
-
-  De borde discontinuo y SIN ser un enlace, a propósito. Es de fuera:
-  vive en su calendario, HUBI solo la enseña. Si se pudiera tocar y
-  marcar "hecho", HUBI estaría prometiendo algo que no puede cumplir —
-  ese cambio no llegaría nunca a Google.
-*/
-function DeGoogle({ c, conVarios }: { c: CitaDeAlguien; conVarios: boolean }) {
-  return (
-    <li className="flex items-start gap-3 rounded-[20px] border border-dashed border-borde bg-superficie px-3.5 py-3.5">
-      {/* Una barra del color de su dueño. Pero el color NO va solo:
-          debajo está el nombre escrito. Quien no distinga bien los
-          colores tiene que poder saber igualmente de quién es. */}
-      <span
-        className="mt-0.5 h-10 w-[4px] shrink-0 rounded-full"
-        style={{ background: c.color }}
-        aria-hidden
-      />
-      <span className="w-[46px] shrink-0 text-[15px] font-extrabold text-tinta-suave">
-        {c.hora ?? <span className="text-tenue">—</span>}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[17px] font-bold leading-snug">{c.titulo}</span>
-        <span className="mt-0.5 block text-[14px] font-bold text-tenue">
-          {[conVarios ? c.de : null, c.lugar, 'Google']
-            .filter(Boolean)
-            .join(' · ')}
-        </span>
-      </span>
-    </li>
-  )
-}
 
 function Filtro({
   texto,

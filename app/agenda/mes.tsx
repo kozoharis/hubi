@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { cuando, atrasado, hoyAqui, type Recordatorio } from '@/lib/tablon'
-import { Ico, Pastilla, pintaDe } from '../iconos'
+import { atrasado, hoyAqui, type Recordatorio } from '@/lib/tablon'
+import { Ico, pintaDe } from '../iconos'
 import { citasDeLaFamilia, calendariosVisibles } from '@/lib/agenda-google'
 import Refrescar from './refrescar'
 
@@ -82,7 +82,6 @@ export default async function Mes({
   const anterior = mesNum === 1 ? `${anio - 1}-12` : `${anio}-${String(mesNum - 1).padStart(2, '0')}`
   const siguiente = mesNum === 12 ? `${anio + 1}-01` : `${anio}-${String(mesNum + 1).padStart(2, '0')}`
 
-  const delDia = porDia.get(diaElegido) ?? []
 
   /*
     Y las citas de su Google, si las ha volcado.
@@ -101,7 +100,6 @@ export default async function Mes({
      día elegido, para la lista de abajo. Es UNA sola petición: partir
      esto en dos sería pedirle a Google el mismo archivo dos veces. */
   const googleDelMes = await citasDeLaFamilia(user.id, desde, hasta, dueno)
-  const deGoogle = googleDelMes.filter((c) => c.fecha === diaElegido)
 
   const conGoogle = new Map<string, string[]>()
   for (const c of googleDelMes) {
@@ -110,6 +108,28 @@ export default async function Mes({
   }
 
   const filtro = dueno ? `&de=${dueno}` : ''
+
+  /*
+    ── EL MES ENTERO, DÍA A DÍA ──
+
+    Solo los días que tienen algo: treinta renglones diciendo «nada»
+    ocupan cinco pantallas para no contar nada. Los vacíos siguen en la
+    cuadrícula de arriba, que es donde se ve el hueco.
+  */
+  const porDiaGoogle = new Map<string, typeof googleDelMes>()
+  for (const c of googleDelMes) {
+    porDiaGoogle.set(c.fecha, [...(porDiaGoogle.get(c.fecha) ?? []), c])
+  }
+
+  const conAlgo = Array.from(new Set([...porDia.keys(), ...porDiaGoogle.keys()]))
+    .sort()
+    .map((f) => ({
+      fecha: f,
+      lista: porDia.get(f) ?? [],
+      google: porDiaGoogle.get(f) ?? [],
+    }))
+
+  const cuantasCosas = conAlgo.reduce((n, d) => n + d.lista.length + d.google.length, 0)
 
   return (
     <>
@@ -176,7 +196,7 @@ export default async function Mes({
             ) : (
               <Link
                 key={f}
-                href={`/agenda?vista=mes&mes=${anio}-${String(mesNum).padStart(2, '0')}&dia=${f}${filtro}`}
+                href={`/agenda?vista=dia&dia=${f}${filtro}`}
                 className={`flex aspect-square flex-col items-center justify-center gap-[3px] rounded-[13px] text-[16px] ${
                   f === diaElegido
                     ? 'bg-boton font-extrabold text-boton-texto'
@@ -215,111 +235,102 @@ export default async function Mes({
           )}
         </div>
 
-        {/* ── Lo de ese día ── */}
-        <section className="mt-6">
-          <h2 className="rotulo">{enPalabras(diaElegido)}</h2>
+        {/*
+          ═══════════════════════════════════════════════════════
+          Y DEBAJO, EL MES ENTERO
+          ═══════════════════════════════════════════════════════
 
-          {delDia.length === 0 ? (
+          Antes salía UN día: el elegido en la cuadrícula. Y eso
+          convertía el mes en una manera lenta de mirar un día — la
+          cuadrícula decía en qué días hay puntos, pero para saber QUÉ
+          hay en el mes había que ir tocando día por día, treinta
+          veces.
+
+          Ahora se enseña el mes entero, resumido: los días que tienen
+          algo, con una línea por cosa. La cuadrícula sigue arriba para
+          ver la forma del mes de un vistazo, y tocar un día ENTRA en
+          él, hora a hora.
+
+          Es la misma regla en las tres escalas: lo que estás mirando
+          se ve entero, y se entra para ver el detalle.
+        */}
+        <section className="mt-6">
+          <h2 className="rotulo">
+            {conAlgo.length === 0
+              ? 'Este mes'
+              : `Este mes · ${cuantasCosas} ${cuantasCosas === 1 ? 'cosa' : 'cosas'}`}
+          </h2>
+
+          {conAlgo.length === 0 ? (
             <p className="mt-3 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
-              Nada este día.
+              No hay nada apuntado este mes.
             </p>
           ) : (
-            <ul className="mt-3 space-y-2.5">
-              {delDia.map((r) => {
-                const pinta = pintaDe(r.titulo)
-                const vence = r.tipo === 'vencimiento'
-                /* Se pasó la fecha y sigue sin hacerse. Antes esto no
-                   se veía: en el mes todo salía del mismo verde para
-                   siempre, así que una cita de hace tres semanas que
-                   nadie marcó tenía exactamente el mismo aspecto que
-                   la de mañana. */
-                const tarde = atrasado(r)
-                const hecho = r.estado === 'hecho'
-                return (
-                  <li key={r.id}>
-                    <Link
-                      href={`/tablon/${r.id}`}
-                      className={`flex items-center gap-3 rounded-[20px] border bg-superficie px-3.5 py-3 ${
-                        (vence || tarde) && !hecho ? 'border-coral' : 'border-borde'
-                      } ${hecho ? 'opacity-55' : ''}`}
+            <div className="mt-3 space-y-5">
+              {conAlgo.map((d) => (
+                <div key={d.fecha}>
+                  <Link
+                    href={`/agenda?vista=dia&dia=${d.fecha}${filtro}`}
+                    className="flex items-baseline justify-between gap-3"
+                  >
+                    <p
+                      className="text-[15.5px] font-extrabold tracking-tight"
+                      style={d.fecha === hoyISO ? { color: 'var(--color-verde)' } : undefined}
                     >
-                      <span
-                        className={`w-[52px] shrink-0 text-[15px] font-extrabold ${
-                          tarde ? 'text-coral' : ''
-                        }`}
-                      >
-                        {r.hora ? r.hora.slice(0, 5) : <span className="text-tenue">—</span>}
-                      </span>
-                      <Pastilla
-                        nombre={vence || tarde ? 'reloj' : pinta.icono}
-                        color={vence || tarde ? '#FF6B6B' : pinta.color}
-                        fondo={vence || tarde ? '#FFE7E7' : pinta.fondo}
-                        tam={38}
-                        icono={20}
-                        redondez={12}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span
-                          className={`block text-[16.5px] font-bold leading-snug ${
-                            hecho ? 'text-tinta-suave line-through' : ''
-                          }`}
-                        >
-                          {r.titulo}
-                        </span>
-                        <span
-                          className={`block text-[14px] font-semibold ${
-                            tarde ? 'text-coral' : 'text-tenue'
-                          }`}
-                        >
-                          {tarde && 'Sin hacer · '}
-                          {r.documento_origen_id
-                            ? 'Detectado en un papel'
-                            : r.asignado_a
-                              ? (nombres[r.asignado_a] ?? '')
-                              : 'Los dos'}
-                        </span>
-                      </span>
-                      <Ico nombre="flecha" tam={19} grosor={2.2} className="shrink-0 text-borde" />
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
+                      {d.fecha === hoyISO ? 'Hoy · ' : ''}
+                      {cortoEnPalabras(d.fecha)}
+                    </p>
+                    <span className="flex items-center gap-1 text-[13.5px] font-bold text-tenue">
+                      Ver el día
+                      <Ico nombre="flecha" tam={14} grosor={2.6} />
+                    </span>
+                  </Link>
+
+                  <ul className="mt-2 space-y-1.5">
+                    {d.lista.map((r) => {
+                      const pinta = pintaDe(r.titulo)
+                      const tarde = atrasado(r)
+                      return (
+                        <li key={r.id}>
+                          <Renglon
+                            href={`/tablon/${r.id}`}
+                            hora={r.hora}
+                            titulo={r.titulo}
+                            color={tarde ? '#FF6B6B' : pinta.color}
+                            hecha={r.estado === 'hecho'}
+                            pie={
+                              tarde
+                                ? 'Sin hacer'
+                                : r.asignado_a
+                                  ? (nombres[r.asignado_a] ?? '').split(' ')[0]
+                                  : null
+                            }
+                          />
+                        </li>
+                      )
+                    })}
+                    {d.google.map((c) => (
+                      <li key={c.uid}>
+                        <Renglon
+                          href={null}
+                          hora={c.hora}
+                          titulo={c.titulo}
+                          color={c.color}
+                          hecha={false}
+                          pie={
+                            [calendarios.length > 1 ? c.de.split(' ')[0] : null, c.lugar]
+                              .filter(Boolean)
+                              .join(' · ') || null
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           )}
         </section>
-
-        {deGoogle.length > 0 && (
-          <section className="mt-5">
-            <h2 className="rotulo">
-              {calendarios.length > 1 ? 'De Google' : 'De tu Google'}
-            </h2>
-            <ul className="mt-2.5 space-y-2.5">
-              {deGoogle.map((c) => (
-                <li
-                  key={c.uid}
-                  className="flex items-center gap-3 rounded-[20px] border border-dashed border-borde bg-superficie px-3.5 py-3"
-                >
-                  <span className="w-[52px] shrink-0 text-[15px] font-extrabold">
-                    {c.hora ?? <span className="text-tenue">—</span>}
-                  </span>
-                  <span
-                    className="h-9 w-[4px] shrink-0 rounded-full"
-                    style={{ background: c.color }}
-                    aria-hidden
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[16.5px] font-bold leading-snug">{c.titulo}</span>
-                    <span className="block text-[14px] font-semibold text-tenue">
-                      {[calendarios.length > 1 ? c.de : null, c.lugar, 'Google']
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
 
         <Link
           href="/tablon/nuevo"
@@ -416,13 +427,72 @@ function diaValido(dia: string, anio: number, mes: number): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(dia) && dia.startsWith(`${anio}-${String(mes).padStart(2, '0')}`)
 }
 
-function enPalabras(diaISO: string): string {
-  const [a, m, d] = diaISO.split('-')
-  const f = new Date(Number(a), Number(m) - 1, Number(d))
-  const semana = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado']
-  const etiqueta = cuando(diaISO, null)
-  if (etiqueta === 'Hoy' || etiqueta === 'Mañana' || etiqueta === 'Ayer') {
-    return `${etiqueta} · ${Number(d)} de ${MESES[Number(m) - 1]}`
-  }
-  return `${semana[f.getDay()]} ${Number(d)} de ${MESES[Number(m) - 1]}`
+
+/*
+  Una cosa del mes, en un renglón.
+
+  El mismo dibujo que usa la semana, a propósito: si las dos escalas
+  pintaran sus líneas distintas, cambiar de una a otra obligaría a
+  volver a aprender a leerlas. La hora en columna fija a la izquierda
+  para que el ojo pueda bajar por ellas sin leer los títulos.
+*/
+function Renglon({
+  href,
+  hora,
+  titulo,
+  color,
+  pie,
+  hecha,
+}: {
+  href: string | null
+  hora: string | null
+  titulo: string
+  color: string
+  pie: string | null
+  hecha: boolean
+}) {
+  const dentro = (
+    <span
+      className={`flex items-center gap-2.5 rounded-[14px] border border-borde bg-superficie px-3 py-2.5 ${
+        hecha ? 'opacity-55' : ''
+      }`}
+    >
+      <span
+        className="w-[40px] shrink-0 text-[12.5px] font-extrabold tabular-nums"
+        style={{ color: hora ? color : 'var(--t-apagado)' }}
+      >
+        {hora ? hora.slice(0, 5) : '—'}
+      </span>
+      <span
+        className="h-[26px] w-[3px] shrink-0 rounded-full"
+        style={{ background: color }}
+        aria-hidden
+      />
+      <span className="min-w-0 flex-1">
+        <span
+          className={`block truncate text-[16px] font-bold leading-snug ${
+            hecha ? 'line-through' : ''
+          }`}
+        >
+          {titulo}
+        </span>
+        {pie && <span className="block truncate text-[13px] font-bold text-tenue">{pie}</span>}
+      </span>
+    </span>
+  )
+
+  if (!href) return <span className="block">{dentro}</span>
+  return (
+    <Link href={href} className="block">
+      {dentro}
+    </Link>
+  )
+}
+
+/** «2026-09-09» → «Miércoles 9». En el mes, el día de la semana ayuda. */
+function cortoEnPalabras(iso: string): string {
+  const nombres = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+  const [a, m, d] = iso.split('-').map(Number)
+  const f = new Date(a, m - 1, d)
+  return `${nombres[f.getDay()]} ${d}`
 }
