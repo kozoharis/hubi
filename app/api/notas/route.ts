@@ -163,15 +163,24 @@ export async function PATCH(peticion: NextRequest) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  let cuerpo: { id?: string; que?: string; texto?: string }
+  type Cambio = { id?: string; que?: string; texto?: string; destino?: string | null }
+
+  let cuerpo: Cambio
   try {
-    cuerpo = (await peticion.json()) as { id?: string; que?: string; texto?: string }
+    cuerpo = (await peticion.json()) as Cambio
   } catch {
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
   }
 
   const id = String(cuerpo.id ?? '')
   if (!id) return NextResponse.json({ error: 'Falta la nota.' }, { status: 400 })
+
+  /* Su casa. Hace falta para comprobar que el nuevo destinatario está
+     dentro de ella: sin eso, un identificador escrito a mano dejaría
+     la nota dirigida a un desconocido, que ni la vería ni podría
+     quitársela de encima. */
+  const hogarId = await miHogar(supabase, user.id)
+  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 409 })
 
   const { data: nota } = await supabase
     .from('notas')
@@ -215,6 +224,50 @@ export async function PATCH(peticion: NextRequest) {
       }
       cambio.texto = texto
       cambio.cambiada_en = new Date().toISOString()
+
+      /*
+        Y DE PASO, PARA QUIÉN.
+
+        Faltaba: se podía corregir la letra pero no el destinatario, y
+        equivocarse de persona al ponerla es lo más fácil del mundo —
+        las pastillas están una al lado de otra—. Sin esto había que
+        quitar la nota y escribirla otra vez.
+
+        `destino` viaja aparte de `para` en el cuerpo para poder
+        distinguir «no lo toques» de «ponla para la casa»: con un solo
+        campo, no mandarlo y mandarlo vacío serían lo mismo, y una
+        corrección de texto acabaría desasignando la nota sin querer.
+      */
+      if (cuerpo.destino !== undefined) {
+        const aQuien = String(cuerpo.destino ?? '').trim()
+
+        if (!aQuien) {
+          cambio.para = null
+        } else if (aQuien === user.id) {
+          cambio.para = aQuien
+        } else {
+          const { data: esDeCasa } = await supabase
+            .from('miembros')
+            .select('perfil_id')
+            .eq('hogar_id', hogarId)
+            .eq('perfil_id', aQuien)
+            .maybeSingle()
+
+          if (!esDeCasa) {
+            return NextResponse.json(
+              { error: 'Esa persona no está en esta casa.' },
+              { status: 400 }
+            )
+          }
+          cambio.para = aQuien
+        }
+
+        /* Cambia de dueño, así que el «visto» del anterior ya no dice
+           nada: la nota vuelve a estar sin ver para quien la reciba
+           ahora. Dejarlo puesto haría que le llegara marcada como
+           leída por otro. */
+        if (cambio.para !== nota.para) cambio.vista_en = null
+      }
       break
     }
 

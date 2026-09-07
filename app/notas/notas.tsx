@@ -62,6 +62,8 @@ export default function Notas({
   const [fallo, setFallo] = useState<string | null>(null)
   const [editando, setEditando] = useState<string | null>(null)
   const [borrador, setBorrador] = useState('')
+  /* Para quién queda la nota al corregirla. Empieza en el que tenía. */
+  const [otroDestino, setOtroDestino] = useState<string | null>(null)
   /* Qué montón se está mirando, y si la caja de escribir está abierta. */
   const [mirando, setMirando] = useState<string>('todas')
   const [escribiendo, setEscribiendo] = useState(false)
@@ -114,13 +116,25 @@ export default function Notas({
   const cuantasCon = (quien: string | null) =>
     notas.filter((n) => n.para === quien).length
 
+  /*
+    ── Y CABEN EN UNA LÍNEA PORQUE LAS PALABRAS SON CORTAS ──
+
+    Eran «Todas · 4», «De la casa · 3», «Para mí · 1», «Para Julia ·
+    0»: cuatro pastillas gordas que se iban a dos filas y ocupaban más
+    que las propias notas. El «Para» se repetía en tres de las cuatro
+    sin distinguir nada, y el título de la pantalla ya dice Notas.
+
+    Con `Todas · Casa · Yo · Julia` cabe la fila entera. Y «Yo» junto a
+    «Julia» se entiende de un vistazo: son la misma clase de cosa —una
+    persona— dicha con la misma clase de palabra.
+  */
   const montones = [
     { clave: 'todas', etiqueta: 'Todas', cuantas: notas.length },
-    { clave: 'casa', etiqueta: 'De la casa', cuantas: cuantasCon(null) },
-    { clave: yo, etiqueta: 'Para mí', cuantas: cuantasCon(yo) },
+    { clave: 'casa', etiqueta: 'Casa', cuantas: cuantasCon(null) },
+    { clave: yo, etiqueta: 'Yo', cuantas: cuantasCon(yo) },
     ...otros.map((g) => ({
       clave: g.id,
-      etiqueta: `Para ${g.nombre.split(' ')[0]}`,
+      etiqueta: g.nombre.split(' ')[0],
       cuantas: cuantasCon(g.id),
     })),
   ]
@@ -179,8 +193,16 @@ export default function Notas({
   }
 
   async function guardarCambio(id: string) {
-    if (await pedir({ id, que: 'texto', texto: borrador.trim() }, 'PATCH')) {
+    /* `destino: ''` es «para la casa» y `undefined` sería «no lo
+       toques». Se manda siempre porque la pantalla siempre lo
+       enseña: lo que se ve es lo que se guarda. */
+    const bien = await pedir(
+      { id, que: 'texto', texto: borrador.trim(), destino: otroDestino ?? '' },
+      'PATCH'
+    )
+    if (bien) {
       setEditando(null)
+      setMirando(otroDestino ?? 'casa')
     }
   }
 
@@ -203,11 +225,12 @@ export default function Notas({
         casa» y «Para mí» son la misma cosa.
       */}
       {otros.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Qué notas ver">
+        <div className="mt-3 flex gap-1.5" role="group" aria-label="Qué notas ver">
           {montones.map((m) => (
-            <Pastilla
+            <Monton
               key={m.clave}
-              texto={`${m.etiqueta} · ${m.cuantas}`}
+              etiqueta={m.etiqueta}
+              cuantas={m.cuantas}
               puesta={mirando === m.clave}
               alPulsar={() => setMirando(m.clave)}
             />
@@ -279,6 +302,26 @@ export default function Notas({
                       className="w-full resize-y rounded-[16px] border border-borde bg-fondo px-4 py-3.5 text-[18px] font-semibold leading-snug text-tinta outline-none focus:border-verde"
                       autoFocus
                     />
+                    {/* PARA QUIÉN, TAMBIÉN AL CORREGIR.
+
+                        Se podía arreglar la letra pero no la persona,
+                        y equivocarse de persona al ponerla es lo más
+                        fácil del mundo: las pastillas están una al
+                        lado de otra. Sin esto había que quitar la nota
+                        y escribirla otra vez. */}
+                    {otros.length > 0 && (
+                      <div className="mt-2.5 flex flex-wrap gap-2">
+                        {destinos.map((d) => (
+                          <Pastilla
+                            key={d.id ?? 'casa'}
+                            texto={d.etiqueta}
+                            puesta={otroDestino === d.id}
+                            alPulsar={() => setOtroDestino(d.id)}
+                          />
+                        ))}
+                      </div>
+                    )}
+
                     <div className="mt-2.5 flex gap-2">
                       <button
                         onClick={() => guardarCambio(n.id)}
@@ -324,11 +367,17 @@ export default function Notas({
                       </p>
                     )}
 
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    {/* En UNA línea, repartidos. Antes cada botón
+                        llevaba su dibujo delante y se medía por su
+                        palabra, así que tres se iban a dos filas y una
+                        nota de seis palabras ocupaba media pantalla de
+                        botones. Los dibujos se van —«Visto», «Cambiar»
+                        y «Quitar» no se confunden escritos— y el ancho
+                        lo reparte la fila. */}
+                    <div className="mt-3 flex gap-2">
                       {paraMi && !n.vista_en && escribo && (
                         <Boton
                           texto="Visto"
-                          icono="check"
                           ocupado={ocupado}
                           alPulsar={() => pedir({ id: n.id, que: 'visto' }, 'PATCH')}
                           fuerte
@@ -338,11 +387,11 @@ export default function Notas({
                       {mia && !viendoGuardadas && escribo && (
                         <Boton
                           texto="Cambiar"
-                          icono="lapiz"
                           ocupado={ocupado}
                           alPulsar={() => {
                             setEditando(n.id)
                             setBorrador(n.texto)
+                            setOtroDestino(n.para)
                           }}
                         />
                       )}
@@ -352,14 +401,12 @@ export default function Notas({
                         (viendoGuardadas ? (
                           <Boton
                             texto="Volver a ponerla"
-                            icono="chincheta"
                             ocupado={ocupado}
                             alPulsar={() => pedir({ id: n.id, que: 'recuperar' }, 'PATCH')}
                           />
                         ) : (
                           <Boton
                             texto="Quitar"
-                            icono="carpeta"
                             ocupado={ocupado}
                             alPulsar={() => pedir({ id: n.id, que: 'guardar' }, 'PATCH')}
                           />
@@ -539,18 +586,63 @@ function Pastilla({
   )
 }
 
+/*
+  Una pestaña de montón: la palabra y cuántas hay.
+
+  `flex-1` con `min-w-0`: se reparten el ancho a partes iguales y
+  nunca se van a una segunda fila, tenga la casa dos personas o cinco.
+  El número va debajo y más pequeño — al lado alargaba la pastilla
+  justo lo que hacía falta para no caber.
+*/
+function Monton({
+  etiqueta,
+  cuantas,
+  puesta,
+  alPulsar,
+}: {
+  etiqueta: string
+  cuantas: number
+  puesta: boolean
+  alPulsar: () => void
+}) {
+  return (
+    <button
+      onClick={alPulsar}
+      aria-pressed={puesta}
+      className="flex h-[52px] min-w-0 flex-1 flex-col items-center justify-center rounded-[14px] px-1"
+      style={
+        puesta
+          ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
+          : {
+              background: 'var(--t-superficie)',
+              color: 'var(--t-tinta-suave)',
+              border: '1px solid var(--t-borde)',
+            }
+      }
+    >
+      <span className="w-full truncate text-center text-[15px] font-extrabold leading-none">
+        {etiqueta}
+      </span>
+      <span
+        className="mt-1 text-[13px] font-bold leading-none tabular-nums"
+        style={{ opacity: cuantas === 0 ? 0.45 : 0.8 }}
+      >
+        {cuantas}
+      </span>
+    </button>
+  )
+}
+
 /* Los botones de una nota. Con texto SIEMPRE, nunca un dibujo suelto:
    el punto 5 lo dice y aquí se nota — «quitar» y «cambiar» dibujados
    se parecen demasiado. */
 function Boton({
   texto,
-  icono,
   ocupado,
   alPulsar,
   fuerte = false,
 }: {
   texto: string
-  icono: 'check' | 'lapiz' | 'chincheta' | 'carpeta'
   ocupado: boolean
   alPulsar: () => void
   fuerte?: boolean
@@ -559,7 +651,7 @@ function Boton({
     <button
       onClick={alPulsar}
       disabled={ocupado}
-      className="flex h-12 items-center gap-1.5 rounded-[14px] px-4 text-[15.5px] font-extrabold disabled:opacity-50"
+      className="flex h-12 min-w-0 flex-1 items-center justify-center rounded-[14px] px-2 text-[15.5px] font-extrabold disabled:opacity-50"
       style={
         fuerte
           ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
@@ -570,7 +662,6 @@ function Boton({
             }
       }
     >
-      <Ico nombre={icono} tam={17} grosor={2.3} />
       {texto}
     </button>
   )
