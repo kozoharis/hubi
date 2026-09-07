@@ -25,6 +25,11 @@ import type { NotaVista } from '@/lib/notas'
   única opción —tú— es una decisión inventada. Sale cuando hay otra
   persona en la casa.
 
+  Pero cuando sale, TÚ estás en él. Es «Para la casa · Para mí · Para
+  Conchita», y las tres hacen cosas distintas: la de la casa no avisa
+  a nadie, la tuya se te queda en el Inicio hasta que la despachas, y
+  la de otra persona le hace sonar el móvil.
+
   ─────────────────────────────────────────────────────────────
   Y LAS NOTAS NO SON PRIVADAS
 
@@ -59,6 +64,25 @@ export default function Notas({
   const [borrador, setBorrador] = useState('')
 
   const otros = gente.filter((g) => g.id !== yo)
+
+  /*
+    ── Y TÚ TAMBIÉN ──
+
+    Faltabas en tu propia lista. Dejarse una nota a uno mismo es lo que
+    hace cualquiera con un papel en la nevera, y hasta ahora aquí no se
+    podía: te quedaba «para la casa», que no es lo mismo — la de la
+    casa no sale en tu Inicio ni se queda ahí hasta que la despachas.
+
+    Vas después de «Para la casa» y antes que los demás, porque es el
+    destino que más se usa después del común. Y no sale tu nombre sino
+    «Para mí»: leerse a uno mismo en tercera persona en una lista donde
+    están los demás hace dudar de si ése eres tú.
+  */
+  const destinos: { id: string | null; etiqueta: string }[] = [
+    { id: null, etiqueta: 'Para la casa' },
+    { id: yo, etiqueta: 'Para mí' },
+    ...otros.map((g) => ({ id: g.id, etiqueta: `Para ${g.nombre.split(' ')[0]}` })),
+  ]
   const nombreDe = new Map(gente.map((g) => [g.id, g.nombre]))
   /* El color de quien la escribió. Con cuatro personas en la casa,
      saber de quién es cada nota obliga hoy a leerse la firma de cada
@@ -141,24 +165,24 @@ export default function Notas({
             <>
               <p className="mt-4 text-[17px] font-extrabold leading-snug">¿Para quién?</p>
               <div className="mt-2.5 flex flex-wrap gap-2">
-                <Pastilla
-                  texto="Para la casa"
-                  puesta={para === null}
-                  alPulsar={() => setPara(null)}
-                />
-                {otros.map((g) => (
+                {destinos.map((d) => (
                   <Pastilla
-                    key={g.id}
-                    texto={`Para ${g.nombre.split(' ')[0]}`}
-                    puesta={para === g.id}
-                    alPulsar={() => setPara(g.id)}
+                    key={d.id ?? 'casa'}
+                    texto={d.etiqueta}
+                    puesta={para === d.id}
+                    alPulsar={() => setPara(d.id)}
                   />
                 ))}
               </div>
+              {/* Lo que va a pasar, dicho antes de pulsar. Los tres
+                  destinos hacen tres cosas distintas y ninguna se
+                  adivina mirando la pastilla. */}
               <p className="mt-2.5 text-[14.5px] font-semibold leading-snug text-tenue">
                 {para === null
                   ? 'La verá todo el mundo en casa. No suena ningún teléfono.'
-                  : 'Le llega un aviso al móvil. La nota la sigue viendo toda la casa.'}
+                  : para === yo
+                    ? 'Te saldrá en tu Inicio hasta que la marques como vista. No suena ningún teléfono.'
+                    : 'Le llega un aviso al móvil. La nota la sigue viendo toda la casa.'}
               </p>
             </>
           )}

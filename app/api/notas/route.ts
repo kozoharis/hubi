@@ -62,7 +62,24 @@ export async function POST(peticion: NextRequest) {
   let para: string | null = null
   const pedido = String(cuerpo.para ?? '').trim()
 
-  if (pedido && pedido !== user.id) {
+  if (pedido === user.id) {
+    /*
+      A TI MISMO, QUE ES LO MÁS NORMAL DEL MUNDO.
+
+      Antes esta línea decía `pedido && pedido !== user.id`: tu propio
+      identificador se descartaba EN SILENCIO y la nota acababa siendo
+      «para la casa». O sea que dejarte una nota a ti no fallaba, que
+      habría sido mejor — hacía otra cosa sin decirlo.
+
+      Y una nota a la casa no es lo mismo: la de la casa no sale en tu
+      Inicio y no se queda hasta que la despachas. Es justo eso lo que
+      se busca al apuntarse algo uno mismo.
+
+      Aquí no hace falta comprobar que estás en esta casa: `miHogar`
+      acaba de devolverla y es la tuya.
+    */
+    para = pedido
+  } else if (pedido) {
     const { data: esDeCasa } = await supabase
       .from('miembros')
       .select('perfil_id')
@@ -103,7 +120,10 @@ export async function POST(peticion: NextRequest) {
     vibrar dos móviles cada vez que alguien apunta «queda poca leña»
     es la manera más rápida de que los dos apaguen los avisos.
   */
-  if (para) {
+  /* Y a ti mismo no, claro. Que te vibre el móvil por algo que
+     acabas de escribir tú es la manera más rápida de que apagues los
+     avisos — y de que dejes de enterarte de los que sí importan. */
+  if (para && para !== user.id) {
     try {
       const yo = await leerPerfil(supabase, user.id, user.email)
       const quienEs = yo.nombre.split(' ')[0]
