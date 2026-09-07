@@ -507,19 +507,35 @@ export default async function Cuentas({
           )}
         </section>
 
+        {/*
+          «UN MOVIMIENTO», NO «UN GASTO».
+
+          El botón decía «Apuntar un gasto» y la primera pregunta de la
+          pantalla siguiente es «¿un gasto o un ingreso?». O sea: el
+          botón daba por decidido algo que se decide justo después.
+
+          Quien viene a apuntar el alquiler de un piso —un ingreso—
+          leía «Apuntar un gasto» y no tocaba, porque no es lo que
+          quiere hacer. Y encima el rótulo de arriba de la lista ya
+          dice MOVIMIENTOS: son la misma cosa llamada de dos maneras
+          en la misma pantalla.
+        */}
         <Link
           href={`/finca/apuntar?seccion=${seccion.raiz ?? 'resto'}`}
           className="mt-5 flex h-[60px] items-center justify-center gap-2.5 rounded-[18px] bg-boton text-[18px] font-extrabold text-boton-texto"
         >
           <Ico nombre="mas" tam={22} grosor={2.3} />
-          Apuntar un gasto
+          Apuntar un movimiento
         </Link>
 
         {/* Sin `pr-24`: ese hueco a la derecha estaba para esquivar el
             botón de voz, que ahora va pegado a la barra de abajo y ya
             no pasa por aquí. Descentraba la frase sin motivo. */}
-        <p className="mt-3 text-center text-[14.5px] font-semibold leading-snug text-tenue">
-          Las facturas con importe entran aquí solas.
+        {/* El hueco a la derecha SÍ hace falta: el botón de voz flota
+            justo encima de la barra y se comía el final de la frase —
+            «entran aquí solas» quedaba tapado por él. */}
+        <p className="mt-3 px-14 text-center text-[14.5px] font-semibold leading-snug text-tenue">
+          Un gasto o un ingreso. Las facturas con importe entran solas.
         </p>
       </div>
 
