@@ -6,9 +6,21 @@ import { hoyAqui } from './tablon'
   EL PARTE DEL DÍA
   ═══════════════════════════════════════════════════════════════
 
-  Cuántas horas estuvo y qué tiene que decir de ese día. Lo escribe
+  Las horas de MÁS y lo que tenga que contar de ese día. Lo escribe
   ella y nadie más — ni siquiera quien creó la casa—, que es lo único
   que hace que el número valga algo a fin de mes.
+
+  ─────────────────────────────────────────────────────────────
+  LO NORMAL NO SE APUNTA
+
+  El horario está acordado: viene lunes, miércoles y viernes de nueve
+  a una. Eso no cambia y pedirle que lo escriba cada día es dar
+  trabajo a cambio de un dato que ya saben los dos.
+
+  Lo que se apunta es lo que se SALE de lo acordado: el día que se
+  quedó una hora más. Y el efecto es el que importa — el estado normal
+  pasa a ser no escribir nada. Un campo que hay que rellenar todos los
+  días se rellena mal a la tercera semana.
 
   ─────────────────────────────────────────────────────────────
   APUNTES PARA CUADRAR EL MES, NO UN REGISTRO DE JORNADA
@@ -30,9 +42,35 @@ type Cliente = SupabaseClient<any, any, any>
 export type Parte = {
   quien: string
   fecha: string
-  horas: number | null
+  /** Horas de MÁS sobre lo acordado. Nulo = un día normal. */
+  extra: number | null
   nota: string | null
   apuntado_en: string
+}
+
+const CAMPOS = 'quien, fecha, horas_extra, nota, apuntado_en'
+/* Cómo se llamaba antes del SQL 41, por si todavía no se ha ejecutado. */
+const VIEJOS = 'quien, fecha, horas, nota, apuntado_en'
+
+/* La fila tal y como viene, antes de ponerle nuestros nombres. */
+type Fila = {
+  quien: string
+  fecha: string
+  horas_extra?: number | string | null
+  horas?: number | string | null
+  nota: string | null
+  apuntado_en: string
+}
+
+function comoParte(f: Fila): Parte {
+  const bruto = f.horas_extra ?? f.horas ?? null
+  return {
+    quien: f.quien,
+    fecha: f.fecha,
+    extra: bruto == null ? null : Number(bruto),
+    nota: f.nota,
+    apuntado_en: f.apuntado_en,
+  }
 }
 
 /** El parte de una persona en un día. */
@@ -42,15 +80,24 @@ export async function parteDe(
   fecha?: string
 ): Promise<Parte | null> {
   try {
-    const { data, error } = await supabase
-      .from('dias_en_casa')
-      .select('quien, fecha, horas, nota, apuntado_en')
-      .eq('quien', quien)
-      .eq('fecha', fecha ?? hoyAqui())
-      .maybeSingle()
+    const dia = fecha ?? hoyAqui()
 
-    if (error || !data) return null
-    return data as Parte
+    /* Dos intentos: `horas_extra` es del SQL 41 y, si no está,
+       Postgres rechaza la consulta ENTERA en vez de decir «esa columna
+       no existe». La misma trampa de siempre. */
+    const pedir = (campos: string) =>
+      supabase
+        .from('dias_en_casa')
+        .select(campos)
+        .eq('quien', quien)
+        .eq('fecha', dia)
+        .maybeSingle()
+
+    let fila = await pedir(CAMPOS)
+    if (fila.error) fila = await pedir(VIEJOS)
+
+    if (fila.error || !fila.data) return null
+    return comoParte(fila.data as unknown as Fila)
   } catch {
     return null
   }
@@ -63,25 +110,34 @@ export async function partesDe(
   desde: string
 ): Promise<Parte[]> {
   try {
-    const { data, error } = await supabase
-      .from('dias_en_casa')
-      .select('quien, fecha, horas, nota, apuntado_en')
-      .eq('quien', quien)
-      .gte('fecha', desde)
-      .order('fecha', { ascending: false })
+    const pedir = (campos: string) =>
+      supabase
+        .from('dias_en_casa')
+        .select(campos)
+        .eq('quien', quien)
+        .gte('fecha', desde)
+        .order('fecha', { ascending: false })
 
-    if (error || !data) return []
-    return data as Parte[]
+    let filas = await pedir(CAMPOS)
+    if (filas.error) filas = await pedir(VIEJOS)
+
+    if (filas.error || !filas.data) return []
+    return (filas.data as unknown as Fila[]).map(comoParte)
   } catch {
     return []
   }
 }
 
-/** «7,5 h» · «45 min». Nunca «7.5». */
+/**
+ * «1 h» · «1,5 h» · «30 min». Nunca «1.5».
+ *
+ * La coma y no el punto: en un móvil español, «1.5 h» se lee mal por
+ * la misma razón por la que aquí se escribe 1.500 para mil quinientos.
+ */
 export function enHoras(h: number | null): string {
   if (h == null) return ''
   if (h < 1) return `${Math.round(h * 60)} min`
-  const texto = Number.isInteger(h) ? String(h) : h.toFixed(2).replace(/0$/, '')
+  const texto = Number.isInteger(h) ? String(h) : String(Number(h.toFixed(2)))
   return `${texto.replace('.', ',')} h`
 }
 

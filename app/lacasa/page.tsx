@@ -94,9 +94,11 @@ export default async function LaCasaHoy({
 
   const suParte: Parte | null = laAyuda ? await parteDe(supabase, laAyuda.id, fecha) : null
 
-  /* Lo que lleva del mes. Solo si hay alguien de quien contarlo. */
+  /* Las horas de MÁS que lleva del mes. El horario de siempre no se
+     apunta: lo que hay que cuadrar a fin de mes es lo que se salió de
+     lo acordado. */
   const delMes = laAyuda ? await partesDe(supabase, laAyuda.id, primeroDelMes(fecha)) : []
-  const horasDelMes = delMes.reduce((n, p) => n + Number(p.horas ?? 0), 0)
+  const extraDelMes = delMes.reduce((n, p) => n + Number(p.extra ?? 0), 0)
 
   const hechas = deberes.filter((d) => d.hecha).length
 
@@ -156,10 +158,10 @@ export default async function LaCasaHoy({
             esHoy={esHoy}
             mio={soyLaAyuda}
             parte={
-              suParte ? { horas: suParte.horas, nota: suParte.nota } : { horas: null, nota: null }
+              suParte ? { extra: suParte.extra, nota: suParte.nota } : { extra: null, nota: null }
             }
-            horasDelMes={horasDelMes}
-            diasDelMes={delMes.filter((p) => Number(p.horas ?? 0) > 0).length}
+            extraDelMes={extraDelMes}
+            diasConExtra={delMes.filter((p) => Number(p.extra ?? 0) > 0).length}
           />
         )}
       </div>
