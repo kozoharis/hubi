@@ -6,6 +6,7 @@ import { clienteServidor } from '@/lib/supabase/servidor'
 import Barra from './barra'
 import Arranque from './arranque'
 import Invitacion from './invitacion'
+import SinAvisos from './sin-avisos'
 import Cabecera from './cabecera'
 import { BotonAjustes, Ico, Logo, Pastilla, pintaDe } from './iconos'
 import Avatar from './avatar'
@@ -594,6 +595,16 @@ export default async function Inicio({
           hasta donde se ve sin arrastrar la pantalla — que era lo
           único que de verdad se quedaba abajo.
         */}
+
+        {/* AVISO DE QUE ALGO NO FUNCIONA, Y POR ESO VA EL PRIMERO.
+
+            No es una tarjeta más ni una sugerencia: es HUBI diciendo
+            que ahora mismo no puede cumplir lo que promete. Eso no se
+            pone debajo de seis tarjetas.
+
+            Se pinta solo cuando hace falta —y en el ordenador nunca—,
+            así que en un teléfono bien puesto esta línea no existe. */}
+        <SinAvisos />
 
         {/* ── La grande: hacer una foto ── */}
         {conectado && ve.guardarDocumento && (
