@@ -109,6 +109,31 @@ const SEÑALES: { accion: Entendido['accion']; palabras: string[] }[] = [
     palabras: ['un gasto', 'gasto de', 'hemos pagado', 'he pagado', 'he gastado', 'hemos gastado', 'me ha costado', 'nos ha costado'],
   },
   /*
+    LA NOTA, ANTES QUE LA COMPRA Y DESPUÉS DEL DINERO.
+
+    Después del dinero porque "apunta un gasto de 40 y déjame nota"
+    tiene que seguir siendo un gasto: lo que no se puede perder es el
+    importe.
+
+    Antes que la compra porque "déjame una nota de que hay que comprar
+    pilas" es una nota, no un artículo: no se está haciendo la lista,
+    se está apuntando algo que recordar.
+
+    Las palabras son largas a propósito —"una nota", "en el corcho"—
+    y nunca la palabra "nota" suelta: eso aparece dentro de cualquier
+    tarea ("con una nota que diga...") y se llevaría por delante media
+    docena de recordatorios.
+  */
+  {
+    accion: 'nota',
+    palabras: [
+      'una nota', 'la nota', 'nota para', 'notale', 'apunta en el corcho',
+      'en el corcho', 'en el tablon', 'al tablon', 'deja dicho',
+      'dejale dicho', 'deja escrito', 'dejale escrito', 'que quede escrito',
+      'para que no se me olvide donde', 'apunta donde',
+    ],
+  },
+  /*
     LA COMPRA VA LA ÚLTIMA, Y ESO SE APRENDIÓ PROBÁNDOLO.
 
     Primero la puse delante, con el razonamiento de que "apunta leche

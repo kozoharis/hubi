@@ -26,7 +26,7 @@ type Oido = {
   tareas: TareaOida[]
   accion:
     | 'recordatorio' | 'gasto' | 'ingreso' | 'buscar'
-    | 'consulta' | 'cambiar' | 'borrar' | 'compra' | 'nada'
+    | 'consulta' | 'cambiar' | 'borrar' | 'compra' | 'nota' | 'nada'
   papel_id?: string | null
   ir_a?: string | null
   compra?: { que: string; cantidad: string | null }[]
@@ -498,6 +498,28 @@ export default function Grabar({
         return
       }
 
+      /*
+        LA NOTA. Se guarda con el texto que se ve en pantalla, no con
+        el que se oyó: si la persona lo ha corregido antes de dar a
+        guardar, manda lo corregido.
+      */
+      if (oido.accion === 'nota') {
+        const r = await fetch('/api/notas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            texto: (oido.titulo ?? '').trim(),
+            para: oido.para_id ?? null,
+          }),
+        })
+        const d = await r.json().catch(() => ({}))
+        if (!r.ok || d?.bien !== true) throw new Error(d?.error ?? 'No se ha podido poner la nota.')
+
+        decir('Nota puesta.')
+        setEstado('hecho')
+        return
+      }
+
       if (oido.accion === 'recordatorio') {
         /* Todas de una vez. El servidor las mete juntas: o entran
            todas o no entra ninguna. Guardar dos de tres y no decirlo
@@ -583,6 +605,8 @@ export default function Grabar({
       ? (oido.compra?.length ?? 0) > 0
       : oido?.accion === 'borrar' || oido?.accion === 'cambiar'
       ? Boolean(elegida)
+      : oido?.accion === 'nota'
+        ? Boolean(oido.titulo?.trim())
       : oido?.accion === 'recordatorio'
         ? (oido.tareas?.length ?? 0) > 0
         : (oido?.accion === 'gasto' || oido?.accion === 'ingreso') &&
@@ -763,6 +787,19 @@ export default function Grabar({
                           : 'Recuérdame mañana que llame al médico'
                       }
                     />
+                    {/* La nota y la compra son las dos que nadie
+                        adivina que existen. Y una función que no se
+                        descubre es una función que no está: quien no
+                        la ve aquí no la va a probar por su cuenta. */}
+                    <Ejemplo
+                      que="Dejar nota"
+                      frase={
+                        otro
+                          ? `Ponle una nota a ${otro}: los papeles están en la mesa`
+                          : 'Deja una nota: la llave del garaje está en el cajón'
+                      }
+                    />
+                    <Ejemplo que="La compra" frase="Apunta leche, pan y huevos en la compra" />
                     <Ejemplo que="Gastar" frase="Un gasto de 85 euros en la ferretería" />
                     <Ejemplo que="Preguntar" frase="¿Cuánto hemos gastado este trimestre en luz?" />
                     <Ejemplo
@@ -1055,16 +1092,21 @@ export default function Grabar({
               </>
             )}
 
-            {(oido.accion === 'recordatorio' || oido.accion === 'gasto' || oido.accion === 'ingreso') && (
+            {(oido.accion === 'recordatorio' ||
+              oido.accion === 'gasto' ||
+              oido.accion === 'ingreso' ||
+              oido.accion === 'nota') && (
               <>
                 <h1 className="mt-10 text-[26px] font-extrabold leading-tight tracking-tight text-white">
-                  {oido.accion === 'recordatorio' && (oido.tareas?.length ?? 0) > 1
-                    ? `${oido.tareas.length} cosas para apuntar`
-                    : oido.accion === 'recordatorio'
-                      ? 'Esto voy a apuntar'
-                      : oido.accion === 'gasto'
-                        ? 'Este gasto voy a apuntar'
-                        : 'Este ingreso voy a apuntar'}
+                  {oido.accion === 'nota'
+                    ? 'Esta nota voy a poner'
+                    : oido.accion === 'recordatorio' && (oido.tareas?.length ?? 0) > 1
+                      ? `${oido.tareas.length} cosas para apuntar`
+                      : oido.accion === 'recordatorio'
+                        ? 'Esto voy a apuntar'
+                        : oido.accion === 'gasto'
+                          ? 'Este gasto voy a apuntar'
+                          : 'Este ingreso voy a apuntar'}
                 </h1>
 
                 {oido.confianza === 'baja' && (
@@ -1076,6 +1118,21 @@ export default function Grabar({
                 {/* Una tarjeta por tarea. Cuando son varias, cada una
                     con su número: así se ve de un vistazo que no se ha
                     perdido ninguna de las que se dijeron. */}
+                {/* LA NOTA, CON SU TEXTO ENTERO Y PARA QUIÉN.
+
+                    Sin recortar: una nota es justamente el texto, y
+                    enseñar la mitad obliga a guardarla a ciegas para
+                    poder leerla después. */}
+                {oido.accion === 'nota' && (
+                  <div className="mt-6 divide-y divide-white/10 rounded-[22px] bg-white/[.07] px-5">
+                    <Dato etiqueta="Nota" valor={oido.titulo} />
+                    <Dato
+                      etiqueta="Para quién"
+                      valor={oido.para_nombre ?? 'La casa'}
+                    />
+                  </div>
+                )}
+
                 {oido.accion === 'recordatorio' &&
                   (oido.tareas ?? []).map((t, i) => (
                     <div

@@ -24,7 +24,7 @@ export type Entendido = {
   tareas: Tarea[]
   accion:
     | 'recordatorio' | 'gasto' | 'ingreso' | 'buscar'
-    | 'consulta' | 'cambiar' | 'borrar' | 'compra' | 'nada'
+    | 'consulta' | 'cambiar' | 'borrar' | 'compra' | 'nota' | 'nada'
   /* Lo que hay que comprar. Una entrada por cosa: "apunta leche, pan
      y huevos" son TRES, no una con comas. */
   compra: { que: string; cantidad: string | null }[]
@@ -85,7 +85,7 @@ const ESQUEMA = {
       type: 'string',
       enum: [
         'recordatorio', 'gasto', 'ingreso', 'buscar',
-        'consulta', 'cambiar', 'borrar', 'compra', 'nada',
+        'consulta', 'cambiar', 'borrar', 'compra', 'nota', 'nada',
       ],
     },
     compra_seccion: {
@@ -212,7 +212,7 @@ function instrucciones(opciones: {
 
 HOY ES ${opciones.diaSemana} ${opciones.hoy}. Úsalo para resolver "mañana", "el martes", "este trimestre".
 
-LAS OCHO COSAS QUE PUEDEN PEDIR:
+LAS NUEVE COSAS QUE PUEDEN PEDIR:
 
 1. "recordatorio" — apuntar algo que hay que hacer o recordar.
 

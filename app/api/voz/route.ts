@@ -274,6 +274,31 @@ export async function POST(peticion: NextRequest) {
 
     /* La compra no necesita resolver nada aquí: no hay persona a la
        que asignarla ni categoría que buscar. Va tal cual a confirmar. */
+    /*
+      ── Una nota para el corcho ──────────────────────────────
+
+      Aquí solo se resuelve A QUIÉN. La nota se guarda desde la
+      pantalla, después de que la persona la vea escrita — igual que
+      las tareas y por la misma razón: una voz mal oída no escribe en
+      la casa sin que nadie lo lea antes.
+
+      Sin persona dicha, la nota es PARA LA CASA y no para quien
+      habla. Es al revés que en las tareas, y a propósito: una tarea
+      sin dueño no la hace nadie, pero una nota es el corcho de la
+      cocina — lo normal es dejarla puesta para todos, y ponérsela a
+      uno mismo es la excepción que se dice en voz alta.
+    */
+    if (oido.accion === 'nota') {
+      return NextResponse.json({
+        ...oido,
+        para_id: paraId ?? null,
+        para_nombre:
+          paraId == null
+            ? 'La casa'
+            : ((perfiles ?? []).find((p) => p.id === paraId)?.nombre ?? 'La casa'),
+      })
+    }
+
     if (oido.accion === 'compra') {
       /* La sección que se haya dicho, comprobada contra las que esta
          familia tiene de verdad: el modelo puede devolver cualquier
