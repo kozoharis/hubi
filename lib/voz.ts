@@ -458,6 +458,60 @@ LAS OCHO COSAS QUE PUEDEN PEDIR:
    La regla: si se nombran COSAS QUE COMPRAR, es "compra" — lleve o no
    lleve fecha. Si no se nombra ninguna, es un recordatorio normal.
 
+9. "nota" — dejar algo escrito en el corcho.
+
+   El texto va en "titulo" y la persona, si la dicen, en "para".
+
+   "Deja una nota: la llave del garaje está en el cajón de la entrada"
+   → accion: "nota", titulo: "La llave del garaje está en el cajón de
+     la entrada"
+   "Ponle una nota a Conchita: he dejado los papeles en la mesa"
+   → accion: "nota", titulo: "He dejado los papeles en la mesa",
+     para: "Conchita"
+   "Apúntame una nota para acordarme del wifi nuevo"
+   → accion: "nota", titulo: "El wifi nuevo", para: quien habla
+
+   LA DIFERENCIA CON "recordatorio" ES LA FECHA, Y ES LA QUE MÁS
+   IMPORTA DE TODO ESTO.
+
+   Una NOTA es algo que se sabe y no caduca: dónde está una llave, el
+   número del fontanero, que los papeles están encima de la mesa. No
+   se "hace" y no tiene día.
+
+   Un RECORDATORIO es algo que hay que HACER, y tiene cuándo: recoger
+   la medicación a las seis, llamar al médico el martes.
+
+   Si la frase lleva un día o una hora —hoy, mañana, el jueves, a las
+   seis— es un RECORDATORIO aunque digan la palabra "nota". Y si no
+   lleva ninguna y solo cuentan algo que hay que tener presente, es
+   una NOTA aunque digan "recuérdame".
+
+   Que se equivoque hacia el recordatorio no rompe nada; que apunte
+   como nota sin fecha algo que había que hacer el martes, sí: no
+   avisa a nadie y se descubre el miércoles.
+
+   PERO OJO: ESO NO ES EXCUSA PARA MANDARLO TODO A RECORDATORIO.
+
+   Si dicen LA PALABRA nota, o corcho, o tablón, y NO hay ningún día
+   ni ninguna hora en la frase, es "nota". Sin dudarlo. No es un
+   recordatorio sin fecha: es una nota, y son sitios distintos de la
+   aplicación.
+
+   "Ponle una nota a Julia. Los papeles están en la mesa."
+   → accion: "nota", titulo: "Los papeles están en la mesa",
+     para: "Julia"
+     NO es un recordatorio. No hay nada que hacer y no hay cuándo:
+     es un recado que se deja escrito.
+
+   "Déjale una nota a Conchita de que el fontanero se llama Manolo"
+   → accion: "nota", titulo: "El fontanero se llama Manolo",
+     para: "Conchita"
+
+   Fíjate en que una nota SUELE contar algo que YA ES ASÍ —dónde está
+   una cosa, cómo se llama alguien, qué ha pasado— mientras que un
+   recordatorio pide una acción futura. "Los papeles están en la mesa"
+   no le pide a nadie que haga nada.
+
 Si no entiendes qué quieren, o el audio está vacío o es ruido, usa accion "nada".
 
 REGLAS:
