@@ -129,6 +129,11 @@ const SEÑALES: { accion: Entendido['accion']; palabras: string[] }[] = [
     accion: 'compra',
     palabras: [
       'en la compra', 'a la compra', 'de la compra', 'lista de la compra',
+      /* Las listas con nombre. Sin esto, «añade aceite a la lista del
+         súper» no llevaba ninguna señal de compra y acababa siendo un
+         recordatorio: una tarea llamada «aceite» en la Agenda. */
+      'a la lista', 'en la lista', 'de la lista', 'a la de', 'en la de',
+      'lista nueva', 'nueva lista', 'otra lista',
       'hay que comprar', 'necesitamos comprar', 'nos falta', 'nos hace falta',
       'se ha acabado', 'se acabo', 'compra la', 'compra el',
     ],
@@ -503,6 +508,74 @@ const ANDAMIO_COMPRA = [
   mañana una familia crea "Obras", "para la obra" funcionará sin tocar
   nada.
 */
+/*
+  ── A QUÉ LISTA VA ────────────────────────────────────────
+
+  "Añade aceite y arroz A LA LISTA DEL SÚPER". "Apunta pilas EN LA DE
+  LA FERRETERÍA".
+
+  Sin esto pasaban las dos cosas malas a la vez: no se sabía a qué
+  lista iba —se metía todo en la abierta— y encima «a la lista del
+  súper» se guardaba COMO UN ARTÍCULO. La lista acababa con un
+  producto llamado «A la lista del super», que es basura que hay que
+  borrar a mano.
+
+  «de la compra» se excluye a propósito: eso no es el nombre de una
+  lista, es la palabra genérica. Quien dice «añade pan a la lista de
+  la compra» no está nombrando ninguna en concreto.
+*/
+const MARCA_LISTA =
+  /\b(?:a|en|de|para)\s+la\s+lista\s+(?:de\s+(?:la\s+|el\s+|los\s+|las\s+)?|del\s+)/
+/* Y para las nuevas, el nombre llega por otro lado: «haz otra lista
+   PARA LA FERRETERÍA». */
+const MARCA_NUEVA = /\bpara\s+(?:la\s+|el\s+|los\s+|las\s+)?/
+
+function laLista(plano: string, nueva = false): string | null {
+  const m = (nueva && !MARCA_LISTA.test(plano) ? MARCA_NUEVA : MARCA_LISTA).exec(plano)
+  if (!m) return null
+
+  /*
+    EL NOMBRE SE CORTA EN CUANTO EMPIEZA LA COMPRA.
+
+    «a la lista del súper aceite y arroz»: el nombre es «súper», y
+    «aceite» ya es lo que se compra. Sin este corte el nombre se
+    comía el primer producto — y el producto se perdía, que es peor
+    que el nombre mal puesto.
+
+    Dos palabras como mucho: «fin de mes» se queda en «fin de», y es
+    suficiente para reconocer la lista al buscarla.
+  */
+  const detras = plano.slice(m.index + m[0].length)
+  const palabras: string[] = []
+
+  for (const w of detras.split(/[\s,;.]+/)) {
+    if (!w) continue
+    if (w === 'y' || w === 'e') break
+    if (COMPRABLES_ORDENADOS.some((c) => limpio(c) === w)) break
+    palabras.push(w)
+    if (palabras.length === 2) break
+  }
+
+  const nombre = palabras.join(' ')
+  /* «la lista de la compra» no nombra ninguna: es la palabra de
+     siempre. Y una sola letra no es el nombre de nada. */
+  if (!nombre || nombre === 'compra' || nombre.length < 3) return null
+  return nombre
+}
+
+/*
+  ── ¿QUIERE UNA LISTA NUEVA? ──────────────────────────────
+
+  "Crea una lista de la compra", "haz una lista nueva para la
+  ferretería", "empieza otra lista".
+
+  Antes esto no existía y el resultado era grotesco: «Crea una lista
+  de la compra nueva» se guardaba como un ARTÍCULO llamado «Crea una
+  nueva». Ni creaba la lista ni avisaba de nada.
+*/
+const RE_LISTA_NUEVA =
+  /\b(crea|crear|haz|hacer|empieza|empezar|abre|abrir|monta|montar)\b[^.]{0,20}?\b(?:una|otra|la)?\s*lista\b/
+
 const RE_DESTINO =
   /\b(?:para|de|en)\s+(?:la|el|los|las)?\s*(finca|huerta|helechos|casa|obra|obras|piso|apartamento|coche|jard[ií]n|animales|perro|gato)\b/g
 
@@ -530,12 +603,37 @@ const MEDIDAS =
 const CUANTAS =
   '(?:\\d+|un|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|media|medio)'
 
-function laCompra(frase: string): { que: string; cantidad: string | null }[] {
+function laCompra(
+  frase: string,
+  deLaLista: string | null = null
+): { que: string; cantidad: string | null }[] {
   let t = ' ' + limpio(frase) + ' '
+
+  /* PRIMERO lo de la lista, y después el andamio. Al revés no
+     funciona: el andamio se lleva por delante «lista de la compra», y
+     entonces «crea una lista de la compra» ya no contiene la palabra
+     «lista» y el «crea» se queda suelto — acababa guardándose un
+     artículo llamado «Crea».
+
+     Y se recorta el marcador MÁS EL NOMBRE YA VALIDADO, no lo que
+     pille una expresión suelta: en «a la lista del súper aceite y
+     arroz» eso se llevaba por delante el aceite. */
+  t = t.replace(new RegExp(RE_LISTA_NUEVA.source, 'g'), ' ')
+
+  if (deLaLista) {
+    const escapado = deLaLista.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    t = t.replace(new RegExp(MARCA_LISTA.source + '\\s*' + escapado, 'g'), ' ')
+    t = t.replace(new RegExp(MARCA_NUEVA.source + '\\s*' + escapado, 'g'), ' ')
+  }
+  t = t.replace(new RegExp(MARCA_LISTA.source, 'g'), ' ')
+
   for (const r of ANDAMIO_COMPRA) t = t.replace(r, ' ')
 
   // El destino —"para la finca"— no es un artículo. Se quita.
   t = t.replace(RE_DESTINO, ' ')
+
+  /* Y las palabras sueltas que quedan de todo eso. */
+  t = t.replace(/\b(una|otra|nueva|nuevo|lista|listas)\b/g, ' ')
 
   const trozos = t
     .split(/,| y | e |;|\+/)
@@ -899,8 +997,10 @@ export function entenderFrase(opciones: {
     tareas,
     accion,
     cual: accion === 'cambiar' || accion === 'borrar' ? deCual(plano) : null,
-    compra: accion === 'compra' ? laCompra(frase) : [],
+    compra: accion === 'compra' ? laCompra(frase, laLista(plano, RE_LISTA_NUEVA.test(plano))) : [],
     compra_seccion: accion === 'compra' ? elDestino(plano, opciones.categorias) : null,
+    compra_lista: accion === 'compra' ? laLista(plano, RE_LISTA_NUEVA.test(plano)) : null,
+    compra_nueva: accion === 'compra' ? RE_LISTA_NUEVA.test(plano) : false,
     repite: accion === 'cambiar' ? laRepeticion(plano) : null,
     repite_hasta: null,
     titulo: tareas[0]?.titulo ?? null,

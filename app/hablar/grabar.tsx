@@ -32,6 +32,11 @@ type Oido = {
   compra?: { que: string; cantidad: string | null }[]
   compra_seccion?: string | null
   compra_seccion_nombre?: string | null
+  /* A qué lista con nombre va. `_id` si ya existe; solo `_nombre` con
+     `_nueva` si hay que crearla. */
+  compra_lista_id?: string | null
+  compra_lista_nombre?: string | null
+  compra_lista_nueva?: boolean
   /* Las tareas que encajan con lo que ha dicho. Una sola: se enseña y
      se confirma. Varias: elige. Ninguna: se dice. */
   candidatas?: {
@@ -362,12 +367,42 @@ export default function Grabar({
 
       /* La compra: todas de una vez, como las tareas múltiples. */
       if (oido.accion === 'compra') {
+        /*
+          SI LA LISTA NO EXISTE, SE CREA PRIMERO.
+
+          Y si esto falla no se aborta: los artículos se apuntan
+          igualmente en la lista abierta. Perder la compra entera
+          porque no se pudo crear una lista con nombre sería cambiar
+          un problema pequeño por uno grande — quien acaba de dictar
+          seis cosas las quiere apuntadas.
+        */
+        let listaId = oido.compra_lista_id ?? null
+
+        if (!listaId && oido.compra_lista_nueva && oido.compra_lista_nombre) {
+          try {
+            const nueva = await fetch('/api/compra/listas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                nombre: oido.compra_lista_nombre,
+                seccion_id: oido.compra_seccion ?? null,
+              }),
+            })
+            const d = await nueva.json().catch(() => null)
+            if (nueva.ok && d?.lista?.id) listaId = d.lista.id as string
+            else if (nueva.ok && d?.id) listaId = d.id as string
+          } catch {
+            /* Se sigue sin lista: van a la abierta. */
+          }
+        }
+
         const r = await fetch('/api/compra', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             cosas: oido.compra ?? [],
             seccion_id: oido.compra_seccion ?? null,
+            lista_id: listaId,
           }),
         })
         const respuesta = await r.json()
@@ -920,6 +955,21 @@ export default function Grabar({
                 {oido.compra_seccion_nombre && (
                   <p className="mt-3 text-[18px] font-bold text-slate-300">
                     Para {oido.compra_seccion_nombre}
+                  </p>
+                )}
+
+                {/* Y EN QUÉ LISTA, con la palabra «nueva» cuando lo es.
+
+                    Sin decirlo, alguien dicta «a la lista del súper» y
+                    no tiene forma de saber si HUBI encontró la suya o
+                    va a crear una segunda con el mismo nombre mal
+                    escrito. Se ve antes de guardar, que es cuando aún
+                    se puede repetir la frase. */}
+                {oido.compra_lista_nombre && (
+                  <p className="mt-1.5 text-[18px] font-bold text-verde">
+                    {oido.compra_lista_nueva
+                      ? `En una lista nueva: ${oido.compra_lista_nombre}`
+                      : `En la lista ${oido.compra_lista_nombre}`}
                   </p>
                 )}
 

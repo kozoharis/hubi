@@ -282,10 +282,70 @@ export async function POST(peticion: NextRequest) {
       const seccion = todas.find(
         (c) => c.id === oido.compra_seccion && !c.padre_id
       )
+
+      /*
+        ── ¿A QUÉ LISTA? ───────────────────────────────────────
+
+        Una casa puede tener la del súper, la de fin de mes y la de la
+        ferretería. Aquí solo se AVERIGUA cuál: no se crea ni se
+        apunta nada — eso lo hace la pantalla cuando la persona lo ha
+        visto escrito, como todo lo demás de la voz.
+
+        Se busca por parecido en las dos direcciones porque nadie dice
+        el nombre entero: «la del súper» tiene que encontrar «Súper
+        del lunes», y «fin de mes» tiene que encontrar «Fin de mes».
+        Y sin tildes: el móvil transcribe unas veces con y otras sin.
+      */
+      let listaId: string | null = null
+      let listaNombre: string | null = null
+      let listaNueva = oido.compra_nueva === true
+
+      if (oido.compra_lista) {
+        try {
+          const { data: listas } = await supabase
+            .from('listas_compra')
+            .select('id, nombre, seccion_id')
+            .is('archivada_en', null)
+
+          const dicho = sinTildes(oido.compra_lista)
+
+          /* Si además dijo la sección, solo valen las de esa sección:
+             «la del súper de la finca» no puede caer en la del súper
+             de casa. */
+          const candidatas = (listas ?? []).filter(
+            (l) => !seccion || l.seccion_id === seccion.id || l.seccion_id == null
+          )
+
+          const encontrada = candidatas.find((l) => {
+            const suyo = sinTildes(String(l.nombre))
+            return suyo.includes(dicho) || dicho.includes(suyo)
+          })
+
+          if (encontrada) {
+            listaId = encontrada.id as string
+            listaNombre = encontrada.nombre as string
+            listaNueva = false
+          } else {
+            /* No existe. No se inventa un identificador: se devuelve el
+               nombre tal cual y se marca como nueva, para que la
+               pantalla pueda decir «voy a crear la lista Ferretería»
+               antes de crearla. */
+            listaNombre = oido.compra_lista
+            listaNueva = true
+          }
+        } catch {
+          /* Sin la tabla —sql/23 sin ejecutar— la compra sigue yendo a
+             la lista abierta, como siempre. Nunca falla por esto. */
+        }
+      }
+
       return NextResponse.json({
         ...oido,
         compra_seccion: seccion?.id ?? null,
         compra_seccion_nombre: seccion?.nombre ?? null,
+        compra_lista_id: listaId,
+        compra_lista_nombre: listaNombre,
+        compra_lista_nueva: listaNueva,
         para_id: null,
       })
     }

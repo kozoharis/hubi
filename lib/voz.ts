@@ -31,6 +31,13 @@ export type Entendido = {
   /* Para qué sección es la compra: la finca, Los Helechos, la casa.
      Es de la lista entera, no de cada artículo. */
   compra_seccion: string | null
+  /* A qué LISTA con nombre va —«la del súper», «fin de mes»—, si se
+     dice. Distinto de la sección: la sección es de quién es el gasto;
+     la lista es cuál de las varias que puede haber en esa sección. */
+  compra_lista: string | null
+  /* Si han pedido empezar una lista nueva en vez de añadir a la que
+     hay abierta. */
+  compra_nueva?: boolean
   /* Solo en una consulta por un papel: cuál es, para poder ofrecer
      verlo después de habérselo contado en voz alta. */
   papel_id?: string | null
@@ -86,6 +93,18 @@ const ESQUEMA = {
       nullable: true,
       description:
         'Solo para accion "compra". Identificador de la SECCIÓN a la que va la compra, SOLO si lo dicen expresamente: "para la finca", "esto es de Los Helechos". La compra de casa NO lleva sección: es lo normal, y no hace falta decirlo. Nunca pongas secciones que no sean sitios donde se gasta (Seguros, Salud, Documentos y Personal no son destinos de una compra). Vacío si no lo dicen.',
+    },
+    compra_lista: {
+      type: 'string',
+      nullable: true,
+      description:
+        'Solo para accion "compra". El NOMBRE de la lista a la que va, si lo dicen: "a la lista del súper" → "súper"; "en la de fin de mes" → "fin de mes". NO pongas "la compra" ni "la lista de la compra": eso no es un nombre, es la palabra genérica. Vacío si no nombran ninguna.',
+    },
+    compra_nueva: {
+      type: 'boolean',
+      nullable: true,
+      description:
+        'Solo para accion "compra". true si piden EMPEZAR una lista nueva —"crea una lista", "haz otra lista para la ferretería"— en vez de añadir a la que ya está abierta.',
     },
     compra: {
       type: 'array',
@@ -458,6 +477,32 @@ LAS OCHO COSAS QUE PUEDEN PEDIR:
    La regla: si se nombran COSAS QUE COMPRAR, es "compra" — lleve o no
    lleve fecha. Si no se nombra ninguna, es un recordatorio normal.
 
+   ── Y PUEDE HABER VARIAS LISTAS, CON NOMBRE ──
+
+   Una casa tiene la del súper, la de fin de mes, la de la ferretería.
+   Si dicen a cuál va, ponlo en "compra_lista" —solo el nombre, sin el
+   "a la lista de"—:
+
+   "Añade aceite y arroz a la lista del súper"
+   → compra: [{que:"Aceite"}, {que:"Arroz"}], compra_lista: "súper"
+   "Apunta pilas en la de la ferretería"
+   → compra: [{que:"Pilas"}], compra_lista: "ferretería"
+
+   NUNCA pongas "compra" ni "la lista de la compra" ahí: eso no es el
+   nombre de ninguna, es la palabra de siempre. Si no nombran una en
+   concreto, déjalo vacío y va a la que esté abierta.
+
+   Y si piden EMPEZAR una nueva, "compra_nueva": true:
+
+   "Crea una lista de la compra"        → compra_nueva: true
+   "Haz otra lista para la ferretería"  → compra_nueva: true,
+                                          compra_lista: "ferretería"
+
+   OJO: el nombre de la lista NO ES UN ARTÍCULO. "Añade a la lista del
+   súper aceite y arroz" son DOS cosas —aceite y arroz—, nunca tres.
+   Meter "a la lista del súper" en "compra" deja un producto de basura
+   que hay que borrar a mano.
+
 9. "nota" — dejar algo escrito en el corcho.
 
    El texto va en "titulo" y la persona, si la dicen, en "para".
@@ -691,6 +736,16 @@ export async function escuchar(opciones: {
           .filter((c) => c.que.length > 0)
       : [],
     compra_seccion: leido.compra_seccion?.trim() || null,
+    /* «compra» a secas no nombra ninguna lista: es la palabra de
+       siempre. Si el modelo la devuelve igualmente, se descarta aquí
+       — si no, se buscaría una lista llamada «compra» que no existe y
+       se ofrecería crearla. */
+    compra_lista: (() => {
+      const n = leido.compra_lista?.trim() ?? ''
+      const limpio = n.toLowerCase().replace(/^la\s+/, '')
+      return !n || limpio === 'compra' || limpio === 'lista de la compra' ? null : n
+    })(),
+    compra_nueva: leido.compra_nueva === true,
     repite: unaDe(leido.repite, ['diaria', 'semanal', 'mensual', 'anual']),
     repite_hasta: fechaValida(leido.repite_hasta),
     periodo: unaDe(leido.periodo, ['mes', 'trimestre', 'anio']),
