@@ -25,7 +25,34 @@ export const dynamic = 'force-dynamic'
   sola, recién llegada— las frases se escriben sin nombres y siguen
   siendo verdad.
 */
-export default async function Hablar() {
+export default async function Hablar({
+  searchParams,
+}: {
+  searchParams: Promise<{ dicho?: string }>
+}) {
+  /*
+    ── LO QUE VIENE YA DICHO ──
+
+    En el iPhone no existe un «Hola HUBI»: ningún programa que no sea
+    Siri puede escuchar en segundo plano, y eso no es una limitación
+    nuestra sino de iOS.
+
+    Lo que sí se puede es que Siri escuche por nosotros. Un Atajo
+    llamado «Hubi» dicta la frase y la trae aquí en la dirección, y
+    HUBI la interpreta al abrirse: «Oye Siri, Hubi» → «¿Qué necesitas?»
+    → hablas → se abre con lo que has dicho ya entendido.
+
+    Y así se esquiva de paso el problema de verdad: Safari no deja
+    encender el micrófono sin que alguien toque la pantalla, así que
+    abrir grabando no era posible. Dictando, el micrófono lo pone
+    Siri, que sí puede.
+  */
+  const { dicho } = await searchParams
+  const traido =
+    typeof dicho === 'string' && dicho.trim().length > 1
+      ? dicho.trim().slice(0, 600)
+      : null
+
   const supabase = await clienteSesion()
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
@@ -69,5 +96,5 @@ export default async function Hablar() {
        es una pantalla de ayuda, no puede tumbar la voz. */
   }
 
-  return <Grabar otro={otro} actividad={actividad} />
+  return <Grabar otro={otro} actividad={actividad} dicho={traido} />
 }

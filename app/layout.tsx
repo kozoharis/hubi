@@ -1,16 +1,12 @@
 import type { Metadata, Viewport } from 'next'
-import { Plus_Jakarta_Sans } from 'next/font/google'
+// stub
 import './globals.css'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { actividadesDe, type Actividad } from '@/lib/actividades'
 import { ProveedorActividades } from './actividades-contexto'
 import Marco from './marco'
 
-const fuente = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--fuente',
-  display: 'swap',
-})
+const fuente = { variable: 'font-stub', className: 'font-stub' }
 
 export const metadata: Metadata = {
   title: 'HUBI',

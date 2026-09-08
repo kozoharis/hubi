@@ -67,11 +67,14 @@ const BARRAS = [0.35, 0.6, 0.85, 1, 0.85, 0.6, 0.35]
 export default function Grabar({
   otro = null,
   actividad = null,
+  dicho = null,
 }: {
   /** Alguien de esta casa que no sea quien está mirando. */
   otro?: string | null
   /** Una actividad de esta casa: la Finca, las Obras, Los Helechos… */
   actividad?: string | null
+  /** Una frase que ya viene dictada desde fuera —un Atajo de Siri—. */
+  dicho?: string | null
 } = {}) {
   const [estado, setEstado] = useState<Estado>('listo')
   const [segundos, setSegundos] = useState(0)
@@ -522,6 +525,23 @@ export default function Grabar({
       setEstado('entendido')
     }
   }
+
+  /*
+    LO DICTADO DESDE FUERA SE INTERPRETA SOLO, Y UNA SOLA VEZ.
+
+    El `ref` no es manía: sin él, cualquier repintado —y aquí hay
+    muchos, que esto es una pantalla con cronómetro— volvería a mandar
+    la misma frase y saldrían dos tareas iguales. Guardar dos veces lo
+    que se dijo una es de los fallos que peor se explican.
+  */
+  const yaInterpretado = useRef(false)
+
+  useEffect(() => {
+    if (!dicho || yaInterpretado.current) return
+    yaInterpretado.current = true
+    interpretar(dicho)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dicho])
 
   const puedeGuardar =
     oido?.accion === 'compra'
