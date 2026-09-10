@@ -7,6 +7,7 @@ import { Volver } from '../../../iconos'
 import { Aviso } from '../../../piezas'
 import type { Categoria } from '@/lib/carpetas'
 import Corregir, { type Papel } from './formulario'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,6 +52,7 @@ export default async function EditarDocumento({
   let { data, error } = await supabase
     .from('documentos')
     .select(`${BASE}, se_renueva, preaviso_dias, avisar_con`)
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .maybeSingle()
 
@@ -58,6 +60,7 @@ export default async function EditarDocumento({
     ;({ data, error } = await supabase
       .from('documentos')
       .select(BASE)
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('id', id)
       .maybeSingle())
   }
@@ -88,6 +91,7 @@ export default async function EditarDocumento({
   const { data: cats } = await supabase
     .from('categorias')
     .select('id, padre_id, nombre, segmento_drive, orden')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('activa', true)
 
   return (

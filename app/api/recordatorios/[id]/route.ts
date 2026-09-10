@@ -1,9 +1,9 @@
 import { NextResponse, after, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar } from '@/lib/hogar'
 import { ponerCita, quitarCita } from '@/lib/google/calendario'
 import { clienteServidor } from '@/lib/supabase/servidor'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +36,7 @@ export async function PATCH(
       hecho_en: hecho ? new Date().toISOString() : null,
       hecho_por: hecho ? user.id : null,
     })
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id, titulo, tipo, fecha, hora, nota, asignado_a, repite, repite_hasta, evento_google')
     .maybeSingle()
@@ -124,7 +125,7 @@ export async function PATCH(
   */
   /* La casa, antes del `after`: dentro ya no hay sesión que consultar
      y el calendario que se toca es el de esta casa. */
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
 
   after(async () => {
     if (!hogarId) return
@@ -141,7 +142,11 @@ export async function PATCH(
           r.evento_google
         )
         if (evento && evento !== r.evento_google) {
-          await enGoogle.from('recordatorios').update({ evento_google: evento }).eq('id', id)
+          await enGoogle
+            .from('recordatorios')
+            .update({ evento_google: evento })
+            .eq('hogar_id', hogarId)
+            .eq('id', id)
         }
       } catch (e) {
         console.error('[HUBI] No se ha podido actualizar el calendario:', e)
@@ -173,6 +178,7 @@ export async function PATCH(
           await enGoogle
             .from('recordatorios')
             .update({ evento_google: evento })
+            .eq('hogar_id', hogarId)
             .eq('id', siguiente)
         }
       } catch (e) {
@@ -289,6 +295,7 @@ export async function PUT(
   const { data, error } = await supabase
     .from('recordatorios')
     .update(cambios)
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id, titulo, fecha, hora, nota, estado, evento_google')
     .maybeSingle()
@@ -320,7 +327,7 @@ export async function PUT(
     HUBI ya no tenía fecha, y no había forma de quitarla desde aquí.
   */
   /* La casa, mientras todavía hay sesión. */
-  const casa = await miHogar(supabase, user.id)
+  const casa = await elEspacio(supabase)
 
   after(async () => {
     if (!casa) return
@@ -331,7 +338,11 @@ export async function PUT(
       if (data.evento_google) {
         try {
           await quitarCita(data.evento_google, casa)
-          await enGoogle.from('recordatorios').update({ evento_google: null }).eq('id', id)
+          await enGoogle
+            .from('recordatorios')
+            .update({ evento_google: null })
+            .eq('hogar_id', casa)
+            .eq('id', id)
         } catch (e) {
           console.error('[HUBI] La cita se ha quedado en Google sin fecha en HUBI:', e)
         }
@@ -352,7 +363,11 @@ export async function PUT(
         data.evento_google
       )
       if (evento && evento !== data.evento_google) {
-        await enGoogle.from('recordatorios').update({ evento_google: evento }).eq('id', id)
+        await enGoogle
+          .from('recordatorios')
+          .update({ evento_google: evento })
+          .eq('hogar_id', casa)
+          .eq('id', id)
       }
     } catch (e) {
       console.error('[HUBI] Cambio guardado sin actualizar Google:', e)
@@ -388,6 +403,7 @@ export async function DELETE(
   const { data: antes } = await supabase
     .from('recordatorios')
     .select('evento_google')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .maybeSingle()
 
@@ -405,6 +421,7 @@ export async function DELETE(
   const { data: borradas, error } = await supabase
     .from('recordatorios')
     .delete()
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 
@@ -444,7 +461,7 @@ export async function DELETE(
      función se congela al devolver la respuesta y la cita se quedaba
      en el calendario de Google para siempre, borrada en HUBI y viva en
      el móvil. */
-  const donde = await miHogar(supabase, user.id)
+  const donde = await elEspacio(supabase)
 
   if (antes?.evento_google && donde) {
     const evento = antes.evento_google

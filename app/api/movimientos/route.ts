@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar } from '@/lib/hogar'
 import { desgloseQueToca } from '@/lib/impuesto'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -75,7 +75,7 @@ export async function POST(peticion: NextRequest) {
     tumbaría el apunte entero, que es la trampa de siempre.
   */
   const conImpuesto = await desgloseQueToca(supabase, {
-    hogarId: await miHogar(supabase, user.id),
+    hogarId: await elEspacio(supabase),
     categoriaId: cuerpo.categoria_id,
     total: importe,
     tipoDicho: cuerpo.impuesto_tipo ?? null,

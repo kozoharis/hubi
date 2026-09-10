@@ -19,7 +19,7 @@ import {
   type Ambito,
 } from './piezas'
 import { hoyAqui } from '@/lib/tablon'
-import { miHogar } from '@/lib/hogar'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 import {
   cuentaDelImpuesto,
   comoSeLlama,
@@ -141,9 +141,13 @@ export default async function Cuentas({
   }
 
   let todas: Cat[] = []
-  const conCuentas = await supabase.from('categorias').select(`${campos}, lleva_cuentas`)
+  const espacio = await elEspacioO(supabase)
+  const conCuentas = await supabase
+    .from('categorias')
+    .select(`${campos}, lleva_cuentas`)
+    .eq('hogar_id', espacio)
   if (conCuentas.error) {
-    const basico = await supabase.from('categorias').select(campos)
+    const basico = await supabase.from('categorias').select(campos).eq('hogar_id', espacio)
     todas = (basico.data ?? []) as Cat[]
   } else {
     todas = (conCuentas.data ?? []) as Cat[]
@@ -201,6 +205,7 @@ export default async function Cuentas({
   const conTodo = await supabase
     .from('movimientos')
     .select(`${columnas}, unidad_id, impuesto_cuota`)
+    .eq('hogar_id', await elEspacioO(supabase))
     .gte('fecha', periodo.desde)
     .lte('fecha', periodo.hasta)
     .order('fecha', { ascending: false })
@@ -212,6 +217,7 @@ export default async function Cuentas({
     : await supabase
     .from('movimientos')
     .select(`${columnas}, unidad_id`)
+    .eq('hogar_id', await elEspacioO(supabase))
     .gte('fecha', periodo.desde)
     .lte('fecha', periodo.hasta)
     .order('fecha', { ascending: false })
@@ -220,6 +226,7 @@ export default async function Cuentas({
     const sinUnidad = await supabase
       .from('movimientos')
       .select(columnas)
+      .eq('hogar_id', await elEspacioO(supabase))
       .gte('fecha', periodo.desde)
       .lte('fecha', periodo.hasta)
       .order('fecha', { ascending: false })
@@ -261,7 +268,7 @@ export default async function Cuentas({
   */
   let impuestoCasa: Impuesto = 'ninguno'
   try {
-    const casa = await miHogar(supabase, user.id)
+    const casa = await elEspacio(supabase)
     if (casa) {
       const { data: fila } = await supabase
         .from('hogares')
@@ -361,6 +368,7 @@ export default async function Cuentas({
     const { count } = await supabase
       .from('documentos')
       .select('id', { count: 'exact', head: true })
+      .eq('hogar_id', await elEspacioO(supabase))
       .in('categoria_id', dentro)
       .is('eliminado_en', null)
 

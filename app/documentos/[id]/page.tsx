@@ -7,6 +7,7 @@ import { diaLimite } from '@/lib/vencimientos'
 import Barra from '../../barra'
 import Cabecera from '../../cabecera'
 import { Ico, Volver } from '../../iconos'
+import { elEspacioO } from '@/lib/espacio'
 import {
   Aviso,
   BotonPrincipal,
@@ -61,6 +62,7 @@ export default async function Documento({
   let { data, error: averia } = await supabase
     .from('documentos')
     .select(`${BASE}, se_renueva, preaviso_dias`)
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .maybeSingle()
 
@@ -68,6 +70,7 @@ export default async function Documento({
     ;({ data, error: averia } = await supabase
       .from('documentos')
       .select(BASE)
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('id', id)
       .maybeSingle())
   }
@@ -99,6 +102,7 @@ export default async function Documento({
   const { data: cats } = await supabase
     .from('categorias')
     .select('id, padre_id, nombre, segmento_drive, orden')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('activa', true)
 
   const todas = (cats ?? []) as Categoria[]
@@ -119,6 +123,7 @@ export default async function Documento({
   const conDesglose = await supabase
     .from('movimientos')
     .select('id, tipo, importe, impuesto_tipo, impuesto_cuota')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('documento_id', id)
     .maybeSingle()
 
@@ -126,6 +131,7 @@ export default async function Documento({
     ? await supabase
         .from('movimientos')
         .select('id, tipo, importe')
+        .eq('hogar_id', await elEspacioO(supabase))
         .eq('documento_id', id)
         .maybeSingle()
     : conDesglose
@@ -133,6 +139,7 @@ export default async function Documento({
   const { data: recordatorio } = await supabase
     .from('recordatorios')
     .select('id, titulo, fecha, estado')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('documento_origen_id', id)
     .maybeSingle()
 

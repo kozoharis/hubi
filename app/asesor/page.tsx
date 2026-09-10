@@ -5,7 +5,7 @@ import Barra from '../barra'
 import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
 import { Persona } from '../piezas'
-import { miHogar } from '@/lib/hogar'
+import { elEspacio } from '@/lib/espacio'
 import { genteDeLaCasa, elAsesor, type Quien } from '@/lib/gente'
 import { cuandoSePuso } from '@/lib/notas'
 import Hilo, { type Cosa } from './hilo'
@@ -52,7 +52,7 @@ export default async function DelAsesor() {
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) redirect('/empezar')
 
   const gente = await genteDeLaCasa(supabase, hogarId)
@@ -109,6 +109,7 @@ export default async function DelAsesor() {
     supabase
       .from('notas')
       .select('id, texto, para, escrita_por, creada_en, vista_en')
+      .eq('hogar_id', hogarId)
       .is('guardada_en', null)
       .or(`escrita_por.eq.${suyo.id},para.eq.${suyo.id}`)
       .order('creada_en', { ascending: false })
@@ -121,6 +122,7 @@ export default async function DelAsesor() {
     supabase
       .from('recordatorios')
       .select('id, titulo, fecha, hora, estado, creado_por, creado_en, nota')
+      .eq('hogar_id', hogarId)
       .eq('creado_por', suyo.id)
       .order('fecha', { ascending: false })
       .limit(40)

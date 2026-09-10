@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { elEspacioO } from './espacio'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -70,6 +71,7 @@ export async function actividadesDe(supabase: Cliente): Promise<Actividad[]> {
     const { data, error } = await supabase
       .from('categorias')
       .select('id, nombre, icono, color, fondo, segmento_drive')
+      .eq('hogar_id', await elEspacioO(supabase))
       .is('padre_id', null)
       .eq('activa', true)
       .eq('lleva_cuentas', true)

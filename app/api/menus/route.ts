@@ -3,6 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { hoyAqui } from '@/lib/tablon'
 import { elLunesDe, laSemanaDe, esEnlace } from '@/lib/menus'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,7 @@ export async function GET(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('menus')
     .select('id, fecha, momento, que, receta_id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .gte('fecha', dias[0])
     .lte('fecha', dias[6])
 
@@ -40,6 +42,7 @@ export async function GET(peticion: NextRequest) {
   const { data: recetas } = await supabase
     .from('recetas')
     .select('id, titulo, url, nota')
+    .eq('hogar_id', await elEspacioO(supabase))
     .order('creado_en', { ascending: false })
     .limit(100)
 
@@ -79,6 +82,7 @@ export async function PUT(peticion: NextRequest) {
     const { error } = await supabase
       .from('menus')
       .delete()
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('fecha', fecha)
       .eq('momento', momento)
 
@@ -100,6 +104,7 @@ export async function PUT(peticion: NextRequest) {
   const { data: yaHay } = await supabase
     .from('menus')
     .select('id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('fecha', fecha)
     .eq('momento', momento)
     .maybeSingle()
@@ -113,7 +118,12 @@ export async function PUT(peticion: NextRequest) {
   }
 
   const { data, error } = yaHay
-    ? await supabase.from('menus').update(campos).eq('id', yaHay.id).select('id')
+    ? await supabase
+        .from('menus')
+        .update(campos)
+        .eq('hogar_id', await elEspacioO(supabase))
+        .eq('id', yaHay.id)
+        .select('id')
     : await supabase.from('menus').insert(campos).select('id')
 
   /* Con `.select()`: un escrito que la seguridad no permite contesta
@@ -200,7 +210,12 @@ export async function DELETE(peticion: NextRequest) {
 
   /* Los menús que la usaban NO se caen: `on delete set null`. Lo que se
      comió el martes se comió, aunque la receta ya no esté guardada. */
-  const { data, error } = await supabase.from('recetas').delete().eq('id', id).select('id')
+  const { data, error } = await supabase
+    .from('recetas')
+    .delete()
+    .eq('hogar_id', await elEspacioO(supabase))
+    .eq('id', id)
+    .select('id')
 
   if (error || !data || data.length === 0) {
     return NextResponse.json(

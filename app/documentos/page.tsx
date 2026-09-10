@@ -8,6 +8,7 @@ import Cabecera from '../cabecera'
 import { Ico } from '../iconos'
 import { Fila, Vacio, Aviso, PastillaAmbito, seccionPintada } from '../piezas'
 import HubiCaja from '../hubi-caja'
+import { elEspacioO } from '@/lib/espacio'
 import {
   contar,
   hijosDe,
@@ -53,6 +54,7 @@ export default async function Documentos({
     const { data: cats } = await supabase
       .from('categorias')
       .select('id, padre_id, nombre, segmento_drive, orden')
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('activa', true)
     const todasCat = (cats ?? []) as Categoria[]
 
@@ -84,6 +86,7 @@ export default async function Documentos({
       const { data, error } = await supabase
         .from('documentos')
         .select(CAMPOS)
+        .eq('hogar_id', await elEspacioO(supabase))
         .in('categoria_id', dentro)
         .order('fecha_documento', { ascending: false })
         .limit(200)
@@ -103,6 +106,7 @@ export default async function Documentos({
       const { data, error } = await supabase
         .from('documentos')
         .select(CAMPOS)
+        .eq('hogar_id', await elEspacioO(supabase))
         .textSearch('busqueda', busqueda, { config: 'spanish', type: 'websearch' })
         .order('fecha_documento', { ascending: false })
         .limit(60)
@@ -126,6 +130,7 @@ export default async function Documentos({
         const { data } = await supabase
           .from('documentos')
           .select(CAMPOS)
+          .eq('hogar_id', await elEspacioO(supabase))
           .textSearch('busqueda', sueltas.join(' | '), { config: 'spanish' })
           .order('fecha_documento', { ascending: false })
           .limit(40)
@@ -217,15 +222,18 @@ export default async function Documentos({
     mejor que un vacío tranquilo, porque el vacío tranquilo hace que
     alguien piense que sus papeles no se guardaron.
   */
+  const espacio = await elEspacioO(supabase)
   const [{ data: cats, error: falloCats }, { data: docs, error: falloDocs }] =
     await Promise.all([
       supabase
         .from('categorias')
         .select('id, padre_id, nombre, segmento_drive, orden')
+        .eq('hogar_id', espacio)
         .eq('activa', true),
       supabase
         .from('documentos')
         .select('id, categoria_id, titulo, fecha_documento, anio, trimestre')
+        .eq('hogar_id', espacio)
         .order('fecha_documento', { ascending: false })
         .limit(5000),
     ])

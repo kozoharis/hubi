@@ -5,13 +5,13 @@ import Barra from '../barra'
 import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
 import { ambitoDeColor, Persona, TarjetaAccion, Vacio } from '../piezas'
-import { miHogar } from '@/lib/hogar'
 import { genteDeLaCasa, type Quien } from '@/lib/gente'
 import { loDeHoy } from '@/lib/rutinas'
 import { parteDe, partesDe, primeroDelMes, type Parte } from '@/lib/dia'
 import { hoyAqui } from '@/lib/tablon'
 import RutinasHoy, { type Deber } from '../rutinas-hoy'
 import ParteDelDia from './parte'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,7 +54,7 @@ export default async function LaCasaHoy({
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) redirect('/empezar')
 
   /* Un día concreto si se pide; si no, hoy. Nunca `new Date()`: la

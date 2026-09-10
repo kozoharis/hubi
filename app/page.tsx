@@ -15,7 +15,7 @@ import { BotonAjustes, Ico, Logo, pintaDe } from './iconos'
 import Avatar from './avatar'
 import { cuando, type Recordatorio } from '@/lib/tablon'
 import { leerPerfil } from '@/lib/perfil'
-import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
+import { mandaEnSuCasa, quienManda } from '@/lib/hogar'
 import { casasDe } from '@/lib/casas'
 import { paraMi, cuandoSePuso } from '@/lib/notas'
 import { queVeEnInicio } from '@/lib/roles'
@@ -24,6 +24,7 @@ import { genteDeLaCasa } from '@/lib/gente'
 import { AMBITO, Aviso, BotonPrincipal, Fila, PastillaAmbito, Vacio } from './piezas'
 import Casas from './casas'
 import { type Deber } from './rutinas-hoy'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -95,7 +96,7 @@ export default async function Inicio({
 
     Se le lleva a crear la suya, que es lo que de verdad le falta.
   */
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) redirect('/empezar')
 
   /* En cuántas casas está, y si le han invitado a alguna. Con una sola
@@ -114,6 +115,8 @@ export default async function Inicio({
     la base de datos al otro lado, eso son cuatro esperas donde bastaba
     con una.
   */
+
+  const espacio = await elEspacioO(supabase)
   const [
     perfil,
     { data: pendientes },
@@ -128,6 +131,7 @@ export default async function Inicio({
       supabase
         .from('recordatorios')
         .select(CAMPOS)
+        .eq('hogar_id', espacio)
         .eq('estado', 'pendiente')
         .lte('fecha', hoyISO)
         .order('hora', { ascending: true, nullsFirst: true })
@@ -136,6 +140,7 @@ export default async function Inicio({
       supabase
         .from('recordatorios')
         .select(CAMPOS)
+        .eq('hogar_id', espacio)
         .eq('estado', 'pendiente')
         .gt('fecha', hoyISO)
         .lte('fecha', dentroDe60.toISOString().slice(0, 10))
@@ -159,6 +164,7 @@ export default async function Inicio({
       supabase
         .from('documentos')
         .select('creado_en', { count: 'exact' })
+        .eq('hogar_id', espacio)
         .is('eliminado_en', null)
         .order('creado_en', { ascending: false })
         .limit(1),

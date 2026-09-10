@@ -5,9 +5,9 @@ import Barra from '../barra'
 import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
 import { esImpuesto, type Impuesto } from '@/lib/impuesto'
-import { miHogar } from '@/lib/hogar'
 import type { Categoria } from '@/lib/rutas'
 import Fijos from './fijos'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,6 +38,7 @@ export default async function PaginaPagos() {
   const { data } = await supabase
     .from('categorias')
     .select('id, padre_id, nombre, segmento_drive, icono, orden, naturaleza')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('activa', true)
 
   const categorias = (data ?? []) as Categoria[]
@@ -60,7 +61,7 @@ export default async function PaginaPagos() {
      pago. En dos intentos, que es del sql/46. */
   let impuesto: Impuesto = 'ninguno'
   try {
-    const casa = await miHogar(supabase, user.id)
+    const casa = await elEspacio(supabase)
     if (casa) {
       const { data: fila } = await supabase
         .from('hogares')

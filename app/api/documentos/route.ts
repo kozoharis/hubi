@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, SIN_CASA } from '@/lib/hogar'
+import { SIN_CASA } from '@/lib/hogar'
 import { desgloseQueToca } from '@/lib/impuesto'
 import { tipoDe, TIPOS_BUENOS } from '@/lib/archivos'
 import { accesoDrive, idDeCarpeta, subirArchivo } from '@/lib/google/drive'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 import {
   cadena,
   rutaDeCarpetas,
@@ -122,11 +123,12 @@ export async function POST(peticion: NextRequest) {
   const { data: categorias } = await supabase
     .from('categorias')
     .select('id, padre_id, nombre, segmento_drive, icono, orden, naturaleza')
+    .eq('hogar_id', await elEspacioO(supabase))
 
   /* De qué hogar es quien guarda. Hace falta para dos cosas: para que
      la memoria de carpetas no nazca huérfana, y para saber a QUÉ Drive
      se sube —el de su casa, no el de otra. */
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   const camino = cadena((categorias ?? []) as Categoria[], categoriaId)

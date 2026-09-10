@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, SIN_CASA } from '@/lib/hogar'
+import { SIN_CASA } from '@/lib/hogar'
 import { esImpuesto } from '@/lib/impuesto'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -98,7 +99,7 @@ export async function PATCH(peticion: NextRequest) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   let cuerpo: { usa_compra?: boolean; nombre?: string; impuesto?: string }

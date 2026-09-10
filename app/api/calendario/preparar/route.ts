@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, mandaEnSuCasa, SIN_CASA } from '@/lib/hogar'
+import { mandaEnSuCasa, SIN_CASA } from '@/lib/hogar'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { compartirCon, estadoCalendario, NOMBRE_CALENDARIO } from '@/lib/google/calendario'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +28,7 @@ export async function POST() {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   if (!(await mandaEnSuCasa(supabase, user.id))) {

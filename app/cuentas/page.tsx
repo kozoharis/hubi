@@ -3,13 +3,13 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { actividadesDe } from '@/lib/actividades'
 import { gastadoEnCasa } from '@/lib/gastos-casa'
-import { miHogar } from '@/lib/hogar'
 import Barra from '../barra'
 import HubiCaja from '../hubi-caja'
 import Cabecera from '../cabecera'
 import { Ico, Volver } from '../iconos'
 import { Fila, PastillaAmbito, seccionPintada, TarjetaAccion, Vacio } from '../piezas'
 import NuevaActividad from '../ajustes/nueva-actividad'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,7 +52,7 @@ export default async function Cuentas() {
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) redirect('/empezar')
 
   const actividades = await actividadesDe(supabase)
@@ -68,11 +68,13 @@ export default async function Cuentas() {
   const hoy = new Date()
   const mes = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
 
+  const espacio = await elEspacioO(supabase)
   const [{ data: categorias }, { data: movimientos }, gastoCasa] = await Promise.all([
-    supabase.from('categorias').select('id, padre_id'),
+    supabase.from('categorias').select('id, padre_id').eq('hogar_id', espacio),
     supabase
       .from('movimientos')
       .select('tipo, importe, categoria_id')
+      .eq('hogar_id', espacio)
       .gte('fecha', `${mes}-01`)
       .lte('fecha', `${mes}-31`),
     gastadoEnCasa(supabase),

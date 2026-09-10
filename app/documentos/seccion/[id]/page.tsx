@@ -23,6 +23,7 @@ import {
 } from '@/lib/carpetas'
 import { fechaBreve } from '@/lib/carpetas'
 import { euros } from '@/lib/periodos'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,15 +52,18 @@ export default async function Seccion({
 
   /* Si la consulta falla, SE DICE. Antes se ignoraba el error y la
      sección salía "vacía" — indistinguible de no tener papeles. */
+  const espacio = await elEspacioO(supabase)
   const [{ data: cats, error: falloCats }, { data: docs, error: falloDocs }] =
     await Promise.all([
       supabase
         .from('categorias')
         .select('id, padre_id, nombre, segmento_drive, orden, naturaleza')
+        .eq('hogar_id', espacio)
         .eq('activa', true),
       supabase
         .from('documentos')
         .select('id, categoria_id, titulo, fecha_documento, anio, trimestre, importe')
+        .eq('hogar_id', espacio)
         .limit(5000),
     ])
 

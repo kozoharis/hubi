@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { limpiar } from '@/lib/rutas'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -87,6 +88,7 @@ async function grupoDe(
   const { data: existe } = await supabase
     .from('categorias')
     .select('id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('padre_id', seccionId)
     .eq('segmento_drive', segmento)
     .maybeSingle()
@@ -149,6 +151,7 @@ export async function POST(peticion: NextRequest) {
   const { data: seccion } = await supabase
     .from('categorias')
     .select('id, padre_id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', seccionId)
     .maybeSingle()
 
@@ -176,6 +179,7 @@ export async function POST(peticion: NextRequest) {
   const { data: repetida } = await supabase
     .from('categorias')
     .select('id, activa')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('padre_id', grupo.id)
     .ilike('nombre', nombre)
     .maybeSingle()
@@ -197,6 +201,7 @@ export async function POST(peticion: NextRequest) {
     const { data: revivida } = await supabase
       .from('categorias')
       .update({ activa: true })
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('id', repetida.id)
       .select('id, nombre')
 
@@ -212,6 +217,7 @@ export async function POST(peticion: NextRequest) {
   const { data: ultima } = await supabase
     .from('categorias')
     .select('orden')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('padre_id', grupo.id)
     .order('orden', { ascending: false })
     .limit(1)
@@ -290,6 +296,7 @@ export async function PATCH(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('categorias')
     .update({ nombre })
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 
@@ -334,14 +341,17 @@ export async function DELETE(peticion: NextRequest) {
      carpeta de papeles —Contratos, Seguros— no tiene ninguno y sí
      tiene documentos, y contar solo los apuntes le diría a quien va
      a retirarla que está vacía teniendo el contrato dentro. */
+  const espacio = await elEspacioO(supabase)
   const [{ count }, { count: papeles }] = await Promise.all([
     supabase
       .from('movimientos')
       .select('id', { count: 'exact', head: true })
+      .eq('hogar_id', espacio)
       .eq('categoria_id', id),
     supabase
       .from('documentos')
       .select('id', { count: 'exact', head: true })
+      .eq('hogar_id', espacio)
       .eq('categoria_id', id)
       .is('eliminado_en', null),
   ])
@@ -349,6 +359,7 @@ export async function DELETE(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('categorias')
     .update({ activa: false })
+    .eq('hogar_id', espacio)
     .eq('id', id)
     .select('id')
 

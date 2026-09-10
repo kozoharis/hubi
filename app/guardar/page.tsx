@@ -1,13 +1,14 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, quienManda } from '@/lib/hogar'
+import { quienManda } from '@/lib/hogar'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
 import { Aviso, BotonSecundario } from '../piezas'
 import Formulario from './formulario'
 import type { Categoria } from '@/lib/rutas'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,13 +28,14 @@ export default async function Guardar({
   const { data: categorias } = await supabase
     .from('categorias')
     .select('id, padre_id, nombre, segmento_drive, icono, orden, naturaleza')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('activa', true)
     .order('orden')
 
   /* El Drive de SU casa. Preguntar por «la» conexión enseñaría a una
      familia el estado de la de al lado — y peor, la dejaría entrar a
      guardar creyendo que tiene Drive cuando el conectado es otro. */
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
 
   const admin = clienteServidor()
   const { data: conexion } = hogarId

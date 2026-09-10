@@ -3,6 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { avisarDeCompra } from '@/lib/push'
 import { esAlgoQueSeCompra } from '@/lib/comprables'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -66,6 +67,7 @@ export async function POST(peticion: NextRequest) {
     let busca = supabase
       .from('listas_compra')
       .select('id')
+      .eq('hogar_id', await elEspacioO(supabase))
       .is('archivada_en', null)
       .order('creada_en')
       .limit(1)
@@ -263,6 +265,7 @@ export async function PATCH(peticion: NextRequest) {
   let archivar = supabase
     .from('compra')
     .update({ archivado_en: new Date().toISOString() })
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('comprado', true)
     .is('archivado_en', null)
 
@@ -290,6 +293,7 @@ export async function PATCH(peticion: NextRequest) {
     const { count } = await supabase
       .from('compra')
       .select('id', { count: 'exact', head: true })
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('lista_id', listaId)
       .is('archivado_en', null)
 
@@ -297,6 +301,7 @@ export async function PATCH(peticion: NextRequest) {
       const { data: laLista } = await supabase
         .from('listas_compra')
         .select('id, nombre, seccion_id')
+        .eq('hogar_id', await elEspacioO(supabase))
         .eq('id', listaId)
         .maybeSingle()
 
@@ -304,6 +309,7 @@ export async function PATCH(peticion: NextRequest) {
         const { data: cerrandola } = await supabase
           .from('listas_compra')
           .update({ archivada_en: new Date().toISOString(), cerrada_por: user.id })
+          .eq('hogar_id', await elEspacioO(supabase))
           .eq('id', listaId)
           .select('id, nombre')
           .maybeSingle()

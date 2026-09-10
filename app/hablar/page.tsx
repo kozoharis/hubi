@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar } from '@/lib/hogar'
 import { actividadesDe } from '@/lib/actividades'
 import Grabar from './grabar'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,7 +61,7 @@ export default async function Hablar({
   let actividad: string | null = null
 
   try {
-    const hogarId = await miHogar(supabase, user.id)
+    const hogarId = await elEspacio(supabase)
 
     if (hogarId) {
       /* Alguien de la casa que no sea yo. «Recuérdate a ti mismo» no

@@ -2,9 +2,9 @@ import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Apuntar from './formulario'
-import { miHogar } from '@/lib/hogar'
 import { esImpuesto, type Impuesto } from '@/lib/impuesto'
 import type { Categoria } from '@/lib/rutas'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,11 +51,17 @@ export default async function PaginaApuntar({
   const conCuentas = await supabase
     .from('categorias')
     .select(`${campos}, lleva_cuentas, usa_unidades`)
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('activa', true)
     .order('orden')
 
   if (conCuentas.error) {
-    const basico = await supabase.from('categorias').select(campos).eq('activa', true).order('orden')
+    const basico = await supabase
+      .from('categorias')
+      .select(campos)
+      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('activa', true)
+      .order('orden')
     todas = (basico.data ?? []) as Cat[]
   } else {
     todas = (conCuentas.data ?? []) as Cat[]
@@ -103,7 +109,7 @@ export default async function PaginaApuntar({
      como siempre y el formulario no enseña nada nuevo. */
   let impuesto: Impuesto = 'ninguno'
   try {
-    const casa = await miHogar(supabase, user.id)
+    const casa = await elEspacio(supabase)
     if (casa) {
       const { data: fila } = await supabase
         .from('hogares')

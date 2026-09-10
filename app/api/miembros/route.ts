@@ -2,8 +2,9 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, mandaEnSuCasa, SIN_CASA } from '@/lib/hogar'
+import { mandaEnSuCasa, SIN_CASA } from '@/lib/hogar'
 import { esRol, type Rol } from '@/lib/roles'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +50,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   if (!(await mandaEnSuCasa(supabase, user.id))) {
@@ -343,7 +344,7 @@ export async function DELETE(peticion: NextRequest) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   if (!(await mandaEnSuCasa(supabase, user.id))) {
@@ -404,7 +405,7 @@ export async function PATCH(peticion: NextRequest) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   if (!(await mandaEnSuCasa(supabase, user.id))) {

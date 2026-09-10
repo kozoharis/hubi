@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, SIN_CASA } from '@/lib/hogar'
+import { SIN_CASA } from '@/lib/hogar'
 import { accesoDrive, descargarArchivo } from '@/lib/google/drive'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,7 @@ export async function GET(
   const { data: documento } = await supabase
     .from('documentos')
     .select('drive_file_id, tipo_mime, nombre_archivo')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .maybeSingle()
 
@@ -36,7 +38,7 @@ export async function GET(
   /* La consulta de arriba va con la sesión, así que la base de datos
      ya ha impedido ver el documento de otra casa. Esto es lo mismo por
      el otro lado: se abre el Drive de SU casa, nunca otro. */
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return new NextResponse(SIN_CASA, { status: 403 })
 
   try {

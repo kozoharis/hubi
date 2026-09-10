@@ -1,13 +1,13 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar } from '@/lib/hogar'
 import { genteDeLaCasa } from '@/lib/gente'
 import { accionesDe, type Papel } from '@/lib/guia'
 import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
 import { PastillaAmbito } from '../piezas'
 import Guia from './guia'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,7 +48,7 @@ export default async function ComoSeHace({
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) redirect('/empezar')
 
   /* Qué papel tiene, para enseñarle lo suyo. Sin rol puesto se le

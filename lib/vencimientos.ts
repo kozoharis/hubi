@@ -42,6 +42,8 @@
   una aplicación para siempre.
 */
 
+import { elEspacioO } from './espacio'
+
 export type Vencimiento = {
   /** El día que caduca. Sin esto no hay nada que avisar. */
   fecha_vencimiento: string | null
@@ -170,6 +172,7 @@ export async function rehacerAvisos(
     await supabase
       .from('recordatorios')
       .delete()
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('documento_origen_id', documentoId)
       .not('motivo', 'is', null)
       .eq('estado', 'pendiente')

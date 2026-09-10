@@ -37,6 +37,7 @@ function aDondeLleva(
 import { citasDeLaFamilia } from '@/lib/agenda-google'
 import { calcular, euros } from '@/lib/periodos'
 import { hoyAqui } from '@/lib/tablon'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -117,6 +118,7 @@ export async function POST(peticion: NextRequest) {
   const { data: categorias } = await supabase
     .from('categorias')
     .select('id, padre_id, nombre, segmento_drive, icono, orden, naturaleza')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('activa', true)
 
   const todas = (categorias ?? []) as Categoria[]
@@ -410,6 +412,7 @@ export async function POST(peticion: NextRequest) {
       const { data: pendientes } = await supabase
         .from('recordatorios')
         .select('id, titulo, fecha, hora, nota, asignado_a, estado')
+        .eq('hogar_id', await elEspacioO(supabase))
         .eq('estado', 'pendiente')
         .order('fecha', { ascending: true, nullsFirst: false })
         .limit(300)
@@ -521,6 +524,7 @@ export async function POST(peticion: NextRequest) {
           const { data: listas } = await supabase
             .from('listas_compra')
             .select('id, nombre, seccion_id')
+            .eq('hogar_id', await elEspacioO(supabase))
             .is('archivada_en', null)
 
           const dicho = sinTildes(oido.compra_lista)
@@ -582,6 +586,7 @@ export async function POST(peticion: NextRequest) {
       let cuales = supabase
         .from('documentos')
         .select('id, titulo, proveedor, fecha_documento, importe, categoria_id')
+        .eq('hogar_id', await elEspacioO(supabase))
         .order('fecha_documento', { ascending: false })
         .limit(1)
 
@@ -636,6 +641,7 @@ export async function POST(peticion: NextRequest) {
       let cuales = supabase
         .from('compra')
         .select('que, cantidad, seccion_id')
+        .eq('hogar_id', await elEspacioO(supabase))
         .is('archivado_en', null)
         .eq('comprado', false)
         .order('creado_en')
@@ -691,6 +697,7 @@ export async function POST(peticion: NextRequest) {
         supabase
           .from('recordatorios')
           .select('titulo, hora, estado')
+          .eq('hogar_id', await elEspacioO(supabase))
           .eq('fecha', dia)
           .eq('estado', 'pendiente')
           .order('hora', { ascending: true, nullsFirst: true }),
@@ -743,6 +750,7 @@ export async function POST(peticion: NextRequest) {
       let consulta = supabase
         .from('movimientos')
         .select('tipo, importe, categoria_id, apartamento')
+        .eq('hogar_id', await elEspacioO(supabase))
         .gte('fecha', periodo.desde)
         .lte('fecha', periodo.hasta)
 

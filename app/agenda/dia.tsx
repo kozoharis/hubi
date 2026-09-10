@@ -7,6 +7,7 @@ import { AMBITO } from '@/lib/ambitos'
 import { BotonPrincipal } from '../piezas'
 import { hoyAqui, type Recordatorio } from '@/lib/tablon'
 import { citasDeLaFamilia, calendariosVisibles } from '@/lib/agenda-google'
+import { elEspacioO } from '@/lib/espacio'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -85,6 +86,7 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
     .select(
       'id, titulo, tipo, asignado_a, creado_por, fecha, hora, estado, nota, documento_origen_id'
     )
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('fecha', fecha)
     .order('hora', { ascending: true, nullsFirst: true })
 

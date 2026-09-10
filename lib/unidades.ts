@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { elEspacioO } from './espacio'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -65,6 +66,7 @@ export async function unidadesDe(supabase: Cliente, seccionId: string): Promise<
     const { data, error } = await supabase
       .from('unidades')
       .select('id, nombre, orden, referencia, presupuesto')
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('seccion_id', seccionId)
       .eq('activa', true)
       .order('orden', { ascending: true })
@@ -92,6 +94,7 @@ export async function comoEsLaSeccion(
     const { data, error } = await supabase
       .from('categorias')
       .select('usa_unidades, reparte_comunes')
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('id', seccionId)
       .maybeSingle()
 

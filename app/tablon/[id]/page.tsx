@@ -7,6 +7,7 @@ import AccionHecho from './accion'
 import Editar from './editar'
 import Barra from '../../barra'
 import { Volver } from '../../iconos'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,7 @@ export default async function Detalle({
     .select(
       'id, titulo, tipo, asignado_a, creado_por, fecha, hora, estado, nota, documento_origen_id, aviso_previo, repite, repite_hasta, creado_en, hecho_en, hecho_por'
     )
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .maybeSingle()
 
@@ -55,6 +57,7 @@ export default async function Detalle({
     ? await supabase
         .from('documentos')
         .select('id, titulo, tipo_mime')
+        .eq('hogar_id', await elEspacioO(supabase))
         .eq('id', r.documento_origen_id)
         .maybeSingle()
     : { data: null }

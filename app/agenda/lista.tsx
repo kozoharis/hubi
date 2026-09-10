@@ -10,6 +10,7 @@ import { atrasado, hoyAqui, type Recordatorio } from '@/lib/tablon'
 import { citasDeLaFamilia, calendariosVisibles, type CitaDeAlguien } from '@/lib/agenda-google'
 import { enlaceAgenda } from '@/lib/agenda-enlace'
 import Refrescar from './refrescar'
+import { elEspacioO } from '@/lib/espacio'
 
 /*
   La lista de la Agenda — DE SEMANA EN SEMANA.
@@ -78,6 +79,7 @@ export default async function Lista({
     .select(
       'id, titulo, tipo, asignado_a, creado_por, fecha, hora, estado, nota, documento_origen_id'
     )
+    .eq('hogar_id', await elEspacioO(supabase))
     .order('fecha', { ascending: true, nullsFirst: false })
     .order('hora', { ascending: true, nullsFirst: true })
     .limit(200)

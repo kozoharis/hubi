@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, SIN_CASA } from '@/lib/hogar'
+import { SIN_CASA } from '@/lib/hogar'
+import { elEspacio } from '@/lib/espacio'
 import { avisarA } from '@/lib/push'
 import { leerPerfil } from '@/lib/perfil'
 
@@ -48,7 +49,7 @@ export async function POST(peticion: NextRequest) {
     )
   }
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 409 })
 
   /*
@@ -179,12 +180,13 @@ export async function PATCH(peticion: NextRequest) {
      dentro de ella: sin eso, un identificador escrito a mano dejaría
      la nota dirigida a un desconocido, que ni la vería ni podría
      quitársela de encima. */
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 409 })
 
   const { data: nota } = await supabase
     .from('notas')
     .select('id, escrita_por, para, guardada_en')
+    .eq('hogar_id', hogarId)
     .eq('id', id)
     .maybeSingle()
 
@@ -292,6 +294,7 @@ export async function PATCH(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('notas')
     .update(cambio)
+    .eq('hogar_id', hogarId)
     .eq('id', id)
     .select('id')
 

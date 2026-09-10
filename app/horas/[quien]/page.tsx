@@ -9,8 +9,7 @@ import Cabecera from '../../cabecera'
 import { Ico, Volver } from '../../iconos'
 import { ambitoDeColor, BotonSecundario, Cifra, Fila, Tarjeta, Vacio } from '../../piezas'
 import { genteDeLaCasa } from '@/lib/gente'
-import { miHogar } from '@/lib/hogar'
-
+import { elEspacio } from '@/lib/espacio'
 export const dynamic = 'force-dynamic'
 
 /*
@@ -64,7 +63,7 @@ export default async function HorasDeAlguien({
 
   /* Su color, el mismo con el que sale en La casa y en el corcho. Sin
      él —si no se encuentra en la casa— el ámbito de reserva. */
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   const suyo = ambitoDeColor(
     (await genteDeLaCasa(supabase, hogarId)).find((g) => g.id === aQuien)?.color
   )

@@ -3,6 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { avisarA } from '@/lib/push'
 import { deducirTipo } from '@/lib/tablon'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -123,6 +124,7 @@ export async function PATCH(peticion: NextRequest) {
     const { data, error } = await supabase
       .from('listas_compra')
       .update({ ticket_id: ticket })
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('id', id)
       .select('id')
 
@@ -161,6 +163,7 @@ export async function PATCH(peticion: NextRequest) {
     const { data, error } = await supabase
       .from('listas_compra')
       .update({ nombre: nuevo })
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('id', id)
       .select('id')
 
@@ -178,6 +181,7 @@ export async function PATCH(peticion: NextRequest) {
   const { data: antes } = await supabase
     .from('listas_compra')
     .select('id, nombre, seccion_id, recordatorio_id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .maybeSingle()
 
@@ -196,6 +200,7 @@ export async function PATCH(peticion: NextRequest) {
   const { count } = await supabase
     .from('compra')
     .select('id', { count: 'exact', head: true })
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('lista_id', id)
     .is('archivado_en', null)
     .eq('comprado', false)
@@ -251,6 +256,7 @@ export async function PATCH(peticion: NextRequest) {
       const { data: cambiada } = await supabase
         .from('recordatorios')
         .update(laTarea)
+        .eq('hogar_id', await elEspacioO(supabase))
         .eq('id', recordatorioId)
         .select('id')
 
@@ -299,6 +305,7 @@ export async function PATCH(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('listas_compra')
     .update({ nombre, fecha, hora, asignado_a: asignado, recordatorio_id: recordatorioId })
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 
@@ -346,6 +353,7 @@ export async function DELETE(peticion: NextRequest) {
   const { data: dentro } = await supabase
     .from('compra')
     .update({ archivado_en: ahora })
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('lista_id', id)
     .is('archivado_en', null)
     .select('id')
@@ -353,6 +361,7 @@ export async function DELETE(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('listas_compra')
     .update({ archivada_en: ahora })
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 

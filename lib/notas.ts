@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { elEspacioO } from './espacio'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -51,6 +52,7 @@ export async function notasDe(
     const q = supabase
       .from('notas')
       .select('id, texto, para, escrita_por, creada_en, cambiada_en, vista_en, guardada_en')
+      .eq('hogar_id', await elEspacioO(supabase))
       .order('creada_en', { ascending: false })
       .limit(guardadas ? 60 : 100)
 
@@ -83,6 +85,7 @@ export async function cuantasNotas(
     const { data, error } = await supabase
       .from('notas')
       .select('id, para, vista_en')
+      .eq('hogar_id', await elEspacioO(supabase))
       .is('guardada_en', null)
       .limit(200)
 
@@ -122,6 +125,7 @@ export async function paraMi(
     const { data, error } = await supabase
       .from('notas')
       .select('id, texto, para, escrita_por, creada_en, cambiada_en, vista_en, guardada_en')
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('para', perfilId)
       .is('vista_en', null)
       .is('guardada_en', null)

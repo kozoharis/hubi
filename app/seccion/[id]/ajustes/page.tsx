@@ -9,6 +9,7 @@ import Unidades, { type UnidadDeLaLista } from '../../../ajustes/unidades'
 import Dividir from './dividir'
 import Partidas, { type Partida } from './partidas'
 import Quitar from './quitar'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,11 +73,17 @@ export default async function AjustesDeLaSeccion({
   const completa = await supabase
     .from('categorias')
     .select(`${columnas}, color, fondo, usa_unidades, reparte_comunes, palabra_unidad`)
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .maybeSingle()
 
   if (completa.error) {
-    const basica = await supabase.from('categorias').select(columnas).eq('id', id).maybeSingle()
+    const basica = await supabase
+      .from('categorias')
+      .select(columnas)
+      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('id', id)
+      .maybeSingle()
     fila = basica.data as Record<string, unknown> | null
   } else {
     fila = completa.data as Record<string, unknown> | null
@@ -92,6 +99,7 @@ export default async function AjustesDeLaSeccion({
     const { data } = await supabase
       .from('unidades')
       .select('id, nombre, referencia, presupuesto')
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('seccion_id', id)
       .eq('activa', true)
       .order('orden')
@@ -110,6 +118,7 @@ export default async function AjustesDeLaSeccion({
   const { data: hijas } = await supabase
     .from('categorias')
     .select('id, nombre, naturaleza, padre_id, segmento_drive, activa, orden')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('padre_id', id)
 
   const grupos = (hijas ?? []).filter((c) => c.activa !== false)
@@ -155,6 +164,7 @@ export default async function AjustesDeLaSeccion({
     const { count } = await supabase
       .from('documentos')
       .select('id', { count: 'exact', head: true })
+      .eq('hogar_id', await elEspacioO(supabase))
       .in('categoria_id', bajoEsta)
       .is('eliminado_en', null)
 
@@ -244,6 +254,7 @@ async function partidasDe(
   const { data } = await supabase
     .from('categorias')
     .select('id, nombre, activa, orden')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('padre_id', grupoId)
     .eq('activa', true)
     .order('orden')
@@ -258,9 +269,14 @@ async function partidasDe(
       ? await supabase
           .from('documentos')
           .select('categoria_id')
+          .eq('hogar_id', await elEspacioO(supabase))
           .in('categoria_id', ids)
           .is('eliminado_en', null)
-      : await supabase.from('movimientos').select('categoria_id').in('categoria_id', ids)
+      : await supabase
+          .from('movimientos')
+          .select('categoria_id')
+          .eq('hogar_id', await elEspacioO(supabase))
+          .in('categoria_id', ids)
 
   const cuenta = new Map<string, number>()
   for (const m of filas ?? []) {

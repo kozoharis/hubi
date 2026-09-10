@@ -1,9 +1,9 @@
 import { NextResponse, after, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar } from '@/lib/hogar'
 import { accesoDrive, asegurarRaiz, idDeCarpeta, moverYRenombrar } from '@/lib/google/drive'
 import { limpiar } from '@/lib/rutas'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -77,6 +77,7 @@ async function raizDeLaSeccion(
   const { data } = await supabase
     .from('categorias')
     .select('id, segmento_drive, padre_id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', seccionId)
     .maybeSingle()
 
@@ -165,6 +166,7 @@ export async function POST(peticion: NextRequest) {
   const { data: repetida } = await supabase
     .from('unidades')
     .select('id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('seccion_id', seccionId)
     .eq('activa', true)
     .ilike('nombre', nombre)
@@ -178,6 +180,7 @@ export async function POST(peticion: NextRequest) {
   const { data: ultima } = await supabase
     .from('unidades')
     .select('orden')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('seccion_id', seccionId)
     .order('orden', { ascending: false })
     .limit(1)
@@ -243,11 +246,12 @@ export async function PATCH(peticion: NextRequest) {
   /* El hogar se resuelve AQUÍ, no dentro del `after` de abajo: allí la
      sesión ya no está garantizada, y una consulta que falle ahí no la
      ve nadie. */
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
 
   const { data: antes } = await supabase
     .from('unidades')
     .select('id, nombre, seccion_id, carpeta_drive_id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .maybeSingle()
 
@@ -276,6 +280,7 @@ export async function PATCH(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('unidades')
     .update(cambios)
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 
@@ -344,6 +349,7 @@ export async function DELETE(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('unidades')
     .update({ activa: false })
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 

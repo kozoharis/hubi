@@ -43,6 +43,8 @@
   está de paso.
 */
 
+import { elEspacioO } from './espacio'
+
 export type Impuesto = 'ninguno' | 'igic' | 'iva'
 
 export const IMPUESTOS: Impuesto[] = ['ninguno', 'igic', 'iva']
@@ -262,6 +264,7 @@ export async function desgloseQueToca(
       const { data: cat } = await supabase
         .from('categorias')
         .select('impuesto_tipo')
+        .eq('hogar_id', await elEspacioO(supabase))
         .eq('id', datos.categoriaId)
         .maybeSingle()
       if (cat && cat.impuesto_tipo != null) deLaPartida = Number(cat.impuesto_tipo)

@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
+import { mandaEnSuCasa } from '@/lib/hogar'
 import { canjearCodigo, correoDeLaCuenta } from '@/lib/google/oauth'
 import { asegurarRaiz, guardarConexion } from '@/lib/google/drive'
 import { cifrar } from '@/lib/cifrado'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +46,7 @@ export async function GET(peticion: NextRequest) {
     en la casa nueva podría conectar su Drive. Ahora manda el papel
     dentro de su hogar, con la casilla vieja de respaldo.
   */
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return volver('sin-casa')
 
   if (!(await mandaEnSuCasa(supabase, user.id))) return volver('no-eres-tu')

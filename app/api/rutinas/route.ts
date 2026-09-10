@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, mandaEnSuCasa, SIN_CASA } from '@/lib/hogar'
+import { mandaEnSuCasa, SIN_CASA } from '@/lib/hogar'
 import { hoyAqui } from '@/lib/tablon'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +34,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   if (!(await mandaEnSuCasa(supabase, user.id))) {
@@ -150,7 +151,7 @@ export async function PATCH(peticion: NextRequest) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   let cuerpo: { id?: string; hecha?: boolean; fecha?: string }
@@ -176,6 +177,7 @@ export async function PATCH(peticion: NextRequest) {
     const { error } = await supabase
       .from('rutinas_hechas')
       .delete()
+      .eq('hogar_id', hogarId)
       .eq('rutina_id', id)
       .eq('fecha', fecha)
 

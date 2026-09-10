@@ -10,7 +10,7 @@ import { Ico, Logo, Volver, type Icono } from '../iconos'
 import { ambitoDe, AMBITO, type Ambito, PastillaAmbito, Pildora } from '../piezas'
 import SelectorTema from '../tema'
 import { leerPerfil } from '@/lib/perfil'
-import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
+import { mandaEnSuCasa } from '@/lib/hogar'
 import { planDeLaCasa, type Rutina } from '@/lib/rutinas'
 import { colorApagado } from '@/lib/gente'
 import TuPerfil from './foto'
@@ -22,6 +22,7 @@ import ImpuestoDeLaCasa from './impuesto'
 import { esImpuesto, type Impuesto } from '@/lib/impuesto'
 import MiCalendario from './mi-calendario'
 import { casasDe } from '@/lib/casas'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -89,7 +90,7 @@ export default async function Ajustes({
 
   /* De qué casa es quien mira esta pantalla. Todo lo de Google —el
      Drive conectado, el calendario— es de SU casa, no «el» de HUBI. */
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
 
   const admin = clienteServidor()
   const { data: conexion } = hogarId
@@ -151,6 +152,7 @@ export default async function Ajustes({
     const { data: raices } = await supabase
       .from('categorias')
       .select('id, nombre, icono, activa, lleva_cuentas')
+      .eq('hogar_id', await elEspacioO(supabase))
       .is('padre_id', null)
       .order('orden')
 
@@ -325,6 +327,7 @@ export default async function Ajustes({
     const { data: secciones } = await supabase
       .from('categorias')
       .select('id, nombre, segmento_drive, usa_unidades, palabra_unidad')
+      .eq('hogar_id', await elEspacioO(supabase))
       .is('padre_id', null)
       .eq('lleva_cuentas', true)
       .eq('activa', true)
@@ -365,11 +368,18 @@ export default async function Ajustes({
     /* Cuántos papeles tiene cada una. De una vez para todas: con ocho
        carpetas, una consulta por cada una serían ocho viajes a la base
        de datos para pintar una pantalla. */
+    const espacio = await elEspacioO(supabase)
     const cuenta = new Map<string, number>()
 
     if (soloPapeles.length > 0) {
-      const { data: todas } = await supabase.from('categorias').select('id, padre_id')
-      const { data: papeles } = await supabase.from('documentos').select('categoria_id')
+      const { data: todas } = await supabase
+        .from('categorias')
+        .select('id, padre_id')
+        .eq('hogar_id', espacio)
+      const { data: papeles } = await supabase
+        .from('documentos')
+        .select('categoria_id')
+        .eq('hogar_id', espacio)
 
       /* De qué raíz cuelga cada categoría. */
       const padre = new Map((todas ?? []).map((c) => [c.id as string, c.padre_id as string | null]))

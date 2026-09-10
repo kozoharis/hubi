@@ -8,6 +8,7 @@ import { AMBITO, ambitoDeColor } from '@/lib/ambitos'
 import { citasDeLaFamilia, calendariosVisibles } from '@/lib/agenda-google'
 import Refrescar from './refrescar'
 import { BotonPrincipal, Pildora } from '../piezas'
+import { elEspacioO } from '@/lib/espacio'
 
 const MESES = [
   'enero','febrero','marzo','abril','mayo','junio',
@@ -56,6 +57,7 @@ export default async function Mes({
   const { data } = await supabase
     .from('recordatorios')
     .select('id, titulo, tipo, asignado_a, creado_por, fecha, hora, estado, nota, documento_origen_id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .gte('fecha', desde)
     .lte('fecha', hasta)
     .order('hora', { ascending: true, nullsFirst: true })

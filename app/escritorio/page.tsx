@@ -94,8 +94,19 @@ export default async function Escritorio() {
           {unaSola
             ? 'Aquí saldrán todas tus casas juntas. Ahora mismo tienes una.'
             : 'Tus casas, de una vez.'}{' '}
-          Las cuentas son de {titulo.toLowerCase()}, y solo de las actividades — la
-          compra de casa no sale aquí.
+          {/*
+            «Las cuentas son de 3º trimestre de 2026» — así salía, sin
+            artículo, y es de las cosas que uno lee tres veces sin ver
+            qué le chirría.
+
+            El motivo: `titulo` viene de `calcular()`, que lo escribe
+            para ir SOLO como encabezado de la pantalla de cuentas. Una
+            frase pensada para estar sola casi nunca encaja dentro de
+            otra, y bajarle las mayúsculas no la convierte en un
+            complemento — solo la disimula.
+          */}
+          Las cuentas son las del {titulo.toLowerCase()}, y solo de las actividades
+          — la compra de casa no sale aquí.
         </p>
 
         {casas === null ? (

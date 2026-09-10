@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +24,7 @@ export default async function Helechos() {
   const { data } = await supabase
     .from('categorias')
     .select('id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('segmento_drive', 'HELECHOS')
     .is('padre_id', null)
     .maybeSingle()

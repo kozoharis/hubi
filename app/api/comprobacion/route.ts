@@ -3,13 +3,13 @@ import { createClient } from '@supabase/supabase-js'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar } from '@/lib/hogar'
 import { descifrar } from '@/lib/cifrado'
 import { accesoDesdePermiso } from '@/lib/google/oauth'
 import { accesoDrive } from '@/lib/google/drive'
 import { contar, hijosDe, type Categoria } from '@/lib/carpetas'
 import { tieneCalendario } from '@/lib/google/oauth'
 import { estadoGuardado, comprobarCalendario } from '@/lib/google/calendario'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +32,20 @@ export const dynamic = 'force-dynamic'
 */
 export async function GET() {
   const sesion = await clienteSesion()
+
+  /*
+    EN QUÉ ESPACIO SE ESTÁ COMPROBANDO.
+
+    Esta pantalla existe para contestar «¿está mi papel guardado o no?»,
+    y esa pregunta es siempre DE UNA CASA. Contando todas a la vez, a
+    quien lleva varias le saldría «214 papeles» y no sabría de quién
+    son, ni si el que busca está entre ellos.
+
+    Así que se cuenta lo de ESTE espacio a los dos lados —el del
+    servidor y el de la sesión—, que es lo que hace que comparar los
+    dos números signifique algo.
+  */
+  const espacio = await elEspacioO(sesion)
   const yoMismo = await quien(sesion)
   if (!yoMismo) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
@@ -41,7 +55,7 @@ export async function GET() {
      Sin esto, la comprobación de la segunda familia iría a mirar el
      Drive y el calendario de la primera y diría que todo está bien
      enseñándole datos que no son suyos. */
-  const miCasa = await miHogar(sesion, yoMismo.id)
+  const miCasa = await elEspacio(sesion)
 
   const resultado = {
     variables: {
@@ -199,16 +213,19 @@ export async function GET() {
     const { count, error } = await supa
       .from('categorias')
       .select('*', { count: 'exact', head: true })
+      .eq('hogar_id', espacio)
     if (error) throw error
 
     const { count: raices } = await supa
       .from('categorias')
       .select('*', { count: 'exact', head: true })
+      .eq('hogar_id', espacio)
       .is('padre_id', null)
 
     const { count: documentos } = await supa
       .from('documentos')
       .select('*', { count: 'exact', head: true })
+      .eq('hogar_id', espacio)
 
     resultado.servidor.ok = true
     resultado.servidor.categorias = count ?? 0
@@ -225,6 +242,9 @@ export async function GET() {
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '',
       { auth: { persistSession: false, autoRefreshToken: false } }
     )
+    /* espacio: a propósito — ésta es la sonda que comprueba que la
+       base de datos le cierra la puerta a quien no ha entrado. Filtrar
+       por espacio aquí sería preguntarle otra cosa. */
     const { data, error } = await sinSesion.from('categorias').select('id').limit(5)
 
     if (error) {
@@ -302,6 +322,7 @@ export async function GET() {
     const { count: enElServidor } = await supa
       .from('documentos')
       .select('*', { count: 'exact', head: true })
+      .eq('hogar_id', espacio)
     resultado.papeles.enElServidor = enElServidor ?? 0
 
     /* 2 · ¿Las ve quien ha entrado? Con SU sesión, pasando por las
@@ -311,6 +332,7 @@ export async function GET() {
     const { data: mios } = await sesion
       .from('documentos')
       .select('id, titulo, fecha_documento, categoria_id, drive_file_id')
+      .eq('hogar_id', espacio)
       .order('fecha_documento', { ascending: false })
       .limit(500)
 
@@ -323,6 +345,7 @@ export async function GET() {
     const { data: vivas } = await sesion
       .from('categorias')
       .select('id, nombre')
+      .eq('hogar_id', espacio)
       .eq('activa', true)
 
     const nombreCarpeta = new Map((vivas ?? []).map((c) => [c.id as string, c.nombre as string]))
@@ -381,6 +404,7 @@ export async function GET() {
     const inicio = await sesion
       .from('documentos')
       .select('id, categoria_id, fecha_documento, anio, trimestre')
+      .eq('hogar_id', espacio)
       .limit(5000)
     resultado.papeles.pantallas.inicio.filas = inicio.data?.length ?? 0
     resultado.papeles.pantallas.inicio.error = inicio.error?.message ?? null
@@ -401,6 +425,7 @@ export async function GET() {
       .select(
         'id, titulo, categoria_id, perfiles(nombre), categorias(nombre)'
       )
+      .eq('hogar_id', espacio)
       .limit(200)
     resultado.papeles.pantallas.carpeta.filas = carpeta.data?.length ?? 0
     resultado.papeles.pantallas.carpeta.error = carpeta.error?.message ?? null
@@ -410,6 +435,7 @@ export async function GET() {
     const { data: arbol } = await sesion
       .from('categorias')
       .select('id, padre_id, nombre, segmento_drive, orden')
+      .eq('hogar_id', espacio)
       .eq('activa', true)
 
     const cats = (arbol ?? []) as Categoria[]
@@ -540,11 +566,13 @@ export async function GET() {
     const { count: conFecha } = await supa
       .from('recordatorios')
       .select('id', { count: 'exact', head: true })
+      .eq('hogar_id', espacio)
       .not('fecha', 'is', null)
 
     const { count: enGoogle, error: fallo } = await supa
       .from('recordatorios')
       .select('id', { count: 'exact', head: true })
+      .eq('hogar_id', espacio)
       .not('fecha', 'is', null)
       .not('evento_google', 'is', null)
 

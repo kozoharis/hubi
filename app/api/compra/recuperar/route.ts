@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,12 +56,14 @@ export async function POST(peticion: NextRequest) {
   const { data: laVieja } = await supabase
     .from('listas_compra')
     .select('id, seccion_id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', de)
     .maybeSingle()
 
   const { data: laNueva } = await supabase
     .from('listas_compra')
     .select('id, seccion_id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', a)
     .maybeSingle()
 
@@ -71,6 +74,7 @@ export async function POST(peticion: NextRequest) {
   const { data: viejas, error: alLeer } = await supabase
     .from('compra')
     .select('que, cantidad, seccion_id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('lista_id', de)
 
   if (alLeer) {
@@ -92,6 +96,7 @@ export async function POST(peticion: NextRequest) {
   const { data: yaHay } = await supabase
     .from('compra')
     .select('que')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('lista_id', a)
     .is('archivado_en', null)
 

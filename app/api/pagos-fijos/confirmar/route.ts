@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,7 @@ export async function POST(peticion: NextRequest) {
     const { data, error } = await supabase
       .from('movimientos')
       .delete()
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('id', id)
       .eq('previsto', true)
       .select('id')
@@ -53,6 +55,7 @@ export async function POST(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('movimientos')
     .update({ previsto: false })
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 

@@ -1,11 +1,11 @@
 import { NextResponse, after, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar } from '@/lib/hogar'
 import { deducirTipo, cuando } from '@/lib/tablon'
 import { avisarA } from '@/lib/push'
 import { ponerCita } from '@/lib/google/calendario'
 import { clienteServidor } from '@/lib/supabase/servidor'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -183,7 +183,7 @@ export async function POST(peticion: NextRequest) {
      Dentro ya no hay sesión garantizada, y el calendario al que va la
      cita es el de esta casa: sin el dato, la cita se escribiría en el
      calendario de quien fuera. */
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
 
   after(async () => {
     for (const fila of data) {
@@ -211,7 +211,11 @@ export async function POST(peticion: NextRequest) {
           hogarId
         )
         if (evento) {
-          await enGoogle.from('recordatorios').update({ evento_google: evento }).eq('id', fila.id)
+          await enGoogle
+            .from('recordatorios')
+            .update({ evento_google: evento })
+            .eq('hogar_id', hogarId)
+            .eq('id', fila.id)
         }
       } catch (e) {
         console.error('[HUBI] Tarea guardada sin cita en Google:', e)

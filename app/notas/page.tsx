@@ -2,12 +2,13 @@ import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { genteDeLaCasa } from '@/lib/gente'
-import { miHogar, puedeEscribir } from '@/lib/hogar'
+import { puedeEscribir } from '@/lib/hogar'
 import { notasDe, conFecha } from '@/lib/notas'
 import Cabecera from '../cabecera'
 import Barra from '../barra'
 import { Volver } from '../iconos'
 import Notas from './notas'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +38,7 @@ export default async function PaginaNotas({
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
 
   const [notas, escribo] = await Promise.all([
     notasDe(supabase, viendoGuardadas),

@@ -90,6 +90,7 @@ export async function pagosAlDia(
     const { data: yaEstan } = await supa
       .from('movimientos')
       .select('periodo')
+      .eq('hogar_id', pago.hogar_id)
       .eq('pago_fijo_id', pago.id)
 
     const puestosYa = new Set(
@@ -108,6 +109,7 @@ export async function pagosAlDia(
     const { data: cat } = await supa
       .from('categorias')
       .select('naturaleza, nombre, impuesto_tipo')
+      .eq('hogar_id', pago.hogar_id)
       .eq('id', pago.categoria_id)
       .maybeSingle()
 
@@ -213,9 +215,23 @@ export async function papelesQueFaltan(
     const ultimos = periodos.slice(-2)
 
     let papeles: { proveedor: string | null; categoria_id: string | null; fecha_documento: string }[] = []
+    /*
+      LOS PAPELES DE ESTA CASA, NO LOS DE TODAS.
+
+      Esto va con la clave de servidor —es la cita diaria, no hay
+      sesión de nadie—, así que aquí no hay políticas que filtren:
+      sin este `.eq` se leían los documentos de TODAS las casas para
+      decidir si a ÉSTA le falta uno.
+
+      Con una casa no se notaba. Con dos, la factura de la luz de una
+      familia podía dar por entregada la de la otra, y el aviso de
+      «falta el papel» no llegaba nunca. El espacio sale de la fila
+      del pago, que es quien lo sabe.
+    */
     const { data: docs } = await supa
       .from('documentos')
       .select('proveedor, categoria_id, fecha_documento')
+      .eq('hogar_id', pago.hogar_id)
       .gte('fecha_documento', menosUnMes(ultimos[0]))
       .limit(500)
     papeles = docs ?? []

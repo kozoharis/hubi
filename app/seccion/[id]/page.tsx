@@ -4,6 +4,7 @@ import { quien } from '@/lib/supabase/quien'
 import { iconoDeEmoji } from '../../iconos'
 import { ambitoDe } from '../../piezas'
 import Cuentas from '../../cuentas'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,11 +58,17 @@ export default async function Seccion({
   const conColor = await supabase
     .from('categorias')
     .select(`${columnas}, color, fondo, lleva_cuentas, palabra_unidad`)
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .maybeSingle()
 
   if (conColor.error) {
-    const basico = await supabase.from('categorias').select(columnas).eq('id', id).maybeSingle()
+    const basico = await supabase
+      .from('categorias')
+      .select(columnas)
+      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('id', id)
+      .maybeSingle()
     fila = basico.data as Record<string, unknown> | null
   } else {
     fila = conColor.data as Record<string, unknown> | null

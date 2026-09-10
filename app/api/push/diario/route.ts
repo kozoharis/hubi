@@ -55,6 +55,9 @@ export async function GET(peticion: NextRequest) {
     deCadaCasa.set(casa, [...(deCadaCasa.get(casa) ?? []), m.perfil_id as string])
   }
 
+  /* espacio: a propósito — la cita diaria mira TODAS las casas y
+     agrupa por `hogar_id` unos renglones más abajo. Sin sesión no hay
+     un espacio del que filtrar: el de cada aviso viene en su fila. */
   const { data: pendientes } = await supa
     .from('recordatorios')
     .select('id, titulo, tipo, asignado_a, fecha, hora, aviso_previo, ultimo_aviso, hogar_id')
@@ -112,7 +115,11 @@ export async function GET(peticion: NextRequest) {
       })
     }
 
-    await supa.from('recordatorios').update({ ultimo_aviso: hoy }).eq('id', r.id)
+    await supa
+      .from('recordatorios')
+      .update({ ultimo_aviso: hoy })
+      .eq('hogar_id', r.hogar_id)
+      .eq('id', r.id)
     detalle.push(`${titulo} → ${destinatarios.length}`)
   }
 

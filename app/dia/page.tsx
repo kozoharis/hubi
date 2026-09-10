@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar } from '@/lib/hogar'
+import { elEspacio } from '@/lib/espacio'
 import { genteDeLaCasa, elAsesor } from '@/lib/gente'
 import { cuantasNotas } from '@/lib/notas'
 import { loDeHoy } from '@/lib/rutinas'
@@ -58,7 +58,7 @@ export default async function DiaADia() {
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) redirect('/empezar')
 
   const gente = await genteDeLaCasa(supabase, hogarId)
@@ -87,6 +87,7 @@ export default async function DiaADia() {
     supabase
       .from('compra')
       .select('id', { count: 'exact', head: true })
+      .eq('hogar_id', hogarId)
       .eq('comprado', false)
       .is('archivado_en', null),
 
@@ -104,6 +105,7 @@ export default async function DiaADia() {
         const { data } = await supabase
           .from('notas')
           .select('id, vista_en')
+          .eq('hogar_id', hogarId)
           .eq('escrita_por', suyo.id)
           .is('guardada_en', null)
           .limit(50)

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { limpiar } from '@/lib/rutas'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -239,6 +240,7 @@ export async function POST(peticion: NextRequest) {
   const { data: yaHay } = await supabase
     .from('categorias')
     .select('id, nombre, activa')
+    .eq('hogar_id', await elEspacioO(supabase))
     .is('padre_id', null)
     .or(`nombre.ilike.${nombre},segmento_drive.eq.${segmento}`)
 
@@ -249,6 +251,7 @@ export async function POST(peticion: NextRequest) {
       const { data: revivida } = await supabase
         .from('categorias')
         .update({ activa: true, lleva_cuentas: true })
+        .eq('hogar_id', await elEspacioO(supabase))
         .eq('id', misma.id)
         .select('id')
 
@@ -271,6 +274,7 @@ export async function POST(peticion: NextRequest) {
   const { data: ultimas } = await supabase
     .from('categorias')
     .select('orden')
+    .eq('hogar_id', await elEspacioO(supabase))
     .is('padre_id', null)
     .order('orden', { ascending: false })
     .limit(1)
@@ -360,6 +364,7 @@ export async function POST(peticion: NextRequest) {
     const { data: yaEstan } = await supabase
       .from('categorias')
       .select('id')
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('padre_id', raiz)
       .eq('segmento_drive', 'DOCUMENTOS')
       .maybeSingle()
@@ -466,6 +471,7 @@ export async function DELETE(peticion: NextRequest) {
   const { data: suya } = await supabase
     .from('categorias')
     .select('id, nombre, padre_id, lleva_cuentas')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .is('padre_id', null)
     .maybeSingle()
@@ -486,7 +492,10 @@ export async function DELETE(peticion: NextRequest) {
      sino de las partidas. */
   const dentro = [id]
   try {
-    const { data: todas } = await supabase.from('categorias').select('id, padre_id')
+    const { data: todas } = await supabase
+      .from('categorias')
+      .select('id, padre_id')
+      .eq('hogar_id', await elEspacioO(supabase))
     const hijasDe = new Map<string, string[]>()
     for (const c of todas ?? []) {
       const p = (c.padre_id as string | null) ?? ''
@@ -506,14 +515,17 @@ export async function DELETE(peticion: NextRequest) {
        ajena de los documentos. Nunca al revés. */
   }
 
+  const espacio = await elEspacioO(supabase)
   const [{ count: apuntes }, { count: papeles }] = await Promise.all([
     supabase
       .from('movimientos')
       .select('id', { count: 'exact', head: true })
+      .eq('hogar_id', espacio)
       .in('categoria_id', dentro),
     supabase
       .from('documentos')
       .select('id', { count: 'exact', head: true })
+      .eq('hogar_id', espacio)
       .in('categoria_id', dentro)
       .is('eliminado_en', null),
   ])
@@ -525,6 +537,7 @@ export async function DELETE(peticion: NextRequest) {
     const { data, error } = await supabase
       .from('categorias')
       .update({ activa: false })
+      .eq('hogar_id', espacio)
       .eq('id', id)
       .select('id')
 
@@ -550,6 +563,7 @@ export async function DELETE(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('categorias')
     .delete()
+    .eq('hogar_id', espacio)
     .eq('id', id)
     .is('padre_id', null)
     .select('id')
@@ -591,6 +605,7 @@ export async function PATCH(peticion: NextRequest) {
   const { data: seccion } = await supabase
     .from('categorias')
     .select('id, nombre, padre_id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .maybeSingle()
 
@@ -637,6 +652,7 @@ export async function PATCH(peticion: NextRequest) {
     const { data: actual } = await supabase
       .from('categorias')
       .select('palabra_unidad')
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('id', id)
       .maybeSingle()
 
@@ -646,6 +662,7 @@ export async function PATCH(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('categorias')
     .update(cambios)
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 

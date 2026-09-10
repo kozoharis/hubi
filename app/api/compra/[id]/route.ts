@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,7 @@ export async function PATCH(
       comprado_en: hecho ? new Date().toISOString() : null,
       comprado_por: hecho ? user.id : null,
     })
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
     .maybeSingle()
@@ -62,7 +64,12 @@ export async function DELETE(
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const { data, error } = await supabase.from('compra').delete().eq('id', id).select('id')
+  const { data, error } = await supabase
+    .from('compra')
+    .delete()
+    .eq('hogar_id', await elEspacioO(supabase))
+    .eq('id', id)
+    .select('id')
 
   if (error) {
     console.error('[HUBI] Fallo quitando de la compra:', error)

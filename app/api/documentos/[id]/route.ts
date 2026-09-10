@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, SIN_CASA } from '@/lib/hogar'
+import { SIN_CASA } from '@/lib/hogar'
 import { accesoDrive, idDeCarpeta, moverYRenombrar, aLaPapelera } from '@/lib/google/drive'
 import {
   cadena,
@@ -13,6 +13,7 @@ import {
 import { rehacerAvisos, esAviso, type Vencimiento } from '@/lib/vencimientos'
 import { desgloseQueToca } from '@/lib/impuesto'
 import { hoyAqui } from '@/lib/tablon'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -114,12 +115,18 @@ export async function PATCH(
     const r = await supabase
       .from('documentos')
       .select(`${BASE}, se_renueva, preaviso_dias, avisar_con`)
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('id', id)
       .maybeSingle()
 
     if (r.error) {
       hayVencimientos = false
-      const r2 = await supabase.from('documentos').select(BASE).eq('id', id).maybeSingle()
+      const r2 = await supabase
+        .from('documentos')
+        .select(BASE)
+        .eq('hogar_id', await elEspacioO(supabase))
+        .eq('id', id)
+        .maybeSingle()
       antes = r2.data as Antes | null
     } else {
       antes = r.data as Antes | null
@@ -193,13 +200,14 @@ export async function PATCH(
   const { data: cats } = await supabase
     .from('categorias')
     .select('id, padre_id, nombre, segmento_drive, icono, orden, naturaleza')
+    .eq('hogar_id', await elEspacioO(supabase))
 
   const camino = cadena((cats ?? []) as Categoria[], categoriaId)
   if (camino.length === 0) {
     return NextResponse.json({ error: 'Esa carpeta ya no existe.' }, { status: 400 })
   }
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   // ── Mover el archivo en Drive, ANTES de tocar la base de datos ──
@@ -271,6 +279,7 @@ export async function PATCH(
   const { data: guardado, error } = await supabase
     .from('documentos')
     .update(cambios)
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 
@@ -307,6 +316,7 @@ export async function PATCH(
   const { data: apunte } = await supabase
     .from('movimientos')
     .select('id')
+    .eq('hogar_id', hogarId)
     .eq('documento_id', id)
     .maybeSingle()
 
@@ -337,11 +347,19 @@ export async function PATCH(
       cambioDelApunte.impuesto_cuota = impuestoAhora.impuesto_cuota
     }
 
-    await supabase.from('movimientos').update(cambioDelApunte).eq('id', apunte.id)
+    await supabase
+      .from('movimientos')
+      .update(cambioDelApunte)
+      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('id', apunte.id)
   } else if (apunte) {
     /* Ya no es dinero, o se le ha quitado el importe: el apunte deja de
        tener sentido y se quita del balance. */
-    await supabase.from('movimientos').delete().eq('id', apunte.id)
+    await supabase
+      .from('movimientos')
+      .delete()
+      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('id', apunte.id)
   } else if (importe != null && importe > 0 && esDinero) {
     /*
       No tenía apunte y ahora le toca tener uno.
@@ -467,6 +485,7 @@ export async function DELETE(
   const { data: papel } = await supabase
     .from('documentos')
     .select('id, drive_file_id, titulo')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .maybeSingle()
 
@@ -481,6 +500,7 @@ export async function DELETE(
   const { data: apunte } = await supabase
     .from('movimientos')
     .select('id')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('documento_id', id)
     .maybeSingle()
 
@@ -490,6 +510,7 @@ export async function DELETE(
   let { data: borradas, error } = await supabase
     .from('documentos')
     .delete()
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 
@@ -501,7 +522,11 @@ export async function DELETE(
     y después se toca lo que colgaba de él. Nunca al revés.
   */
   if (error?.code === '23503') {
-    if (apunte) await supabase.from('movimientos').delete().eq('id', apunte.id)
+    if (apunte) await supabase
+      .from('movimientos')
+      .delete()
+      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('id', apunte.id)
 
     /* Los avisos NO se borran: se quedan sin padre.
 
@@ -513,11 +538,13 @@ export async function DELETE(
     await supabase
       .from('recordatorios')
       .update({ documento_origen_id: null })
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('documento_origen_id', id)
 
     ;({ data: borradas, error } = await supabase
       .from('documentos')
       .delete()
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('id', id)
       .select('id'))
   }
@@ -539,7 +566,11 @@ export async function DELETE(
      ahora: un gasto sin papel que lo respalde es un número suelto en
      las cuentas que nadie puede comprobar. Si ya se fue solo, esto no
      borra nada y no pasa nada. */
-  if (apunte) await supabase.from('movimientos').delete().eq('id', apunte.id)
+  if (apunte) await supabase
+      .from('movimientos')
+      .delete()
+      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('id', apunte.id)
 
   // Y el archivo, a la papelera de Drive.
   let enPapelera = false
@@ -548,7 +579,7 @@ export async function DELETE(
        ya está borrada de HUBI y dejar un archivo huérfano en Drive es
        infinitamente mejor que mandar a la papelera el de otra
        familia. */
-    const casa = await miHogar(supabase, user.id)
+    const casa = await elEspacio(supabase)
     if (!casa) throw new Error('SIN_CASA')
 
     const { acceso } = await accesoDrive(casa)

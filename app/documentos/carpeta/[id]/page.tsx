@@ -9,6 +9,7 @@ import { Ico, Volver } from '../../../iconos'
 import { Aviso, PastillaAmbito, Vacio, seccionPintada } from '../../../piezas'
 import { caminoDe, ramaDe, fechaCorta, type Categoria } from '@/lib/carpetas'
 import { euros } from '@/lib/periodos'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,6 +42,7 @@ export default async function Carpeta({
   const { data: cats } = await supabase
     .from('categorias')
     .select('id, padre_id, nombre, segmento_drive, orden')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('activa', true)
 
   const todas = (cats ?? []) as Categoria[]
@@ -61,6 +63,7 @@ export default async function Carpeta({
          nombres se piden aparte, abajo. */
       'id, titulo, fecha_documento, tipo_mime, importe, proveedor, visibilidad, categoria_id, subido_por'
     )
+    .eq('hogar_id', await elEspacioO(supabase))
     .in('categoria_id', dentro)
     .order('fecha_documento', { ascending: false })
     .limit(200)

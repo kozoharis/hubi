@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { limpiar } from '@/lib/rutas'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,6 +102,7 @@ export async function PATCH(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('categorias')
     .update(cambios)
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .is('padre_id', null)
     .select('id')
@@ -147,6 +149,7 @@ export async function POST(peticion: NextRequest) {
   const { data: yaHay } = await supabase
     .from('categorias')
     .select('id, nombre, activa')
+    .eq('hogar_id', await elEspacioO(supabase))
     .is('padre_id', null)
     .or(`nombre.ilike.${nombre},segmento_drive.eq.${segmento}`)
 
@@ -157,6 +160,7 @@ export async function POST(peticion: NextRequest) {
       const { data: encendida } = await supabase
         .from('categorias')
         .update({ activa: true })
+        .eq('hogar_id', await elEspacioO(supabase))
         .eq('id', misma.id)
         .select('id')
 
@@ -177,6 +181,7 @@ export async function POST(peticion: NextRequest) {
   const { data: ultimas } = await supabase
     .from('categorias')
     .select('orden')
+    .eq('hogar_id', await elEspacioO(supabase))
     .is('padre_id', null)
     .order('orden', { ascending: false })
     .limit(1)

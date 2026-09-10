@@ -2,12 +2,13 @@ import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
+import { mandaEnSuCasa, quienManda } from '@/lib/hogar'
 import { estadoGuardado } from '@/lib/google/calendario'
 import Cabecera from '../../cabecera'
 import Barra from '../../barra'
 import { Volver } from '../../iconos'
 import PrepararCalendario from '../calendario'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,7 +32,7 @@ export default async function AjustesDeGoogle() {
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   const manda = await mandaEnSuCasa(supabase, user.id)
 
   const admin = clienteServidor()

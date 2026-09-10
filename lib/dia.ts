@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { hoyAqui } from './tablon'
+import { elEspacioO } from './espacio'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -81,6 +82,7 @@ export async function parteDe(
 ): Promise<Parte | null> {
   try {
     const dia = fecha ?? hoyAqui()
+    const espacio = await elEspacioO(supabase)
 
     /* Dos intentos: `horas_extra` es del SQL 41 y, si no está,
        Postgres rechaza la consulta ENTERA en vez de decir «esa columna
@@ -89,6 +91,7 @@ export async function parteDe(
       supabase
         .from('dias_en_casa')
         .select(campos)
+        .eq('hogar_id', espacio)
         .eq('quien', quien)
         .eq('fecha', dia)
         .maybeSingle()
@@ -110,10 +113,12 @@ export async function partesDe(
   desde: string
 ): Promise<Parte[]> {
   try {
+    const espacio = await elEspacioO(supabase)
     const pedir = (campos: string) =>
       supabase
         .from('dias_en_casa')
         .select(campos)
+        .eq('hogar_id', espacio)
         .eq('quien', quien)
         .gte('fecha', desde)
         .order('fecha', { ascending: false })

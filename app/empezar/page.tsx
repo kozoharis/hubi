@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar } from '@/lib/hogar'
 import { casasDe } from '@/lib/casas'
 import { leerPerfil } from '@/lib/perfil'
 import Casas from '../casas'
 import Empezar from './empezar'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +21,7 @@ export default async function PaginaEmpezar() {
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
 
-  if (await miHogar(supabase, user.id)) redirect('/')
+  if (await elEspacio(supabase)) redirect('/')
 
   const perfil = await leerPerfil(supabase, user.id, user.email)
 

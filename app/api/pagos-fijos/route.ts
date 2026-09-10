@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar, SIN_CASA } from '@/lib/hogar'
+import { SIN_CASA } from '@/lib/hogar'
 import { hoyAqui } from '@/lib/tablon'
 import { pagosAlDia, papelesQueFaltan } from '@/lib/pagos-al-dia'
 import type { Cada } from '@/lib/pagos-fijos'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -31,7 +32,7 @@ export async function GET() {
   const user = await quien(supabase)
   if (!user) return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   const hoy = hoyAqui()
@@ -51,6 +52,7 @@ export async function GET() {
     .select(
       'id, que, proveedor, categoria_id, importe, impuesto_tipo, cada, dia, desde, hasta, espera_papel, activo'
     )
+    .eq('hogar_id', hogarId)
     .order('que')
 
   if (error) {
@@ -72,6 +74,7 @@ export async function GET() {
   const { data: previstos } = await supabase
     .from('movimientos')
     .select('id, concepto, importe, fecha, periodo')
+    .eq('hogar_id', hogarId)
     .eq('previsto', true)
     .order('fecha', { ascending: false })
     .limit(30)
@@ -85,7 +88,7 @@ export async function POST(peticion: NextRequest) {
   const user = await quien(supabase)
   if (!user) return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
 
-  const hogarId = await miHogar(supabase, user.id)
+  const hogarId = await elEspacio(supabase)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
   const cuerpo = (await peticion.json().catch(() => ({}))) as Record<string, unknown>
@@ -180,6 +183,7 @@ export async function PATCH(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('pagos_fijos')
     .update(cambios)
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 
@@ -212,6 +216,7 @@ export async function DELETE(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('pagos_fijos')
     .delete()
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
     .select('id')
 

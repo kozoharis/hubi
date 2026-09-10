@@ -5,6 +5,7 @@ import { leerDocumento } from '@/lib/ocr'
 import { entenderPapel, type Conocido } from '@/lib/entender'
 import { tipoDe, TIPOS_BUENOS } from '@/lib/archivos'
 import { cadena, type Categoria } from '@/lib/rutas'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -87,6 +88,7 @@ export async function POST(peticion: NextRequest) {
   const { data } = await supabase
     .from('categorias')
     .select('id, padre_id, nombre, segmento_drive, icono, orden, naturaleza')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('activa', true)
 
   const categorias = (data ?? []) as Categoria[]
@@ -185,6 +187,7 @@ export async function POST(peticion: NextRequest) {
       const { data: historia } = await supabase
         .from('documentos')
         .select('proveedor, categoria_id')
+        .eq('hogar_id', await elEspacioO(supabase))
         .not('proveedor', 'is', null)
         .limit(2000)
 

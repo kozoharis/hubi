@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { calcular } from './periodos'
 import { hoyAqui } from './tablon'
+import { elEspacioO } from './espacio'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -48,6 +49,7 @@ export async function gastadoEnCasa(supabase: Cliente): Promise<Resumen> {
     const { data: cats, error } = await supabase
       .from('categorias')
       .select('id, padre_id, nombre, lleva_cuentas')
+      .eq('hogar_id', await elEspacioO(supabase))
 
     if (error || !cats) return NADA
 
@@ -73,6 +75,7 @@ export async function gastadoEnCasa(supabase: Cliente): Promise<Resumen> {
     const { data: movs } = await supabase
       .from('movimientos')
       .select('importe, categoria_id')
+      .eq('hogar_id', await elEspacioO(supabase))
       .eq('tipo', 'gasto')
       .gte('fecha', periodo.desde)
       .lte('fecha', periodo.hasta)

@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { miHogar } from '@/lib/hogar'
 import Nuevo from './formulario'
+import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +29,7 @@ export default async function PaginaNuevo() {
   */
   let dentro: string[] | null = null
   try {
-    const hogarId = await miHogar(supabase, user.id)
+    const hogarId = await elEspacio(supabase)
     if (hogarId) {
       const { data, error } = await supabase
         .from('miembros')

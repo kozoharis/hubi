@@ -5,6 +5,7 @@ import Barra from '../barra'
 import Cabecera from '../cabecera'
 import { Aviso, PastillaAmbito } from '../piezas'
 import Pantalla, { type Cerrada, type ListaCompra } from './lista'
+import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +33,7 @@ export default async function Compra() {
   const { data: raices } = await supabase
     .from('categorias')
     .select('id, nombre, segmento_drive')
+    .eq('hogar_id', await elEspacioO(supabase))
     .is('padre_id', null)
     .eq('activa', true)
     .order('orden')
@@ -53,6 +55,7 @@ export default async function Compra() {
   const { data: arbol } = await supabase
     .from('categorias')
     .select('id, padre_id, nombre, segmento_drive')
+    .eq('hogar_id', await elEspacioO(supabase))
     .eq('activa', true)
 
   const cats = arbol ?? []
@@ -74,6 +77,7 @@ export default async function Compra() {
   const { data: listas } = await supabase
     .from('listas_compra')
     .select('id, nombre, seccion_id, fecha, hora, asignado_a')
+    .eq('hogar_id', await elEspacioO(supabase))
     .is('archivada_en', null)
     .order('creada_en')
 
@@ -100,6 +104,7 @@ export default async function Compra() {
     const conTicket = await supabase
       .from('listas_compra')
       .select(`${columnasC}, ticket_id`)
+      .eq('hogar_id', await elEspacioO(supabase))
       .not('archivada_en', 'is', null)
       .order('archivada_en', { ascending: false })
       .limit(6)
@@ -109,6 +114,7 @@ export default async function Compra() {
           await supabase
             .from('listas_compra')
             .select(columnasC)
+            .eq('hogar_id', await elEspacioO(supabase))
             .not('archivada_en', 'is', null)
             .order('archivada_en', { ascending: false })
             .limit(6)
@@ -125,6 +131,7 @@ export default async function Compra() {
       const { data: suyas } = await supabase
         .from('compra')
         .select('lista_id')
+        .eq('hogar_id', await elEspacioO(supabase))
         .in('lista_id', ids)
 
       for (const c of suyas ?? []) {
@@ -182,6 +189,7 @@ export default async function Compra() {
   const primera = await supabase
     .from('compra')
     .select(`${columnas}, lista_id`)
+    .eq('hogar_id', await elEspacioO(supabase))
     .is('archivado_en', null)
     .order('comprado', { ascending: true })
     .order('creado_en', { ascending: true })
@@ -194,6 +202,7 @@ export default async function Compra() {
     const segunda = await supabase
       .from('compra')
       .select(columnas)
+      .eq('hogar_id', await elEspacioO(supabase))
       .is('archivado_en', null)
       .order('comprado', { ascending: true })
       .order('creado_en', { ascending: true })
@@ -216,6 +225,7 @@ export default async function Compra() {
   const { data: historia } = await supabase
     .from('compra')
     .select('que')
+    .eq('hogar_id', await elEspacioO(supabase))
     .not('archivado_en', 'is', null)
     .limit(600)
 
