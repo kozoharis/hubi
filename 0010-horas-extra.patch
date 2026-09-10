@@ -1,0 +1,957 @@
+From 90ed05ff3015ebd8c4137d73dfe031954f7df67b Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Mon, 7 Sep 2026 12:59:15 +0000
+Subject: [PATCH] =?UTF-8?q?No=20son=20las=20horas=20del=20d=C3=ADa:=20son?=
+ =?UTF-8?q?=20las=20de=20m=C3=A1s?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Estaba mal planteado y tenías razón.
+
+Se preguntaba «¿cuántas horas has estado hoy?», todos los días. Pero
+el horario está acordado —viene lunes, miércoles y viernes de nueve a
+una— y eso no cambia: pedirle que lo escriba cada día es dar trabajo a
+cambio de un dato que ya saben los dos.
+
+Lo que hay que apuntar es lo que se SALE de lo acordado: el día que se
+quedó una hora más. Eso es lo que a fin de mes hay que cuadrar, y es
+justo lo que se olvida.
+
+Y el efecto es el que importa: EL ESTADO NORMAL PASA A SER NO ESCRIBIR
+NADA. Un campo que hay que rellenar todos los días se rellena mal a la
+tercera semana; uno que solo se toca los días raros se toca los días
+raros.
+
+CÓMO QUEDA
+
+  · «¿Has hecho horas de más?» con «si no, no hace falta que pongas
+    nada» debajo.
+  · Tres atajos —+30 min, +1 h, +2 h— y los botones de media hora
+    arriba y abajo. Sin teclado: con el teclado tapando media pantalla
+    es donde se cuelan los errores.
+  · Un día sin nada apuntado se dice «Un día normal. Sin horas de
+    más», que es información, no un hueco.
+  · Y arriba, lo que de verdad se mira: «Horas de más este mes: +4,5 h
+    · 3 días». Con cero no sale un cero grande — un mes sin horas de
+    más es un mes normal, no un resultado.
+
+POR DEBAJO
+
+Un cero es lo mismo que nada: si no hay horas de más ni nota, se borra
+la fila. Así «tres días con horas de más» cuenta tres y no treinta.
+
+Y la columna se renombra: `horas` → `horas_extra`. Una columna que se
+llama `horas` y guarda «horas de más» es la clase de mentira que
+cuesta una tarde dentro de seis meses, cuando alguien sume la columna
+creyendo que son las trabajadas. El tope baja de 24 a 12: doce horas
+de más en un día no existe, y un tope realista convierte un dedo gordo
+en un error visible en vez de en un número que se suma al mes.
+
+Ejecuta sql/41-horas-extra.sql. Vale igual si ya ejecutaste el 40 o si
+todavía no: renombra si estaba y crea si falta.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/api/dia/route.ts   |  55 ++++++---
+ app/lacasa/page.tsx    |  12 +-
+ app/lacasa/parte.tsx   | 250 ++++++++++++++++++++++++-----------------
+ lib/dia.ts             | 100 +++++++++++++----
+ sql/41-horas-extra.sql | 167 +++++++++++++++++++++++++++
+ 5 files changed, 437 insertions(+), 147 deletions(-)
+ create mode 100644 sql/41-horas-extra.sql
+
+diff --git a/app/api/dia/route.ts b/app/api/dia/route.ts
+index 9b188c2..9d3a271 100644
+--- a/app/api/dia/route.ts
++++ b/app/api/dia/route.ts
+@@ -11,15 +11,23 @@ export const dynamic = 'force-dynamic'
+   EL PARTE DEL DÍA
+   ═══════════════════════════════════════════════════════════════
+ 
+-  Cuántas horas y qué pasó. Un solo verbo: se manda el parte entero y
+-  se guarda encima del que hubiera de ese día.
++  Las horas de MÁS y qué pasó. Un solo verbo: se manda el parte entero
++  y se guarda encima del que hubiera de ese día.
++
++  ─────────────────────────────────────────────────────────────
++  LO NORMAL NO SE APUNTA
++
++  El horario está acordado y no cambia: pedirle que lo escriba cada
++  día es dar trabajo a cambio de un dato que ya saben los dos. Lo que
++  se guarda aquí es lo que se SALE de lo acordado — que es lo que hay
++  que cuadrar a fin de mes y lo que se olvida.
+ 
+   ─────────────────────────────────────────────────────────────
+   Y SOLO SE PUEDE ESCRIBIR EL PROPIO
+ 
+   `quien` no se acepta del navegador: se coge de la sesión. Aunque
+   alguien mandara el identificador de otra persona, aquí se ignora — y
+-  además las políticas del SQL 40 lo cortan por su lado.
++  además las políticas del SQL 41 lo cortan por su lado.
+ 
+   No es paranoia: es lo único que hace que el número valga algo a fin
+   de mes. Un parte que el empleador puede escribir no es el parte de
+@@ -35,7 +43,7 @@ export async function POST(peticion: NextRequest) {
+   const hogarId = await miHogar(supabase, user.id)
+   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
+ 
+-  let cuerpo: { horas?: number | string | null; nota?: string | null; fecha?: string }
++  let cuerpo: { extra?: number | string | null; nota?: string | null; fecha?: string }
+   try {
+     cuerpo = (await peticion.json()) as typeof cuerpo
+   } catch {
+@@ -51,25 +59,36 @@ export async function POST(peticion: NextRequest) {
+       ? cuerpo.fecha
+       : hoyAqui()
+ 
+-  /* Se admite «7,5» además de «7.5»: en un teclado español la coma es
++  /* Se admite «1,5» además de «1.5»: en un teclado español la coma es
+      lo que sale, y rechazarla sería culpar a la persona de escribir
+      su idioma. */
+   const bruto =
+-    typeof cuerpo.horas === 'string'
+-      ? Number(cuerpo.horas.replace(',', '.'))
+-      : typeof cuerpo.horas === 'number'
+-        ? cuerpo.horas
++    typeof cuerpo.extra === 'string'
++      ? Number(cuerpo.extra.replace(',', '.'))
++      : typeof cuerpo.extra === 'number'
++        ? cuerpo.extra
+         : null
+ 
+-  const horas =
+-    bruto == null || Number.isNaN(bruto) ? null : Math.min(24, Math.max(0, Math.round(bruto * 4) / 4))
++  /*
++    HORAS DE MÁS, NO HORAS DEL DÍA.
++
++    El horario acordado no se apunta: lo que se guarda aquí es lo que
++    se sale de él. Por eso el tope es 12 y no 24 —doce horas de más en
++    un día no existe— y por eso un cero es lo mismo que no poner nada:
++    un día sin horas de más es un día normal, no un dato.
++  */
++  const extra =
++    bruto == null || Number.isNaN(bruto) || bruto <= 0
++      ? null
++      : Math.min(12, Math.round(bruto * 4) / 4)
+ 
+   const nota = String(cuerpo.nota ?? '').trim().slice(0, 600) || null
+ 
+-  /* Un parte sin horas y sin nota no es un parte: es un borrado. Se
+-     dice así en vez de guardar una fila vacía que luego nadie entiende
+-     qué hace ahí. */
+-  if (horas == null && !nota) {
++  /* Sin horas de más y sin nota no hay parte: es un día normal. Se
++     borra la fila en vez de guardar una vacía que luego nadie entiende
++     qué hace ahí — y así «este mes, tres días con horas de más» cuenta
++     tres y no treinta. */
++  if (extra == null && !nota) {
+     const { error } = await supabase
+       .from('dias_en_casa')
+       .delete()
+@@ -95,7 +114,7 @@ export async function POST(peticion: NextRequest) {
+         hogar_id: hogarId,
+         quien: user.id,
+         fecha,
+-        horas,
++        horas_extra: extra,
+         nota,
+         cambiado_en: new Date().toISOString(),
+       },
+@@ -110,11 +129,11 @@ export async function POST(peticion: NextRequest) {
+     return NextResponse.json(
+       {
+         error: 'No se ha podido guardar.',
+-        detalle: error?.message ?? 'Puede que falte ejecutar el SQL 40.',
++        detalle: error?.message ?? 'Puede que falte ejecutar el SQL 41.',
+       },
+       { status: 500 }
+     )
+   }
+ 
+-  return NextResponse.json({ bien: true, fecha, horas, nota })
++  return NextResponse.json({ bien: true, fecha, extra, nota })
+ }
+diff --git a/app/lacasa/page.tsx b/app/lacasa/page.tsx
+index 41c335b..698b78a 100644
+--- a/app/lacasa/page.tsx
++++ b/app/lacasa/page.tsx
+@@ -94,9 +94,11 @@ export default async function LaCasaHoy({
+ 
+   const suParte: Parte | null = laAyuda ? await parteDe(supabase, laAyuda.id, fecha) : null
+ 
+-  /* Lo que lleva del mes. Solo si hay alguien de quien contarlo. */
++  /* Las horas de MÁS que lleva del mes. El horario de siempre no se
++     apunta: lo que hay que cuadrar a fin de mes es lo que se salió de
++     lo acordado. */
+   const delMes = laAyuda ? await partesDe(supabase, laAyuda.id, primeroDelMes(fecha)) : []
+-  const horasDelMes = delMes.reduce((n, p) => n + Number(p.horas ?? 0), 0)
++  const extraDelMes = delMes.reduce((n, p) => n + Number(p.extra ?? 0), 0)
+ 
+   const hechas = deberes.filter((d) => d.hecha).length
+ 
+@@ -156,10 +158,10 @@ export default async function LaCasaHoy({
+             esHoy={esHoy}
+             mio={soyLaAyuda}
+             parte={
+-              suParte ? { horas: suParte.horas, nota: suParte.nota } : { horas: null, nota: null }
++              suParte ? { extra: suParte.extra, nota: suParte.nota } : { extra: null, nota: null }
+             }
+-            horasDelMes={horasDelMes}
+-            diasDelMes={delMes.filter((p) => Number(p.horas ?? 0) > 0).length}
++            extraDelMes={extraDelMes}
++            diasConExtra={delMes.filter((p) => Number(p.extra ?? 0) > 0).length}
+           />
+         )}
+       </div>
+diff --git a/app/lacasa/parte.tsx b/app/lacasa/parte.tsx
+index ee0d2e8..c7e63f6 100644
+--- a/app/lacasa/parte.tsx
++++ b/app/lacasa/parte.tsx
+@@ -7,20 +7,35 @@ import { enHoras } from '@/lib/dia'
+ 
+ /*
+   ═══════════════════════════════════════════════════════════════
+-  EL PARTE DEL DÍA
++  LAS HORAS DE MÁS
+   ═══════════════════════════════════════════════════════════════
+ 
+-  Cuántas horas ha estado y qué tiene que decir de ese día.
++  ─────────────────────────────────────────────────────────────
++  LO NORMAL NO SE APUNTA. ESTO ES LO QUE CAMBIA TODO.
++
++  Aquí antes se preguntaba «¿cuántas horas has estado hoy?», y estaba
++  mal planteado. El horario está acordado —viene lunes, miércoles y
++  viernes de nueve a una— y eso no cambia: pedirle que lo escriba cada
++  día es dar trabajo a cambio de un dato que ya saben los dos.
++
++  Lo que hay que apuntar es lo que se SALE de lo acordado: el día que
++  se quedó una hora más. Eso es lo que a fin de mes hay que cuadrar, y
++  es justo lo que se olvida.
++
++  Y el efecto es el que importa: el estado normal pasa a ser NO
++  ESCRIBIR NADA. Un campo que hay que rellenar todos los días se
++  rellena mal a la tercera semana; uno que solo se toca los días raros
++  se toca los días raros.
+ 
+   ─────────────────────────────────────────────────────────────
+   LO ESCRIBE ELLA. A LOS DEMÁS SE LES ENSEÑA.
+ 
+-  No es una cortesía de la pantalla: las políticas del SQL 40 dicen
++  No es una cortesía de la pantalla: las políticas del SQL 41 dicen
+   exactamente lo mismo, así que si aquí saliera un formulario para la
+   familia, fallaría al guardar y nadie entendería por qué.
+ 
+-  Y es lo único que hace que el número valga algo a fin de mes. Un
+-  parte que el empleador puede escribir no es el parte de ella.
++  Es lo único que hace que el número valga algo. Un parte que el
++  empleador puede escribir no es el parte de ella.
+ 
+   ─────────────────────────────────────────────────────────────
+   Y SE DICE LO QUE ES, EN LA PANTALLA
+@@ -29,13 +44,6 @@ import { enHoras } from '@/lib/dia'
+   registro de jornada tiene requisitos legales que HUBI no cumple, y
+   dejar que alguien crea que sí los cumple sería lo peor que podemos
+   hacer aquí.
+-
+-  ─────────────────────────────────────────────────────────────
+-  LAS HORAS, A TOQUES
+-
+-  Un campo numérico en un móvil, con el teclado tapando media
+-  pantalla, para escribir «7,5». Los botones de −½ y +½ lo resuelven
+-  sin teclado y sin errores: nadie apunta 75 horas por un dedo gordo.
+ */
+ 
+ export default function Parte({
+@@ -45,8 +53,8 @@ export default function Parte({
+   esHoy,
+   mio,
+   parte,
+-  horasDelMes,
+-  diasDelMes,
++  extraDelMes,
++  diasConExtra,
+ }: {
+   deQuien: string
+   color: string
+@@ -54,26 +62,25 @@ export default function Parte({
+   esHoy: boolean
+   /** ¿Es mi parte? Solo entonces se puede escribir. */
+   mio: boolean
+-  parte: { horas: number | null; nota: string | null }
+-  horasDelMes: number
+-  diasDelMes: number
++  parte: { extra: number | null; nota: string | null }
++  extraDelMes: number
++  diasConExtra: number
+ }) {
+   const router = useRouter()
+ 
+-  const [horas, setHoras] = useState<number | null>(parte.horas)
++  const [extra, setExtra] = useState<number | null>(parte.extra)
+   const [nota, setNota] = useState(parte.nota ?? '')
+   const [abierto, setAbierto] = useState(false)
+   const [ocupado, setOcupado] = useState(false)
+   const [fallo, setFallo] = useState<string | null>(null)
+-  const [guardado, setGuardado] = useState(false)
+ 
+-  const cambiado = horas !== parte.horas || nota !== (parte.nota ?? '')
++  const cambiado = extra !== parte.extra || nota !== (parte.nota ?? '')
++  const diaNormal = parte.extra == null && !parte.nota
+ 
+   function mover(paso: number) {
+-    setGuardado(false)
+-    setHoras((h) => {
++    setExtra((h) => {
+       const n = Math.round(((h ?? 0) + paso) * 4) / 4
+-      return n <= 0 ? null : Math.min(24, n)
++      return n <= 0 ? null : Math.min(12, n)
+     })
+   }
+ 
+@@ -84,7 +91,7 @@ export default function Parte({
+     const r = await fetch('/api/dia', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+-      body: JSON.stringify({ fecha, horas, nota: nota.trim() || null }),
++      body: JSON.stringify({ fecha, extra, nota: nota.trim() || null }),
+     })
+ 
+     const d = (await r.json().catch(() => null)) as {
+@@ -104,32 +111,42 @@ export default function Parte({
+       return
+     }
+ 
+-    setGuardado(true)
+     setAbierto(false)
+     router.refresh()
+   }
+ 
+-  // ── Lo que ve la familia: el parte, sin poder tocarlo ────
++  // ══ Lo que ve la familia: el parte, sin poder tocarlo ══════
+   if (!mio) {
+     return (
+       <section className="mt-6">
+         <h2 className="rotulo">El día de {deQuien}</h2>
+ 
+-        {parte.horas == null && !parte.nota ? (
++        {diaNormal ? (
++          /* Un día sin nada apuntado NO es un día sin información: es
++             un día normal, que es la mayoría. Se dice así en vez de
++             dejar un hueco que parece que falta algo. */
+           <p className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4 text-[16px] font-semibold leading-snug text-tenue">
+-            {esHoy
+-              ? `${deQuien} todavía no ha apuntado nada de hoy.`
+-              : `${deQuien} no apuntó nada ese día.`}
++            Un día normal. Sin horas de más.
+           </p>
+         ) : (
+           <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4">
+-            {parte.horas != null && (
+-              <p className="text-[26px] font-extrabold leading-none tracking-tight" style={{ color }}>
+-                {enHoras(parte.horas)}
+-              </p>
++            {parte.extra != null && (
++              <>
++                <p className="text-[14.5px] font-bold text-tenue">Horas de más</p>
++                <p
++                  className="mt-0.5 text-[28px] font-extrabold leading-none tracking-tight"
++                  style={{ color }}
++                >
++                  +{enHoras(parte.extra)}
++                </p>
++              </>
+             )}
+             {parte.nota && (
+-              <p className="mt-2.5 whitespace-pre-wrap text-[16.5px] font-semibold leading-snug">
++              <p
++                className={`whitespace-pre-wrap text-[16.5px] font-semibold leading-snug ${
++                  parte.extra != null ? 'mt-3' : ''
++                }`}
++              >
+                 {parte.nota}
+               </p>
+             )}
+@@ -139,12 +156,12 @@ export default function Parte({
+           </div>
+         )}
+ 
+-        {horasDelMes > 0 && <DelMes horas={horasDelMes} dias={diasDelMes} color={color} />}
++        <DelMes horas={extraDelMes} dias={diasConExtra} color={color} deQuien={deQuien} />
+       </section>
+     )
+   }
+ 
+-  // ── Y lo que ve ella: su parte, para escribirlo ─────────
++  // ══ Y lo que ve ella: su parte, para escribirlo ═══════════
+   return (
+     <section className="mt-6">
+       <h2 className="rotulo">Tu día</h2>
+@@ -152,7 +169,15 @@ export default function Parte({
+       {!abierto ? (
+         <button
+           onClick={() => setAbierto(true)}
+-          className="mt-2.5 flex w-full items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-4 text-left"
++          className="mt-2.5 flex w-full items-center gap-3.5 rounded-[20px] border px-4 py-4 text-left"
++          style={
++            diaNormal
++              ? { borderColor: 'var(--t-borde)', background: 'var(--t-superficie)' }
++              : {
++                  borderColor: `color-mix(in srgb, ${color} 40%, transparent)`,
++                  background: `color-mix(in srgb, ${color} 10%, var(--t-superficie))`,
++                }
++          }
+         >
+           <span
+             className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[15px]"
+@@ -161,19 +186,19 @@ export default function Parte({
+             <Ico nombre="reloj" tam={23} grosor={2.1} />
+           </span>
+           <span className="min-w-0 flex-1">
+-            {parte.horas == null && !parte.nota ? (
++            {diaNormal ? (
+               <>
+                 <span className="block text-[17.5px] font-extrabold tracking-tight">
+-                  Apuntar tus horas
++                  ¿Has hecho horas de más?
+                 </span>
+                 <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
+-                  Y lo que quieras contar del día
++                  {esHoy ? 'Si no, no hace falta que pongas nada' : 'Si aquel día te quedaste más'}
+                 </span>
+               </>
+             ) : (
+               <>
+                 <span className="block text-[17.5px] font-extrabold tracking-tight">
+-                  {parte.horas != null ? enHoras(parte.horas) : 'Sin horas'}
++                  {parte.extra != null ? `+${enHoras(parte.extra)}` : 'Sin horas de más'}
+                 </span>
+                 <span className="mt-0.5 block truncate text-[14.5px] font-bold text-tenue">
+                   {parte.nota ?? 'Toca para cambiarlo'}
+@@ -186,73 +211,78 @@ export default function Parte({
+       ) : (
+         <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4">
+           <p className="text-[17px] font-extrabold leading-snug">
+-            {esHoy ? '¿Cuántas horas has estado hoy?' : '¿Cuántas horas estuviste?'}
++            {esHoy ? '¿Cuántas horas de más hoy?' : '¿Cuántas horas de más aquel día?'}
++          </p>
++          <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
++            Solo lo que se salga de tu horario. Un día normal se deja en blanco.
+           </p>
+ 
++          {/*
++            Los de siempre, de un toque. Media hora, una y dos cubren
++            casi todos los casos reales; para lo demás están los
++            botones de arriba y abajo.
++          */}
++          <div className="mt-3 flex gap-2">
++            {[0.5, 1, 2].map((h) => (
++              <button
++                key={h}
++                onClick={() => setExtra(extra === h ? null : h)}
++                aria-pressed={extra === h}
++                className="h-[54px] flex-1 rounded-[14px] text-[16.5px] font-extrabold"
++                style={
++                  extra === h
++                    ? { background: color, color: '#FFFFFF' }
++                    : {
++                        background: 'var(--t-fondo)',
++                        color: 'var(--t-tenue)',
++                        border: '1px solid var(--t-borde)',
++                      }
++                }
++              >
++                +{enHoras(h)}
++              </button>
++            ))}
++          </div>
++
+           {/* Media hora arriba y media abajo. Sin teclado: en un móvil,
+-              con el teclado tapando media pantalla, escribir «7,5» es
++              con el teclado tapando media pantalla, escribir «1,5» es
+               donde se cuelan los errores. */}
+-          <div className="mt-3 flex items-center gap-2">
++          <div className="mt-2 flex items-center gap-2">
+             <button
+               onClick={() => mover(-0.5)}
+-              disabled={ocupado || horas == null}
++              disabled={ocupado || extra == null}
+               aria-label="Media hora menos"
+-              className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[16px] border border-borde text-[26px] font-light leading-none text-tinta-suave disabled:opacity-40"
++              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[14px] border border-borde text-[26px] font-light leading-none text-tinta-suave disabled:opacity-40"
+             >
+               −
+             </button>
+-            <span className="flex h-[58px] flex-1 items-center justify-center rounded-[16px] border border-borde text-[24px] font-extrabold tracking-tight">
+-              {horas == null ? <span className="text-tenue">Sin apuntar</span> : enHoras(horas)}
++            <span className="flex h-[54px] flex-1 items-center justify-center rounded-[14px] border border-borde text-[22px] font-extrabold tracking-tight">
++              {extra == null ? (
++                <span className="text-[17px] text-tenue">Ninguna</span>
++              ) : (
++                `+${enHoras(extra)}`
++              )}
+             </span>
+             <button
+               onClick={() => mover(0.5)}
+               disabled={ocupado}
+               aria-label="Media hora más"
+-              className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[16px] border border-borde text-[26px] font-light leading-none text-tinta-suave disabled:opacity-40"
++              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[14px] border border-borde text-[26px] font-light leading-none text-tinta-suave disabled:opacity-40"
+             >
+               +
+             </button>
+           </div>
+ 
+-          {/* Los de siempre, de un toque. Cuatro, seis y ocho horas
+-              cubren casi todos los días de casi todas las casas. */}
+-          <div className="mt-2 flex gap-2">
+-            {[2, 4, 6, 8].map((h) => (
+-              <button
+-                key={h}
+-                onClick={() => {
+-                  setGuardado(false)
+-                  setHoras(h)
+-                }}
+-                className="h-[44px] flex-1 rounded-[13px] text-[15.5px] font-extrabold"
+-                style={
+-                  horas === h
+-                    ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
+-                    : {
+-                        background: 'var(--t-fondo)',
+-                        color: 'var(--t-tenue)',
+-                        border: '1px solid var(--t-borde)',
+-                      }
+-                }
+-              >
+-                {h} h
+-              </button>
+-            ))}
+-          </div>
+-
+           <label htmlFor="nota" className="mt-5 block text-[17px] font-extrabold leading-snug">
+             ¿Algo que contar? <span className="font-bold text-tenue">· si quieres</span>
+           </label>
+           <textarea
+             id="nota"
+             value={nota}
+-            onChange={(e) => {
+-              setGuardado(false)
+-              setNota(e.target.value)
+-            }}
++            onChange={(e) => setNota(e.target.value)}
+             rows={3}
+             maxLength={600}
+-            placeholder="No pude planchar, no había plancha. Me quedé una hora más."
++            placeholder="No pude planchar, no había plancha."
+             className="entrada mt-2.5 min-h-[92px] py-3 leading-snug"
+           />
+ 
+@@ -267,7 +297,7 @@ export default function Parte({
+             </button>
+             <button
+               onClick={() => {
+-                setHoras(parte.horas)
++                setExtra(parte.extra)
+                 setNota(parte.nota ?? '')
+                 setAbierto(false)
+               }}
+@@ -286,20 +316,8 @@ export default function Parte({
+         </div>
+       )}
+ 
+-      {guardado && !abierto && (
+-        <p className="mt-2 text-[14.5px] font-bold text-verde">Guardado.</p>
+-      )}
+-
+-      {horasDelMes > 0 && <DelMes horas={horasDelMes} dias={diasDelMes} color={color} />}
++      <DelMes horas={extraDelMes} dias={diasConExtra} color={color} />
+ 
+-      {/*
+-        SE DICE LO QUE ES. Y se dice aquí, donde se escribe.
+-
+-        Llamar a esto «registro de jornada» sería mentir: un registro
+-        de jornada tiene requisitos legales que HUBI no cumple. Dejar
+-        que alguien crea que sí los cumple es lo peor que podríamos
+-        hacer en esta pantalla.
+-      */}
+       <p className="mt-3 rounded-[16px] border border-borde px-4 py-3 text-[14px] font-semibold leading-snug text-tenue">
+         Esto son apuntes para cuadrar el mes entre vosotros, no un registro de jornada
+         oficial. Los escribes tú y nadie más los puede cambiar.
+@@ -309,18 +327,46 @@ export default function Parte({
+ }
+ 
+ /*
+-  Lo que lleva del mes.
++  Lo que lleva de horas de más este mes.
+ 
+-  Es el número por el que se hace todo esto: nadie apunta horas por
++  Es el número por el que existe todo esto: nadie apunta horas por
+   gusto, se apuntan para que a fin de mes los dos miren lo mismo.
++
++  Con cero NO se enseña un cero grande: un mes sin horas de más es un
++  mes normal, no un resultado. Se dice en una línea y ya.
+ */
+-function DelMes({ horas, dias, color }: { horas: number; dias: number; color: string }) {
++function DelMes({
++  horas,
++  dias,
++  color,
++  deQuien,
++}: {
++  horas: number
++  dias: number
++  color: string
++  deQuien?: string
++}) {
++  if (horas <= 0) {
++    return (
++      <p className="mt-2.5 px-1 text-[14.5px] font-semibold leading-snug text-tenue">
++        Este mes no hay horas de más apuntadas
++        {deQuien ? ` por ${deQuien}` : ''}.
++      </p>
++    )
++  }
++
+   return (
+-    <div className="mt-2.5 flex items-center gap-3.5 rounded-[20px] border border-borde px-4 py-3.5">
++    <div
++      className="mt-2.5 flex items-center gap-3.5 rounded-[20px] border px-4 py-3.5"
++      style={{
++        borderColor: `color-mix(in srgb, ${color} 34%, transparent)`,
++        background: `color-mix(in srgb, ${color} 9%, transparent)`,
++      }}
++    >
+       <span className="min-w-0 flex-1">
+-        <span className="block text-[14.5px] font-bold text-tenue">Este mes</span>
+-        <span className="mt-0.5 block text-[22px] font-extrabold leading-tight tracking-tight">
+-          {enHoras(horas)}
++        <span className="block text-[14.5px] font-bold text-tenue">Horas de más este mes</span>
++        <span className="mt-0.5 block text-[24px] font-extrabold leading-tight tracking-tight">
++          +{enHoras(horas)}
+         </span>
+       </span>
+       <span className="shrink-0 text-[14.5px] font-bold" style={{ color }}>
+diff --git a/lib/dia.ts b/lib/dia.ts
+index 46283bb..f690980 100644
+--- a/lib/dia.ts
++++ b/lib/dia.ts
+@@ -6,10 +6,22 @@ import { hoyAqui } from './tablon'
+   EL PARTE DEL DÍA
+   ═══════════════════════════════════════════════════════════════
+ 
+-  Cuántas horas estuvo y qué tiene que decir de ese día. Lo escribe
++  Las horas de MÁS y lo que tenga que contar de ese día. Lo escribe
+   ella y nadie más — ni siquiera quien creó la casa—, que es lo único
+   que hace que el número valga algo a fin de mes.
+ 
++  ─────────────────────────────────────────────────────────────
++  LO NORMAL NO SE APUNTA
++
++  El horario está acordado: viene lunes, miércoles y viernes de nueve
++  a una. Eso no cambia y pedirle que lo escriba cada día es dar
++  trabajo a cambio de un dato que ya saben los dos.
++
++  Lo que se apunta es lo que se SALE de lo acordado: el día que se
++  quedó una hora más. Y el efecto es el que importa — el estado normal
++  pasa a ser no escribir nada. Un campo que hay que rellenar todos los
++  días se rellena mal a la tercera semana.
++
+   ─────────────────────────────────────────────────────────────
+   APUNTES PARA CUADRAR EL MES, NO UN REGISTRO DE JORNADA
+ 
+@@ -30,11 +42,37 @@ type Cliente = SupabaseClient<any, any, any>
+ export type Parte = {
+   quien: string
+   fecha: string
+-  horas: number | null
++  /** Horas de MÁS sobre lo acordado. Nulo = un día normal. */
++  extra: number | null
++  nota: string | null
++  apuntado_en: string
++}
++
++const CAMPOS = 'quien, fecha, horas_extra, nota, apuntado_en'
++/* Cómo se llamaba antes del SQL 41, por si todavía no se ha ejecutado. */
++const VIEJOS = 'quien, fecha, horas, nota, apuntado_en'
++
++/* La fila tal y como viene, antes de ponerle nuestros nombres. */
++type Fila = {
++  quien: string
++  fecha: string
++  horas_extra?: number | string | null
++  horas?: number | string | null
+   nota: string | null
+   apuntado_en: string
+ }
+ 
++function comoParte(f: Fila): Parte {
++  const bruto = f.horas_extra ?? f.horas ?? null
++  return {
++    quien: f.quien,
++    fecha: f.fecha,
++    extra: bruto == null ? null : Number(bruto),
++    nota: f.nota,
++    apuntado_en: f.apuntado_en,
++  }
++}
++
+ /** El parte de una persona en un día. */
+ export async function parteDe(
+   supabase: Cliente,
+@@ -42,15 +80,24 @@ export async function parteDe(
+   fecha?: string
+ ): Promise<Parte | null> {
+   try {
+-    const { data, error } = await supabase
+-      .from('dias_en_casa')
+-      .select('quien, fecha, horas, nota, apuntado_en')
+-      .eq('quien', quien)
+-      .eq('fecha', fecha ?? hoyAqui())
+-      .maybeSingle()
+-
+-    if (error || !data) return null
+-    return data as Parte
++    const dia = fecha ?? hoyAqui()
++
++    /* Dos intentos: `horas_extra` es del SQL 41 y, si no está,
++       Postgres rechaza la consulta ENTERA en vez de decir «esa columna
++       no existe». La misma trampa de siempre. */
++    const pedir = (campos: string) =>
++      supabase
++        .from('dias_en_casa')
++        .select(campos)
++        .eq('quien', quien)
++        .eq('fecha', dia)
++        .maybeSingle()
++
++    let fila = await pedir(CAMPOS)
++    if (fila.error) fila = await pedir(VIEJOS)
++
++    if (fila.error || !fila.data) return null
++    return comoParte(fila.data as unknown as Fila)
+   } catch {
+     return null
+   }
+@@ -63,25 +110,34 @@ export async function partesDe(
+   desde: string
+ ): Promise<Parte[]> {
+   try {
+-    const { data, error } = await supabase
+-      .from('dias_en_casa')
+-      .select('quien, fecha, horas, nota, apuntado_en')
+-      .eq('quien', quien)
+-      .gte('fecha', desde)
+-      .order('fecha', { ascending: false })
+-
+-    if (error || !data) return []
+-    return data as Parte[]
++    const pedir = (campos: string) =>
++      supabase
++        .from('dias_en_casa')
++        .select(campos)
++        .eq('quien', quien)
++        .gte('fecha', desde)
++        .order('fecha', { ascending: false })
++
++    let filas = await pedir(CAMPOS)
++    if (filas.error) filas = await pedir(VIEJOS)
++
++    if (filas.error || !filas.data) return []
++    return (filas.data as unknown as Fila[]).map(comoParte)
+   } catch {
+     return []
+   }
+ }
+ 
+-/** «7,5 h» · «45 min». Nunca «7.5». */
++/**
++ * «1 h» · «1,5 h» · «30 min». Nunca «1.5».
++ *
++ * La coma y no el punto: en un móvil español, «1.5 h» se lee mal por
++ * la misma razón por la que aquí se escribe 1.500 para mil quinientos.
++ */
+ export function enHoras(h: number | null): string {
+   if (h == null) return ''
+   if (h < 1) return `${Math.round(h * 60)} min`
+-  const texto = Number.isInteger(h) ? String(h) : h.toFixed(2).replace(/0$/, '')
++  const texto = Number.isInteger(h) ? String(h) : String(Number(h.toFixed(2)))
+   return `${texto.replace('.', ',')} h`
+ }
+ 
+diff --git a/sql/41-horas-extra.sql b/sql/41-horas-extra.sql
+new file mode 100644
+index 0000000..6927c56
+--- /dev/null
++++ b/sql/41-horas-extra.sql
+@@ -0,0 +1,167 @@
++-- ═══════════════════════════════════════════════════════════════
++-- 41 · NO SON LAS HORAS DEL DÍA. SON LAS DE MÁS.
++-- ═══════════════════════════════════════════════════════════════
++--
++-- El SQL 40 puso `dias_en_casa.horas` para apuntar cuántas horas
++-- estuvo cada día. Y eso, pensándolo con la cabeza de quien lo va a
++-- usar, está mal planteado.
++--
++-- ─────────────────────────────────────────────────────────────
++-- LO NORMAL NO HAY QUE APUNTARLO
++--
++-- El horario está acordado: viene lunes, miércoles y viernes de nueve
++-- a una. Eso no cambia y no hace falta escribirlo cada día — pedirlo
++-- es dar trabajo a cambio de un dato que ya sabían los dos.
++--
++-- Lo que SÍ hay que apuntar es lo que se sale de lo acordado: el día
++-- que se quedó una hora más. Eso es lo que a fin de mes hay que
++-- cuadrar, y es lo que se olvida.
++--
++-- El efecto es el que importa: el estado normal pasa a ser NO ESCRIBIR
++-- NADA. Un campo que hay que rellenar todos los días se rellena mal a
++-- la tercera semana; uno que solo se toca los días raros se toca los
++-- días raros.
++--
++-- ─────────────────────────────────────────────────────────────
++-- Y POR ESO SE RENOMBRA LA COLUMNA
++--
++-- Una columna que se llama `horas` y guarda «horas de más» es la clase
++-- de mentira que cuesta una tarde dentro de seis meses, cuando alguien
++-- sume la columna creyendo que son las trabajadas.
++--
++-- Se puede ejecutar más de una vez sin estropear nada, y también si el
++-- SQL 40 todavía no se ha ejecutado.
++-- ═══════════════════════════════════════════════════════════════
++
++
++-- ── 1 · La tabla, por si el 40 no se ha ejecutado ──────────
++create table if not exists dias_en_casa (
++  hogar_id    uuid not null references hogares(id) on delete cascade,
++  quien       uuid not null references perfiles(id) on delete cascade,
++  fecha       date not null,
++  nota        text,
++  apuntado_en timestamptz not null default now(),
++  cambiado_en timestamptz,
++  primary key (quien, fecha)
++);
++
++
++-- ── 2 · `horas` pasa a ser `horas_extra` ───────────────────
++/*
++  Se renombra si estaba, y si no se crea. Las dos ramas, porque esto
++  se puede encontrar la base de datos de tres maneras: con el 40
++  ejecutado, sin él, o con el 41 ya pasado.
++*/
++do $$
++begin
++  if exists (
++    select 1 from information_schema.columns
++    where table_schema = 'public' and table_name = 'dias_en_casa' and column_name = 'horas'
++  ) and not exists (
++    select 1 from information_schema.columns
++    where table_schema = 'public' and table_name = 'dias_en_casa' and column_name = 'horas_extra'
++  ) then
++    alter table dias_en_casa rename column horas to horas_extra;
++    raise notice 'Renombrada: horas → horas_extra.';
++  end if;
++end $$;
++
++alter table dias_en_casa
++  add column if not exists horas_extra numeric(4,2);
++
++/*
++  El tope baja de 24 a 12. No es capricho: 24 horas de más en un día
++  no existe, y un tope realista es lo que convierte un dedo gordo en
++  un error visible en vez de en un número que se suma al mes.
++*/
++alter table dias_en_casa drop constraint if exists dias_en_casa_horas_check;
++alter table dias_en_casa drop constraint if exists dias_en_casa_horas_extra_check;
++alter table dias_en_casa
++  add constraint dias_en_casa_horas_extra_check
++  check (horas_extra is null or (horas_extra > 0 and horas_extra <= 12));
++
++comment on column dias_en_casa.horas_extra is
++  'Horas de MÁS sobre el horario acordado. Nulo = un día normal. '
++  'Nunca son las horas trabajadas: el horario de siempre no se apunta.';
++
++
++-- ── 3 · Índice ─────────────────────────────────────────────
++create index if not exists idx_dias_en_casa
++  on dias_en_casa (hogar_id, fecha desc);
++
++/*
++  Y uno para lo que de verdad se consulta a fin de mes: los días que
++  tuvieron horas de más. Los normales no se miran nunca.
++*/
++create index if not exists idx_dias_con_extra
++  on dias_en_casa (quien, fecha desc) where horas_extra is not null;
++
++
++-- ── 4 · Las políticas, por si falta el 40 ──────────────────
++/*
++  Idénticas a las del 40. Se repiten aquí porque este archivo tiene
++  que dejar la tabla utilizable aunque sea el único que se ejecute —
++  una tabla con RLS puesto y sin políticas no deja hacer nada, y el
++  fallo se ve como «no se guarda» sin más pistas.
++*/
++alter table dias_en_casa enable row level security;
++
++drop policy if exists dias_leer on dias_en_casa;
++create policy dias_leer on dias_en_casa
++  for select to authenticated using (
++    hogar_id = mi_hogar()
++    and (coalesce(mi_rol(), 'familia') <> 'ayuda' or quien = auth.uid())
++  );
++
++/* SOLO ELLA, Y SOLO LO SUYO. Ni siquiera quien creó la casa: un parte
++   que el empleador puede escribir no es el parte de ella. */
++drop policy if exists dias_crear on dias_en_casa;
++create policy dias_crear on dias_en_casa
++  for insert to authenticated with check (
++    hogar_id = mi_hogar() and quien = auth.uid()
++  );
++
++drop policy if exists dias_editar on dias_en_casa;
++create policy dias_editar on dias_en_casa
++  for update to authenticated using (
++    hogar_id = mi_hogar() and quien = auth.uid() and fecha >= current_date - 7
++  );
++
++drop policy if exists dias_borrar on dias_en_casa;
++create policy dias_borrar on dias_en_casa
++  for delete to authenticated using (
++    hogar_id = mi_hogar() and quien = auth.uid() and fecha >= current_date - 7
++  );
++
++
++-- ── 5 · Comprobación ───────────────────────────────────────
++/*
++  TRES resultados.
++
++  1 · La columna se llama `horas_extra` y NO queda ninguna `horas`.
++      Si salieran las dos, el renombrado no se hizo y hay dos sitios
++      donde mirar lo mismo.
++
++  2 · Las cuatro políticas, con `auth.uid()` en las tres que escriben.
++
++  3 · Cuántos partes hay y cuántos tienen horas de más. Lo normal es
++      que el segundo número sea MUCHO menor: si fueran parecidos, es
++      que se está apuntando la jornada entera y no lo que se sale de
++      ella.
++*/
++select column_name as columna, data_type as tipo
++from information_schema.columns
++where table_schema = 'public' and table_name = 'dias_en_casa'
++  and column_name in ('horas', 'horas_extra');
++
++select policyname as politica, cmd as para_que,
++       coalesce(qual, with_check) ilike '%auth.uid()%' as solo_ella
++from pg_policies
++where tablename = 'dias_en_casa'
++order by policyname;
++
++select
++  count(*)                                          as partes,
++  count(*) filter (where horas_extra is not null)    as con_horas_de_mas,
++  coalesce(sum(horas_extra), 0)                      as horas_de_mas
++from dias_en_casa;
+-- 
+2.43.0
+

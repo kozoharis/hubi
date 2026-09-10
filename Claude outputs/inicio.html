@@ -1,0 +1,134 @@
+<meta charset="utf-8">
+<title>Prueba · resúmenes en el Inicio</title>
+<style>
+  :root{
+    --fondo:#0B1220; --sup:#182133; --borde:#253148;
+    --tinta:#F1F5F9; --suave:#CBD5E1; --tenue:#94A3B8;
+    --verde:#14B8A6; --coral:#F97362; --morado:#8B5CF6; --azul:#3B82F6; --ambar:#F59E0B;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#05090F;font-family:"Plus Jakarta Sans",system-ui,-apple-system,sans-serif;
+       color:var(--tinta);-webkit-font-smoothing:antialiased}
+  .tel{width:390px;margin:0 auto;background:var(--fondo);padding:0 20px 40px}
+  .et{margin:34px 0 4px;font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--verde)}
+  .et small{display:block;margin-top:5px;font-size:12.5px;font-weight:600;letter-spacing:0;color:var(--tenue);text-transform:none}
+  .rotulo{margin:22px 0 10px;font-size:13px;font-weight:800;letter-spacing:.13em;color:var(--tenue)}
+  .card{background:var(--sup);border:1px solid var(--borde);border-radius:22px}
+  .fila2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .regla{margin:30px 0 0;border-top:1px dashed #22304a}
+
+  /* ── A · tamaños de iOS, tal cual ── */
+  .ios{padding:14px;border-radius:20px;background:#1C1C1E;border:0}
+  .ios .tit{font-size:13px;font-weight:700;color:#FF453A}
+  .ios .num{font-size:13px;font-weight:700;float:right}
+  .ios .sub{margin-top:4px;font-size:12px;color:#98989F}
+  .ios li{font-size:12.5px;color:#EBEBF5;padding:5px 0;list-style:none}
+  .ios ul{margin:6px 0 0;padding:0}
+
+  /* ── B · a la escala de HUBI ── */
+  .b-num{font-size:44px;font-weight:800;line-height:1;letter-spacing:-.02em}
+  .b-et{font-size:13px;font-weight:800;letter-spacing:.13em;color:var(--tenue)}
+  .lin{display:flex;gap:12px;align-items:flex-start;padding:13px 0}
+  .lin+.lin{border-top:1px solid var(--borde)}
+  .pt{width:10px;height:10px;border-radius:99px;flex:0 0 auto;margin-top:6px}
+  .q{display:block;font-size:17px;font-weight:700;line-height:1.3}
+  .c{display:block;margin-top:3px;font-size:14.5px;font-weight:600;color:var(--tenue)}
+
+  /* ── C · la franja de horas ── */
+  .hh{display:grid;grid-template-columns:46px 1fr;gap:0}
+  .hr{font-size:14px;font-weight:700;color:var(--tenue);height:52px;line-height:1;display:flex;align-items:flex-start}
+  .pista{position:relative;border-left:1px solid var(--borde)}
+  .cinta{position:absolute;left:10px;right:0;border-radius:12px;padding:8px 12px;
+         border-left:4px solid;overflow:hidden}
+  .cq{font-size:16px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ch{margin-top:2px;font-size:13.5px;font-weight:700;opacity:.75}
+  .ahora{position:absolute;left:0;right:0;height:2px;background:var(--coral);z-index:3}
+  .ahora::before{content:'';position:absolute;left:-5px;top:-4px;z-index:3;width:10px;height:10px;border-radius:99px;background:var(--coral)}
+</style>
+
+<div class="tel">
+
+  <div class="et">A · EL WIDGET DE IOS, A SU TAMAÑO REAL
+    <small>Copiado tal cual para verlo, no para usarlo.</small></div>
+
+  <div class="fila2">
+    <div class="ios">
+      <div><span class="tit">Para ti</span><span class="num">3</span></div>
+      <ul>
+        <li>Recoger medicación</li>
+        <li>Papeles a Silvia</li>
+        <li>Coche a revisión</li>
+      </ul>
+    </div>
+    <div class="ios">
+      <div><span class="tit">Esta semana</span><span class="num">7</span></div>
+      <div class="sub">2 vencidas</div>
+      <ul>
+        <li>ITV — en 8 días</li>
+        <li>Seguro casa — 22 días</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="regla"></div>
+
+  <div class="et">B · LA MISMA IDEA, A LA ESCALA DE HUBI
+    <small>El número grande y tres líneas. Nada por debajo de 17.</small></div>
+
+  <div class="rotulo">PARA TI</div>
+  <div class="card" style="padding:18px 18px 6px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="b-num" style="color:var(--verde)">3</span>
+      <span class="b-et" style="line-height:1.25">NOTAS Y TAREAS<br>QUE TE HAN DEJADO</span>
+    </div>
+    <div style="margin-top:6px">
+      <div class="lin"><span class="pt" style="background:var(--morado)"></span>
+        <span><span class="q">Recoger la medicación</span><span class="c">Conchita · hoy 18:00</span></span></div>
+      <div class="lin"><span class="pt" style="background:var(--ambar)"></span>
+        <span><span class="q">Llevar los papeles a Silvia</span><span class="c">Conchita · mañana</span></span></div>
+      <div class="lin"><span class="pt" style="background:var(--azul)"></span>
+        <span><span class="q">Dejar el coche para revisión</span><span class="c">Tú · miércoles 09:30</span></span></div>
+    </div>
+  </div>
+
+  <div class="rotulo" style="margin-top:26px">B2 · EL PAR DE TARJETAS</div>
+  <div class="fila2">
+    <div class="card" style="padding:16px">
+      <div class="b-num" style="color:var(--verde)">3</div>
+      <div class="b-et" style="margin-top:8px;line-height:1.3">PARA TI</div>
+      <div class="c" style="margin-top:2px">Hoy, 1</div>
+    </div>
+    <div class="card" style="padding:16px">
+      <div class="b-num" style="color:var(--coral)">2</div>
+      <div class="b-et" style="margin-top:8px;line-height:1.3">VENCIDAS</div>
+      <div class="c" style="margin-top:2px">La más vieja, 3 días</div>
+    </div>
+  </div>
+
+  <div class="regla"></div>
+
+  <div class="et">C · LA FRANJA DE HOY
+    <small>El widget del calendario, traducido. Solo lo que queda del día.</small></div>
+
+  <div class="rotulo">LO QUE QUEDA DE HOY</div>
+  <div class="card" style="padding:16px 16px 10px">
+    <div class="hh">
+      <div>
+        <div class="hr">17</div><div class="hr">18</div><div class="hr">19</div><div class="hr">20</div>
+      </div>
+      <div class="pista" style="height:208px">
+        <div class="ahora" style="top:35px"></div>
+        <div class="cinta" style="top:13px;height:39px;background:color-mix(in srgb,var(--azul) 20%,transparent);border-color:var(--azul)">
+          <div class="cq">Farmacia</div><div class="ch">17:15</div>
+        </div>
+        <div class="cinta" style="top:52px;height:52px;background:color-mix(in srgb,var(--morado) 20%,transparent);border-color:var(--morado)">
+          <div class="cq">Recoger la medicación</div><div class="ch">18:00 · Conchita</div>
+        </div>
+        <div class="cinta" style="top:156px;height:46px;background:color-mix(in srgb,var(--verde) 20%,transparent);border-color:var(--verde)">
+          <div class="cq">Cena en casa de Ana</div><div class="ch">20:00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

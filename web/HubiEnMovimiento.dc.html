@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="HUBI en movimiento — trece demostraciones guiadas, una por cada cosa que se puede hacer con HUBI.">
+<meta name="hz:canvas-width" content="1180">
+<style>
+  html{color-scheme:dark}
+  body{margin:0}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+<title>HUBI en movimiento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
+
+<style>
+/* ═══════════════════════════════════════════════════════════
+   Todo lo de aquí sale de `app/globals.css` y `app/iconos.tsx`.
+   Los colores, la tipografía, los trazos de los iconos y el
+   logotipo son los del producto, no una imitación.
+   ═══════════════════════════════════════════════════════════ */
+:root{
+  /* ═══════════════════════════════════════════════════════
+     LA PALETA ES LA DE LA LANDING. LA DE VERDAD.
+
+     El bloque de variables de la web declara un sistema cálido
+     —papel #f5f3ef, tinta #0a0a0a, arena #b9a589, Helvetica— pero
+     luego NO se usa casi: lo que pinta la página son los azules
+     fríos y el turquesa de HUBI. Contados en el archivo:
+
+       #8FA0B6 ×21   #F1F5F9 ×18   #2DD4BF ×17   #7C8AA0 ×17
+       #E2E8F0 ×14   #64748B ×14   #B6C2D4 ×13   #C7D2E0 ×10
+       #8B5CF6 ×9    #14B8A6 ×8    #3B82F6 ×7    #F97362 ×6
+       #60A5FA ×6    #F59E0B ×2    #FB923C ×2
+
+     Frente a dos apariciones de cada color cálido. Así que esta
+     demostración toma los de arriba, uno por uno, incluidos los
+     grises azulados —que son los que dan el aire de la página y
+     son justo lo que faltaba aquí.
+     ═══════════════════════════════════════════════════════ */
+
+  --fondo:#05080F;        /* el fondo oscuro de la landing */
+  --superficie:#0C1424;   /* sus tarjetas sobre oscuro */
+  --escena:#000619;       /* su bloque más profundo */
+  --escena-borde:rgba(255,255,255,.16);   /* su hairline-dark */
+  --borde:rgba(255,255,255,.16);
+  --borde-fino:rgba(255,255,255,.08);
+
+  --tinta:#F1F5F9;
+  --tinta-suave:#C7D2E0;
+  --tenue:#8FA0B6;
+  --apagado:#7C8AA0;
+
+  --verde:#2DD4BF;
+  --azul:#60A5FA;
+  --morado:#8B5CF6;
+  --coral:#F97362;
+  --naranja:#F59E0B;
+  --cielo:#60A5FA;
+
+  --sans:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;
+
+  /* Y el móvil enseña HUBI en oscuro: los tokens de `globals.css`,
+     que además son los mismos que usan las maquetas de la landing. */
+  --f:#0B1220; --s:#182133; --b:#253148; --bf:#1E2839;
+  --i:#F1F5F9; --is:#CBD5E1; --te:#94A3B8; --ap:#64748B;
+  --btn:#14B8A6; --btn-t:#06202B;
+}
+
+*{box-sizing:border-box}
+body{background:var(--fondo);color:var(--tinta);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+.hoja{max-width:1060px;margin:0 auto;padding:36px 20px 80px}
+
+.eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--tenue)}
+.tenue{color:var(--tenue)}
+
+/* ── Portada ─────────────────────────────────────────────── */
+.portada{display:flex;flex-direction:column;gap:14px;max-width:640px;margin-bottom:16px}
+.marca{display:flex;align-items:center;gap:11px}
+.marca img{width:38px;height:38px;object-fit:contain}
+.marca b{font-size:19px;font-weight:800;letter-spacing:.09em}
+h1{font-size:clamp(30px,4.8vw,44px);font-weight:800;line-height:1.05;letter-spacing:-.025em;text-wrap:balance}
+
+/* ── Índice ──────────────────────────────────────────────── */
+.clave{
+  font-size:16.5px;line-height:1.55;color:var(--tinta-suave);
+  border-left:3px solid var(--verde);padding:2px 0 2px 17px;margin-top:4px;
+}
+.clave strong{color:var(--tinta);font-weight:800}
+.indice{display:flex;flex-wrap:wrap;gap:7px;margin:26px 0 10px;padding:20px 0;border-top:1px solid var(--borde);border-bottom:1px solid var(--borde)}
+.indice a{
+  text-decoration:none;font-size:14px;font-weight:700;color:var(--tinta-suave);
+  border:1px solid var(--borde);border-radius:999px;padding:7px 14px;background:var(--superficie);
+}
+.indice a:hover{border-color:var(--verde);color:var(--verde)}
+
+/* ── Un bloque ───────────────────────────────────────────── */
+.bloque{padding-top:60px;scroll-margin-top:18px}
+.bloque-cab{display:flex;flex-direction:column;gap:9px;max-width:640px;margin-bottom:20px}
+.bloque h2{font-size:clamp(24px,3.1vw,32px);font-weight:800;line-height:1.14;letter-spacing:-.024em;text-wrap:balance}
+.bloque-pie{font-size:16.5px;color:var(--tinta-suave)}
+.quien{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;letter-spacing:.05em;padding:4px 11px;border-radius:999px;width:fit-content}
+
+.escenario{
+  display:grid;grid-template-columns:minmax(0,290px) minmax(0,1fr);gap:32px;align-items:center;
+  background:var(--escena);border:1px solid var(--escena-borde);border-radius:26px;padding:28px;
+}
+@media (max-width:780px){
+  .escenario{grid-template-columns:1fr;justify-items:center;gap:20px;padding:20px 16px}
+  .relato{text-align:center}
+}
+
+/* ── El móvil ────────────────────────────────────────────── */
+.movil{position:relative;width:278px;height:582px;flex:none;border-radius:36px;padding:10px;
+  background:#151C2B;border:1px solid #2A3348;
+  box-shadow:0 28px 66px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06)}
+.muesca{position:absolute;top:15px;left:50%;transform:translateX(-50%);width:82px;height:19px;border-radius:11px;background:#0B1018;z-index:9}
+.pantalla{position:relative;width:100%;height:100%;overflow:hidden;border-radius:28px;background:var(--f);color:var(--i)}
+
+.p{position:absolute;inset:0;padding:34px 14px 0;opacity:0;pointer-events:none;
+   transition:opacity .3s ease;display:flex;flex-direction:column;gap:8px;font-size:12.5px}
+.p.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.p{transition:none}}
+
+/* ── Piezas de HUBI, a escala ────────────────────────────── */
+.est{display:flex;justify-content:space-between;font-size:10px;font-weight:800;color:var(--te);padding:0 4px}
+.cab{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.logo{display:flex;align-items:center;gap:6px}
+.logo img{width:20px;height:20px;object-fit:contain}
+.logo b{font-size:12px;letter-spacing:.09em;font-weight:800}
+.aj{
+  /* La línea del degradado y nada más: ni halo ni flecha. Igual que
+     el de verdad — el degradado es el fondo del botón entero y encima
+     va otra capa, de la que solo asoma el borde de 1 px. */
+  display:block;border-radius:999px;padding:1px;
+  background:linear-gradient(102deg,#00F4FC 0%,#628BFC 55%,#AE62F7 100%);
+}
+.aj-d{display:flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;
+  font-size:9.5px;font-weight:800;color:var(--i);background:var(--f)}
+.aj img{width:11px;height:11px;object-fit:contain}
+
+.volver{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:800;color:var(--is);
+  background:var(--s);border:1px solid var(--b);border-radius:999px;padding:4px 10px 4px 7px;width:fit-content}
+.titulo-p{font-size:19px;font-weight:800;letter-spacing:-.025em;line-height:1.1}
+
+.saludo{display:flex;align-items:center;gap:9px;margin-top:2px}
+.av{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px}
+.dia{font-size:10px;font-weight:700;color:var(--te);display:block}
+.hola{font-size:15.5px;font-weight:800;letter-spacing:-.022em;line-height:1.15;display:block}
+
+.ancha{display:flex;align-items:center;gap:9px;border-radius:16px;padding:9px 10px;min-height:53px}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.cuadro{border-radius:16px;padding:10px;display:flex;flex-direction:column;justify-content:space-between;min-height:100px}
+.caja{width:33px;height:33px;border-radius:11px;background:var(--s);display:grid;place-items:center;flex:none}
+.t1{font-size:13px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.t2{font-size:10.5px;font-weight:700}
+.cif{font-size:23px;font-weight:800;line-height:1;letter-spacing:-.03em}
+.rot{font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--te);margin-top:3px}
+
+.fila{display:flex;align-items:center;gap:9px;background:var(--s);border:1px solid var(--b);border-radius:15px;padding:7px 9px}
+.sello{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none}
+
+.baja{position:absolute;left:0;right:0;bottom:0;height:50px;background:var(--s);border-top:1px solid var(--b);display:flex;align-items:center}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:8px;font-weight:800;color:var(--ap)}
+.tab.act{color:#14B8A6}
+
+.campo{background:var(--s);border:1px solid var(--b);border-radius:13px;padding:10px 12px;font-size:12.5px;font-weight:600;color:var(--is)}
+.btn{border-radius:13px;padding:12px;text-align:center;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-p{background:var(--btn);color:var(--btn-t)}
+.btn-v{background:#14B8A6;color:#06202B}
+.btn-s{background:var(--s);border:1px solid var(--b);color:var(--is)}
+
+.p.oscura{background:#01071B;color:#F1F5F9;padding-top:32px}
+.p.oscura .campo{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#E2E8F0}
+.p.oscura .fila{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
+.mancha{position:absolute;border-radius:50%;filter:blur(40px);opacity:.72;pointer-events:none}
+
+.dato{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--bf)}
+.dato span:first-child{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--te);white-space:nowrap}
+.dato span:last-child{font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-align:right}
+
+.girando{width:32px;height:32px;border-radius:50%;border:3px solid var(--b);border-top-color:#2DD4BF;animation:giro 1s linear infinite}
+@keyframes giro{to{transform:rotate(360deg)}}
+.onda-viva{display:flex;align-items:flex-end;gap:4px;height:32px}
+.onda-viva i{width:5px;border-radius:3px;background:#2DD4BF;display:block;animation:latir 1.1s ease-in-out infinite}
+.onda-viva i:nth-child(1){height:11px}.onda-viva i:nth-child(2){height:24px;animation-delay:.12s}
+.onda-viva i:nth-child(3){height:32px;animation-delay:.24s}.onda-viva i:nth-child(4){height:19px;animation-delay:.36s}
+.onda-viva i:nth-child(5){height:9px;animation-delay:.48s}
+@keyframes latir{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
+@media (prefers-reduced-motion:reduce){.girando,.onda-viva i{animation:none}}
+
+.casilla{width:29px;height:29px;border-radius:9px;flex:none;display:grid;place-items:center}
+.pastilla-dia{flex:1;text-align:center;padding:7px 0;border-radius:9px;font-size:11px;font-weight:800}
+
+.toque{position:absolute;width:38px;height:38px;border-radius:50%;
+  border:2px solid rgba(20,184,166,.9);background:rgba(20,184,166,.22);
+  transform:translate(-50%,-50%) scale(.4);opacity:0;pointer-events:none;z-index:8}
+.toque.dar{animation:tocar .6s ease-out}
+@keyframes tocar{0%{opacity:0;transform:translate(-50%,-50%) scale(.35)}
+  35%{opacity:1;transform:translate(-50%,-50%) scale(.85)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.5)}}
+@media (prefers-reduced-motion:reduce){.toque.dar{animation:none;opacity:.9;transform:translate(-50%,-50%) scale(.9)}}
+
+/* ── El relato ───────────────────────────────────────────── */
+.relato{display:flex;flex-direction:column;gap:14px;color:var(--tinta);max-width:420px;width:100%}
+.dice{font-size:clamp(18px,2.4vw,24px);font-weight:800;line-height:1.28;letter-spacing:-.02em;text-wrap:balance;min-height:2.9em}
+.matiz{font-size:14.5px;line-height:1.5;color:var(--tenue);min-height:4.2em}
+
+.mandos{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
+.play{display:inline-flex;align-items:center;gap:8px;background:var(--verde);color:#00201C;border:0;
+  border-radius:999px;padding:10px 19px;font:inherit;font-weight:800;font-size:14.5px;cursor:pointer}
+.play:hover{filter:brightness(1.07)}
+.otra{background:transparent;border:1px solid var(--borde);color:var(--tinta-suave);border-radius:999px;
+  padding:9px 15px;font:inherit;font-weight:800;font-size:13.5px;cursor:pointer}
+.otra:hover{border-color:var(--verde);color:var(--verde)}
+.reloj{font-size:13px;font-weight:800;color:var(--apagado);font-variant-numeric:tabular-nums}
+.barra{height:5px;border-radius:99px;background:var(--borde-fino);overflow:hidden;margin-top:2px}
+.barra i{display:block;height:100%;width:0;background:var(--verde);border-radius:99px}
+
+:focus-visible{outline:3px solid var(--verde);outline-offset:3px;border-radius:8px}
+.pie{margin-top:44px;max-width:640px;font-size:15px;color:var(--tenue)}
+a{color:var(--verde)}
+</style>
+
+</head>
+<body>
+<div class="hoja">
+
+  <header class="portada">
+    <div class="marca"><img id="marcaLogo" alt=""><b>HUBI</b></div>
+    <span class="eyebrow">Demostración guiada</span>
+    <h1>Así se usa, una cosa cada vez.</h1>
+    <p class="tenue">
+      Primero un día entero de un vistazo. Después, cada cosa que se puede hacer
+      con HUBI, en su propio bloque y con su propio título. Cada demostración
+      arranca sola al llegar a ella; puedes pararla y volver a verla cuando
+      quieras.
+    </p>
+    <p class="clave">
+      Y una cosa antes de empezar, porque cambia cómo se lee todo lo demás:
+      <strong>todo se guarda en el mismo sitio, y ese sitio es tu Google
+      Drive.</strong> HUBI no es el almacén — es la interfaz. Si mañana
+      desaparece, tus papeles siguen ahí, ordenados y con sus nombres.
+    </p>
+  </header>
+
+  <nav class="indice" id="indice"></nav>
+
+  <div id="bloques"></div>
+
+  <p class="pie">
+    Los nombres y los importes son de ejemplo. Todo lo demás —las pantallas, los
+    iconos, el logotipo, los colores, los textos y el orden de los toques— es lo
+    que hay en HUBI. La versión escrita y con detalle está en la
+    <strong>Guía de HUBI</strong>.
+  </p>
+</div>
+
+<script>
+/* El logotipo y el icono de Ajustes, los archivos reales de
+   `public/`, metidos en la propia página: fuera de HUBI no hay
+   de dónde cargarlos. */
+const LOGO_CLARO = 'data:image/png;base64,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';
+const LOGO_OSCURO = 'data:image/png;base64,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';
+const MANDO = 'data:image/png;base64,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';
+
+/* ═══════════════════════════════════════════════════════════
+   LOS ICONOS DE HUBI
+
+   Copiados literalmente de `app/iconos.tsx`. Son los mismos
+   trazos que dibuja la aplicación: no se parecen, son ellos.
+   ═══════════════════════════════════════════════════════════ */
+const TRAZOS = {
+  casa:      'M3 10.5 12 3l9 7.5M5.5 9.5V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5',
+  carpeta:   'M3 7.5a2 2 0 0 1 2-2h3.6a2 2 0 0 1 1.5.7l1.1 1.3H19a2 2 0 0 1 2 2v8.8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
+  check:     'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M8.3 12.2l2.6 2.6 4.8-5.2',
+  calendario:'M6.2 5h11.6a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6.2a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3M3.2 10h17.6M8 3v4M16 3v4',
+  hoja:      'M20 4C10 4 4 9 4 16.5c0 1.5.3 2.5.3 2.5S9 8.5 19.5 8.5C15 11 12 14 10 20M4.5 20.5C8 13 13 9.5 19.5 8.5',
+  micro:     'M12 2.5a3 3 0 0 1 3 3v5.5a3 3 0 0 1-6 0V5.5a3 3 0 0 1 3-3M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.2',
+  onda:      'M3.5 10.6v2.8M7.6 7.4v9.2M11.8 3.6v16.8M16 7.4v9.2M20.1 10.6v2.8',
+  foto:      'M3 8.6a2 2 0 0 1 2-2h2.2l1.3-2.1h6.8L16.8 6.6H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM15.6 13a3.6 3.6 0 1 1-7.2 0 3.6 3.6 0 0 1 7.2 0',
+  lupa:      'M17.6 10.8a6.8 6.8 0 1 1-13.6 0 6.8 6.8 0 0 1 13.6 0M15.8 15.8 21 21',
+  flecha:    'M9 5.5 15.5 12 9 18.5',
+  atras:     'M15 5.5 8.5 12 15 18.5',
+  campana:   'M18.5 16.5V11a6.5 6.5 0 1 0-13 0v5.5L4 18.5h16zM9.8 21.5a2.6 2.6 0 0 0 4.4 0',
+  escudo:    'M12 3 5 6v6c0 4.4 3 7.6 7 9 4-1.4 7-4.6 7-9V6z',
+  corazon:   'M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z',
+  coche:     'M4.5 16.5h15M6 16.5v2a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1v-5l2-5.2a1.6 1.6 0 0 1 1.5-1h10a1.6 1.6 0 0 1 1.5 1l2 5.2v5a1 1 0 0 1-1 1H19a1 1 0 0 1-1-1v-2M3.7 12.5h16.6',
+  papel:     'M6 3h7.5L19 8.5V21H6zM13.5 3v5.5H19M9 13h7M9 16.5h5',
+  pastilla:  'M20.8 12a3.4 3.4 0 0 1-3.4 3.4H6.6a3.4 3.4 0 0 1 0-6.8h10.8A3.4 3.4 0 0 1 20.8 12M12 8.6v6.8',
+  reloj:     'M20.6 12a8.6 8.6 0 1 1-17.2 0 8.6 8.6 0 0 1 17.2 0M12 7.2V12l3.2 2',
+  euro:      'M17.5 6.5A6.5 6.5 0 0 0 7 12a6.5 6.5 0 0 0 10.5 5.5M4.5 10.5h8M4.5 13.8h8',
+  mas:       'M12 5.5v13M5.5 12h13',
+  chincheta: 'M9 3h6l-.8 5.6 3.3 3.2H6.5l3.3-3.2zM12 11.8V21',
+  ojo:       'M2.6 12S6.6 5.5 12 5.5 21.4 12 21.4 12 17.4 18.5 12 18.5 2.6 12 2.6 12M15.1 12a3.1 3.1 0 1 1-6.2 0 3.1 3.1 0 0 1 6.2 0',
+  lapiz:     'M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17z',
+  gente:     'M12.4 8.5a3.4 3.4 0 1 1-6.8 0 3.4 3.4 0 0 1 6.8 0M3 20a6 6 0 0 1 12 0M16.5 5.6a3.4 3.4 0 0 1 0 5.8M17 14.6a6 6 0 0 1 4 5.4',
+  bolsa:     'M5 8h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8zM8.6 8V6.4a3.4 3.4 0 0 1 6.8 0V8',
+  aviso:     'M12 3.6 21.4 20H2.6zM12 10v4.4M12 17.2v.1',
+  llave:     'M15.5 3.5a5.5 5.5 0 1 1-3.9 9.4L4 20.5v-3h-1.5v-3H6l5.6-5.6A5.5 5.5 0 0 1 15.5 3.5M17 8.2h.01',
+  casco:     'M4 15.5a8 8 0 0 1 16 0M9.2 15.2V8.4a2.8 2.8 0 0 1 5.6 0v6.8M2.5 15.5h19a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-19a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1Z',
+};
+
+/** El mismo <Ico> de la aplicación: trazo de línea, sin relleno. */
+function ico(n, tam = 20, grosor = 1.9, color = 'currentColor') {
+  return `<svg width="${tam}" height="${tam}" viewBox="0 0 24 24" fill="none"
+    stroke="${color}" stroke-width="${grosor}" stroke-linecap="round"
+    stroke-linejoin="round" aria-hidden="true"><path d="${TRAZOS[n]}"/></svg>`;
+}
+
+/* ── Trozos que se repiten ──────────────────────────────── */
+const est = (h = '9:41') =>
+  `<div class="est"><span>${h}</span><span>▮▮▮ ᯤ ▰</span></div>`;
+
+const cabHubi = () => `
+  <div class="cab">
+    <span class="logo"><img src="${LOGO_CLARO}" alt=""><b>HUBI</b></span>
+    <span class="aj"><span class="aj-d"><img src="${MANDO}" alt="">Ajustes</span></span>
+  </div>`;
+
+const volver = (t = 'Volver') =>
+  `<span class="volver">${ico('atras', 11, 2.4)}${t}</span>`;
+
+const tab = (n, t, act) =>
+  `<span class="tab${act ? ' act' : ''}">${ico(n, 21, act ? 2.1 : 1.9)}<span>${t}</span></span>`;
+
+const bajaFamilia = (act) => `<div class="baja">
+  ${tab('casa', 'Inicio', act === 'inicio')}
+  ${tab('carpeta', 'Papeles', act === 'papeles')}
+  ${tab('calendario', 'Agenda', act === 'agenda')}
+  ${tab('hoja', 'Finca', act === 'finca')}
+  ${tab('casco', 'Obras', act === 'obras')}
+</div>`;
+
+const bajaAyuda = (act) => `<div class="baja">
+  ${tab('casa', 'Inicio', act === 'inicio')}
+  ${tab('calendario', 'Agenda', act === 'agenda')}
+  ${tab('bolsa', 'La compra', act === 'compra')}
+</div>`;
+
+const bajaAsesor = (act) => `<div class="baja">
+  ${tab('casa', 'Inicio', act === 'inicio')}
+  ${tab('carpeta', 'Papeles', act === 'papeles')}
+  ${tab('calendario', 'Agenda', act === 'agenda')}
+  ${tab('hoja', 'Finca', act === 'finca')}
+  ${tab('casco', 'Obras', act === 'obras')}
+</div>`;
+
+const saludo = (ini, color, dia, texto) => `
+  <div class="saludo">
+    <span class="av" style="background:${color}">${ini}</span>
+    <span><span class="dia">${dia}</span><span class="hola">${texto}</span></span>
+  </div>`;
+
+const manchas = () => `
+  <span class="mancha" style="width:170px;height:170px;left:-50px;top:-30px;background:rgba(20,184,166,.5)"></span>
+  <span class="mancha" style="width:160px;height:160px;right:-55px;top:70px;background:rgba(59,130,246,.45)"></span>
+  <span class="mancha" style="width:145px;height:145px;left:55px;bottom:-40px;background:rgba(139,92,246,.35)"></span>`;
+
+/* ═══════════════════════════════════════════════════════════
+   LAS PANTALLAS
+   ═══════════════════════════════════════════════════════════ */
+const PANTALLAS = {
+
+entrar: `<div class="p oscura">${manchas()}
+  <div style="position:relative;display:flex;flex-direction:column;gap:9px;padding-top:66px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <img src="${LOGO_OSCURO}" alt="" style="width:56px;height:56px;object-fit:contain">
+      <b style="font-size:21px;letter-spacing:.1em;font-weight:800">HUBI</b>
+      <p style="font-size:11.5px;color:var(--ap);font-weight:700;text-align:center;line-height:1.5">
+        Todo lo importante,<br>en un mismo lugar.</p>
+    </div>
+    <div style="margin-top:20px;display:flex;flex-direction:column;gap:9px">
+      <div class="campo">juanmiguel@gmail.com</div>
+      <div class="btn btn-v">Continuar</div>
+      <p style="font-size:10px;color:var(--ap);text-align:center;font-weight:600;line-height:1.5">
+        Te enviaremos un número por correo.<br>No hace falta recordar ninguna contraseña.</p>
+    </div>
+  </div></div>`,
+
+codigo: `<div class="p oscura">${manchas()}
+  <div style="position:relative;display:flex;flex-direction:column;gap:11px;padding-top:96px">
+    <p style="font-size:16px;font-weight:800;text-align:center;letter-spacing:-.02em">Mira tu correo</p>
+    <p style="font-size:11.5px;color:var(--ap);text-align:center;font-weight:600">Te hemos enviado un número de seis cifras.</p>
+    <div class="campo" style="text-align:center;font-size:23px;letter-spacing:.3em;font-weight:800;padding:14px">4 8 3 1 0 6</div>
+    <div class="btn btn-v">Entrar</div>
+  </div></div>`,
+
+inicio: `<div class="p">${est()}${cabHubi()}
+  ${saludo('J', '#14B8A6', 'Viernes, 14 de agosto', 'Buenos días, Juan Miguel')}
+  <div class="ancha" style="background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3)">
+    <span class="caja">${ico('foto', 19, 2.1, '#14B8A6')}</span>
+    <span style="flex:1;min-width:0">
+      <span class="t1" style="display:block">Guardar documento</span>
+      <span class="t2" style="color:#14B8A6">34 guardados · el último, hace 2 días</span></span>
+    ${ico('flecha', 17, 2.2, '#14B8A6')}
+  </div>
+  <div class="dos">
+    <div class="cuadro" style="background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3)">
+      <span class="caja">${ico('bolsa', 18, 2.1, '#0EA5E9')}</span>
+      <span><span class="cif" style="color:#0EA5E9;display:block">3</span>
+        <span class="t1" style="display:block;margin-top:3px">La compra</span>
+        <span class="t2" style="color:#0EA5E9">cosas por coger</span></span>
+    </div>
+    <div class="cuadro" style="background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.55)">
+      <span class="caja">${ico('chincheta', 18, 2.1, '#F59E0B')}</span>
+      <span><span class="cif" style="color:#F59E0B;display:block">2</span>
+        <span class="t1" style="display:block;margin-top:3px">Notas</span>
+        <span class="t2" style="color:#F59E0B">una es para ti</span></span>
+    </div>
+  </div>
+  <div class="ancha" style="background:rgba(245,158,11,.13);border:1px solid rgba(245,158,11,.35)">
+    <span class="av" style="background:#F59E0B;width:32px;height:32px;border-radius:11px;font-size:14px">S</span>
+    <span style="flex:1;min-width:0">
+      <span class="t1" style="display:block">Silvia</span>
+      <span class="t2" style="color:#F59E0B">Te ha dejado 2 cosas</span></span>
+    ${ico('flecha', 17, 2.2, '#F59E0B')}
+  </div>
+  <div class="ancha" style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3)">
+    <span class="caja">${ico('euro', 19, 2.1, '#8B5CF6')}</span>
+    <span style="flex:1;min-width:0">
+      <span class="t2" style="color:var(--te);display:block">Cuentas de casa</span>
+      <span class="cif" style="display:block">1.240 €</span>
+      <span class="t2" style="color:#8B5CF6">Lo que más, luz</span></span>
+  </div>
+  <span class="rot">Hoy</span>
+  <div class="fila">
+    <span class="sello" style="background:rgba(255,107,107,.18)">${ico('pastilla', 17, 2.1, '#FF6B6B')}</span>
+    <span><span class="t1" style="display:block">Recoger medicación</span>
+      <span class="t2" style="color:var(--te)">10:30</span></span>
+  </div>
+  ${bajaFamilia('inicio')}</div>`,
+
+elegir: `<div class="p">${est()}${volver()}
+  <p class="titulo-p" style="margin-top:3px">Guardar documento</p>
+  <div style="display:flex;flex-direction:column;gap:9px;margin-top:16px">
+    <div class="btn btn-v" style="padding:19px">${ico('foto', 19, 2.2, '#06202B')}Hacer foto</div>
+    <div class="btn btn-s" style="padding:19px">${ico('carpeta', 19, 2.2)}Elegir archivo</div>
+  </div>
+  <p style="font-size:11px;color:var(--te);font-weight:600;margin-top:12px;line-height:1.5">
+    Vale una foto de la factura, o un PDF que te haya llegado por correo.</p>
+  ${bajaFamilia('inicio')}</div>`,
+
+leyendo: `<div class="p">${est()}
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;height:76%">
+    <div style="width:116px;height:146px;border-radius:10px;background:var(--s);border:1px solid var(--b);display:flex;flex-direction:column;gap:5px;padding:12px">
+      <span style="height:7px;width:60%;background:#334155;border-radius:3px"></span>
+      <span style="height:5px;width:85%;background:var(--b);border-radius:3px"></span>
+      <span style="height:5px;width:72%;background:var(--b);border-radius:3px"></span>
+      <span style="height:5px;width:90%;background:var(--b);border-radius:3px"></span>
+      <span style="height:5px;width:48%;background:var(--b);border-radius:3px"></span>
+      <span style="height:14px;width:55%;background:#334155;border-radius:3px;margin-top:auto"></span>
+    </div>
+    <div class="girando"></div>
+    <p style="font-size:12.5px;font-weight:800;color:var(--is)">Leyendo el documento…</p>
+  </div></div>`,
+
+encontrado: `<div class="p">${est()}
+  <span class="rot" style="margin-top:2px">Hemos encontrado</span>
+  <div style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:3px 12px 9px">
+    <div class="dato"><span>Proveedor</span><span>ENDESA</span></div>
+    <div class="dato"><span>Fecha</span><span>14/08/2026</span></div>
+    <div class="dato"><span>Importe</span><span style="color:#8B5CF6">127,43 €</span></div>
+    <div class="dato"><span>Tipo</span><span>Factura</span></div>
+    <div class="dato" style="border:0"><span>Carpeta</span><span style="color:#14B8A6">Finca › Gastos › Luz</span></div>
+  </div>
+  <p style="font-size:17px;font-weight:800;letter-spacing:-.025em;margin-top:9px">¿Es correcto?</p>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:5px">
+    <div class="btn btn-v" style="padding:16px">${ico('check', 17, 2.3, '#06202B')}Guardar</div>
+    <div class="btn btn-s" style="padding:16px">${ico('lapiz', 17, 2.3)}Cambiar</div>
+  </div></div>`,
+
+guardado: `<div class="p">${est()}
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;height:62%">
+    <span style="width:64px;height:64px;border-radius:50%;background:#14B8A6;display:grid;place-items:center">
+      ${ico('check', 34, 2.4, '#06202B')}</span>
+    <p style="font-size:18px;font-weight:800;letter-spacing:-.025em">Documento guardado</p>
+    <p style="font-size:11px;color:var(--te);font-weight:700;text-align:center;line-height:1.7">
+      FINCA › GASTOS › 2026 › T3 › LUZ<br>
+      <span style="font-size:10px">2026-08-14_ENDESA_LUZ_127-43EUR.jpg</span></p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:auto;margin-bottom:62px">
+    <div class="btn btn-s">Ver documento</div>
+    <div class="btn btn-p">Volver al inicio</div>
+  </div>
+  ${bajaFamilia('inicio')}</div>`,
+
+vence: `<div class="p">${est()}
+  <div style="display:flex;flex-direction:column;gap:10px;padding-top:40px">
+    <span class="sello" style="background:rgba(255,107,107,.18);width:44px;height:44px">${ico('reloj', 24, 2.1, '#FF6B6B')}</span>
+    <p style="font-size:18px;font-weight:800;letter-spacing:-.025em;line-height:1.22">
+      Este seguro vence el 12 de noviembre</p>
+    <p style="font-size:13px;font-weight:700;color:var(--is)">¿Quieres que te avisemos?</p>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-top:3px">
+      <div class="btn btn-s" style="padding:15px">1 mes antes</div>
+      <div class="btn btn-v" style="padding:15px">1 semana antes</div>
+      <div class="btn btn-s" style="padding:15px">1 día antes</div>
+    </div>
+    <p style="font-size:10.5px;color:var(--te);font-weight:600;margin-top:6px;line-height:1.5">
+      Lo mismo con la ITV, las garantías, las revisiones y los contratos.</p>
+  </div></div>`,
+
+hablar: `<div class="p oscura">
+  <span class="mancha" style="width:180px;height:180px;left:-40px;top:30px;background:rgba(20,184,166,.45)"></span>
+  <span class="mancha" style="width:155px;height:155px;right:-50px;bottom:70px;background:rgba(59,130,246,.4)"></span>
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:17px;height:100%">
+    <div class="onda-viva"><i></i><i></i><i></i><i></i><i></i></div>
+    <p style="font-size:11px;color:var(--ap);font-weight:800;letter-spacing:.12em;text-transform:uppercase">Estoy escuchando</p>
+    <p style="font-size:15px;font-weight:700;text-align:center;line-height:1.45;padding:0 6px">
+      «Recuérdale a Juan Miguel mañana a las diez que recoja la medicación en la farmacia.»</p>
+  </div></div>`,
+
+entendido: `<div class="p">${est()}
+  <span class="rot" style="margin-top:2px">Esto es lo que he entendido</span>
+  <div style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:3px 12px 9px">
+    <div class="dato"><span>Tarea</span><span>Recoger medicación</span></div>
+    <div class="dato"><span>Para</span><span>Juan Miguel</span></div>
+    <div class="dato"><span>Cuándo</span><span>Mañana · 10:00</span></div>
+    <div class="dato" style="border:0"><span>Aviso</span><span style="color:#14B8A6">30 min antes</span></div>
+  </div>
+  <p style="font-size:17px;font-weight:800;letter-spacing:-.025em;margin-top:9px">¿Lo guardo?</p>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:5px">
+    <div class="btn btn-v" style="padding:16px">${ico('check', 17, 2.3, '#06202B')}Guardar</div>
+    <div class="btn btn-s" style="padding:16px">${ico('lapiz', 17, 2.3)}Cambiar</div>
+  </div></div>`,
+
+preguntar: `<div class="p oscura">
+  <span class="mancha" style="width:180px;height:180px;left:-40px;top:30px;background:rgba(20,184,166,.45)"></span>
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:17px;height:100%">
+    <div class="onda-viva"><i></i><i></i><i></i><i></i><i></i></div>
+    <p style="font-size:15px;font-weight:700;text-align:center;line-height:1.45;padding:0 6px">
+      «¿Cuánto hemos gastado este trimestre en luz?»</p>
+    <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:14px 16px;text-align:center">
+      <span style="font-size:28px;font-weight:800;letter-spacing:-.03em;display:block">642,80 €</span>
+      <span style="font-size:11px;color:var(--ap);font-weight:700">en luz · julio a septiembre · 3 facturas</span>
+    </div>
+  </div></div>`,
+
+papeles: `<div class="p">${est()}
+  <p class="titulo-p" style="margin-top:2px">Papeles</p>
+  <div class="campo" style="display:flex;align-items:center;gap:8px;color:var(--ap)">
+    ${ico('lupa', 16, 2.1, 'var(--ap)')}¿Qué estás buscando?</div>
+  <div class="dos" style="margin-top:2px">
+    <div class="cuadro" style="background:var(--s);border:1px solid var(--b);min-height:82px">
+      <span class="sello" style="background:rgba(20,184,166,.18)">${ico('hoja', 17, 2.1, '#14B8A6')}</span>
+      <span><span class="t1" style="display:block">Finca</span><span class="t2" style="color:var(--te)">42 papeles</span></span>
+    </div>
+    <div class="cuadro" style="background:var(--s);border:1px solid var(--b);min-height:82px">
+      <span class="sello" style="background:rgba(59,130,246,.18)">${ico('escudo', 17, 2.1, '#3B82F6')}</span>
+      <span><span class="t1" style="display:block">Seguros</span><span class="t2" style="color:var(--te)">9 papeles</span></span>
+    </div>
+    <div class="cuadro" style="background:var(--s);border:1px solid var(--b);min-height:82px">
+      <span class="sello" style="background:rgba(255,107,107,.18)">${ico('corazon', 17, 2.1, '#FF6B6B')}</span>
+      <span><span class="t1" style="display:block">Salud</span><span class="t2" style="color:var(--te)">16 papeles</span></span>
+    </div>
+    <div class="cuadro" style="background:var(--s);border:1px solid var(--b);min-height:82px">
+      <span class="sello" style="background:rgba(139,92,246,.18)">${ico('coche', 17, 2.1, '#8B5CF6')}</span>
+      <span><span class="t1" style="display:block">Vehículos</span><span class="t2" style="color:var(--te)">11 papeles</span></span>
+    </div>
+  </div>
+  ${bajaFamilia('papeles')}</div>`,
+
+buscando: `<div class="p">${est()}
+  <p class="titulo-p" style="margin-top:2px">Papeles</p>
+  <div class="campo" style="display:flex;align-items:center;gap:8px;border-color:#14B8A6">
+    ${ico('lupa', 16, 2.1, '#14B8A6')}<b style="font-weight:800">seguro coche</b></div>
+  <span class="rot">3 resultados</span>
+  <div class="fila">
+    <span class="sello" style="background:rgba(139,92,246,.18)">${ico('papel', 17, 2.1, '#8B5CF6')}</span>
+    <span style="flex:1;min-width:0"><span class="t1" style="display:block">Póliza Mapfre 2026</span>
+      <span class="t2" style="color:var(--te)">Vehículos › Seguro · 12 nov</span></span>
+    ${ico('flecha', 15, 2.2, 'var(--ap)')}
+  </div>
+  <div class="fila">
+    <span class="sello" style="background:rgba(139,92,246,.18)">${ico('papel', 17, 2.1, '#8B5CF6')}</span>
+    <span style="flex:1;min-width:0"><span class="t1" style="display:block">Recibo del seguro</span>
+      <span class="t2" style="color:var(--te)">Vehículos › Seguro · 12 nov 2025</span></span>
+    ${ico('flecha', 15, 2.2, 'var(--ap)')}
+  </div>
+  <div class="fila">
+    <span class="sello" style="background:rgba(139,92,246,.18)">${ico('papel', 17, 2.1, '#8B5CF6')}</span>
+    <span style="flex:1;min-width:0"><span class="t1" style="display:block">Parte amistoso</span>
+      <span class="t2" style="color:var(--te)">Vehículos › Seguro · 3 mar 2025</span></span>
+    ${ico('flecha', 15, 2.2, 'var(--ap)')}
+  </div>
+  ${bajaFamilia('papeles')}</div>`,
+
+ficha: `<div class="p">${est()}${volver('Seguro')}
+  <div style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:10px;margin-top:4px">
+    <div style="height:118px;border-radius:11px;background:var(--f);display:grid;place-items:center">
+      ${ico('papel', 34, 1.7, 'var(--ap)')}</div>
+  </div>
+  <p style="font-size:16px;font-weight:800;letter-spacing:-.025em;margin-top:4px">Póliza Mapfre 2026</p>
+  <div style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:3px 12px 9px">
+    <div class="dato"><span>Vence</span><span style="color:#FF6B6B">12 nov 2026</span></div>
+    <div class="dato"><span>Importe</span><span>486,20 €</span></div>
+    <div class="dato" style="border:0"><span>Dónde</span><span style="font-size:10.5px">VEHÍCULOS › SEGURO › 2026</span></div>
+  </div>
+  <div class="btn btn-s" style="margin-top:6px">${ico('carpeta', 16, 2.2)}Abrir en Drive</div>
+  ${bajaFamilia('papeles')}</div>`,
+
+agenda: `<div class="p">${est()}
+  <p class="titulo-p" style="margin-top:2px">Agenda</p>
+  <div style="display:flex;gap:4px;margin-top:4px">
+    ${['L','M','X','J','V','S','D'].map((d, i) => `
+      <div style="flex:1;text-align:center;padding:8px 0 6px;border-radius:12px;
+        ${i === 4 ? 'background:var(--btn);color:var(--btn-t)' : 'background:var(--s);border:1px solid var(--b)'}">
+        <span style="font-size:9.5px;font-weight:800;display:block;opacity:.7">${d}</span>
+        <span style="font-size:14px;font-weight:800;display:block">${10 + i}</span>
+        <span style="display:flex;gap:2px;justify-content:center;margin-top:3px;height:4px">
+          ${[0, 2, 4].includes(i) ? '<i style="width:4px;height:4px;border-radius:50%;background:#FF6B6B;display:block"></i>' : ''}
+          ${[1, 4].includes(i) ? '<i style="width:4px;height:4px;border-radius:50%;background:#14B8A6;display:block"></i>' : ''}
+          ${i === 4 ? '<i style="width:9px;height:4px;border-radius:99px;background:#8B5CF6;display:block"></i>' : ''}
+        </span>
+      </div>`).join('')}
+  </div>
+  <span class="rot">Viernes, 14 de agosto</span>
+  <div class="fila">
+    <span class="sello" style="background:rgba(255,107,107,.18)">${ico('pastilla', 17, 2.1, '#FF6B6B')}</span>
+    <span><span class="t1" style="display:block">Recoger medicación</span><span class="t2" style="color:var(--te)">10:30 · Juan Miguel</span></span>
+  </div>
+  <div class="fila">
+    <span class="sello" style="background:rgba(20,184,166,.18)">${ico('check', 17, 2.1, '#14B8A6')}</span>
+    <span><span class="t1" style="display:block">Llevar papeles a Silvia</span><span class="t2" style="color:var(--te)">18:00 · Conchita</span></span>
+  </div>
+  <div class="fila">
+    <span class="sello" style="background:rgba(139,92,246,.18)">${ico('coche', 17, 2.1, '#8B5CF6')}</span>
+    <span><span class="t1" style="display:block">ITV del coche</span><span class="t2" style="color:var(--te)">Dentro de 6 días</span></span>
+  </div>
+  ${bajaFamilia('agenda')}</div>`,
+
+apuntar: `<div class="p">${est()}${volver('Agenda')}
+  <p class="titulo-p" style="margin-top:3px">¿Qué hay que recordar?</p>
+  <div class="campo" style="margin-top:4px"><b style="font-weight:800">Llevar el coche a la ITV</b></div>
+  <p style="font-size:11.5px;font-weight:800;margin-top:8px">¿Para quién?</p>
+  <div style="display:flex;gap:5px;margin-top:4px">
+    <span class="pastilla-dia" style="background:var(--btn);color:var(--btn-t)">Yo</span>
+    <span class="pastilla-dia" style="background:var(--s);border:1px solid var(--b);color:var(--te)">Conchita</span>
+    <span class="pastilla-dia" style="background:var(--s);border:1px solid var(--b);color:var(--te)">Los dos</span>
+  </div>
+  <p style="font-size:11.5px;font-weight:800;margin-top:8px">¿Cuándo?</p>
+  <div class="campo" style="margin-top:4px">Jueves, 20 de agosto · 09:00</div>
+  <div class="btn btn-v" style="margin-top:10px;padding:15px">${ico('check', 17, 2.3, '#06202B')}Guardar</div>
+  </div>`,
+
+notas: `<div class="p">${est()}
+  <p class="titulo-p" style="margin-top:2px">Notas</p>
+  <div style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:11px 12px">
+    <p style="font-size:11.5px;color:var(--ap);font-weight:700">Escribe una nota…</p>
+    <div style="display:flex;gap:6px;margin-top:9px">
+      <span class="pastilla-dia" style="background:var(--btn);color:var(--btn-t);font-size:10.5px">Poner en el corcho</span>
+    </div>
+  </div>
+  <div style="background:var(--s);border:1px solid #2DD4BF;border-left:4px solid #F59E0B;border-radius:16px;padding:10px 12px;background:rgba(20,184,166,.08)">
+    <p style="font-size:13px;font-weight:700;line-height:1.4">He dejado los papeles del seguro encima de la mesa.</p>
+    <p style="font-size:10px;color:var(--te);font-weight:700;margin-top:5px">Silvia · para ti · hace 2 horas</p>
+  </div>
+  <div style="background:var(--s);border:1px solid var(--b);border-left:4px solid #14B8A6;border-radius:16px;padding:10px 12px">
+    <p style="font-size:13px;font-weight:700;line-height:1.4">La llave del garaje está en el cajón de la entrada.</p>
+    <p style="font-size:10px;color:var(--te);font-weight:700;margin-top:5px">Conchita · ayer</p>
+  </div>
+  <div style="background:var(--s);border:1px solid var(--b);border-left:4px solid #0EA5E9;border-radius:16px;padding:10px 12px">
+    <p style="font-size:13px;font-weight:700;line-height:1.4">El del agua viene los martes por la mañana.</p>
+    <p style="font-size:10px;color:var(--te);font-weight:700;margin-top:5px">Marta · el 3 de agosto</p>
+  </div>
+  ${bajaFamilia('')}</div>`,
+
+compra: `<div class="p">${est()}
+  <p class="titulo-p" style="margin-top:2px">La compra</p>
+  <div class="campo" style="display:flex;align-items:center;gap:8px;color:var(--ap)">
+    ${ico('mas', 15, 2.4, 'var(--ap)')}Añadir algo</div>
+  <div class="fila"><span class="casilla" style="border:1px solid var(--b)"></span><span class="t1">Leche</span></div>
+  <div class="fila"><span class="casilla" style="border:1px solid var(--b)"></span><span class="t1">Pan de molde</span></div>
+  <div class="fila"><span class="casilla" style="border:1px solid var(--b)"></span><span class="t1">Detergente</span></div>
+  <div class="fila" style="opacity:.5">
+    <span class="casilla" style="background:#14B8A6">${ico('check', 16, 2.6, '#06202B')}</span>
+    <span class="t1" style="text-decoration:line-through">Tomates</span></div>
+  <div class="btn btn-s" style="margin-top:6px;padding:15px">${ico('foto', 17, 2.2, '#0EA5E9')}Guardar el ticket</div>
+  <p style="font-size:10.5px;color:var(--te);font-weight:600;margin-top:6px;line-height:1.5">
+    Va directo a la carpeta de la compra. No pregunta nada más.</p>
+  ${bajaFamilia('')}</div>`,
+
+finca: `<div class="p">${est()}
+  <div style="display:flex;align-items:center;gap:9px;margin-top:2px">
+    <span class="sello" style="background:rgba(20,184,166,.18);width:36px;height:36px">${ico('hoja', 20, 2.1, '#14B8A6')}</span>
+    <p class="titulo-p">La finca</p>
+  </div>
+  <div style="display:flex;gap:5px;margin-top:4px">
+    <span class="pastilla-dia" style="background:var(--s);border:1px solid var(--b);color:var(--te)">Mes</span>
+    <span class="pastilla-dia" style="background:var(--btn);color:var(--btn-t)">Trimestre</span>
+    <span class="pastilla-dia" style="background:var(--s);border:1px solid var(--b);color:var(--te)">Año</span>
+  </div>
+  <div class="dos" style="margin-top:3px">
+    <div class="cuadro" style="background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.3);min-height:74px">
+      <span class="t2" style="color:var(--te)">Ingresos</span>
+      <span class="cif" style="color:#14B8A6">11.780 €</span></div>
+    <div class="cuadro" style="background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.3);min-height:74px">
+      <span class="t2" style="color:var(--te)">Gastos</span>
+      <span class="cif" style="color:#FF6B6B">8.430 €</span></div>
+  </div>
+  <div class="ancha" style="background:var(--btn);color:var(--btn-t)">
+    <span style="flex:1"><span class="t2" style="opacity:.7">Balance</span>
+      <span class="cif" style="display:block">+3.350 €</span></span>
+  </div>
+  <span class="rot">En qué se va</span>
+  <div class="fila" style="padding:8px 10px">
+    <span style="flex:1"><span class="t1" style="display:block">Jardinería</span>
+      <span style="display:block;height:5px;border-radius:99px;background:#14B8A6;width:78%;margin-top:4px"></span></span>
+    <span class="t1">1.180 €</span></div>
+  <div class="fila" style="padding:8px 10px">
+    <span style="flex:1"><span class="t1" style="display:block">Suministros</span>
+      <span style="display:block;height:5px;border-radius:99px;background:#14B8A6;width:67%;margin-top:4px"></span></span>
+    <span class="t1">1.017 €</span></div>
+  <div class="fila" style="padding:8px 10px">
+    <span style="flex:1"><span class="t1" style="display:block">Agua</span>
+      <span style="display:block;height:5px;border-radius:99px;background:#14B8A6;width:42%;margin-top:4px"></span></span>
+    <span class="t1">642 €</span></div>
+  ${bajaFamilia('finca')}</div>`,
+
+gente: `<div class="p">${est()}${volver()}
+  <p class="titulo-p" style="margin-top:3px">Ajustes</p>
+  <span class="rot">Quién vive aquí</span>
+  <div style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:9px 11px;display:flex;gap:9px;align-items:center">
+    <span class="av" style="background:#14B8A6;width:30px;height:30px;font-size:13px">C</span>
+    <span><span class="t1" style="display:block">Conchita</span><span class="t2" style="color:var(--te)">Familia · lo ve todo</span></span>
+  </div>
+  <div style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:9px 11px">
+    <div style="display:flex;gap:9px;align-items:center">
+      <span class="av" style="background:#0EA5E9;width:30px;height:30px;font-size:13px">M</span>
+      <span><span class="t1" style="display:block">Marta</span>
+        <span class="t2" style="color:var(--te)">Ayuda en casa · ve 1 carpeta</span></span>
+    </div>
+    <div style="display:flex;gap:3px;border-top:1px solid var(--bf);margin-top:8px;padding-top:7px">
+      <span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:8px;font-weight:800;color:var(--is)">${ico('calendario', 15, 2.2)}Su semana</span>
+      <span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:8px;font-weight:800;color:var(--is)">${ico('lapiz', 15, 2.2)}Quién es</span>
+      <span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:8px;font-weight:800;color:var(--is)">${ico('ojo', 15, 2.2)}Qué ve</span>
+      <span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:8px;font-weight:800;color:#FF6B6B">${ico('aviso', 15, 2.2)}Sacar</span>
+    </div>
+  </div>
+  <div style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:9px 11px;display:flex;gap:9px;align-items:center">
+    <span class="av" style="background:#F59E0B;width:30px;height:30px;font-size:13px">S</span>
+    <span><span class="t1" style="display:block">Silvia</span>
+      <span class="t2" style="color:var(--te)">Asesora · hasta el 31 de diciembre</span></span>
+  </div>
+  <div class="btn btn-s" style="margin-top:4px">${ico('mas', 17, 2.4)}Invitar a alguien</div>
+  </div>`,
+
+invitar: `<div class="p">${est()}
+  <p style="font-size:14px;font-weight:800;letter-spacing:-.02em;margin-top:2px">¿Quién es?</p>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+    <div style="border:1px solid var(--b);border-radius:14px;padding:9px 11px;background:var(--s)">
+      <span class="t1" style="display:block">Familia</span>
+      <span class="t2" style="color:var(--te)">Lo ve todo y puede con todo, igual que tú.</span></div>
+    <div style="border-radius:14px;padding:9px 11px;background:var(--btn);color:var(--btn-t)">
+      <span class="t1" style="display:block">✓ Ayuda en casa</span>
+      <span class="t2" style="opacity:.8">Sus tareas, la compra y los tickets. Nada más.</span></div>
+    <div style="border:1px solid var(--b);border-radius:14px;padding:9px 11px;background:var(--s)">
+      <span class="t1" style="display:block">Asesor o gestor</span>
+      <span class="t2" style="color:var(--te)">Las cuentas de tus actividades. No toca nada.</span></div>
+    <div style="border:1px solid var(--b);border-radius:14px;padding:9px 11px;background:var(--s)">
+      <span class="t1" style="display:block">Solo mirar</span>
+      <span class="t2" style="color:var(--te)">Lo ve todo pero no cambia nada.</span></div>
+  </div>
+  <p style="font-size:10.5px;color:var(--te);font-weight:600;border:1px solid var(--b);border-radius:13px;padding:9px 11px;line-height:1.5;margin-top:4px">
+    Ve lo que le encargas y la lista de la compra, y puede subir el ticket del súper.
+    No ve los papeles, ni las cuentas, ni Salud.</p>
+  <p style="font-size:11.5px;font-weight:800;margin-top:4px">¿Hasta cuándo? <span style="color:var(--te);font-weight:700">· si quieres</span></p>
+  </div>`,
+
+semana: `<div class="p">${est()}
+  <p style="font-size:15px;font-weight:800;letter-spacing:-.025em;margin-top:2px">La semana de Marta</p>
+  <p style="font-size:12px;font-weight:800;margin-top:5px">¿Qué días viene?</p>
+  <div style="display:flex;gap:4px;margin-top:4px">
+    <span class="pastilla-dia" style="background:var(--btn);color:var(--btn-t)">L</span>
+    <span class="pastilla-dia" style="background:var(--s);border:1px solid var(--b);color:var(--ap)">M</span>
+    <span class="pastilla-dia" style="background:var(--btn);color:var(--btn-t)">X</span>
+    <span class="pastilla-dia" style="background:var(--s);border:1px solid var(--b);color:var(--ap)">J</span>
+    <span class="pastilla-dia" style="background:var(--btn);color:var(--btn-t)">V</span>
+    <span class="pastilla-dia" style="background:var(--s);border:1px solid var(--b);color:var(--ap)">S</span>
+    <span class="pastilla-dia" style="background:var(--s);border:1px solid var(--b);color:var(--ap)">D</span>
+  </div>
+  <p style="font-size:12px;font-weight:800;margin-top:9px">¿Y qué hace cada día?</p>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+    ${[['Cambiar las sábanas', [1, 0, 0]], ['Poner la lavadora', [1, 0, 1]], ['Limpieza general', [0, 1, 0]]]
+      .map(([q, d]) => `
+      <div style="border:1px solid var(--b);border-radius:13px;padding:8px 10px;background:var(--s)">
+        <span class="t1" style="display:block">${q}</span>
+        <div style="display:flex;gap:4px;margin-top:5px">
+          ${['L', 'X', 'V'].map((n, i) => `<span class="pastilla-dia" style="${d[i]
+            ? 'background:#0EA5E9;color:#04202B'
+            : 'background:var(--f);border:1px solid var(--b);color:var(--ap)'}">${n}</span>`).join('')}
+        </div>
+      </div>`).join('')}
+  </div>
+  <div class="btn btn-v" style="margin-top:8px;padding:14px">${ico('check', 16, 2.3, '#06202B')}Guardar · 5</div>
+  </div>`,
+
+marta: `<div class="p">${est('8:12')}
+  ${saludo('M', '#0EA5E9', 'Lunes, 17 de agosto', 'Buenos días, Marta')}
+  <p style="font-size:11px;color:var(--is);font-weight:600;background:var(--s);border:1px solid var(--b);border-radius:14px;padding:9px 11px;line-height:1.5">
+    Aquí tienes lo que te han encargado y la lista de la compra. El ticket del súper se guarda desde la propia compra.</p>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px">
+    <span class="rot" style="margin:0">Lo de hoy</span>
+    <span class="t2" style="color:var(--te)">2 de 5</span></div>
+  <div class="fila" style="background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.35)">
+    <span class="casilla" style="background:#14B8A6">${ico('check', 16, 2.6, '#06202B')}</span>
+    <span class="t1" style="text-decoration:line-through;opacity:.55">Poner la lavadora</span></div>
+  <div class="fila" style="background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.35)">
+    <span class="casilla" style="background:#14B8A6">${ico('check', 16, 2.6, '#06202B')}</span>
+    <span class="t1" style="text-decoration:line-through;opacity:.55">Sacar la basura</span></div>
+  <div class="fila"><span class="casilla" style="border:1px solid var(--b)"></span><span class="t1">Cambiar las sábanas</span></div>
+  <div class="fila"><span class="casilla" style="border:1px solid var(--b)"></span><span class="t1">Baños</span></div>
+  <div class="fila"><span class="casilla" style="border:1px solid var(--b)"></span><span class="t1">Regar las plantas</span></div>
+  ${bajaAyuda('inicio')}</div>`,
+
+drive: `<div class="p">${est()}${volver('Documento')}
+  <p class="titulo-p" style="margin-top:3px">Dónde está guardado</p>
+  <p style="font-size:11px;color:var(--te);font-weight:700;line-height:1.5">
+    En el Google Drive de tu casa. No en un servidor nuestro.</p>
+  <div style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:12px 11px;display:flex;flex-direction:column;gap:7px;margin-top:4px">
+    <div style="display:flex;align-items:center;gap:7px">
+      ${ico('carpeta', 15, 2.1, '#14B8A6')}
+      <span style="font-size:11.5px;font-weight:800;letter-spacing:.03em">J+C · FAMILY HUB</span></div>
+    <div style="display:flex;align-items:center;gap:7px;padding-left:10px">
+      <span style="color:var(--ap);font-size:11px">└</span>${ico('carpeta', 15, 2.1, '#14B8A6')}
+      <span style="font-size:11.5px;font-weight:800;letter-spacing:.03em">FINCA</span></div>
+    <div style="display:flex;align-items:center;gap:7px;padding-left:22px">
+      <span style="color:var(--ap);font-size:11px">└</span>${ico('carpeta', 15, 2.1, '#14B8A6')}
+      <span style="font-size:11.5px;font-weight:800;letter-spacing:.03em">GASTOS</span></div>
+    <div style="display:flex;align-items:center;gap:7px;padding-left:34px">
+      <span style="color:var(--ap);font-size:11px">└</span>${ico('carpeta', 15, 2.1, '#14B8A6')}
+      <span style="font-size:11.5px;font-weight:800;letter-spacing:.03em">2026</span></div>
+    <div style="display:flex;align-items:center;gap:7px;padding-left:46px">
+      <span style="color:var(--ap);font-size:11px">└</span>${ico('carpeta', 15, 2.1, '#14B8A6')}
+      <span style="font-size:11.5px;font-weight:800;letter-spacing:.03em">T3</span></div>
+    <div style="display:flex;align-items:center;gap:7px;padding-left:58px">
+      <span style="color:var(--ap);font-size:11px">└</span>${ico('carpeta', 15, 2.1, '#14B8A6')}
+      <span style="font-size:11.5px;font-weight:800;letter-spacing:.03em">LUZ</span></div>
+    <div style="display:flex;align-items:center;gap:7px;padding-left:70px">
+      <span style="color:var(--ap);font-size:11px">└</span>${ico('papel', 15, 2.1, '#8B5CF6')}</div>
+    <div style="font-size:10px;font-weight:700;line-height:1.4;color:var(--is);
+                background:var(--f);border-radius:9px;padding:6px 8px;margin-top:-3px;
+                word-break:break-all">2026-08-14_ENDESA_LUZ_127-43EUR.jpg</div>
+  </div>
+  <div class="btn btn-s" style="margin-top:6px">${ico('carpeta', 16, 2.2)}Abrir en Drive</div>
+  <p style="font-size:10.5px;color:var(--te);font-weight:600;margin-top:6px;line-height:1.55;
+            border-left:3px solid #14B8A6;padding-left:10px">
+    Todos los de la casa suben aquí y todos leen de aquí. Aunque no
+    hayan conectado ningún Drive suyo.</p>
+  </div>`,
+
+asesor: `<div class="p">${est()}${volver('Inicio')}
+  <div style="display:flex;align-items:center;gap:9px;margin-top:3px">
+    <span class="av" style="background:#F59E0B">S</span>
+    <span><span class="hola" style="font-size:17px">Silvia</span>
+      <span class="dia">Tu asesora</span></span>
+  </div>
+  <div style="background:var(--s);border:1px solid var(--b);border-radius:16px;padding:11px 12px">
+    <p style="font-size:12px;font-weight:800">Escribirle a Silvia</p>
+    <p style="font-size:11px;color:var(--ap);font-weight:600;margin-top:5px">Te he subido las facturas del trimestre…</p>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <span class="pastilla-dia" style="background:var(--btn);color:var(--btn-t);font-size:10.5px">Enviar</span>
+      <span class="pastilla-dia" style="background:var(--s);border:1px solid var(--b);color:var(--is);font-size:10.5px">Con fecha</span>
+    </div>
+  </div>
+  <div style="border:1px solid rgba(245,158,11,.35);border-left:4px solid #F59E0B;border-radius:16px;padding:10px 12px;background:rgba(245,158,11,.08)">
+    <p style="font-size:10px;color:var(--te);font-weight:700">hace 2 horas</p>
+    <p style="font-size:13px;font-weight:700;line-height:1.4;margin-top:3px">Falta la factura de septiembre de la luz. Sin ella no puedo cerrar el trimestre.</p>
+  </div>
+  <div style="border:1px solid rgba(245,158,11,.35);border-left:4px solid #F59E0B;border-radius:16px;padding:10px 12px;background:rgba(245,158,11,.08)">
+    <p style="display:flex;gap:6px;align-items:center">
+      <span style="font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:rgba(245,158,11,.2);color:#F59E0B;padding:2px 7px;border-radius:99px">Tarea</span>
+      <span style="font-size:10px;color:var(--te);font-weight:700">ayer</span></p>
+    <p style="font-size:13px;font-weight:700;line-height:1.4;margin-top:4px">Pago del IVA del trimestre</p>
+    <p style="font-size:11px;color:var(--te);font-weight:700;margin-top:3px">Para el 20 de octubre</p>
+  </div>
+  ${bajaFamilia('')}</div>`,
+};
+
+/* ═══════════════════════════════════════════════════════════
+   LOS BLOQUES
+
+   Uno por cada cosa que se puede hacer con HUBI. Cada uno tiene
+   su título, su reproductor y su propio guion: se pueden ver por
+   separado y en cualquier orden.
+
+   `toque` va en porcentaje de la pantalla, no en píxeles: así el
+   dedo cae donde tiene que caer aunque el móvil cambie de tamaño.
+   ═══════════════════════════════════════════════════════════ */
+const BLOQUES = [
+{
+  id:'dia', titulo:'Un día cualquiera', quien:'Todo el mundo', color:'#2DD4BF',
+  pie:'Lo que ves al abrir HUBI por la mañana, antes de tocar nada.',
+  guion:[
+    { p:'entrar', d:3200, t:'Sin contraseñas. Escribes tu correo.',
+      m:'No hay ninguna que olvidar ni que recuperar. Importa más de lo que parece si en casa hay alguien a quien esto siempre se le atraviesa.', toque:[50,72] },
+    { p:'codigo', d:2600, t:'Te llega un número de seis cifras.',
+      m:'Lo escribes y ya estás dentro, en el espacio de tu familia.', toque:[50,58] },
+    { p:'inicio', d:4200, t:'Y esto es todo lo que hay por la mañana.',
+      m:'Lo que toca hoy, y poco más. Sin menús, sin pestañas escondidas, sin veinte opciones por pantalla.' },
+    { p:'inicio', d:4400, t:'Cada tarjeta ya te dice lo que hay dentro.',
+      m:'34 papeles guardados. 3 cosas por comprar. Una nota que es para ti. 1.240 € este trimestre, y lo que más, la luz. Sin entrar en ninguna.' },
+    { p:'inicio', d:3600, t:'Abajo, tus secciones.',
+      m:'Papeles, Agenda, y las actividades que tenga tu casa. Cinco pestañas como mucho: por debajo de 48 píxeles un botón deja de ser cómodo para un dedo de 75 años.' },
+  ]
+},
+{
+  id:'guardar', titulo:'Guardar un papel', quien:'Familia', color:'#2DD4BF',
+  pie:'El gesto central de HUBI: una foto y una pregunta. Nadie escribe un solo dato.',
+  guion:[
+    { p:'inicio', d:1800, t:'Llega la factura de la luz.',
+      m:'Toca la tarjeta grande del inicio.', toque:[50,32] },
+    { p:'elegir', d:2400, t:'Hacer foto.',
+      m:'También vale un PDF que te haya llegado por correo, o cualquier archivo que ya tengas en el móvil.', toque:[50,26] },
+    { p:'leyendo', d:2800, t:'HUBI la lee.',
+      m:'Aquí no hay nadie escribiendo. Ni el importe, ni la fecha, ni el proveedor, ni en qué carpeta va.' },
+    { p:'encontrado', d:5000, t:'Y enseña lo que ha entendido antes de guardar nada.',
+      m:'ENDESA · 14 de agosto · 127,43 € · Finca › Gastos › Luz. Si algo no cuadra, se corrige aquí. Esta pantalla es innegociable: un sistema que archiva solo y sin enseñarlo es un sistema en el que, el día que se equivoque, ya nadie confía.' },
+    { p:'encontrado', d:1500, t:'Guardar.', m:'', toque:[50,71] },
+    { p:'guardado', d:4600, t:'Y se ha guardado en el Drive de la familia.',
+      m:'En SU Google Drive, no en un servidor nuestro. En su carpeta, creando el año y el trimestre si no existían, y con un nombre que se puede leer dentro de cinco años. Los 127,43 € ya están en el balance de la finca.' },
+  ]
+},
+{
+  id:'drive', titulo:'Todo acaba en tu Drive', quien:'Toda la casa', color:'#2DD4BF',
+  pie:'HUBI no es el almacén. Es la interfaz: los archivos son tuyos y están donde siempre.',
+  guion:[
+    { p:'guardado', d:4200, t:'Todo se guarda en el mismo sitio. Siempre.',
+      m:'No hay dos Drives, ni carpetas sueltas, ni «lo tengo yo en el móvil». Un solo sitio para toda la casa: el Google Drive de quien la creó.' },
+    { p:'drive', d:5400, t:'Y ese sitio es TU Drive.',
+      m:'Con sus carpetas, su año, su trimestre, y un nombre de archivo que se entiende. Lo puedes abrir desde Drive ahora mismo, sin pasar por HUBI.' },
+    { p:'drive', d:5600, t:'Que es lo que hace que puedas confiarle una escritura.',
+      m:'Si mañana HUBI desaparece, tus papeles siguen exactamente donde están y ordenados. No hay nada que exportar ni nadie a quien pedírselo: ya son tuyos.', toque:[50,74] },
+    { p:'inicio', d:4000, t:'Y desde el otro móvil se ve igual.',
+      m:'Conchita no ha conectado ningún Drive, y no tiene por qué. Sube y ve los papeles del de la casa como si fuera suyo — porque para ella lo es.' },
+  ]
+},
+{
+  id:'avisar', titulo:'Que te avise antes de que venza', quien:'Familia', color:'#F97362',
+  pie:'Nadie pierde el seguro del coche. Lo que se pierde es saber cuándo vence.',
+  guion:[
+    { p:'vence', d:5000, t:'Si el papel traía una fecha, HUBI hace una pregunta.',
+      m:'Una sola, y en el momento en que tiene sentido: justo después de guardarlo, cuando todavía lo tienes en la cabeza.' },
+    { p:'vence', d:2000, t:'Una semana antes.',
+      m:'Listo. Ya no hay que acordarse.', toque:[50,62] },
+    { p:'agenda', d:4400, t:'Y aparece donde tiene que aparecer.',
+      m:'En la agenda, junto al médico y a la ITV. Para vosotros no hay diferencia entre «cita», «tarea» y «vencimiento»: todo es cosas que hay que recordar.' },
+  ]
+},
+{
+  id:'hablar', titulo:'Hablar con HUBI', quien:'Familia · Ayuda en casa', color:'#3B82F6',
+  pie:'Sirve para apuntar y para preguntar. Se habla normal: no hay fórmulas que aprender.',
+  guion:[
+    { p:'hablar', d:5000, t:'Cuando hay prisa, se habla.',
+      m:'«Recuérdale a Juan Miguel mañana a las diez que recoja la medicación en la farmacia.»' },
+    { p:'entendido', d:5000, t:'Y otra vez: primero enseña lo que ha entendido.',
+      m:'Tarea, para quién, qué día, a qué hora y con qué aviso. Nunca guarda en silencio algo de lo que ha dudado.' },
+    { p:'preguntar', d:4800, t:'También contesta.',
+      m:'«¿Cuánto hemos gastado este trimestre en luz?» La respuesta existe porque en agosto alguien hizo una foto en la cocina. Eso fue todo lo que hubo que hacer.' },
+  ]
+},
+{
+  id:'buscar', titulo:'Encontrar un papel', quien:'Familia · Asesor', color:'#8B5CF6',
+  pie:'Dos niveles, no cinco. El año y el trimestre son un filtro, no carpetas por las que bajar.',
+  guion:[
+    { p:'papeles', d:3800, t:'Los papeles, por carpetas grandes.',
+      m:'Con su color y su icono. Lo que ves aquí sale de la base de datos, no de la estructura técnica de Drive.' },
+    { p:'buscando', d:4400, t:'O escribes lo que buscas y ya está.',
+      m:'«seguro coche», «facturas agua 2026», «cooperativa agosto». Y en voz alta funciona igual.', toque:[50,14] },
+    { p:'ficha', d:4400, t:'Y ahí está, con lo que importa de él.',
+      m:'Cuándo vence, cuánto costó y dónde está guardado. Con el camino de Drive escrito, por si algún día lo quieres buscar desde allí.' },
+  ]
+},
+{
+  id:'agenda', titulo:'Apuntar algo en la agenda', quien:'Familia · Asesor', color:'#F59E0B',
+  pie:'Una semana en una tira, y dos estados: pendiente y hecho. No hacen falta más.',
+  guion:[
+    { p:'agenda', d:4400, t:'La semana entera en una línea.',
+      m:'Un punto por cada cosa de cada día. Se ve de un vistazo dónde está lo cargado y dónde no hay nada.' },
+    { p:'apuntar', d:4600, t:'Apuntar algo son cuatro campos.',
+      m:'Qué es, para quién, qué día, y ya. La hora y el aviso, solo si hacen falta. Nada de prioridades, etiquetas ni estados intermedios.' },
+    { p:'agenda', d:3400, t:'Y entra en el mismo sitio que todo lo demás.',
+      m:'Lo que apuntáis vosotros, lo que sale de un documento y lo que os deja el gestor: una sola agenda.', toque:[70,17] },
+  ]
+},
+{
+  id:'notas', titulo:'Dejar una nota', quien:'Familia · Ayuda en casa', color:'#F59E0B',
+  pie:'El papel de la nevera. Sin fecha, sin «hecho» y sin caducidad.',
+  guion:[
+    { p:'notas', d:5000, t:'Hay cosas que no son tareas.',
+      m:'«La llave del garaje está en el cajón de la entrada.» Si eso estuviera en la agenda saldría en «por hacer» hasta el fin de los tiempos, y una lista que nunca baja deja de mirarse.' },
+    { p:'notas', d:4400, t:'Cada nota lleva el color de quien la escribió.',
+      m:'Con cuatro personas en la casa, eso contesta «¿quién ha dejado esto?» de reojo, sin leer ninguna firma. Y la que es para ti se ve desde el otro lado de la habitación.' },
+  ]
+},
+{
+  id:'compra', titulo:'La lista de la compra', quien:'Familia · Ayuda en casa', color:'#60A5FA',
+  pie:'Compartida y al momento. Con el ticket, que es lo que se olvida siempre.',
+  guion:[
+    { p:'compra', d:4000, t:'Uno añade, el otro tacha, y los dos lo ven.',
+      m:'En el inicio sale cuántas cosas faltan, sin entrar.' },
+    { p:'compra', d:4200, t:'Y al salir de la caja, el ticket.',
+      m:'Un botón dentro de la propia compra, que va directo a su carpeta sin preguntar nada. Con el papel en la mano no hay tiempo para elegir entre veinte carpetas.', toque:[50,79] },
+  ]
+},
+{
+  id:'cuentas', titulo:'Ver las cuentas de la finca', quien:'Familia · Asesor', color:'#2DD4BF',
+  pie:'Lo que convierte HUBI de archivador en herramienta: las fotos se vuelven balance.',
+  guion:[
+    { p:'finca', d:4800, t:'Ingresos, gastos y balance. Por mes, trimestre o año.',
+      m:'Nadie ha abierto una hoja de cálculo. Todo esto ha entrado fotografiando facturas y justificantes de venta.' },
+    { p:'finca', d:4600, t:'Y en qué se va, de mayor a menor.',
+      m:'Igual para unas obras o unos pisos, cada uno con sus propias partidas. Y si la actividad se divide en partes —la obra de Manuel, Helechos 2— se puede cruzar: cuánto llevo en carpintería en todas las obras.' },
+  ]
+},
+{
+  id:'invitar', titulo:'Invitar a alguien a tu casa', quien:'Solo quien creó la casa', color:'#60A5FA',
+  pie:'En una casa no solo entra la familia. Y ninguno de los que entran necesita verlo todo.',
+  guion:[
+    { p:'gente', d:5200, t:'Quién tiene acceso a tus papeles, de un vistazo.',
+      m:'Es la pregunta más importante de todos los ajustes, así que va arriba del todo. Cada uno con su color, su papel y —si se la pusiste— su fecha de fin.' },
+    { p:'invitar', d:5400, t:'Al invitar, eliges quién es.',
+      m:'Y debajo te dice exactamente qué le estás dando, con sus palabras. Se dice antes de escribir el correo, no después.', toque:[50,32] },
+    { p:'gente', d:4600, t:'El acceso puede caducar solo.',
+      m:'Una empleada que se va, un gestor que deja de llevarte las cuentas. Hoy hay que acordarse de quitarles el acceso y nadie se acuerda: así es como se acumula gente mirando los papeles de una casa donde ya no está.' },
+    { p:'gente', d:3800, t:'Y se afina después, carpeta a carpeta.',
+      m:'Si la cuidadora necesita ver la medicación, se le abre esa carpeta y solo esa.', toque:[64,53] },
+  ]
+},
+{
+  id:'semana', titulo:'La semana de quien ayuda en casa', quien:'Solo quien creó la casa', color:'#60A5FA',
+  pie:'Se programa una vez, al invitarla, y ella entra sabiendo qué toca.',
+  guion:[
+    { p:'semana', d:4600, t:'Primero, qué días viene.',
+      m:'Todo lo demás cuelga de ahí: los días que no viene ni se enseñan. Ofrecerle trabajos un martes que no viene es programar cosas que no va a hacer nadie.' },
+    { p:'semana', d:4800, t:'Y la lista viene puesta, no en blanco.',
+      m:'Sábanas, lavadora, planchar, baños, la basura, regar, la compra. Se quita lo que no valga y se añade lo que falte: es mucho más fácil que inventarlo de cero.', toque:[50,88] },
+    { p:'marta', d:5200, t:'Ella entra el lunes y su HUBI ya sabe qué toca.',
+      m:'Lo suyo arriba del todo, con una casilla grande por cosa y un contador. Marca y desmarca, pero no se añade ni se quita trabajos.' },
+    { p:'marta', d:4400, t:'Y un lunes sin marcar no se arrastra.',
+      m:'El lunes que viene vuelve solo. Por eso las rutinas no son tareas repetidas: dieciocho tareas al mes en rojo acabarían tapando la ITV y el seguro.' },
+  ]
+},
+{
+  id:'asesor', titulo:'Trabajar con tu gestoría', quien:'Familia · Asesor', color:'#F59E0B',
+  pie:'La otra mitad de la relación: un gestor no solo mira, también te pide cosas.',
+  guion:[
+    { p:'inicio', d:3800, t:'Silvia tiene su propio sitio en tu inicio.',
+      m:'Con su color, y con lo que te está esperando. Es la única persona de fuera con la que hay una conversación de ida y vuelta.', toque:[50,60] },
+    { p:'asesor', d:5400, t:'Todo lo que os habéis dejado, en un sitio.',
+      m:'«Falta la factura de septiembre.» «El 20 hay un pago.» Sin esto, eso acaba en un WhatsApp que se pierde entre fotos del grupo del pueblo.' },
+    { p:'asesor', d:4600, t:'Puede dejarte avisos y ponerte fechas. Y nada más.',
+      m:'No sube papeles, no apunta gastos, no toca las cuentas, y no borra tareas que no sean suyas. Eso sigue siendo vuestro.' },
+  ]
+},
+];
+
+/* ═══════════════════════════════════════════════════════════
+   EL REPRODUCTOR
+
+   Uno por bloque, todos iguales. Se cuenta con un reloj único y
+   no con una cadena de temporizadores: así pausar, reanudar y
+   volver al principio no se pelean entre sí.
+   ═══════════════════════════════════════════════════════════ */
+const QUIETO = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const jugadores = [];
+
+function reloj(ms) {
+  const s = Math.round(ms / 1000);
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+function montar(bloque) {
+  const dur = bloque.guion.reduce((n, p) => n + p.d, 0);
+  const usadas = [...new Set(bloque.guion.map(p => p.p))];
+
+  const sec = document.createElement('section');
+  sec.className = 'bloque';
+  sec.id = bloque.id;
+  sec.innerHTML = `
+    <div class="bloque-cab">
+      <span class="quien" style="background:color-mix(in srgb, ${bloque.color} 15%, transparent);color:${bloque.color}">${bloque.quien}</span>
+      <h2>${bloque.titulo}</h2>
+      <p class="bloque-pie">${bloque.pie}</p>
+    </div>
+    <div class="escenario">
+      <div class="movil">
+        <div class="muesca"></div>
+        <div class="pantalla">
+          ${usadas.map(k => PANTALLAS[k].replace('class="p', `data-p="${k}" class="p`)).join('')}
+          <span class="toque"></span>
+        </div>
+      </div>
+      <div class="relato">
+        <p class="dice"></p>
+        <p class="matiz"></p>
+        <div class="barra"><i></i></div>
+        <div class="mandos">
+          <button class="play">▶ &nbsp;Reproducir</button>
+          <button class="otra">↺ Otra vez</button>
+          <span class="reloj">0:00 / ${reloj(dur)}</span>
+        </div>
+      </div>
+    </div>`;
+
+  const pantalla = sec.querySelector('.pantalla');
+  const elToque  = sec.querySelector('.toque');
+  const elDice   = sec.querySelector('.dice');
+  const elMatiz  = sec.querySelector('.matiz');
+  const elBarra  = sec.querySelector('.barra i');
+  const elPlay   = sec.querySelector('.play');
+  const elReloj  = sec.querySelector('.reloj');
+
+  const j = { t: 0, corriendo: false, ultimo: 0, plano: -1, dur, sec };
+
+  function donde(t) {
+    let acc = 0;
+    for (let i = 0; i < bloque.guion.length; i++) {
+      if (t < acc + bloque.guion[i].d) return i;
+      acc += bloque.guion[i].d;
+    }
+    return bloque.guion.length - 1;
+  }
+
+  function pintar(i) {
+    if (i === j.plano) return;
+    j.plano = i;
+    const p = bloque.guion[i];
+    pantalla.querySelectorAll('.p').forEach(el =>
+      el.classList.toggle('on', el.dataset.p === p.p));
+    elDice.textContent = p.t;
+    elMatiz.textContent = p.m || '';
+
+    elToque.classList.remove('dar');
+    if (p.toque) {
+      elToque.style.left = p.toque[0] + '%';
+      elToque.style.top  = p.toque[1] + '%';
+      setTimeout(() => {
+        if (j.plano === i) { void elToque.offsetWidth; elToque.classList.add('dar'); }
+      }, Math.min(650, p.d * 0.32));
+    }
+  }
+
+  function progreso() {
+    elBarra.style.width = (j.t / dur * 100) + '%';
+    elReloj.textContent = reloj(j.t) + ' / ' + reloj(dur);
+  }
+
+  function marco(ahora) {
+    if (!j.corriendo) return;
+    /* Tope de 120 ms por fotograma: si la pestaña se va al fondo, al
+       volver no da un salto de veinte segundos. */
+    j.t += Math.min(ahora - j.ultimo, 120);
+    j.ultimo = ahora;
+
+    if (j.t >= dur) {
+      j.t = dur;
+      pintar(bloque.guion.length - 1);
+      progreso();
+      j.corriendo = false;
+      elPlay.innerHTML = '↺ &nbsp;Ver otra vez';
+      return;
+    }
+    pintar(donde(j.t));
+    progreso();
+    requestAnimationFrame(marco);
+  }
+
+  j.arrancar = () => {
+    jugadores.forEach(o => { if (o !== j) o.parar(); });
+    if (j.t >= dur) { j.t = 0; j.plano = -1; }
+    j.corriendo = true;
+    j.ultimo = performance.now();
+    elPlay.innerHTML = '❙❙ &nbsp;Pausa';
+    requestAnimationFrame(marco);
+  };
+
+  j.parar = () => {
+    if (!j.corriendo) return;
+    j.corriendo = false;
+    elPlay.innerHTML = '▶ &nbsp;Seguir';
+  };
+
+  elPlay.onclick = () => (j.corriendo ? j.parar() : j.arrancar());
+  sec.querySelector('.otra').onclick = () => { j.t = 0; j.plano = -1; j.arrancar(); };
+
+  pintar(0);
+  progreso();
+  jugadores.push(j);
+  return sec;
+}
+
+/* ── Se monta todo ─────────────────────────────────────── */
+const contenedor = document.getElementById('bloques');
+const indice = document.getElementById('indice');
+document.getElementById('marcaLogo').src = LOGO_CLARO;
+
+BLOQUES.forEach(b => {
+  contenedor.appendChild(montar(b));
+  const a = document.createElement('a');
+  a.href = '#' + b.id;
+  a.textContent = b.titulo;
+  indice.appendChild(a);
+});
+
+/*
+  ── ARRANCA SOLO AL LLEGAR ──
+
+  Es lo que hace que esto se sienta un vídeo y no un catálogo de
+  botones: bajas, y el bloque empieza. Solo uno a la vez — el que
+  estás mirando— y nunca si el teléfono pide menos movimiento.
+*/
+if (!QUIETO && 'IntersectionObserver' in window) {
+  const ojo = new IntersectionObserver((entradas) => {
+    entradas.forEach(e => {
+      const j = jugadores.find(o => o.sec === e.target);
+      if (!j) return;
+      if (e.isIntersecting && e.intersectionRatio > 0.55) {
+        if (!j.corriendo && j.t < j.dur) j.arrancar();
+      } else {
+        j.parar();
+      }
+    });
+  }, { threshold: [0, 0.55, 1] });
+  jugadores.forEach(j => ojo.observe(j.sec));
+}
+
+</script>
+
+</body>
+</html>

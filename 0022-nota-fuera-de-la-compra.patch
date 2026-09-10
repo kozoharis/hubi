@@ -1,0 +1,174 @@
+From 6f55d8f3302eeaa35057d521418ee6f3756580a1 Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Tue, 8 Sep 2026 15:11:37 +0000
+Subject: [PATCH] =?UTF-8?q?La=20secci=C3=B3n=20de=20las=20notas=20estaba?=
+ =?UTF-8?q?=20metida=20dentro=20de=20la=20de=20la=20compra?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fallo mío del parche 0019, y de los que solo se ven leyendo el
+resultado entero.
+
+Al añadir la novena acción la inserté buscando un texto de la sección
+8 y cortando por el siguiente salto de línea doble. Ese salto no era
+el final de la sección: era el que separa dos párrafos DENTRO de ella.
+Resultado: la sección 8 —la compra— iba de la línea 385 a la 490, y la
+9 quedó incrustada en la 402.
+
+O sea que el modelo leía:
+
+    9. "nota" — dejar algo escrito en el corcho
+       [...la explicación de las notas...]
+       SE DICTA DE CORRIDO, SIN COMAS
+       "apunta leche pan huevos" → seis cosas
+       CORRIGE LO QUE EL TELÉFONO OYE MAL
+       SON DE CANARIAS: papas, millo, gofio...
+
+Instrucciones de separar productos del súper colgando de la
+explicación de las notas. Con eso, «Ponle una nota a Julia. Los
+papeles están en la mesa» acababa en la Agenda.
+
+La sección 9 se mueve al final, después de que la 8 termine de verdad.
+
+─────────────────────────────────────────────────────────────
+Y SE REFUERZA LA REGLA, PORQUE ESTABA COJA
+
+Decía que ante la duda tirara hacia recordatorio —el error barato— y
+eso, leído solo, invita a mandarlo todo allí. Ahora dice también lo
+contrario cuando toca:
+
+    Si dicen la palabra nota, corcho o tablón, y NO hay ningún día ni
+    ninguna hora, es "nota". Sin dudarlo.
+
+Con la frase que falló puesta de ejemplo, y con la pista que de verdad
+las distingue: una nota cuenta algo que YA ES ASÍ —dónde está una
+cosa, cómo se llama alguien—; un recordatorio pide una acción futura.
+«Los papeles están en la mesa» no le pide a nadie que haga nada.
+
+─────────────────────────────────────────────────────────────
+COMPROBADO CONTRA EL RESPALDO
+
+El diccionario sin conexión acertaba las seis desde el principio
+—incluida la que falló—, lo que confirma dónde estaba el problema:
+
+    nota          Ponle una nota a Julia. Los papeles están en la mesa
+    nota          Deja una nota: la llave del garaje está en el cajón
+    nota          Apunta en el corcho que el fontanero es Manolo
+    recordatorio  Recuérdale a Julia mañana a las diez que llame al médico
+    compra        Apunta leche pan y huevos en la compra
+    gasto         Un gasto de 85 euros en la ferretería
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ lib/voz.ts | 86 ++++++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 54 insertions(+), 32 deletions(-)
+
+diff --git a/lib/voz.ts b/lib/voz.ts
+index 48df1c0..d56351c 100644
+--- a/lib/voz.ts
++++ b/lib/voz.ts
+@@ -399,38 +399,6 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
+ 
+    UNA ENTRADA POR CADA COSA. "Leche, pan y huevos" son tres, no una.
+ 
+-9. "nota" — dejar algo escrito en el corcho.
+-
+-   El texto va en "titulo" y la persona, si la dicen, en "para".
+-
+-   "Deja una nota: la llave del garaje está en el cajón de la entrada"
+-   → accion: "nota", titulo: "La llave del garaje está en el cajón de
+-     la entrada"
+-   "Ponle una nota a Conchita: he dejado los papeles en la mesa"
+-   → accion: "nota", titulo: "He dejado los papeles en la mesa",
+-     para: "Conchita"
+-   "Apúntame una nota para acordarme del wifi nuevo"
+-   → accion: "nota", titulo: "El wifi nuevo", para: quien habla
+-
+-   LA DIFERENCIA CON "recordatorio" ES LA FECHA, Y ES LA QUE MÁS
+-   IMPORTA DE TODO ESTO.
+-
+-   Una NOTA es algo que se sabe y no caduca: dónde está una llave, el
+-   número del fontanero, que los papeles están encima de la mesa. No
+-   se "hace" y no tiene día.
+-
+-   Un RECORDATORIO es algo que hay que HACER, y tiene cuándo: recoger
+-   la medicación a las seis, llamar al médico el martes.
+-
+-   Si la frase lleva un día o una hora —hoy, mañana, el jueves, a las
+-   seis— es un RECORDATORIO aunque digan la palabra "nota". Y si no
+-   lleva ninguna y solo cuentan algo que hay que tener presente, es
+-   una NOTA aunque digan "recuérdame".
+-
+-   Que se equivoque hacia el recordatorio no rompe nada; que apunte
+-   como nota sin fecha algo que había que hacer el martes, sí: no
+-   avisa a nadie y se descubre el miércoles.
+-
+    SE DICTA DE CORRIDO, SIN COMAS. Nadie dice "coma" al hablar, y el
+    teléfono no las pone. Vas a recibir cosas como:
+ 
+@@ -490,6 +458,60 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
+    La regla: si se nombran COSAS QUE COMPRAR, es "compra" — lleve o no
+    lleve fecha. Si no se nombra ninguna, es un recordatorio normal.
+ 
++9. "nota" — dejar algo escrito en el corcho.
++
++   El texto va en "titulo" y la persona, si la dicen, en "para".
++
++   "Deja una nota: la llave del garaje está en el cajón de la entrada"
++   → accion: "nota", titulo: "La llave del garaje está en el cajón de
++     la entrada"
++   "Ponle una nota a Conchita: he dejado los papeles en la mesa"
++   → accion: "nota", titulo: "He dejado los papeles en la mesa",
++     para: "Conchita"
++   "Apúntame una nota para acordarme del wifi nuevo"
++   → accion: "nota", titulo: "El wifi nuevo", para: quien habla
++
++   LA DIFERENCIA CON "recordatorio" ES LA FECHA, Y ES LA QUE MÁS
++   IMPORTA DE TODO ESTO.
++
++   Una NOTA es algo que se sabe y no caduca: dónde está una llave, el
++   número del fontanero, que los papeles están encima de la mesa. No
++   se "hace" y no tiene día.
++
++   Un RECORDATORIO es algo que hay que HACER, y tiene cuándo: recoger
++   la medicación a las seis, llamar al médico el martes.
++
++   Si la frase lleva un día o una hora —hoy, mañana, el jueves, a las
++   seis— es un RECORDATORIO aunque digan la palabra "nota". Y si no
++   lleva ninguna y solo cuentan algo que hay que tener presente, es
++   una NOTA aunque digan "recuérdame".
++
++   Que se equivoque hacia el recordatorio no rompe nada; que apunte
++   como nota sin fecha algo que había que hacer el martes, sí: no
++   avisa a nadie y se descubre el miércoles.
++
++   PERO OJO: ESO NO ES EXCUSA PARA MANDARLO TODO A RECORDATORIO.
++
++   Si dicen LA PALABRA nota, o corcho, o tablón, y NO hay ningún día
++   ni ninguna hora en la frase, es "nota". Sin dudarlo. No es un
++   recordatorio sin fecha: es una nota, y son sitios distintos de la
++   aplicación.
++
++   "Ponle una nota a Julia. Los papeles están en la mesa."
++   → accion: "nota", titulo: "Los papeles están en la mesa",
++     para: "Julia"
++     NO es un recordatorio. No hay nada que hacer y no hay cuándo:
++     es un recado que se deja escrito.
++
++   "Déjale una nota a Conchita de que el fontanero se llama Manolo"
++   → accion: "nota", titulo: "El fontanero se llama Manolo",
++     para: "Conchita"
++
++   Fíjate en que una nota SUELE contar algo que YA ES ASÍ —dónde está
++   una cosa, cómo se llama alguien, qué ha pasado— mientras que un
++   recordatorio pide una acción futura. "Los papeles están en la mesa"
++   no le pide a nadie que haga nada.
++
+ Si no entiendes qué quieren, o el audio está vacío o es ruido, usa accion "nada".
+ 
+ REGLAS:
+-- 
+2.43.0
+

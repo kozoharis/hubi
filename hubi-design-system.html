@@ -1,0 +1,1109 @@
+<title>HUBI Design System v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+/* ══════════════════════════════════════════════════════════
+   La página del sistema. Usa la tipografía de HUBI y sigue el
+   tema de quien la mire. Los especímenes de dentro llevan sus
+   propios tokens (.hubi.claro / .hubi.oscuro) para poder ver
+   las dos apariencias a la vez.
+   ══════════════════════════════════════════════════════════ */
+:root{
+  --pg-fondo:#F1F5F9; --pg-papel:#FFFFFF; --pg-borde:#E2E8F0;
+  --pg-tinta:#0F172A; --pg-tinta2:#475569; --pg-tenue:#64748B;
+  --pg-acento:#14B8A6; --pg-acento-velo:#DFF7F3;
+  --pg-alerta:#B03A0E; --pg-alerta-velo:#FDECE4;
+  --pg-codigo:#F1F5F9;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --pg-fondo:#0B1220; --pg-papel:#182133; --pg-borde:#253148;
+    --pg-tinta:#F1F5F9; --pg-tinta2:#CBD5E1; --pg-tenue:#94A3B8;
+    --pg-acento:#2DD4BF; --pg-acento-velo:#10322F;
+    --pg-alerta:#F09468; --pg-alerta-velo:#2E1D14;
+    --pg-codigo:#0F172A;
+  }
+}
+:root[data-theme="dark"]{
+  --pg-fondo:#0B1220; --pg-papel:#182133; --pg-borde:#253148;
+  --pg-tinta:#F1F5F9; --pg-tinta2:#CBD5E1; --pg-tenue:#94A3B8;
+  --pg-acento:#2DD4BF; --pg-acento-velo:#10322F;
+  --pg-alerta:#F09468; --pg-alerta-velo:#2E1D14;
+  --pg-codigo:#0F172A;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;padding:0 18px 110px;background:var(--pg-fondo);color:var(--pg-tinta);
+  font-family:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;
+  font-size:16.5px;line-height:1.6;font-weight:500;-webkit-font-smoothing:antialiased;
+}
+.pag{max-width:1080px;margin:0 auto}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px}
+code{background:var(--pg-codigo);border:1px solid var(--pg-borde);padding:1px 5px;border-radius:5px;white-space:nowrap}
+a{color:var(--pg-acento)}
+
+/* portada */
+header{padding:64px 0 30px}
+.kicker{font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--pg-acento);display:flex;gap:20px;flex-wrap:wrap}
+h1{font-size:clamp(36px,6vw,58px);font-weight:800;letter-spacing:-.03em;line-height:1.02;margin:20px 0 0;text-wrap:balance}
+h1 em{font-style:normal;color:var(--pg-tenue)}
+.lead{font-size:19px;color:var(--pg-tinta2);max-width:60ch;margin:18px 0 0;font-weight:500;line-height:1.55}
+
+.aviso{
+  margin:30px 0 0;padding:20px 22px;border-radius:20px;
+  background:var(--pg-acento-velo);border:1px solid color-mix(in srgb,var(--pg-acento) 34%,transparent);
+}
+.aviso p{margin:0;font-size:16.5px;line-height:1.5}
+.aviso p+p{margin-top:10px}
+.aviso b{font-weight:800}
+
+/* secciones */
+section{padding-top:58px;scroll-margin-top:14px}
+.cab{display:flex;align-items:baseline;gap:14px;border-bottom:2px solid var(--pg-tinta);padding-bottom:10px;margin-bottom:8px}
+.num{font-size:12px;font-weight:800;letter-spacing:.14em;background:var(--pg-tinta);color:var(--pg-fondo);padding:4px 9px;border-radius:6px;flex:none}
+h2{font-size:clamp(23px,3.4vw,30px);font-weight:800;letter-spacing:-.025em;margin:0;line-height:1.15}
+h3{font-size:19px;font-weight:800;letter-spacing:-.015em;margin:34px 0 10px}
+h4{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--pg-tenue);margin:26px 0 12px}
+p{margin:0 0 14px;max-width:74ch}
+ul{margin:0 0 16px;padding-left:0;list-style:none;max-width:76ch}
+li{margin:0 0 10px;padding-left:19px;position:relative}
+li::before{content:"";position:absolute;left:2px;top:.72em;width:7px;height:2px;border-radius:2px;background:var(--pg-tenue)}
+.regla{
+  font-size:17.5px;font-weight:700;line-height:1.45;margin:0 0 18px;padding:13px 0 13px 17px;
+  border-left:3px solid var(--pg-acento);max-width:68ch;
+}
+.regla.mal{border-left-color:var(--pg-alerta)}
+
+/* índice */
+.idx{margin-top:34px;border-top:2px solid var(--pg-tinta);padding-top:18px}
+.idx ol{list-style:none;margin:0;padding:0;columns:2;column-gap:34px;font-size:15px;font-weight:700}
+.idx li{margin:0 0 7px;padding:0;break-inside:avoid}
+.idx li::before{display:none}
+.idx a{text-decoration:none;color:var(--pg-tinta)}
+.idx a:hover{color:var(--pg-acento)}
+.idx .n{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--pg-tenue);margin-right:9px;font-weight:400}
+
+/* pares claro/oscuro */
+.par{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 20px}
+@media (max-width:760px){.par{grid-template-columns:1fr}}
+.marco{border-radius:22px;overflow:hidden;border:1px solid var(--pg-borde)}
+.marco>.et{
+  font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  padding:8px 16px;background:var(--pg-papel);color:var(--pg-tenue);border-bottom:1px solid var(--pg-borde);
+}
+.lienzo{padding:20px 18px}
+
+/* ── TOKENS DE HUBI, con sus dos apariencias ── */
+.hubi{
+  font-family:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;
+  background:var(--h-fondo);color:var(--h-tinta);
+}
+.hubi.claro{
+  --h-fondo:#F1F5F9; --h-superficie:#FFFFFF; --h-borde:#E2E8F0;
+  --h-tinta:#0F172A; --h-tinta-suave:#334155; --h-tenue:#64748B; --h-apagado:#94A3B8;
+  --h-accion:#14B8A6; --h-accion-tinta:#04211D;
+  --h-bien:#0E9C8B; --h-atencion:#C77A05; --h-alerta:#E0453F;
+  --h-bien-velo:#DFF7F3; --h-atencion-velo:#FDF1DC; --h-alerta-velo:#FDE8E7;
+}
+.hubi.oscuro{
+  --h-fondo:#0B1220; --h-superficie:#182133; --h-borde:#253148;
+  --h-tinta:#F1F5F9; --h-tinta-suave:#CBD5E1; --h-tenue:#94A3B8; --h-apagado:#64748B;
+  --h-accion:#14B8A6; --h-accion-tinta:#04211D;
+  --h-bien:#2DD4BF; --h-atencion:#F0B440; --h-alerta:#FF7B75;
+  --h-bien-velo:#10322F; --h-atencion-velo:#33270F; --h-alerta-velo:#3A1D22;
+}
+.hubi.calido{--h-fondo:#F7F5F1;--h-borde:#E7E2DA}
+
+/* ── PIEZAS HUBI ── */
+.h-tit{font-size:27px;font-weight:800;letter-spacing:-.025em;line-height:1.15;margin:0}
+.h-sec{font-size:21px;font-weight:800;letter-spacing:-.02em;line-height:1.2;margin:0}
+.h-tar{font-size:19px;font-weight:800;letter-spacing:-.012em;line-height:1.25;margin:0}
+.h-cue{font-size:17px;font-weight:600;line-height:1.45;margin:0}
+.h-apo{font-size:15px;font-weight:600;line-height:1.4;color:var(--h-tenue);margin:0}
+.h-rot{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--h-tenue);margin:0}
+.h-cif{font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;margin:0}
+.h-cif2{font-size:23px;font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;margin:0}
+
+.h-btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+  height:60px;border-radius:16px;font-size:19px;font-weight:800;letter-spacing:-.01em;
+  border:1px solid transparent;cursor:pointer;font-family:inherit;
+  transition:transform .08s ease,filter .12s ease;
+}
+.h-btn:active{transform:scale(.985);filter:brightness(.94)}
+.h-btn:focus-visible{outline:3px solid var(--h-accion);outline-offset:3px}
+.h-p{background:var(--h-accion);color:var(--h-accion-tinta)}
+.h-s{background:var(--h-superficie);border-color:var(--h-borde);color:var(--h-tinta)}
+.h-t{background:transparent;color:var(--h-tinta);height:48px;font-size:17px}
+.h-d{background:var(--h-superficie);border-color:color-mix(in srgb,var(--h-alerta) 55%,transparent);color:var(--h-alerta)}
+.h-off{background:var(--h-superficie);border-color:var(--h-borde);color:var(--h-apagado);cursor:not-allowed}
+.h-off:active{transform:none;filter:none}
+
+.h-card{background:var(--h-superficie);border:1px solid var(--h-borde);border-radius:20px}
+.h-acc{display:flex;align-items:center;gap:14px;height:76px;padding:0 14px 0 14px;text-decoration:none;color:inherit}
+.h-fila{display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 14px}
+.h-past{
+  display:flex;align-items:center;justify-content:center;flex:none;
+  width:48px;height:48px;border-radius:16px;
+}
+.h-past.sm{width:44px;height:44px;border-radius:14px}
+.h-pil{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  height:48px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:800;
+  background:var(--h-superficie);border:1px solid var(--h-borde);color:var(--h-tinta-suave);
+  cursor:pointer;font-family:inherit;white-space:nowrap;
+}
+.h-pil.on{background:var(--h-tinta);border-color:var(--h-tinta);color:var(--h-fondo)}
+.h-inp{
+  display:block;width:100%;height:58px;border-radius:16px;
+  border:1px solid var(--h-borde);background:var(--h-superficie);
+  padding:0 16px;font-size:19px;font-weight:700;color:var(--h-tinta);
+  font-family:inherit;outline:none;
+}
+.h-inp::placeholder{color:var(--h-tenue);font-weight:600}
+.h-inp:focus{border-color:var(--h-accion);box-shadow:0 0 0 1px var(--h-accion)}
+.h-ta{height:auto;min-height:92px;padding:14px 16px;font-size:17px;font-weight:600;line-height:1.45;resize:none}
+
+.h-hubi{
+  display:flex;align-items:center;gap:12px;width:100%;height:64px;
+  border-radius:18px;border:1px solid var(--h-borde);background:var(--h-superficie);padding:0 8px 0 14px;
+}
+.h-hubi .txt{flex:1;min-width:0;font-size:17px;font-weight:600;color:var(--h-tenue)}
+.h-mic{
+  display:flex;align-items:center;justify-content:center;flex:none;width:48px;height:48px;border-radius:14px;color:#fff;
+  background:linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6);
+  box-shadow:0 6px 16px rgba(20,184,166,.34);
+}
+.h-vacio{
+  border-radius:20px;background:var(--h-superficie);border:1px solid var(--h-borde);
+  padding:32px 22px;text-align:center;
+}
+.h-caja{border-radius:20px;padding:16px 18px;border:1px solid}
+.h-err{background:var(--h-alerta-velo);border-color:color-mix(in srgb,var(--h-alerta) 45%,transparent)}
+.h-avi{background:var(--h-atencion-velo);border-color:color-mix(in srgb,var(--h-atencion) 45%,transparent)}
+.h-ok{background:var(--h-bien-velo);border-color:color-mix(in srgb,var(--h-bien) 42%,transparent)}
+
+.h-barra{display:flex;height:68px;background:var(--h-superficie);border-top:1px solid var(--h-borde);border-radius:0 0 18px 18px}
+.h-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--h-apagado)}
+.h-tab.on{color:var(--h-accion)}
+
+.ico{display:block;flex:none}
+
+/* muestras de color */
+.paleta{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin:0 0 20px}
+.chip{border-radius:14px;border:1px solid var(--pg-borde);overflow:hidden;background:var(--pg-papel)}
+.chip .col{height:56px}
+.chip .txt{padding:9px 11px}
+.chip b{display:block;font-size:14px;font-weight:800;letter-spacing:-.01em}
+.chip span{display:block;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--pg-tenue);margin-top:2px}
+.chip em{display:block;font-style:normal;font-size:12px;color:var(--pg-tinta2);margin-top:4px;font-weight:600;line-height:1.3}
+
+/* tablas */
+.tab{width:100%;border-collapse:collapse;font-size:14.5px;margin:0 0 20px}
+.tab th{
+  font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--pg-tenue);
+  text-align:left;padding:0 12px 8px 0;border-bottom:2px solid var(--pg-borde);
+}
+.tab td{padding:10px 12px 10px 0;border-bottom:1px solid var(--pg-borde);vertical-align:middle}
+.tab td:first-child{font-weight:800}
+.scr{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* comparativa */
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 8px}
+@media (max-width:760px){.vs{grid-template-columns:1fr}}
+.vs .col{border-radius:20px;border:1px solid var(--pg-borde);overflow:hidden}
+.vs .et{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:8px 14px;border-bottom:1px solid var(--pg-borde)}
+.et-a{background:var(--pg-alerta-velo);color:var(--pg-alerta)}
+.et-b{background:var(--pg-acento-velo);color:var(--pg-acento)}
+.porque{font-size:14.5px;color:var(--pg-tinta2);margin:0 0 30px;max-width:76ch;font-weight:600;line-height:1.5}
+.porque b{color:var(--pg-tinta);font-weight:800}
+
+/* P0/P1 */
+.bug{display:grid;grid-template-columns:56px 1fr;gap:0 14px;padding:13px 0;border-bottom:1px solid var(--pg-borde);align-items:start}
+.bug:first-of-type{border-top:2px solid var(--pg-tinta)}
+.sev{font-size:11px;font-weight:800;letter-spacing:.08em;padding:3px 8px;border-radius:6px;text-align:center;margin-top:2px}
+.s0{background:var(--pg-alerta-velo);color:var(--pg-alerta)}
+.s1{background:var(--pg-codigo);color:var(--pg-tinta2);border:1px solid var(--pg-borde)}
+.bug b{display:block;font-size:16px;font-weight:800;letter-spacing:-.01em;line-height:1.3;margin-bottom:3px}
+.bug p{margin:0;font-size:14.5px;color:var(--pg-tinta2);font-weight:500;line-height:1.5;max-width:none}
+.bug .ruta{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--pg-tenue)}
+
+/* decisiones */
+.dec{border:1px solid var(--pg-borde);border-radius:18px;padding:18px 20px;margin:0 0 12px;background:var(--pg-papel)}
+.dec h5{margin:0 0 8px;font-size:17px;font-weight:800;letter-spacing:-.015em}
+.dec .tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:var(--pg-acento-velo);color:var(--pg-acento);padding:2px 8px;border-radius:6px;margin-left:8px;vertical-align:2px}
+.dec p{margin:0 0 8px;font-size:15px;font-weight:500;color:var(--pg-tinta2);max-width:none}
+.dec p:last-child{margin-bottom:0}
+.dec .rec{color:var(--pg-tinta);font-weight:700}
+
+footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);font-size:14px;color:var(--pg-tenue);line-height:1.6}
+:focus-visible{outline:2px solid var(--pg-acento);outline-offset:3px}
+</style>
+
+<div class="pag">
+
+<header>
+  <div class="kicker"><span>HUBI Design System</span><span>v1 · propuesta</span><span>Fase 1</span><span>9 sept 2026</span></div>
+  <h1>Las pocas reglas que HUBI necesita<br><em>para dejar de reinventarse en cada pantalla</em></h1>
+  <p class="lead">Tokens, componentes base y lógica de color, sacados de lo que ya funciona en la aplicación actual. Todo se ve aquí en claro y en oscuro, con piezas reales de HUBI.</p>
+
+  <div class="aviso">
+    <p><b>Esto es una propuesta. No se ha modificado ninguna pantalla.</b></p>
+    <p>No se ha tocado la navegación, ni Inicio, ni el asistente, ni el fondo global, ni Weaver / Alquileres. Las 44 pantallas siguen exactamente como estaban. Al final hay una lista de las nueve decisiones que necesitan tu visto bueno antes de migrar nada.</p>
+  </div>
+
+  <nav class="idx">
+    <ol>
+      <li><a href="#s1"><span class="n">01</span>Tipografía</a></li>
+      <li><a href="#s2"><span class="n">02</span>Color</a></li>
+      <li><a href="#s3"><span class="n">03</span>Radios y espaciado</a></li>
+      <li><a href="#s4"><span class="n">04</span>Botones</a></li>
+      <li><a href="#s5"><span class="n">05</span>Tarjetas y filas</a></li>
+      <li><a href="#s6"><span class="n">06</span>Campos</a></li>
+      <li><a href="#s7"><span class="n">07</span>HUBI Input</a></li>
+      <li><a href="#s8"><span class="n">08</span>Píldoras y filtros</a></li>
+      <li><a href="#s9"><span class="n">09</span>Estados</a></li>
+      <li><a href="#s10"><span class="n">10</span>Cabecera y barra</a></li>
+      <li><a href="#s11"><span class="n">11</span>Actual → Propuesta</a></li>
+      <li><a href="#s12"><span class="n">12</span>El fondo: frío o cálido</a></li>
+      <li><a href="#s13"><span class="n">13</span>Decisiones que necesito</a></li>
+      <li><a href="#s14"><span class="n">14</span>P0 / P1 · corregir antes</a></li>
+      <li><a href="#s15"><span class="n">15</span>Qué cambia y qué no</a></li>
+    </ol>
+  </nav>
+</header>
+
+
+<!-- ═══════ 01 TIPOGRAFÍA ═══════ -->
+<section id="s1">
+  <div class="cab"><span class="num">01</span><h2>Tipografía</h2></div>
+  <p class="regla">Ocho papeles y dos pesos. Hoy hay diecisiete tamaños solo en Inicio y prácticamente todo está en negrita, que es la razón de que nada destaque.</p>
+
+  <p>Plus Jakarta Sans se queda. Lo que cambia es que <strong>hay una escala</strong> y que se recupera el peso 600 como peso de lectura: el 800 pasa a significar «esto es un título o una cifra», que es lo que debería haber significado siempre.</p>
+
+  <div class="scr">
+  <table class="tab">
+    <thead><tr><th>Papel</th><th>px</th><th>peso</th><th>interlínea</th><th>dónde</th></tr></thead>
+    <tbody>
+      <tr><td>Título de pantalla · H1</td><td>27</td><td>800</td><td>1.15</td><td>cabecera, siempre</td></tr>
+      <tr><td>Cifra protagonista</td><td>34</td><td>800</td><td>1</td><td>balance, total del mes · tabular</td></tr>
+      <tr><td>Cifra secundaria</td><td>23</td><td>800</td><td>1</td><td>ingresos, gastos, importe destacado</td></tr>
+      <tr><td>Sección · H2</td><td>21</td><td>800</td><td>1.2</td><td>bloques dentro de una pantalla</td></tr>
+      <tr><td>Título de tarjeta</td><td>19</td><td>800</td><td>1.25</td><td>tarjetas, botones, valor de un dato</td></tr>
+      <tr><td>Cuerpo</td><td>17</td><td>600</td><td>1.45</td><td>texto de lectura · el mínimo que ya declaras</td></tr>
+      <tr><td>Apoyo</td><td>15</td><td>600</td><td>1.4</td><td>pie de tarjeta, secundario</td></tr>
+      <tr><td>Rótulo</td><td>13</td><td>800</td><td>1</td><td>mayúsculas, <code>+.12em</code> · ya existe como <code>.rotulo</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="par">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro">
+      <p class="h-rot">Rótulo de sección</p>
+      <p class="h-tit" style="margin-top:8px">Título de pantalla</p>
+      <p class="h-sec" style="margin-top:16px">Un bloque dentro</p>
+      <p class="h-tar" style="margin-top:14px">Título de tarjeta</p>
+      <p class="h-cue" style="margin-top:10px">Cuerpo: el texto que hay que leer de verdad, a diecisiete píxeles y peso normal, que es lo que permite leer varias líneas seguidas sin cansarse.</p>
+      <p class="h-apo" style="margin-top:8px">Apoyo · 34 guardados, el último hoy</p>
+      <p class="h-cif" style="margin-top:18px">3.350 €</p>
+      <p class="h-cif2" style="margin-top:12px">11.780 €</p>
+    </div></div>
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro">
+      <p class="h-rot">Rótulo de sección</p>
+      <p class="h-tit" style="margin-top:8px">Título de pantalla</p>
+      <p class="h-sec" style="margin-top:16px">Un bloque dentro</p>
+      <p class="h-tar" style="margin-top:14px">Título de tarjeta</p>
+      <p class="h-cue" style="margin-top:10px">Cuerpo: el texto que hay que leer de verdad, a diecisiete píxeles y peso normal, que es lo que permite leer varias líneas seguidas sin cansarse.</p>
+      <p class="h-apo" style="margin-top:8px">Apoyo · 34 guardados, el último hoy</p>
+      <p class="h-cif" style="margin-top:18px">3.350 €</p>
+      <p class="h-cif2" style="margin-top:12px">11.780 €</p>
+    </div></div>
+  </div>
+
+  <h4>Reglas</h4>
+  <ul>
+    <li><strong>Dos pesos: 600 y 800.</strong> Nada más. El 700 desaparece.</li>
+    <li><strong>El título de pantalla es 27 siempre</strong>, y vive en la cabecera. Hoy hay pantallas con el título en el cuerpo, que desaparece al hacer scroll.</li>
+    <li><strong>Toda cifra lleva <code>tabular-nums</code>.</strong> Sin eso, una lista de importes baila.</li>
+    <li><strong>Nada por debajo de 15.</strong> El 13 solo para rótulos en mayúsculas, que se leen por forma, no por tamaño.</li>
+  </ul>
+</section>
+
+
+<!-- ═══════ 02 COLOR ═══════ -->
+<section id="s2">
+  <div class="cab"><span class="num">02</span><h2>Color</h2></div>
+  <p class="regla">Cuatro familias con cuatro trabajos distintos. Y una regla que las separa de un vistazo: <strong>lo saturado reclama atención, lo apagado solo identifica.</strong></p>
+
+  <p>Ése es el mecanismo que hace que una interfaz se vuelva premium sin perder personalidad: no usar menos colores, sino <strong>bajar la saturación de los que solo dicen «esto es de aquí»</strong> y reservar el color vivo para lo que de verdad pide algo. Hoy todos los colores gritan igual, y por eso ninguno se oye.</p>
+
+  <h3>A · Color de marca</h3>
+  <p>Un solo degradado HUBI. El de la voz, que ya es el que la gente asocia al producto.</p>
+  <div class="paleta">
+    <div class="chip"><div class="col" style="background:linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)"></div><div class="txt"><b>Degradado HUBI</b><span>#2DD4BF → #14B8A6 → #3B82F6</span><em>Botón de HUBI, aro del micro, arranque, logo. Y nada más.</em></div></div>
+  </div>
+  <p><strong>Se retiran:</strong> el degradado cian-violeta del botón de Ajustes (<code>#00F4FC → #628BFC → #AE62F7</code>, tres colores que no existen en ninguna otra parte del producto) y el degradado violeta de las tarjetas de balance y horas.</p>
+
+  <h3>B · Color de acción</h3>
+  <p>Un color, un uso: el botón que hay que pulsar. Idéntico en claro y en oscuro.</p>
+  <div class="paleta">
+    <div class="chip"><div class="col" style="background:#14B8A6"></div><div class="txt"><b>Acción</b><span>#14B8A6</span><em>Relleno del botón principal.</em></div></div>
+    <div class="chip"><div class="col" style="background:#04211D"></div><div class="txt"><b>Tinta sobre acción</b><span>#04211D</span><em>El texto del botón. Contraste alto en los dos modos.</em></div></div>
+  </div>
+
+  <h3>C · Color de estado</h3>
+  <p>Semántico. Solo aparece cuando comunica algo que ha pasado o que va a pasar. Nunca identifica una sección.</p>
+  <div class="paleta">
+    <div class="chip"><div class="col" style="background:#0E9C8B"></div><div class="txt"><b>Bien</b><span>#0E9C8B · oscuro #2DD4BF</span><em>Hecho · visto · ingreso · confirmado</em></div></div>
+    <div class="chip"><div class="col" style="background:#C77A05"></div><div class="txt"><b>Atención</b><span>#C77A05 · oscuro #F0B440</span><em>Vence pronto · falta un papel · revisar</em></div></div>
+    <div class="chip"><div class="col" style="background:#E0453F"></div><div class="txt"><b>Alerta</b><span>#E0453F · oscuro #FF7B75</span><em>Vencido · error · gasto · borrar</em></div></div>
+  </div>
+  <p><strong>Ojo con estos valores.</strong> El coral actual <code>#FF6B6B</code> sobre blanco da un contraste de texto por debajo de lo aceptable, y el naranja <code>#F59E0B</code> mucho peor. Por eso la propuesta usa versiones oscurecidas <em>para texto e iconos en modo claro</em> y las claras en oscuro. El coral y el ámbar originales siguen valiendo como relleno, con tinta oscura encima.</p>
+
+  <h3>D · Color de ámbito</h3>
+  <p>Identifica de qué es algo. <strong>Apagados a propósito</strong>, para que nunca compitan con un estado. Aparecen solo en tres sitios: la pastilla del icono, una marca de 3 px al borde de una fila, y la cabecera de su sección.</p>
+  <div class="paleta">
+    <div class="chip"><div class="col" style="background:#6B93D6"></div><div class="txt"><b>Azul</b><span>#6B93D6</span><em>Casa · seguros</em></div></div>
+    <div class="chip"><div class="col" style="background:#9482D9"></div><div class="txt"><b>Violeta</b><span>#9482D9</span><em>Vehículos</em></div></div>
+    <div class="chip"><div class="col" style="background:#D07E97"></div><div class="txt"><b>Rosa</b><span>#D07E97</span><em>Salud</em></div></div>
+    <div class="chip"><div class="col" style="background:#6FA88A"></div><div class="txt"><b>Verde</b><span>#6FA88A</span><em>Finca y actividades</em></div></div>
+    <div class="chip"><div class="col" style="background:#C09A62"></div><div class="txt"><b>Arena</b><span>#C09A62</span><em>Documentos · administración</em></div></div>
+    <div class="chip"><div class="col" style="background:#7A8899"></div><div class="txt"><b>Pizarra</b><span>#7A8899</span><em>Sin asignar · otros</em></div></div>
+  </div>
+
+  <p class="regla mal">Consecuencia que hay que aceptar o rechazar: <strong>si el teal es la acción, la Finca ya no puede ser teal.</strong> Pasa al verde apagado. Es la decisión D2 del final.</p>
+
+  <h4>Las cinco reglas de uso</h4>
+  <ul>
+    <li><strong>Una tarjeta no se rellena de color.</strong> Superficie y borde. El color entra por la pastilla del icono. Hoy Inicio tiene trece fondos teñidos compitiendo entre sí.</li>
+    <li><strong>Los números son tinta.</strong> Verde o coral solo cuando el color <em>es</em> el signo: un balance, un ingreso frente a un gasto. Las horas de más son tinta, no una tarjeta violeta.</li>
+    <li><strong>El tinte de fondo se reserva para lo que reclama atención hoy</strong> — un vencimiento, un papel que falta — y como máximo al 10 %.</li>
+    <li><strong>Ningún estado se comunica solo con color.</strong> Siempre con forma o texto: relleno frente a hueco, tachado, una palabra.</li>
+    <li><strong>La sombra es solo del botón de HUBI.</strong> Es la única pieza que flota, y por eso significa algo.</li>
+  </ul>
+</section>
+
+
+<!-- ═══════ 03 RADIOS Y ESPACIADO ═══════ -->
+<section id="s3">
+  <div class="cab"><span class="num">03</span><h2>Radios y espaciado</h2></div>
+
+  <h4>Radios · tres, y ni uno más</h4>
+  <div class="par">
+    <div class="marco"><div class="et">Los tres</div><div class="lienzo hubi claro" style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
+      <div style="text-align:center"><div style="width:96px;height:66px;background:var(--h-superficie);border:1px solid var(--h-borde);border-radius:20px"></div><p class="h-apo" style="margin-top:7px">tarjeta · 20</p></div>
+      <div style="text-align:center"><div style="width:96px;height:58px;background:var(--h-superficie);border:1px solid var(--h-borde);border-radius:16px"></div><p class="h-apo" style="margin-top:7px">campo y botón · 16</p></div>
+      <div style="text-align:center"><div style="width:96px;height:48px;background:var(--h-superficie);border:1px solid var(--h-borde);border-radius:999px"></div><p class="h-apo" style="margin-top:7px">píldora · 999</p></div>
+    </div></div>
+    <div class="marco"><div class="et">Lo que hay hoy</div><div class="lienzo hubi claro">
+      <p class="h-cue" style="margin-bottom:12px">Once radios distintos para el mismo objeto:</p>
+      <p class="mono" style="font-size:13px;color:var(--h-tenue);line-height:1.9">9 · 12 · 13 · 14 · 15 · 16 · 18 · 20 · 22 · 24 · 32<br>+ rounded-2xl · rounded-3xl · rounded-full</p>
+      <p class="h-apo" style="margin-top:14px">En <code>cuentas.tsx</code> conviven tarjetas hermanas a 20 y a 18.</p>
+    </div></div>
+  </div>
+  <p>La pastilla del icono usa el radio de campo (16 a 48 px, 14 a 44 px): es un cuadrado pequeño, no una tarjeta.</p>
+
+  <h4>Espaciado · base 4, cinco huecos con nombre</h4>
+  <div class="scr">
+  <table class="tab">
+    <thead><tr><th>Nombre</th><th>px</th><th>Para qué</th></tr></thead>
+    <tbody>
+      <tr><td>dentro</td><td>12</td><td>entre elementos de una misma pieza (icono ↔ texto)</td></tr>
+      <tr><td>entre</td><td>10</td><td>entre piezas de una lista</td></tr>
+      <tr><td>relleno</td><td>16 / 20</td><td>dentro de una tarjeta · 16 en fila, 20 en bloque</td></tr>
+      <tr><td>bloque</td><td>28</td><td>entre bloques de la pantalla</td></tr>
+      <tr><td>margen</td><td>20</td><td>margen lateral · ya es <code>px-5</code>, no cambia</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Hoy conviven <code>py-3</code>, <code>py-3.5</code>, <code>py-4</code>, <code>py-5</code>, <code>py-6</code>, <code>py-8</code> y <code>py-10</code> sin regla. Con cinco huecos con nombre, el ritmo vertical se vuelve reconocible sin que nadie tenga que pensarlo.</p>
+</section>
+
+
+<!-- ═══════ 04 BOTONES ═══════ -->
+<section id="s4">
+  <div class="cab"><span class="num">04</span><h2>Botones</h2></div>
+  <p class="regla">Una altura, un radio, un color de acción. El botón principal es el mismo en Papeles, en la Compra y en la Finca — no toma el color de la sección, porque entonces deja de reconocerse.</p>
+
+  <div class="par">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:10px">
+      <button class="h-btn h-p">Guardar</button>
+      <button class="h-btn h-s">Dejarlo</button>
+      <button class="h-btn h-t">Ver todo</button>
+      <button class="h-btn h-d">Borrar este papel</button>
+      <button class="h-btn h-off" disabled>Guardar</button>
+      <p class="h-apo" style="margin-top:-2px">Dime en qué carpeta va y lo guardo.</p>
+    </div></div>
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:10px">
+      <button class="h-btn h-p">Guardar</button>
+      <button class="h-btn h-s">Dejarlo</button>
+      <button class="h-btn h-t">Ver todo</button>
+      <button class="h-btn h-d">Borrar este papel</button>
+      <button class="h-btn h-off" disabled>Guardar</button>
+      <p class="h-apo" style="margin-top:-2px">Dime en qué carpeta va y lo guardo.</p>
+    </div></div>
+  </div>
+
+  <div class="scr">
+  <table class="tab">
+    <thead><tr><th>Tipo</th><th>Alto</th><th>Radio</th><th>Letra</th><th>Color</th></tr></thead>
+    <tbody>
+      <tr><td>Principal</td><td>60</td><td>16</td><td>19 / 800</td><td>relleno de acción, tinta oscura</td></tr>
+      <tr><td>Secundario</td><td>60</td><td>16</td><td>19 / 800</td><td>superficie + borde 1 px</td></tr>
+      <tr><td>Terciario</td><td>48</td><td>16</td><td>17 / 800</td><td>sin fondo ni borde</td></tr>
+      <tr><td>Destructivo</td><td>60</td><td>16</td><td>19 / 800</td><td>superficie + borde y texto de alerta · <strong>nunca relleno rojo</strong></td></tr>
+      <tr><td>Apagado</td><td>60</td><td>16</td><td>19 / 800</td><td>superficie + texto apagado <strong>+ motivo escrito debajo</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Estados</h4>
+  <ul>
+    <li><strong>Pulsado:</strong> <code>scale(.985)</code> y brillo al 94 %. Lo mismo para los cinco tipos.</li>
+    <li><strong>Foco:</strong> el anillo que ya existe — 3 px de acción, separado 3. No se toca.</li>
+    <li><strong>Apagado:</strong> nunca solo opacidad. <strong>Siempre con el motivo escrito.</strong> Hoy, al guardar un papel, «Guardar» aparece gris y mudo si el lector no acertó la carpeta, y eso se lee como que la aplicación está rota.</li>
+    <li><strong>Icono:</strong> opcional, a la izquierda, 22 px, mismo color que el texto. Nunca un botón solo con icono si la acción es destructiva.</li>
+  </ul>
+</section>
+
+
+<!-- ═══════ 05 TARJETAS ═══════ -->
+<section id="s5">
+  <div class="cab"><span class="num">05</span><h2>Tarjetas y filas</h2></div>
+  <p class="regla">Cuatro variantes. Todas con la misma base: superficie, borde de 1 px, radio 20. Sin sombra y sin relleno de color.</p>
+
+  <h4>1 · Tarjeta de acción — lleva a algún sitio</h4>
+  <div class="par">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:10px">
+      <a class="h-card h-acc">
+        <span class="h-past" style="background:#DFF7F3;color:#0E9C8B"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
+        <span style="flex:1;min-width:0"><span class="h-tar" style="display:block">Guardar documento</span><span class="h-apo" style="display:block;margin-top:2px">34 guardados · el último, hoy</span></span>
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-apagado)"><path d="m9 5 7 7-7 7"/></svg>
+      </a>
+      <a class="h-card h-acc">
+        <span class="h-past" style="background:color-mix(in srgb,#6B93D6 16%,transparent);color:#4A76BE"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l2 10H6L4 7Z"/><path d="M4 7 3 4"/><circle cx="9" cy="20" r="1.3"/><circle cx="16" cy="20" r="1.3"/></svg></span>
+        <span style="flex:1;min-width:0"><span class="h-tar" style="display:block">La compra</span><span class="h-apo" style="display:block;margin-top:2px">7 cosas apuntadas</span></span>
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-apagado)"><path d="m9 5 7 7-7 7"/></svg>
+      </a>
+    </div></div>
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:10px">
+      <a class="h-card h-acc">
+        <span class="h-past" style="background:#10322F;color:#2DD4BF"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
+        <span style="flex:1;min-width:0"><span class="h-tar" style="display:block">Guardar documento</span><span class="h-apo" style="display:block;margin-top:2px">34 guardados · el último, hoy</span></span>
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-apagado)"><path d="m9 5 7 7-7 7"/></svg>
+      </a>
+      <a class="h-card h-acc">
+        <span class="h-past" style="background:color-mix(in srgb,#6B93D6 22%,transparent);color:#9DBBEA"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l2 10H6L4 7Z"/><path d="M4 7 3 4"/><circle cx="9" cy="20" r="1.3"/><circle cx="16" cy="20" r="1.3"/></svg></span>
+        <span style="flex:1;min-width:0"><span class="h-tar" style="display:block">La compra</span><span class="h-apo" style="display:block;margin-top:2px">7 cosas apuntadas</span></span>
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-apagado)"><path d="m9 5 7 7-7 7"/></svg>
+      </a>
+    </div></div>
+  </div>
+  <p class="porque">Alto <b>76</b> · pastilla <b>48/r16</b> · título <b>19/800</b> · pie <b>15/600</b> · chevron <b>22</b> a la derecha, siempre. El color entra por la pastilla y por nada más.</p>
+
+  <h4>2 · Tarjeta informativa — contiene datos, no navega</h4>
+  <h4 style="margin-top:0">3 · Tarjeta de resumen — la cifra es la protagonista</h4>
+  <div class="par">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:12px">
+      <div class="h-card" style="padding:18px 20px">
+        <p class="h-rot">Balance del trimestre</p>
+        <p class="h-cif" style="margin-top:8px;color:var(--h-bien)">+3.350 €</p>
+        <div style="display:flex;gap:22px;margin-top:16px">
+          <span><span class="h-apo" style="display:block">Ingresos</span><span class="h-cif2" style="display:block;margin-top:3px">11.780 €</span></span>
+          <span><span class="h-apo" style="display:block">Gastos</span><span class="h-cif2" style="display:block;margin-top:3px">8.430 €</span></span>
+        </div>
+      </div>
+      <div class="h-card" style="padding:16px 18px">
+        <p class="h-rot">Póliza del coche</p>
+        <div style="border-top:1px solid var(--h-borde);margin-top:12px;padding-top:11px;display:flex;justify-content:space-between;gap:12px">
+          <span class="h-apo">Compañía</span><span class="h-cue" style="font-weight:800">MAPFRE</span></div>
+        <div style="border-top:1px solid var(--h-borde);padding-top:11px;margin-top:11px;display:flex;justify-content:space-between;gap:12px">
+          <span class="h-apo">Vence</span><span class="h-cue" style="font-weight:800">12 de noviembre</span></div>
+      </div>
+    </div></div>
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:12px">
+      <div class="h-card" style="padding:18px 20px">
+        <p class="h-rot">Balance del trimestre</p>
+        <p class="h-cif" style="margin-top:8px;color:var(--h-bien)">+3.350 €</p>
+        <div style="display:flex;gap:22px;margin-top:16px">
+          <span><span class="h-apo" style="display:block">Ingresos</span><span class="h-cif2" style="display:block;margin-top:3px">11.780 €</span></span>
+          <span><span class="h-apo" style="display:block">Gastos</span><span class="h-cif2" style="display:block;margin-top:3px">8.430 €</span></span>
+        </div>
+      </div>
+      <div class="h-card" style="padding:16px 18px">
+        <p class="h-rot">Póliza del coche</p>
+        <div style="border-top:1px solid var(--h-borde);margin-top:12px;padding-top:11px;display:flex;justify-content:space-between;gap:12px">
+          <span class="h-apo">Compañía</span><span class="h-cue" style="font-weight:800">MAPFRE</span></div>
+        <div style="border-top:1px solid var(--h-borde);padding-top:11px;margin-top:11px;display:flex;justify-content:space-between;gap:12px">
+          <span class="h-apo">Vence</span><span class="h-cue" style="font-weight:800">12 de noviembre</span></div>
+      </div>
+    </div></div>
+  </div>
+  <p class="porque">La cifra grande es <b>tinta</b>, salvo cuando el color <i>es</i> el signo — como aquí, que el balance es positivo. Ningún degradado: hoy el balance y las horas de más comparten el mismo violeta y una es dinero y la otra tiempo.</p>
+
+  <h4>4 · Fila — dentro de una lista</h4>
+  <div class="par">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:8px">
+      <div class="h-card h-fila">
+        <span class="h-past sm" style="background:color-mix(in srgb,#C09A62 18%,transparent);color:#96733F"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/></svg></span>
+        <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Factura Endesa · agosto</span><span class="h-apo" style="display:block">14 ago · Finca › Luz</span></span>
+        <span class="h-cue" style="font-weight:800;font-variant-numeric:tabular-nums">127,43 €</span>
+      </div>
+      <div class="h-card h-fila" style="border-left:3px solid #D07E97">
+        <span style="width:44px;flex:none;text-align:right"><span class="h-apo" style="font-weight:800;font-variant-numeric:tabular-nums">10:30</span></span>
+        <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Recoger la medicación</span><span class="h-apo" style="display:block">Juan Miguel</span></span>
+        <span class="h-pil" style="height:38px;font-size:13px;padding:0 13px">Hecho</span>
+      </div>
+      <div class="h-card h-fila" style="border-left:3px solid #D07E97;opacity:.55">
+        <span style="width:44px;flex:none;text-align:right"><span class="h-apo" style="font-weight:800;font-variant-numeric:tabular-nums">09:00</span></span>
+        <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800;text-decoration:line-through">Llamar al taller</span><span class="h-apo" style="display:block">Conchita · hecho</span></span>
+        <svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-bien)"><path d="m4 12 5.5 5.5L20 7"/></svg>
+      </div>
+    </div></div>
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:8px">
+      <div class="h-card h-fila">
+        <span class="h-past sm" style="background:color-mix(in srgb,#C09A62 24%,transparent);color:#DCBB86"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/></svg></span>
+        <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Factura Endesa · agosto</span><span class="h-apo" style="display:block">14 ago · Finca › Luz</span></span>
+        <span class="h-cue" style="font-weight:800;font-variant-numeric:tabular-nums">127,43 €</span>
+      </div>
+      <div class="h-card h-fila" style="border-left:3px solid #D07E97">
+        <span style="width:44px;flex:none;text-align:right"><span class="h-apo" style="font-weight:800;font-variant-numeric:tabular-nums">10:30</span></span>
+        <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Recoger la medicación</span><span class="h-apo" style="display:block">Juan Miguel</span></span>
+        <span class="h-pil" style="height:38px;font-size:13px;padding:0 13px">Hecho</span>
+      </div>
+      <div class="h-card h-fila" style="border-left:3px solid #D07E97;opacity:.55">
+        <span style="width:44px;flex:none;text-align:right"><span class="h-apo" style="font-weight:800;font-variant-numeric:tabular-nums">09:00</span></span>
+        <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800;text-decoration:line-through">Llamar al taller</span><span class="h-apo" style="display:block">Conchita · hecho</span></span>
+        <svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-bien)"><path d="m4 12 5.5 5.5L20 7"/></svg>
+      </div>
+    </div></div>
+  </div>
+  <p class="porque">Una sola fila para Papeles y para Agenda. Hoy hay <b>cuatro</b> maneras distintas de pintar una fila en cuatro pantallas contiguas. La columna de hora sube de 40 a <b>44 px</b> con <code>tabular-nums</code>, y lo hecho se atenúa <b>y</b> se tacha <b>y</b> lleva un tic — tres señales, no solo el color.</p>
+</section>
+
+
+<!-- ═══════ 06 CAMPOS ═══════ -->
+<section id="s6">
+  <div class="cab"><span class="num">06</span><h2>Campos</h2></div>
+  <p class="regla">La clase <code>.entrada</code> que ya existe es correcta —58 px de alto y letra de 19— y se convierte en la base de todos. Lo que falta es que la usen todos.</p>
+
+  <div class="par">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:14px">
+      <div><p class="h-rot" style="margin-bottom:7px">¿Qué hay que recordar?</p><input class="h-inp" value="Recoger la medicación"></div>
+      <div><p class="h-rot" style="margin-bottom:7px">Nota</p><textarea class="h-inp h-ta" placeholder="Lo que haga falta añadir"></textarea></div>
+      <div><p class="h-rot" style="margin-bottom:7px">¿Dónde lo guardo?</p>
+        <div class="h-inp" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span>Finca › Gastos › Luz</span><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-tenue)"><path d="m6 9 6 6 6-6"/></svg></div></div>
+      <div><p class="h-rot" style="margin-bottom:7px">Importe</p><input class="h-inp" value="127,43 €" style="border-color:var(--h-accion);box-shadow:0 0 0 1px var(--h-accion)"><p class="h-apo" style="margin-top:7px">Con foco: el borde toma el color de acción.</p></div>
+    </div></div>
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:14px">
+      <div><p class="h-rot" style="margin-bottom:7px">¿Qué hay que recordar?</p><input class="h-inp" value="Recoger la medicación"></div>
+      <div><p class="h-rot" style="margin-bottom:7px">Nota</p><textarea class="h-inp h-ta" placeholder="Lo que haga falta añadir"></textarea></div>
+      <div><p class="h-rot" style="margin-bottom:7px">¿Dónde lo guardo?</p>
+        <div class="h-inp" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span>Finca › Gastos › Luz</span><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-tenue)"><path d="m6 9 6 6 6-6"/></svg></div></div>
+      <div><p class="h-rot" style="margin-bottom:7px">Importe</p><input class="h-inp" value="127,43 €" style="border-color:var(--h-accion);box-shadow:0 0 0 1px var(--h-accion)"><p class="h-apo" style="margin-top:7px">Con foco: el borde toma el color de acción.</p></div>
+    </div></div>
+  </div>
+
+  <ul>
+    <li><strong>Etiqueta encima, siempre en rótulo de 13.</strong> Nunca dentro del campo: un marcador de posición que hace de etiqueta desaparece justo cuando hace falta.</li>
+    <li><strong>Selector:</strong> misma caja con chevron. Con más de cinco opciones, pantalla aparte con la lista.</li>
+    <li><strong>Fecha y hora:</strong> misma caja, con el arreglo de <code>min-width:0</code> que ya está en el CSS global.</li>
+    <li><strong>El error va debajo del campo</strong>, en apoyo de 15 y color de alerta, y dice qué hacer — no solo qué ha fallado.</li>
+  </ul>
+</section>
+
+
+<!-- ═══════ 07 HUBI INPUT ═══════ -->
+<section id="s7">
+  <div class="cab"><span class="num">07</span><h2>HUBI Input</h2></div>
+  <p class="regla">El componente que prepara la Fase 2. <strong>Voz y texto en la misma caja</strong>, presente en cualquier pantalla, sabiendo dónde está. No se construye ahora: se deja definido para que nada de lo que hagamos entretanto lo contradiga.</p>
+
+  <p>Es la pieza que convierte «HUBI» de pantalla en capacidad. La caja es la misma en todas partes; lo único que cambia es <strong>la sugerencia</strong>, que enseña qué se puede pedir <em>aquí</em>. Escribas o digas lo que digas, funciona igual.</p>
+
+  <div class="par">
+    <div class="marco"><div class="et">Claro · en reposo, por pantalla</div><div class="lienzo hubi claro" style="display:grid;gap:10px">
+      <div class="h-hubi"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">Pregunta o di lo que necesitas</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
+      <div class="h-hubi"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">«La última póliza del coche»</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
+      <div class="h-hubi"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">«Añade leche»</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
+      <p class="h-apo">Inicio · Papeles · La compra. Misma caja, distinta sugerencia.</p>
+    </div></div>
+    <div class="marco"><div class="et">Oscuro · los cuatro estados</div><div class="lienzo hubi oscuro" style="display:grid;gap:10px">
+      <div class="h-hubi"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">«¿Qué tengo mañana?»</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
+      <div class="h-hubi" style="border-color:var(--h-accion)"><span style="display:flex;gap:3px;align-items:center;height:24px">
+        <i style="width:4px;height:9px;border-radius:2px;background:var(--h-accion);display:block"></i>
+        <i style="width:4px;height:17px;border-radius:2px;background:var(--h-accion);display:block"></i>
+        <i style="width:4px;height:23px;border-radius:2px;background:var(--h-accion);display:block"></i>
+        <i style="width:4px;height:14px;border-radius:2px;background:var(--h-accion);display:block"></i>
+        <i style="width:4px;height:8px;border-radius:2px;background:var(--h-accion);display:block"></i>
+      </span><span class="txt" style="color:var(--h-tinta);font-weight:700">Te escucho · 4 s</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
+      <div class="h-hubi"><span style="width:22px;height:22px;border-radius:50%;border:2.5px solid var(--h-borde);border-top-color:var(--h-accion);display:block"></span><span class="txt" style="color:var(--h-tinta);font-weight:700">Un momento…</span></div>
+      <div class="h-card" style="padding:16px 18px">
+        <p class="h-apo">«¿Qué tengo mañana?»</p>
+        <p class="h-cue" style="margin-top:8px;font-weight:700">Mañana tienes el médico a las 10:30 y hay que llevar los papeles del seguro.</p>
+        <div style="display:flex;gap:8px;margin-top:14px"><span class="h-pil" style="height:44px">Ver la Agenda</span><span class="h-pil" style="height:44px">Otra cosa</span></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="scr">
+  <table class="tab">
+    <thead><tr><th>Estado</th><th>Qué se ve</th><th>Regla</th></tr></thead>
+    <tbody>
+      <tr><td>Reposo</td><td>Caja de 64 px, icono de onda, sugerencia contextual, botón de micro con el degradado HUBI</td><td>Se puede escribir sin tocar el micro</td></tr>
+      <tr><td>Escuchando</td><td>Borde de acción, medidor de nivel, «Te escucho · N s»</td><td>El aro y el medidor comparten el color de acción</td></tr>
+      <tr><td>Pensando</td><td>Aro girando, «Un momento…»</td><td>Un solo texto de espera en todo el producto</td></tr>
+      <tr><td>Respondiendo</td><td>Tarjeta con la pregunta en apoyo, la respuesta en cuerpo y hasta dos píldoras de acción</td><td>Responde <strong>en el sitio</strong>; solo navega si hay que ver algo</td></tr>
+      <tr><td>No entendido</td><td>Hasta <strong>cuatro</strong> opciones, no nueve, y «Otra cosa»</td><td>Menos decisiones justo cuando hay más frustración</td></tr>
+      <tr><td>Sin micrófono</td><td>La caja sigue ahí, solo texto, con una línea que lo explica</td><td><strong>Nunca es un callejón sin salida</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p class="porque"><b>Lo que este componente obliga a decidir ya:</b> el degradado HUBI solo vive aquí y en el botón flotante; la sombra teal solo vive aquí; y el color de acción y el aro del micro son el mismo teal, porque «HUBI está haciendo algo» y «pulsa esto» son la misma idea.</p>
+</section>
+
+
+<!-- ═══════ 08 PÍLDORAS ═══════ -->
+<section id="s8">
+  <div class="cab"><span class="num">08</span><h2>Píldoras, pestañas y filtros</h2></div>
+  <p class="regla">Un solo lenguaje para Semana/Mes/Día, Por hacer/Hechas, los filtros y las categorías. Hoy hay cuatro alturas distintas (44, 46, 48, 52) y tres tratamientos.</p>
+
+  <div class="par">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:14px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="h-pil on">Semana</span><span class="h-pil">Mes</span><span class="h-pil">El día</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="h-pil on">Por hacer · 6</span><span class="h-pil">Hechas</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="h-pil" style="border-color:#D07E97;color:#B65B76"><i style="width:9px;height:9px;border-radius:50%;background:#D07E97;display:block"></i>Salud</span>
+        <span class="h-pil" style="border-color:#9482D9;color:#7562BF"><i style="width:9px;height:9px;border-radius:50%;background:#9482D9;display:block"></i>Vehículos</span>
+      </div>
+      <p class="h-apo">Selección · filtro con contador · categorías con marca de ámbito.</p>
+    </div></div>
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:14px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="h-pil on">Semana</span><span class="h-pil">Mes</span><span class="h-pil">El día</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="h-pil on">Por hacer · 6</span><span class="h-pil">Hechas</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="h-pil" style="border-color:#D07E97;color:#E5A4B6"><i style="width:9px;height:9px;border-radius:50%;background:#D07E97;display:block"></i>Salud</span>
+        <span class="h-pil" style="border-color:#9482D9;color:#B7ACE8"><i style="width:9px;height:9px;border-radius:50%;background:#9482D9;display:block"></i>Vehículos</span>
+      </div>
+      <p class="h-apo">Selección · filtro con contador · categorías con marca de ámbito.</p>
+    </div></div>
+  </div>
+
+  <ul>
+    <li><strong>Alto 48, radio redondo, letra 15/800.</strong> Uno solo.</li>
+    <li><strong>Activa = relleno de tinta</strong>, no de color de sección. Así el mismo componente vale en cualquier pantalla.</li>
+    <li><strong>Máximo tres por fila a 360 px.</strong> Con tres, cada una mide 86 px útiles — «Por hacer · 6» ya se corta hoy. Con más de tres, se colapsa en un selector.</li>
+    <li><strong>El contador va dentro de la píldora</strong>, mismo tamaño, separado por un punto medio.</li>
+  </ul>
+</section>
+
+
+<!-- ═══════ 09 ESTADOS ═══════ -->
+<section id="s9">
+  <div class="cab"><span class="num">09</span><h2>Estados</h2></div>
+  <p class="regla">Una caja para cada situación. Hoy hay cinco redacciones distintas de «aquí no hay nada» y cinco mensajes distintos para el mismo error.</p>
+
+  <div class="par">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:12px">
+      <div class="h-vacio">
+        <p class="h-tar">Todavía no hay papeles aquí</p>
+        <p class="h-apo" style="margin-top:6px">Haz una foto y yo lo archivo donde toca.</p>
+        <button class="h-btn h-p" style="margin-top:16px;width:auto;padding:0 26px;display:inline-flex">Guardar un papel</button>
+      </div>
+      <div class="h-caja h-err">
+        <p class="h-cue" style="font-weight:800;color:var(--h-alerta)">No se han podido leer los papeles</p>
+        <p class="h-apo" style="margin-top:5px;color:var(--h-tinta-suave)">Siguen guardados. Vuelve a intentarlo en un momento.</p>
+      </div>
+      <div class="h-caja h-avi">
+        <p class="h-cue" style="font-weight:800;color:var(--h-atencion)">Falta la factura de septiembre</p>
+        <p class="h-apo" style="margin-top:5px;color:var(--h-tinta-suave)">Internet · 42,90 € · se apuntó pero no hay papel.</p>
+      </div>
+      <div class="h-caja h-ok" style="display:flex;gap:12px;align-items:center">
+        <span style="width:38px;height:38px;border-radius:50%;background:var(--h-bien);display:flex;align-items:center;justify-content:center;flex:none"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg></span>
+        <span><span class="h-cue" style="display:block;font-weight:800">Documento guardado</span><span class="h-apo" style="display:block">Finca › Gastos › 2026 › T3 › Luz</span></span>
+      </div>
+      <div class="h-card h-fila" style="opacity:.6">
+        <span style="width:44px;height:44px;border-radius:14px;background:var(--h-borde);flex:none"></span>
+        <span style="flex:1"><span style="display:block;height:13px;width:65%;border-radius:5px;background:var(--h-borde)"></span><span style="display:block;height:11px;width:40%;border-radius:5px;background:var(--h-borde);margin-top:7px"></span></span>
+      </div>
+    </div></div>
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:12px">
+      <div class="h-vacio">
+        <p class="h-tar">Todavía no hay papeles aquí</p>
+        <p class="h-apo" style="margin-top:6px">Haz una foto y yo lo archivo donde toca.</p>
+        <button class="h-btn h-p" style="margin-top:16px;width:auto;padding:0 26px;display:inline-flex">Guardar un papel</button>
+      </div>
+      <div class="h-caja h-err">
+        <p class="h-cue" style="font-weight:800;color:var(--h-alerta)">No se han podido leer los papeles</p>
+        <p class="h-apo" style="margin-top:5px;color:var(--h-tinta-suave)">Siguen guardados. Vuelve a intentarlo en un momento.</p>
+      </div>
+      <div class="h-caja h-avi">
+        <p class="h-cue" style="font-weight:800;color:var(--h-atencion)">Falta la factura de septiembre</p>
+        <p class="h-apo" style="margin-top:5px;color:var(--h-tinta-suave)">Internet · 42,90 € · se apuntó pero no hay papel.</p>
+      </div>
+      <div class="h-caja h-ok" style="display:flex;gap:12px;align-items:center">
+        <span style="width:38px;height:38px;border-radius:50%;background:var(--h-bien);display:flex;align-items:center;justify-content:center;flex:none"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#04211D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg></span>
+        <span><span class="h-cue" style="display:block;font-weight:800">Documento guardado</span><span class="h-apo" style="display:block">Finca › Gastos › 2026 › T3 › Luz</span></span>
+      </div>
+      <div class="h-card h-fila" style="opacity:.6">
+        <span style="width:44px;height:44px;border-radius:14px;background:var(--h-borde);flex:none"></span>
+        <span style="flex:1"><span style="display:block;height:13px;width:65%;border-radius:5px;background:var(--h-borde)"></span><span style="display:block;height:11px;width:40%;border-radius:5px;background:var(--h-borde);margin-top:7px"></span></span>
+      </div>
+    </div></div>
+  </div>
+
+  <h4>Las reglas de los estados</h4>
+  <ul>
+    <li><strong>Vacío:</strong> caja de superficie, <code>py-32</code>, título de tarjeta + apoyo. Con acción si la hay, sin ella si no. <strong>Una redacción por sitio, no cinco.</strong></li>
+    <li><strong>Error:</strong> qué ha pasado, <strong>qué sigue estando bien</strong>, y qué hacer. Nunca texto técnico, nunca el mensaje crudo de la base de datos.</li>
+    <li><strong>Cuando algo se degrada, dilo y di por qué.</strong> Es la regla que sacamos del lector de documentos y funciona: una línea gris explicando el motivo resolvió en un paso lo que tres rondas de conjeturas no consiguieron.</li>
+    <li><strong>Cargando:</strong> el armazón que ya existe, con sus 280 ms de retardo. No se toca.</li>
+    <li><strong>Confirmar algo destructivo:</strong> panel dentro de la aplicación, siempre. <strong>Nunca <code>window.confirm()</code></strong>, que hoy aparece en tres sitios.</li>
+  </ul>
+</section>
+
+
+<!-- ═══════ 10 CABECERA Y BARRA ═══════ -->
+<section id="s10">
+  <div class="cab"><span class="num">10</span><h2>Cabecera y barra</h2></div>
+  <p class="regla">Solo el aspecto. <strong>La arquitectura de navegación no se toca en esta fase</strong> — las pestañas siguen siendo exactamente las de hoy.</p>
+
+  <div class="par">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="padding:0">
+      <div style="padding:16px 18px 14px;border-bottom:1px solid var(--h-borde)">
+        <span class="h-pil" style="height:44px;padding:0 14px;margin-bottom:12px"><svg class="ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>Volver</span>
+        <p class="h-tit">Papeles</p>
+      </div>
+      <div style="padding:18px;min-height:70px"></div>
+      <div class="h-barra">
+        <span class="h-tab on"><svg class="ico" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/></svg>Inicio</span>
+        <span class="h-tab"><svg class="ico" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/></svg>Papeles</span>
+        <span class="h-tab"><svg class="ico" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda</span>
+        <span class="h-tab"><svg class="ico" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg>Finca</span>
+      </div>
+    </div></div>
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="padding:0">
+      <div style="padding:16px 18px 14px;border-bottom:1px solid var(--h-borde)">
+        <span class="h-pil" style="height:44px;padding:0 14px;margin-bottom:12px"><svg class="ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>Volver</span>
+        <p class="h-tit">Papeles</p>
+      </div>
+      <div style="padding:18px;min-height:70px"></div>
+      <div class="h-barra">
+        <span class="h-tab on"><svg class="ico" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/></svg>Inicio</span>
+        <span class="h-tab"><svg class="ico" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h8a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/></svg>Papeles</span>
+        <span class="h-tab"><svg class="ico" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda</span>
+        <span class="h-tab"><svg class="ico" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg>Finca</span>
+      </div>
+    </div></div>
+  </div>
+
+  <ul>
+    <li><strong>El título de pantalla va siempre en la cabecera</strong>, a 27/800. Hoy en Papeles vive en el cuerpo y desaparece al hacer scroll; en Corregir sí está en la cabecera.</li>
+    <li><strong>Volver es una píldora de 44</strong>, con icono y con la palabra. Un solo componente: hoy hay cuatro implementaciones distintas, una de ellas recargando la aplicación entera.</li>
+    <li><strong>Y vuelve a donde venías</strong>, conservando la vista y los filtros. Hoy no.</li>
+    <li><strong>Barra:</strong> 68 px + área segura, borde superior de 1 px, superficie. Activa en color de acción y trazo 2.1; inactiva apagada y trazo 1.9. Texto 12/700. Igual que hoy, ya está bien.</li>
+    <li><strong>El botón de HUBI</strong> es el único elemento con sombra en toda la aplicación.</li>
+  </ul>
+</section>
+
+
+<!-- ═══════ 11 ACTUAL → PROPUESTA ═══════ -->
+<section id="s11">
+  <div class="cab"><span class="num">11</span><h2>Actual → Propuesta</h2></div>
+  <p>Piezas reales de HUBI, tal como están hoy y como quedarían con el sistema. Nada de esto se ha aplicado.</p>
+
+  <h3>Tarjeta «Guardar documento»</h3>
+  <div class="vs">
+    <div class="col"><div class="et et-a">Actual</div><div class="lienzo hubi claro">
+      <div style="display:flex;align-items:center;gap:14px;height:76px;padding:0 14px;border-radius:22px;background:color-mix(in srgb,#14B8A6 12%,transparent);border:1px solid color-mix(in srgb,#14B8A6 30%,transparent)">
+        <span style="width:48px;height:48px;border-radius:15px;background:#14B8A6;display:flex;align-items:center;justify-content:center;flex:none;color:#fff"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
+        <span style="flex:1;min-width:0"><span style="display:block;font-size:19px;font-weight:800">Guardar documento</span><span style="display:block;font-size:14.5px;font-weight:700;color:var(--h-tenue)">34 guardados · el último, hoy</span></span>
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+      </div>
+    </div></div>
+    <div class="col"><div class="et et-b">Propuesta</div><div class="lienzo hubi claro">
+      <a class="h-card h-acc">
+        <span class="h-past" style="background:#DFF7F3;color:#0E9C8B"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
+        <span style="flex:1;min-width:0"><span class="h-tar" style="display:block">Guardar documento</span><span class="h-apo" style="display:block;margin-top:2px">34 guardados · el último, hoy</span></span>
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-apagado)"><path d="m9 5 7 7-7 7"/></svg>
+      </a>
+    </div></div>
+  </div>
+  <p class="porque">Se quita el relleno teal y el borde teñido; el color entra por la pastilla. Radio <b>22 → 20</b>, pie <b>14,5 → 15</b>. La tarjeta deja de gritar y sigue siendo reconocible — y ahora <b>puede convivir con otras cinco</b> sin que la pantalla se convierta en un semáforo.</p>
+
+  <h3>Cuadros «La compra» y «Notas»</h3>
+  <div class="vs">
+    <div class="col"><div class="et et-a">Actual · dos cuadrados de 152 px teñidos</div><div class="lienzo hubi claro">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="min-height:126px;border-radius:22px;padding:14px;background:color-mix(in srgb,#0EA5E9 12%,transparent);border:1px solid color-mix(in srgb,#0EA5E9 30%,transparent);display:flex;flex-direction:column;justify-content:space-between">
+          <span style="width:48px;height:48px;border-radius:15px;background:#0EA5E9;display:flex;align-items:center;justify-content:center;color:#fff"><svg class="ico" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l2 10H6L4 7Z"/><circle cx="9" cy="20" r="1.3"/><circle cx="16" cy="20" r="1.3"/></svg></span>
+          <span><span style="display:block;font-size:17.5px;font-weight:800">La compra</span><span style="display:block;font-size:14px;font-weight:700;color:var(--h-tenue)">7 cosas</span></span>
+        </div>
+        <div style="min-height:126px;border-radius:22px;padding:14px;background:color-mix(in srgb,#F59E0B 20%,transparent);border:1px solid color-mix(in srgb,#F59E0B 55%,transparent);display:flex;flex-direction:column;justify-content:space-between">
+          <span style="width:48px;height:48px;border-radius:15px;background:#F59E0B;display:flex;align-items:center;justify-content:center;color:#fff"><svg class="ico" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4Z"/></svg></span>
+          <span><span style="display:block;font-size:17.5px;font-weight:800">Notas</span><span style="display:block;font-size:14px;font-weight:700;color:var(--h-tenue)">1 sin ver</span></span>
+        </div>
+      </div>
+    </div></div>
+    <div class="col"><div class="et et-b">Propuesta · dos filas, y el aviso donde importa</div><div class="lienzo hubi claro">
+      <div style="display:grid;gap:8px">
+        <a class="h-card h-acc" style="height:68px">
+          <span class="h-past sm" style="background:color-mix(in srgb,#6B93D6 16%,transparent);color:#4A76BE"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l2 10H6L4 7Z"/><circle cx="9" cy="20" r="1.3"/><circle cx="16" cy="20" r="1.3"/></svg></span>
+          <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800">La compra</span><span class="h-apo" style="display:block">7 cosas apuntadas</span></span>
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-apagado)"><path d="m9 5 7 7-7 7"/></svg>
+        </a>
+        <a class="h-card h-acc" style="height:68px;background:var(--h-bien-velo);border-color:color-mix(in srgb,var(--h-bien) 40%,transparent)">
+          <span class="h-past sm" style="background:var(--h-bien);color:#fff"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4Z"/></svg></span>
+          <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800">Conchita te ha dejado una nota</span><span class="h-apo" style="display:block">Sin ver · hace 2 horas</span></span>
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-apagado)"><path d="m9 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div></div>
+  </div>
+  <p class="porque">Dos superficies de color de 152 px que compiten con la tarjeta de Guardar pasan a ser <b>una fila neutra</b> (la compra, que no reclama nada) y <b>un aviso teñido</b> (la nota sin ver, que sí). Ése es exactamente el cambio: el tinte deja de ser decoración y pasa a significar «esto te está esperando». Y el título dice qué ha pasado, no cómo se llama la sección.</p>
+
+  <h3>Fila de Agenda</h3>
+  <div class="vs">
+    <div class="col"><div class="et et-a">Actual</div><div class="lienzo hubi claro">
+      <div style="display:flex;align-items:center;gap:10px;border-radius:14px;padding:10px 12px;background:var(--h-superficie);border:1px solid var(--h-borde)">
+        <span style="width:40px;flex:none;font-size:13px;font-weight:800;color:var(--h-tenue)">10:30</span>
+        <span style="width:3px;height:30px;border-radius:2px;background:#F59E0B;flex:none"></span>
+        <span style="flex:1;min-width:0;font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Recoger la medicación en la fa…</span>
+      </div>
+      <p class="h-apo" style="margin-top:9px">231 px para el título · sin señal de estado salvo el color</p>
+    </div></div>
+    <div class="col"><div class="et et-b">Propuesta</div><div class="lienzo hubi claro">
+      <div class="h-card h-fila" style="border-left:3px solid #D07E97;min-height:60px">
+        <span style="width:44px;flex:none;text-align:right"><span class="h-apo" style="font-weight:800;font-variant-numeric:tabular-nums">10:30</span></span>
+        <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Recoger la medicación en la farmacia</span></span>
+        <span class="h-pil" style="height:36px;font-size:13px;padding:0 12px">Hecho</span>
+      </div>
+      <p class="h-apo" style="margin-top:9px">Hora tabular · marca de ámbito al borde · acción visible</p>
+    </div></div>
+  </div>
+  <p class="porque">La barra de color pasa al <b>borde</b> de la tarjeta y toma un tono apagado de ámbito, con lo que se recupera anchura para el texto. La hora sube a <b>44 px con cifras tabulares</b>, para que una columna de horas quede alineada. Y aparece la acción, que hoy obliga a entrar en el detalle.</p>
+
+  <h3>Botón «Guardar» · el mismo, en dos pantallas</h3>
+  <div class="vs">
+    <div class="col"><div class="et et-a">Actual · dos colores y dos alturas</div><div class="lienzo hubi claro" style="display:grid;gap:10px">
+      <button class="h-btn" style="background:#0F172A;color:#fff;height:62px;border-radius:18px;font-size:18px">Guardar <span style="font-size:12px;opacity:.7;font-weight:600">· notas, asesor, carpetas</span></button>
+      <button class="h-btn" style="background:#14B8A6;color:#fff;height:58px;border-radius:16px;font-size:17px">Guardar <span style="font-size:12px;opacity:.8;font-weight:600">· menús, pagos, finca</span></button>
+    </div></div>
+    <div class="col"><div class="et et-b">Propuesta · uno</div><div class="lienzo hubi claro" style="display:grid;gap:10px">
+      <button class="h-btn h-p">Guardar</button>
+      <button class="h-btn h-s">Dejarlo</button>
+    </div></div>
+  </div>
+  <p class="porque">Hoy hay <b>diez alturas</b> y dos colores para el botón principal, y como <code>--t-boton</code> cambia entre modos, el mismo botón es marino en un teléfono y verde en otro. Un color, una altura, un radio. Y el texto del botón teal pasa a ser <b>tinta oscura</b>, no blanco: el blanco sobre teal no llega al contraste mínimo.</p>
+
+  <h3>Estado vacío</h3>
+  <div class="vs">
+    <div class="col"><div class="et et-a">Actual · cinco variantes en seis pantallas</div><div class="lienzo hubi claro" style="display:grid;gap:8px">
+      <div style="border-radius:22px;background:var(--h-superficie);border:1px solid var(--h-borde);padding:32px 24px;text-align:center;font-size:18px;font-weight:800">Todavía no hay papeles</div>
+      <div style="border-radius:20px;background:var(--h-superficie);padding:32px 24px;text-align:center;font-size:17px;font-weight:500">Esta sección todavía no tiene carpetas dentro.</div>
+      <div style="border-radius:20px;background:var(--h-superficie);padding:24px;text-align:center;font-size:16.5px;font-weight:500">Ese día no hay nada.</div>
+    </div></div>
+    <div class="col"><div class="et et-b">Propuesta · una</div><div class="lienzo hubi claro">
+      <div class="h-vacio">
+        <p class="h-tar">Todavía no hay papeles aquí</p>
+        <p class="h-apo" style="margin-top:6px">Haz una foto y yo lo archivo donde toca.</p>
+        <button class="h-btn h-p" style="margin-top:16px;width:auto;padding:0 26px;display:inline-flex">Guardar un papel</button>
+      </div>
+    </div></div>
+  </div>
+  <p class="porque">Mismo esqueleto siempre: <b>título + explicación + salida</b>. Cambia el texto, nunca la forma. Hoy hay tres rellenos distintos (<code>py-6</code>, <code>py-8</code>, <code>py-10</code>), dos radios, tres pesos y unos llevan botón y otros no.</p>
+</section>
+
+
+<!-- ═══════ 12 EL FONDO ═══════ -->
+<section id="s12">
+  <div class="cab"><span class="num">12</span><h2>El fondo: frío o cálido</h2></div>
+  <p>No he cambiado nada. Aquí están los dos, con la misma tarjeta encima, para poder decidirlo mirándolo.</p>
+
+  <div class="vs">
+    <div class="col"><div class="et et-a">Actual · #F1F5F9</div><div class="lienzo hubi claro" style="padding:22px 18px">
+      <p class="h-rot">Hoy</p>
+      <div class="h-card h-acc" style="margin-top:10px">
+        <span class="h-past" style="background:#DFF7F3;color:#0E9C8B"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
+        <span style="flex:1"><span class="h-tar" style="display:block">Guardar documento</span><span class="h-apo" style="display:block">34 guardados</span></span>
+      </div>
+      <div class="h-card h-fila" style="margin-top:8px"><span class="h-past sm" style="background:color-mix(in srgb,#C09A62 18%,transparent);color:#96733F"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/></svg></span><span class="h-cue" style="font-weight:800">Factura Endesa</span></div>
+      <button class="h-btn h-p" style="margin-top:12px">Guardar</button>
+    </div></div>
+    <div class="col"><div class="et et-b">Propuesta · #F7F5F1</div><div class="lienzo hubi claro calido" style="padding:22px 18px">
+      <p class="h-rot">Hoy</p>
+      <div class="h-card h-acc" style="margin-top:10px">
+        <span class="h-past" style="background:#DFF7F3;color:#0E9C8B"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
+        <span style="flex:1"><span class="h-tar" style="display:block">Guardar documento</span><span class="h-apo" style="display:block">34 guardados</span></span>
+      </div>
+      <div class="h-card h-fila" style="margin-top:8px"><span class="h-past sm" style="background:color-mix(in srgb,#C09A62 18%,transparent);color:#96733F"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/></svg></span><span class="h-cue" style="font-weight:800">Factura Endesa</span></div>
+      <button class="h-btn h-p" style="margin-top:12px">Guardar</button>
+    </div></div>
+  </div>
+
+  <p><strong>Mi lectura, y es una opinión, no un dato:</strong> el cálido funciona mejor con la identidad que has descrito. El <code>#F1F5F9</code> es <em>slate-100</em>, el gris azulado por defecto de Tailwind, y arrastra el producto entero hacia lo administrativo: es el fondo de una herramienta de trabajo. El <code>#F7F5F1</code> hace que la tarjeta blanca <strong>parezca papel sobre una mesa</strong> en vez de un panel sobre un lienzo, que es literalmente la metáfora de HUBI.</p>
+  <p>Hay un coste real y hay que decirlo: <strong>el cálido y el teal se llevan peor.</strong> El teal es frío y sobre fondo cálido gana un punto de estridencia. Se compensa bajando su saturación entre un 6 y un 10 %, y eso además ayuda al problema de que hoy los cinco colores son valores por defecto de la herramienta.</p>
+  <p class="regla">Recomendación: <strong>sí al cálido, pero en la Fase 3</strong> junto con el ajuste de la paleta. Cambiarlo ahora, con los colores actuales sin retocar, deja el teal desafinado durante toda la migración.</p>
+</section>
+
+
+<!-- ═══════ 13 DECISIONES ═══════ -->
+<section id="s13">
+  <div class="cab"><span class="num">13</span><h2>Decisiones que necesito de ti</h2></div>
+  <p>Nueve. Las cuatro primeras condicionan todo lo demás; las cinco últimas son de una línea cada una.</p>
+
+  <div class="dec">
+    <h5>D1 · Color del botón principal <span class="tag">clave</span></h5>
+    <p><strong>A · Teal en los dos modos</strong>, con tinta oscura encima. Un solo color, es lo más reconocible, y hace que la acción y el asistente compartan color — «HUBI hace algo». Cambia el aspecto del modo claro, donde hoy el botón es marino.</p>
+    <p><strong>B · Tinta que invierte</strong>: casi negro en claro, casi blanco en oscuro. No cambia nada de lo que ves hoy en claro, siempre el máximo contraste, y deja el teal libre para significar solo «bien». Menos identidad.</p>
+    <p class="rec">Recomiendo A. El botón teal <em>es</em> la marca, y es la decisión que más hace que HUBI parezca HUBI en cualquier pantalla.</p>
+  </div>
+
+  <div class="dec">
+    <h5>D2 · Si el teal es la acción, la Finca deja de ser teal <span class="tag">consecuencia de D1</span></h5>
+    <p>Pasa al verde apagado <code>#6FA88A</code>. Es lo que impide que «pulsa aquí» y «esto es de la Finca» se digan con el mismo color.</p>
+    <p class="rec">Va unido a D1: si eliges A, esto es obligatorio. Si eliges B, es opcional.</p>
+  </div>
+
+  <div class="dec">
+    <h5>D3 · Ámbitos apagados, estados vivos <span class="tag">clave</span></h5>
+    <p>Los seis colores de sección bajan de saturación; los tres de estado se quedan vivos. Es el mecanismo que hace que la atención funcione sola y lo que más contribuye a que la interfaz se sienta premium.</p>
+    <p class="rec">Recomiendo sí. Es el cambio de color con más efecto y el menos arriesgado: nada deja de identificarse, solo deja de competir.</p>
+  </div>
+
+  <div class="dec">
+    <h5>D4 · Las tarjetas dejan de rellenarse de color</h5>
+    <p>Superficie y borde. El color entra por la pastilla del icono. El tinte de fondo se reserva a lo que reclama atención hoy, y como máximo al 10 %.</p>
+    <p class="rec">Recomiendo sí. Es lo que descongestiona Inicio sin tocar todavía su estructura.</p>
+  </div>
+
+  <div class="dec">
+    <h5>D5 · Dos pesos: 600 y 800</h5>
+    <p>Recuperar el 600 como peso de lectura. Hoy casi todo es 700 u 800 y por eso nada destaca.</p>
+  </div>
+
+  <div class="dec">
+    <h5>D6 · El título de pantalla vive siempre en la cabecera</h5>
+    <p>Afecta sobre todo a Papeles, donde hoy está en el cuerpo y desaparece al hacer scroll.</p>
+  </div>
+
+  <div class="dec">
+    <h5>D7 · Una sola altura de botón: 60</h5>
+    <p>De diez a una. La única excepción es el terciario, a 48.</p>
+  </div>
+
+  <div class="dec">
+    <h5>D8 · Retirar el degradado cian-violeta del botón de Ajustes</h5>
+    <p><code>#00F4FC → #628BFC → #AE62F7</code>: tres colores que no existen en ninguna otra parte del producto, en la esquina superior derecha de Inicio, al lado del logo.</p>
+  </div>
+
+  <div class="dec">
+    <h5>D9 · El fondo cálido, ¿ahora o en la Fase 3?</h5>
+    <p>Mi recomendación es <strong>Fase 3</strong>, junto con el ajuste de saturación de la paleta, para no dejar el teal desafinado durante toda la migración. Pero es tu decisión y la comparación está en la sección 12.</p>
+  </div>
+</section>
+
+
+<!-- ═══════ 14 P0/P1 ═══════ -->
+<section id="s14">
+  <div class="cab"><span class="num">14</span><h2>P0 / P1 · corregir antes de seguir</h2></div>
+  <p><strong>Ninguno está arreglado.</strong> P0 son los que rompen una función o enseñan tripas al usuario. P1 son visibles y molestos pero no rompen nada.</p>
+
+  <div class="bug"><span class="sev s0">P0</span><div><b>El asistente desaparece si Drive no está conectado</b><p>Inicio pasa <code>voz={false}</code> a la barra porque la invitación ya lleva el botón — pero la invitación solo se pinta si <code>conectado</code>. Casa nueva o permiso caducado = pantalla principal sin ninguna entrada a HUBI.</p><p class="ruta">app/page.tsx</p></div></div>
+
+  <div class="bug"><span class="sev s0">P0</span><div><b>El asistente no acepta texto: si falla el micro, no hay camino</b><p>Cero <code>&lt;input&gt;</code> en toda la carpeta. El único mensaje es «Este navegador no puede grabar» y ahí acaba.</p><p class="ruta">app/hablar/</p></div></div>
+
+  <div class="bug"><span class="sev s0">P0</span><div><b>Mensajes de SQL visibles al usuario</b><p>«Falta ejecutar el sql/47 en la base de datos» y «…el sql/48». Nadie debe leer nunca la palabra SQL.</p><p class="ruta">app/pagos/fijos.tsx:260 · app/menus/semana.tsx:187</p></div></div>
+
+  <div class="bug"><span class="sev s0">P0</span><div><b>Error crudo de Postgres impreso en pantalla</b><p>Se pinta <code>{falloCompra.message}</code> dentro de una tarjeta de La compra.</p><p class="ruta">app/compra/page.tsx:254</p></div></div>
+
+  <div class="bug"><span class="sev s0">P0</span><div><b>«Apuntar otro» manda siempre a HELECHOS</b><p>Cualquier sección con unidades que no sea Los Helechos —una obra, unos pisos, otra familia— acaba apuntando en HELECHOS. El resto del fichero ya está parametrizado; esta línea se quedó con la constante.</p><p class="ruta">app/finca/apuntar/formulario.tsx:130</p></div></div>
+
+  <div class="bug"><span class="sev s0">P0</span><div><b>Bug de zona horaria: «Hoy» guarda mañana</b><p>El formulario usa <code>new Date().toISOString()</code> (UTC) mientras el resto de la aplicación usa <code>hoyAqui()</code> con Atlantic/Canary. Entre las 23:00 y las 24:00 en horario de verano, «Hoy» guarda el día siguiente.</p><p class="ruta">app/tablon/nuevo/formulario.tsx:10</p></div></div>
+
+  <div class="bug"><span class="sev s0">P0</span><div><b>Agenda destruye el contexto al cambiar de vista o de filtro</b><p>Todos los enlaces son literales, sin conservar los otros parámetros. Estás en marzo, pulsas «Mes» y vuelves al mes actual. Estás en la semana del 20 filtrado por una persona, pulsas «Por hacer» y vuelves a esta semana y a «Los dos».</p><p class="ruta">app/agenda/page.tsx · lista.tsx · mes.tsx</p></div></div>
+
+  <div class="bug"><span class="sev s0">P0</span><div><b>El aviso previo de un vencimiento no se puede poner</b><p>Se muestra en el detalle pero no existe en ningún formulario, y solo aparece si el tipo es «vencimiento», que a su vez solo se consigue escribiendo «vence», «caduca» o «renov» en el título. Era el punto 15 del planteamiento y hoy es un campo de solo lectura inalcanzable.</p><p class="ruta">app/tablon/*</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b><code>window.confirm()</code> para borrar, en tres sitios</b><p>Diálogo del navegador: letra pequeña, botones diminutos, en inglés en algunos teléfonos, justo en el momento de más riesgo.</p><p class="ruta">ajustes/partidas.tsx:207 · unidades.tsx:137 · dividir.tsx:85</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>Botones destructivos con solo un icono, y el icono es un triángulo de aviso</b><p>48×48 sin texto, usando el símbolo de advertencia como si fuera una papelera. Contradice tu propia regla de «iconos siempre acompañados por texto».</p><p class="ruta">ajustes/partidas.tsx:283 · unidades.tsx:220</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>Nombres propios escritos a mano</b><p>«Recuérdale a Conchita lo del médico» en la invitación; «Ver la Finca», <code>href="/finca"</code> y <code>decir('Apuntado en la finca.')</code> en el asistente. Falsos en cuanto entra la segunda familia.</p><p class="ruta">app/invitacion.tsx:22 · app/hablar/grabar.tsx:614, 884, 894, 1289, 1297</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>La ficha de un papel enlaza a <code>/finca</code> para cualquier movimiento</b><p>Diga «127,43 € en la Finca» venga de donde venga: de Los Helechos, de una obra o de las cuentas de casa.</p><p class="ruta">app/documentos/[id]/page.tsx:226</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>Rutas antiguas de Tablón vivas bajo Agenda</b><p>El detalle y el alta siguen en <code>/tablon/*</code>. Su «Volver» va a <code>/tablon</code> → redirige a <code>/agenda</code> y pierde la vista, el mes y el filtro. Y la pantalla de éxito dice «Ver el tablón», palabra que ya no existe en la interfaz.</p><p class="ruta">app/tablon/[id]/page.tsx:68 · nuevo/formulario.tsx:76, 89</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>Botón principal apagado y mudo al guardar un papel</b><p>Si el lector no acertó la carpeta, «Guardar» aparece gris sin decir por qué. Se lee como que la aplicación está rota.</p><p class="ruta">app/guardar/formulario.tsx</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>HUBI sigue hablando después de salir de la pantalla</b><p><code>callar</code> está importado y no se usa en ninguna parte.</p><p class="ruta">app/hablar/grabar.tsx:8</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>El diagnóstico del asistente se guarda y no se pinta</b><p><code>const [, setDetalle]</code>: se escribe en la línea 272 y no se muestra nunca. Con lo útil que fue esa línea gris en el lector de documentos, aquí falta.</p><p class="ruta">app/hablar/grabar.tsx:91, 272</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b><code>/comprobacion</code> huérfana, con textos técnicos y sin modo oscuro</b><p>406 líneas, cero enlaces entrantes, paleta propia. «Cruzar tablas YA NO FUNCIONA», «falta GEMINI_API_KEY». Ella misma dice «esta pantalla no forma parte de HUBI».</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>Pestaña de abajo incorrecta en dos pantallas</b><p>Menús enciende «Inicio»; Pagos usa la clave <code>"finca"</code>, que ya no existe porque las actividades se identifican por UUID.</p><p class="ruta">app/menus/page.tsx:42 · app/pagos/page.tsx:95</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>Zonas pulsables por debajo del mínimo declarado</b><p>Las casillas de día de la tira y de la cuadrícula del mes miden 42,3 px a 360 px. El CSS declara 48 como suelo y el propio fichero declara 44 como objetivo.</p><p class="ruta">app/agenda/lista.tsx:557 · mes.tsx:192</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>Agenda · Día deja 46 px de texto con cuatro citas solapadas</b><p>A 360 px, cuatro carriles dan cajas de 86 px con 46 de texto: cuatro o cinco caracteres.</p><p class="ruta">app/agenda/dia.tsx:270</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>La leyenda del mes explica colores que la lista no usa</b><p>La leyenda describe los tres colores de los puntos de la cuadrícula; los renglones de justo encima usan otra paleta de siete colores derivada de palabras del título.</p><p class="ruta">app/agenda/mes.tsx:351</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b><code>window.location.href</code> para volver</b><p>Recarga la aplicación entera en vez de navegar.</p><p class="ruta">app/finca/apuntar/formulario.tsx:144</p></div></div>
+
+  <div class="bug"><span class="sev s1">P1</span><div><b>Restos muertos</b><p><code>--color-terracota</code> es un alias del coral con dos usos vivos. <code>/helechos</code> es una ruta huérfana. En <code>grabar.tsx</code> hay tres <code>className="block flex …"</code> con dos display en la misma clase.</p></div></div>
+</section>
+
+
+<!-- ═══════ 15 QUÉ CAMBIA ═══════ -->
+<section id="s15">
+  <div class="cab"><span class="num">15</span><h2>Qué cambia al aprobarlo y qué no</h2></div>
+
+  <h3>Lo que cambiaría solo, sin rediseñar nada</h3>
+  <p>Una vez exista <code>app/piezas.tsx</code> y las pantallas lo importen, esto se corrige <strong>sin tocar la disposición de ninguna pantalla</strong>: es sustituir lo escrito a mano por la pieza.</p>
+  <ul>
+    <li>Once radios pasan a tres. Diez alturas de botón pasan a una. Diecisiete tamaños de letra pasan a ocho.</li>
+    <li>Los dos colores del botón principal pasan a uno, igual en claro y oscuro.</li>
+    <li>Los cinco estados vacíos pasan a uno; los cinco mensajes de error, a uno.</li>
+    <li>Las cuatro formas de pintar una fila pasan a una; las cuatro implementaciones de «Volver», a una.</li>
+    <li>Las cuatro alturas de píldora pasan a una, y todas superan el mínimo táctil.</li>
+    <li>Los tres interruptores distintos pasan a uno.</li>
+    <li>El color de ámbito sale de los fondos y se concentra en las pastillas.</li>
+    <li>Y todo lo nuevo que construyamos a partir de ahí <strong>ya nace coherente</strong>, que es el objetivo real de esta fase.</li>
+  </ul>
+
+  <h3>Lo que NO se toca — es Fase 2</h3>
+  <ul>
+    <li><strong>La navegación.</strong> Las pestañas siguen exactamente como están, Weaver y Alquileres incluidos. El cuarto concepto lo estudiamos con calma: tienes razón en que «La casa» se queda corto si HUBI también organiza propiedades, vehículos, actividades y personas.</li>
+    <li><strong>Inicio.</strong> Ni se reordena ni se vacía la pila de tarjetas.</li>
+    <li><strong>La arquitectura del asistente.</strong> HUBI Input queda definido, no construido.</li>
+    <li><strong>Agenda.</strong> El colapso de los diecisiete controles a cinco es rediseño, no sistema. (Los <em>bugs</em> de Agenda sí son P0 y van aparte.)</li>
+    <li><strong>«Papeles» frente a «Documentos»</strong> y el resto del vocabulario.</li>
+    <li><strong>Partir Ajustes</strong> en tres y sacar el bloque de IGIC de la primera pantalla de cuentas.</li>
+  </ul>
+
+  <h3>Lo que sería Fase 3</h3>
+  <ul>
+    <li>El fondo cálido y el ajuste de saturación de los cinco colores de marca.</li>
+    <li>Que la voz tenga carácter también con la luz encendida — hoy la única forma que tiene HUBI de sentirse especial es apagarla.</li>
+    <li>Que la pantalla de entrar deje de ser oscura fija y no contradiga lo que viene después.</li>
+    <li>Microinteracciones y el detalle final de la identidad.</li>
+  </ul>
+
+  <div class="aviso" style="margin-top:30px">
+    <p><b>El siguiente paso, cuando lo apruebes</b></p>
+    <p>Escribir <code>app/piezas.tsx</code> con las siete piezas y los tokens, y migrar <strong>tres pantallas</strong> como prueba —Papeles, una ficha y un formulario— para que veas el sistema funcionando de verdad antes de tocar las otras cuarenta y una.</p>
+  </div>
+</section>
+
+<footer>
+  HUBI Design System v1 · propuesta de la Fase 1. Todas las cifras del estado actual —tamaños, radios, alturas, rutas y números de línea— están verificadas leyendo el código de producción.<br><br>
+  <strong>No se ha modificado ningún fichero de la aplicación.</strong>
+</footer>
+
+</div>

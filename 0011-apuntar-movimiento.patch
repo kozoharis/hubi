@@ -1,0 +1,81 @@
+From 5b78c19403032e7a8e4702988f8fbdcca49fcdcf Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Mon, 7 Sep 2026 14:24:42 +0000
+Subject: [PATCH] =?UTF-8?q?=C2=ABApuntar=20un=20movimiento=C2=BB,=20no=20?=
+ =?UTF-8?q?=C2=ABun=20gasto=C2=BB?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+El botón decía «Apuntar un gasto» y la primera pregunta de la pantalla
+siguiente es «¿un gasto o un ingreso?». O sea: el botón daba por
+decidido algo que se decide justo después.
+
+Y tiene una consecuencia real, no solo de redacción: quien viene a
+apuntar el alquiler de un piso —un ingreso— lee «Apuntar un gasto» y
+no toca, porque no es lo que quiere hacer. En Alquileres, que es donde
+más ingresos hay, el único botón para apuntar decía que no servía para
+lo que más se apunta ahí.
+
+Encima el rótulo de arriba de la misma lista ya dice MOVIMIENTOS: era
+la misma cosa llamada de dos maneras en la misma pantalla.
+
+Y la frase de debajo vuelve a llevar hueco a la derecha. Se le quitó
+en su día razonando que el botón de voz ya no pasaba por ahí, y sí
+pasa: flota justo encima de la barra y se comía el final —«entran aquí
+solas» quedaba debajo del botón—. Ahora dice también qué se puede
+apuntar: «Un gasto o un ingreso. Las facturas con importe entran
+solas.»
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/cuentas.tsx | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/app/cuentas.tsx b/app/cuentas.tsx
+index 1e080ad..5254d7d 100644
+--- a/app/cuentas.tsx
++++ b/app/cuentas.tsx
+@@ -507,19 +507,35 @@ export default async function Cuentas({
+           )}
+         </section>
+ 
++        {/*
++          «UN MOVIMIENTO», NO «UN GASTO».
++
++          El botón decía «Apuntar un gasto» y la primera pregunta de la
++          pantalla siguiente es «¿un gasto o un ingreso?». O sea: el
++          botón daba por decidido algo que se decide justo después.
++
++          Quien viene a apuntar el alquiler de un piso —un ingreso—
++          leía «Apuntar un gasto» y no tocaba, porque no es lo que
++          quiere hacer. Y encima el rótulo de arriba de la lista ya
++          dice MOVIMIENTOS: son la misma cosa llamada de dos maneras
++          en la misma pantalla.
++        */}
+         <Link
+           href={`/finca/apuntar?seccion=${seccion.raiz ?? 'resto'}`}
+           className="mt-5 flex h-[60px] items-center justify-center gap-2.5 rounded-[18px] bg-boton text-[18px] font-extrabold text-boton-texto"
+         >
+           <Ico nombre="mas" tam={22} grosor={2.3} />
+-          Apuntar un gasto
++          Apuntar un movimiento
+         </Link>
+ 
+         {/* Sin `pr-24`: ese hueco a la derecha estaba para esquivar el
+             botón de voz, que ahora va pegado a la barra de abajo y ya
+             no pasa por aquí. Descentraba la frase sin motivo. */}
+-        <p className="mt-3 text-center text-[14.5px] font-semibold leading-snug text-tenue">
+-          Las facturas con importe entran aquí solas.
++        {/* El hueco a la derecha SÍ hace falta: el botón de voz flota
++            justo encima de la barra y se comía el final de la frase —
++            «entran aquí solas» quedaba tapado por él. */}
++        <p className="mt-3 px-14 text-center text-[14.5px] font-semibold leading-snug text-tenue">
++          Un gasto o un ingreso. Las facturas con importe entran solas.
+         </p>
+       </div>
+ 
+-- 
+2.43.0
+

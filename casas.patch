@@ -1,0 +1,1179 @@
+From ee730ffee9356c09a91b260eb95657435a2a06e7 Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 13:09:24 +0000
+Subject: [PATCH] =?UTF-8?q?Varias=20casas:=20una=20persona=20puede=20estar?=
+ =?UTF-8?q?=20en=20m=C3=A1s=20de=20una?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Hasta hoy `mi_hogar()` contestaba «la primera casa donde estás», y eso
+convertía una conveniencia técnica en una regla de producto: quien
+tenía su HUBI no podía además entrar en el de sus padres.
+
+Ahora contesta «la casa que estás mirando ahora»: una elección
+guardada en el perfil, que se cambia con un botón. Las políticas no se
+tocan; se toca la función.
+
+  · sql/34: `miembros.aceptado_en`, `perfiles.casa_activa`,
+    `mis_casas()`, `mis_invitaciones()` y `mi_hogar()` reescrita.
+  · Una invitación ya no mete a nadie en ninguna casa: la deja
+    ofrecida. Entra cuando la acepta, y puede decir que no.
+  · `lib/hogar.ts` dice exactamente lo mismo que la base de datos —
+    si discreparan, la pantalla enseñaría una casa y las políticas
+    dejarían ver otra.
+  · `mandaEnSuCasa` pregunta por la casa que se está mirando, no por
+    la primera: quien manda en la suya no manda en la de sus padres.
+  · Los avisos, la lista de gente y «para quién» solo cuentan a los
+    que han aceptado.
+
+Todo lo nuevo va en dos intentos: pedir una columna que no existe no
+da un aviso, hace que Postgres rechace la consulta entera.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/ajustes/gente.tsx     |  12 ++-
+ app/ajustes/page.tsx      |  42 ++++++--
+ app/api/casas/route.ts    | 131 ++++++++++++++++++++++++
+ app/api/miembros/route.ts |  65 ++++++++----
+ app/casas.tsx             | 164 +++++++++++++++++++++++++++++
+ app/empezar/page.tsx      |  31 +++++-
+ app/page.tsx              |  12 +++
+ app/tablon/nuevo/page.tsx |  40 +++++++-
+ lib/casas.ts              |  80 +++++++++++++++
+ lib/hogar.ts              | 123 +++++++++++++++++++++-
+ sql/34-varias-casas.sql   | 210 ++++++++++++++++++++++++++++++++++++++
+ 11 files changed, 873 insertions(+), 37 deletions(-)
+ create mode 100644 app/api/casas/route.ts
+ create mode 100644 app/casas.tsx
+ create mode 100644 lib/casas.ts
+ create mode 100644 sql/34-varias-casas.sql
+
+diff --git a/app/ajustes/gente.tsx b/app/ajustes/gente.tsx
+index 46a33a1..9a40318 100644
+--- a/app/ajustes/gente.tsx
++++ b/app/ajustes/gente.tsx
+@@ -29,6 +29,8 @@ export type Vecino = {
+   manda: boolean
+   soloMira: boolean
+   soyYo: boolean
++  /** Invitada, pero todavía no ha dicho que sí. */
++  pendiente: boolean
+   /** ¿Ve toda la casa, o solo lo que se le ha concedido? */
+   veTodo: boolean
+   escribeTodo: boolean
+@@ -141,7 +143,11 @@ export default function Gente({
+                 {v.soyYo && <span className="text-tenue"> · tú</span>}
+               </span>
+               <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
+-                {v.manda ? 'Creó la casa · su Google Drive' : loQuePuede(v)}
++                {v.manda
++                  ? 'Creó la casa · su Google Drive'
++                  : v.pendiente
++                    ? 'Invitación hecha · todavía no ha entrado'
++                    : loQuePuede(v)}
+               </span>
+             </span>
+             {puedoInvitar && !v.manda && (
+@@ -287,8 +293,8 @@ export default function Gente({
+       {hecho && (
+         <p className="rounded-[16px] border border-borde px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
+           Listo. Dile a <strong className="text-tinta">{hecho.nombre}</strong> que entre en HUBI
+-          con <strong className="text-tinta">{hecho.correo}</strong>: le llegará su número y
+-          aparecerá directamente en esta casa.
++          con <strong className="text-tinta">{hecho.correo}</strong>: le llegará su número y verá
++          tu invitación nada más entrar, y tiene que aceptarla desde su HUBI.
+         </p>
+       )}
+ 
+diff --git a/app/ajustes/page.tsx b/app/ajustes/page.tsx
+index be3653e..d16337a 100644
+--- a/app/ajustes/page.tsx
++++ b/app/ajustes/page.tsx
+@@ -124,16 +124,38 @@ export default async function Ajustes() {
+        se ha ejecutado, Postgres rechaza la consulta ENTERA en vez de
+        decir «esa columna no existe» — así que se pide aparte y con su
+        propio respaldo. La misma trampa de siempre. */
+-    let filas: { perfil_id: string; papel: string; ve_todo?: boolean; escribe_todo?: boolean }[] =
+-      []
+-
+-    const conPermisos = await supabase
+-      .from('miembros')
+-      .select('perfil_id, papel, ve_todo, escribe_todo')
+-      .order('unido_en')
++    let filas: {
++      perfil_id: string
++      papel: string
++      ve_todo?: boolean
++      escribe_todo?: boolean
++      aceptado_en?: string | null
++    }[] = []
++
++    /*
++      `.eq('hogar_id', …)` explícito, y no confiando en las políticas.
++
++      Las políticas dejan ver también TUS filas en otras casas —hacen
++      falta para que la pantalla de invitaciones funcione—, así que
++      quien tenga dos casas se vería a sí mismo dos veces en esta
++      lista. Aquí se pregunta por los de ESTA casa.
++    */
++    const conPermisos = hogarId
++      ? await supabase
++          .from('miembros')
++          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en')
++          .eq('hogar_id', hogarId)
++          .order('unido_en')
++      : { data: [], error: null }
+ 
+     if (conPermisos.error) {
+-      const basico = await supabase.from('miembros').select('perfil_id, papel').order('unido_en')
++      const basico = hogarId
++        ? await supabase
++            .from('miembros')
++            .select('perfil_id, papel')
++            .eq('hogar_id', hogarId)
++            .order('unido_en')
++        : { data: [] }
+       filas = (basico.data ?? []) as typeof filas
+     } else {
+       filas = (conPermisos.data ?? []) as typeof filas
+@@ -179,6 +201,10 @@ export default async function Ajustes() {
+           manda: m.papel === 'propietario',
+           soloMira: m.papel === 'lector',
+           soyYo: id === user.id,
++          /* Invitado pero todavía sin contestar. Sin esto, quien
++             invita ve a Marta en la lista y da por hecho que ya está
++             dentro — y luego se extraña de que no vea nada. */
++          pendiente: m.aceptado_en === null,
+           veTodo: m.ve_todo !== false,
+           escribeTodo: m.escribe_todo !== false,
+           carpetas: raices.map((r) => {
+diff --git a/app/api/casas/route.ts b/app/api/casas/route.ts
+new file mode 100644
+index 0000000..fec92ac
+--- /dev/null
++++ b/app/api/casas/route.ts
+@@ -0,0 +1,131 @@
++import { NextResponse, type NextRequest } from 'next/server'
++import { clienteSesion } from '@/lib/supabase/sesion'
++import { clienteServidor } from '@/lib/supabase/servidor'
++import { quien } from '@/lib/supabase/quien'
++
++export const dynamic = 'force-dynamic'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  CAMBIAR DE CASA · ACEPTAR O RECHAZAR UNA INVITACIÓN
++  ═══════════════════════════════════════════════════════════════
++
++  Las dos cosas que puede hacer una persona con las casas donde está,
++  y las dos son suyas: nadie decide por ella cuál mira ni a cuál entra.
++
++  Por eso van con la SESIÓN y no con la clave de servidor donde se
++  puede. La clave de servidor se salta las políticas — y aquí las
++  políticas son justo lo que impide que alguien active una casa donde
++  no le han invitado.
++*/
++
++export async function POST(peticion: NextRequest) {
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) {
++    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
++  }
++
++  let cuerpo: { casa?: string; que?: string }
++  try {
++    cuerpo = (await peticion.json()) as { casa?: string; que?: string }
++  } catch {
++    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
++  }
++
++  const casa = String(cuerpo.casa ?? '')
++  if (!casa) return NextResponse.json({ error: 'Falta la casa.' }, { status: 400 })
++
++  const que = cuerpo.que === 'aceptar' || cuerpo.que === 'rechazar' ? cuerpo.que : 'mirar'
++
++  /*
++    ¿ESTÁ ESTA PERSONA EN ESA CASA?
++
++    Con la sesión: si no está, las políticas devuelven cero filas y
++    aquí se acaba. Nunca se da por bueno un identificador que viene
++    del navegador — es la puerta por la que alguien intentaría
++    colarse en la casa de otro.
++  */
++  const { data: fila } = await supabase
++    .from('miembros')
++    .select('hogar_id, aceptado_en')
++    .eq('perfil_id', user.id)
++    .eq('hogar_id', casa)
++    .maybeSingle()
++
++  if (!fila) {
++    return NextResponse.json({ error: 'No estás en esa casa.' }, { status: 403 })
++  }
++
++  // ── Rechazar: la fila se va y no queda rastro ─────────────
++  if (que === 'rechazar') {
++    if (fila.aceptado_en) {
++      return NextResponse.json(
++        { error: 'Ya estás dentro de esa casa. Para salir, pídeselo a quien la creó.' },
++        { status: 409 }
++      )
++    }
++
++    const admin = clienteServidor()
++    await admin.from('permisos_carpeta').delete().eq('perfil_id', user.id).eq('hogar_id', casa)
++    await admin.from('miembros').delete().eq('perfil_id', user.id).eq('hogar_id', casa)
++
++    return NextResponse.json({ bien: true })
++  }
++
++  // ── Aceptar ───────────────────────────────────────────────
++  if (que === 'aceptar') {
++    if (!fila.aceptado_en) {
++      const { data, error } = await supabase
++        .from('miembros')
++        .update({ aceptado_en: new Date().toISOString() })
++        .eq('perfil_id', user.id)
++        .eq('hogar_id', casa)
++        .select('hogar_id')
++
++      /* El `.select()`: sin él, un cambio que la base de datos no
++         permita afecta a cero filas y contesta que todo bien. */
++      if (error || !data || data.length === 0) {
++        console.error('[HUBI] No se ha podido aceptar la invitación:', error)
++        return NextResponse.json(
++          {
++            error: 'No se ha podido aceptar.',
++            detalle: error?.message ?? 'Puede que falte ejecutar el SQL 34.',
++          },
++          { status: 500 }
++        )
++      }
++    }
++    /* Y se pasa a mirarla: quien acepta una invitación quiere entrar,
++       no volver a buscarla en un menú. */
++  }
++
++  // ── Mirar esa casa ────────────────────────────────────────
++  /*
++    Se guarda en el perfil y no en una cookie: la base de datos tiene
++    que poder leerlo para decidir qué enseña, y una cookie no llega
++    ahí. Además así la elección viaja entre el móvil y el ordenador.
++
++    Y no hace falta comprobar nada más: `mi_hogar()` solo devuelve
++    esta casa si sigues siendo miembro ACEPTADO de ella. Un valor
++    viejo apuntado aquí no abre ninguna puerta.
++  */
++  const { data: mirando, error: alMirar } = await supabase
++    .from('perfiles')
++    .update({ casa_activa: casa })
++    .eq('id', user.id)
++    .select('id')
++
++  if (alMirar || !mirando || mirando.length === 0) {
++    console.error('[HUBI] No se ha podido cambiar de casa:', alMirar)
++    return NextResponse.json(
++      {
++        error: 'No se ha podido cambiar de casa.',
++        detalle: alMirar?.message ?? 'Puede que falte ejecutar el SQL 34.',
++      },
++      { status: 500 }
++    )
++  }
++
++  return NextResponse.json({ bien: true })
++}
+diff --git a/app/api/miembros/route.ts b/app/api/miembros/route.ts
+index 845e191..3f325c6 100644
+--- a/app/api/miembros/route.ts
++++ b/app/api/miembros/route.ts
+@@ -136,30 +136,29 @@ export async function POST(peticion: NextRequest) {
+   }
+ 
+   /*
+-    ¿ESTÁ YA EN ALGUNA CASA?
+-
+-    Ésta es la comprobación que importa. Si esa persona ya pertenece a
+-    otro hogar, meterla aquí le daría acceso a DOS casas a la vez, y
+-    HUBI entero está construido sobre que cada uno tiene la suya: la
+-    consulta que averigua tu hogar coge el primero que encuentra, así
+-    que a partir de ahí esa persona vería una casa u otra según el
+-    orden en que se hubiera apuntado. Un lío silencioso y muy difícil
+-    de deshacer.
++    ¿YA ESTÁ EN ESTA CASA?
++
++    Solo en ÉSTA. Antes se rechazaba a cualquiera que estuviera en
++    otra —«cada persona pertenece a una sola»— y eso era una
++    limitación técnica disfrazada de regla: castigaba a quien hubiera
++    entrado en HUBI primero. El hijo que tiene su casa y además ayuda
++    con la de sus padres es un caso normal, no una excepción.
++
++    Desde sql/34 una persona puede estar en varias y elegir cuál mira.
+   */
+   const { data: yaEsta } = await admin
+     .from('miembros')
+-    .select('hogar_id')
++    .select('hogar_id, aceptado_en')
+     .eq('perfil_id', id)
+-    .limit(1)
++    .eq('hogar_id', hogarId)
+     .maybeSingle()
+ 
+   if (yaEsta) {
+     return NextResponse.json(
+       {
+-        error:
+-          yaEsta.hogar_id === hogarId
+-            ? 'Esa persona ya está en tu casa.'
+-            : 'Ese correo ya está usando HUBI en otra casa. Cada persona pertenece a una sola.',
++        error: yaEsta.aceptado_en
++          ? 'Esa persona ya está en tu casa.'
++          : 'Ya le invitaste. Está pendiente de que ella acepte.',
+       },
+       { status: 409 }
+     )
+@@ -174,11 +173,25 @@ export async function POST(peticion: NextRequest) {
+     `nombre` es obligatorio en `perfiles`, así que la fila ya existe:
+     la crea un disparador al nacer la cuenta. Aquí solo se cambia.
+   */
+-  const { error: alNombrar } = await admin
++  /*
++    El nombre solo si no tiene el suyo puesto.
++
++    Antes se sobrescribía siempre. Con gente que ya usa HUBI eso
++    significaría que invitar a alguien le CAMBIA el nombre en su
++    propia casa — donde lleva meses llamándose como él quiso.
++  */
++  const { data: comoSeLlama } = await admin
+     .from('perfiles')
+-    .update({ nombre })
++    .select('nombre')
+     .eq('id', id)
+-    .select('id')
++    .maybeSingle()
++
++  const suyoEsElCorreo =
++    !comoSeLlama?.nombre || comoSeLlama.nombre === correo.split('@')[0]
++
++  const { error: alNombrar } = suyoEsElCorreo
++    ? await admin.from('perfiles').update({ nombre }).eq('id', id).select('id')
++    : { error: null }
+ 
+   if (alNombrar) {
+     console.error('[HUBI] No se ha podido ponerle nombre:', alNombrar)
+@@ -188,9 +201,21 @@ export async function POST(peticion: NextRequest) {
+     )
+   }
+ 
++  /*
++    SE INVITA, NO SE METE.
++
++    `aceptado_en` a nulo: la fila existe —así los permisos por carpeta
++    se pueden preparar desde ya— pero esa casa todavía no existe para
++    esa persona. Ni la ve, ni cuenta como suya, ni se le puede
++    activar, hasta que diga que sí.
++
++    Meter a alguien en tu casa sin preguntarle era aceptable cuando
++    nadie tenía cuenta antes de ser invitado. Con gente que ya usa
++    HUBI, no.
++  */
+   const { data: metida, error: alMeter } = await admin
+     .from('miembros')
+-    .insert({ hogar_id: hogarId, perfil_id: id, papel })
++    .insert({ hogar_id: hogarId, perfil_id: id, papel, aceptado_en: null })
+     .select('perfil_id')
+ 
+   /* Con el `.select()`: sin él, una inserción que no entre devuelve
+@@ -203,7 +228,7 @@ export async function POST(peticion: NextRequest) {
+     )
+   }
+ 
+-  return NextResponse.json({ bien: true, correo, nombre, papel })
++  return NextResponse.json({ bien: true, correo, nombre, papel, pendiente: true })
+ }
+ 
+ /*
+diff --git a/app/casas.tsx b/app/casas.tsx
+new file mode 100644
+index 0000000..b4cfa59
+--- /dev/null
++++ b/app/casas.tsx
+@@ -0,0 +1,164 @@
++'use client'
++
++import { useState } from 'react'
++import { useRouter } from 'next/navigation'
++import { Ico } from './iconos'
++import type { Casa } from '@/lib/casas'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  EN QUÉ CASA ESTÁS, Y LAS QUE TE HAN OFRECIDO
++  ═══════════════════════════════════════════════════════════════
++
++  ─────────────────────────────────────────────────────────────
++  CON UNA SOLA CASA, ESTO NO EXISTE
++
++  Y es la regla que decide si esto ayuda o estorba. Juan Miguel y
++  Conchita tienen una: no verán ni un botón, ni un rótulo, ni un
++  «Casa de Juan Miguel y Conchita» que no les dice nada porque ya
++  saben dónde están.
++
++  Un selector que sale cuando no hay nada que seleccionar es ruido en
++  todas las pantallas para el 95% de la gente, a cambio de ayudar al
++  5%. Sale solo cuando hay dos.
++
++  ─────────────────────────────────────────────────────────────
++  LA INVITACIÓN SÍ SALE SIEMPRE, Y ARRIBA
++
++  Alguien te ha dado acceso a los papeles de su casa. Eso no puede
++  estar escondido en un menú: hay que verlo y hay que poder decir que
++  no. Se enseña quién y qué casa, y las dos respuestas al mismo peso —
++  «Aceptar» no es más grande que «No, gracias».
++*/
++
++export default function Casas({ casas }: { casas: Casa[] }) {
++  const router = useRouter()
++
++  const [abierto, setAbierto] = useState(false)
++  const [ocupado, setOcupado] = useState(false)
++  const [fallo, setFallo] = useState<string | null>(null)
++
++  const dentro = casas.filter((c) => !c.pendiente)
++  const ofrecidas = casas.filter((c) => c.pendiente)
++  const aqui = dentro.find((c) => c.mirando)
++
++  async function pedir(casa: string, que: 'mirar' | 'aceptar' | 'rechazar') {
++    setFallo(null)
++    setOcupado(true)
++
++    const r = await fetch('/api/casas', {
++      method: 'POST',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ casa, que }),
++    })
++
++    const d = (await r.json().catch(() => null)) as {
++      bien?: boolean
++      error?: string
++      detalle?: string
++    } | null
++
++    setOcupado(false)
++
++    if (!r.ok || d?.bien !== true) {
++      setFallo(
++        d
++          ? [d.error ?? 'No se ha podido.', d.detalle].filter(Boolean).join(' · ')
++          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
++      )
++      return
++    }
++
++    setAbierto(false)
++    /* `refresh` y no `push`: se recarga la pantalla donde está, ya con
++       la casa nueva. Mandarle al inicio sería sacarle de donde estaba
++       por un cambio que él ha pedido. */
++    router.refresh()
++  }
++
++  if (casas.length <= 1 && ofrecidas.length === 0) return null
++
++  return (
++    <div className="mt-3 space-y-2.5">
++      {/* ── Te han invitado ── */}
++      {ofrecidas.map((c) => (
++        <div key={c.id} className="rounded-[20px] border border-borde bg-superficie px-4 py-4">
++          <p className="text-[17px] font-extrabold leading-snug">
++            Te han invitado a <span className="text-verde">{c.nombre}</span>
++          </p>
++          <p className="mt-1 text-[15px] font-semibold leading-snug text-tenue">
++            Podrás ver sus papeles y su agenda, con los permisos que te hayan dado. Lo tuyo
++            no se comparte con ellos.
++          </p>
++          <div className="mt-3 flex gap-2">
++            <button
++              onClick={() => pedir(c.id, 'aceptar')}
++              disabled={ocupado}
++              className="h-[52px] flex-1 rounded-[14px] bg-boton text-[16.5px] font-extrabold text-boton-texto disabled:opacity-50"
++            >
++              Aceptar
++            </button>
++            <button
++              onClick={() => pedir(c.id, 'rechazar')}
++              disabled={ocupado}
++              className="h-[52px] flex-1 rounded-[14px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
++            >
++              No, gracias
++            </button>
++          </div>
++        </div>
++      ))}
++
++      {/* ── En cuál estás ── */}
++      {dentro.length > 1 && (
++        <>
++          <button
++            onClick={() => setAbierto(!abierto)}
++            className="flex h-[52px] w-full items-center gap-2.5 rounded-[16px] border border-borde bg-superficie px-4"
++          >
++            <Ico nombre="casa" tam={19} grosor={2.2} className="shrink-0 text-tenue" />
++            <span className="min-w-0 flex-1 truncate text-left text-[16px] font-extrabold">
++              {aqui?.nombre ?? 'Tu casa'}
++            </span>
++            <span className="shrink-0 text-[14.5px] font-bold text-tenue">Cambiar</span>
++            <Ico nombre="flecha" tam={18} grosor={2.2} className="shrink-0 text-borde" />
++          </button>
++
++          {abierto && (
++            <ul className="space-y-2">
++              {dentro.map((c) => (
++                <li key={c.id}>
++                  <button
++                    onClick={() => (c.mirando ? setAbierto(false) : pedir(c.id, 'mirar'))}
++                    disabled={ocupado}
++                    className="flex min-h-[52px] w-full items-center gap-2.5 rounded-[14px] px-4 text-left disabled:opacity-50"
++                    style={
++                      c.mirando
++                        ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
++                        : {
++                            background: 'var(--t-fondo)',
++                            color: 'var(--t-tinta-suave)',
++                            border: '1px solid var(--t-borde)',
++                          }
++                    }
++                  >
++                    {c.mirando && <Ico nombre="check" tam={18} grosor={2.3} />}
++                    <span className="min-w-0 flex-1 truncate text-[16px] font-extrabold">
++                      {c.nombre}
++                    </span>
++                  </button>
++                </li>
++              ))}
++            </ul>
++          )}
++        </>
++      )}
++
++      {fallo && (
++        <p className="rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
++          {fallo}
++        </p>
++      )}
++    </div>
++  )
++}
+diff --git a/app/empezar/page.tsx b/app/empezar/page.tsx
+index 059e209..778c98e 100644
+--- a/app/empezar/page.tsx
++++ b/app/empezar/page.tsx
+@@ -2,7 +2,9 @@ import { redirect } from 'next/navigation'
+ import { clienteSesion } from '@/lib/supabase/sesion'
+ import { quien } from '@/lib/supabase/quien'
+ import { miHogar } from '@/lib/hogar'
++import { casasDe } from '@/lib/casas'
+ import { leerPerfil } from '@/lib/perfil'
++import Casas from '../casas'
+ import Empezar from './empezar'
+ 
+ export const dynamic = 'force-dynamic'
+@@ -23,5 +25,32 @@ export default async function PaginaEmpezar() {
+ 
+   const perfil = await leerPerfil(supabase, user.id, user.email)
+ 
+-  return <Empezar nombre={perfil.nombre.split(' ')[0]} />
++  /*
++    ¿LE HAN INVITADO A ALGUNA?
++
++    Sin esto, quien recibe una invitación y entra por primera vez
++    acabaría aquí creando SU casa — sin enterarse de que le estaban
++    esperando en otra. Y una vez creada la suya, la invitación se
++    queda ahí sin que nadie la vea.
++
++    Si hay invitación, se enseña primero y la de crear casa queda
++    debajo: quien llega invitado viene a entrar en la casa de alguien,
++    no a montar la suya.
++  */
++  const casas = await casasDe(supabase, user.id)
++  const ofrecidas = casas.filter((c) => c.pendiente)
++
++  return (
++    <>
++      {ofrecidas.length > 0 && (
++        <div className="mx-auto w-full max-w-md px-5 pt-6">
++          <Casas casas={casas} />
++          <p className="mt-5 text-center text-[15.5px] font-semibold leading-snug text-tenue">
++            O crea tu propia casa aquí abajo. Puedes tener las dos.
++          </p>
++        </div>
++      )}
++      <Empezar nombre={perfil.nombre.split(' ')[0]} />
++    </>
++  )
+ }
+diff --git a/app/page.tsx b/app/page.tsx
+index 80cd2d3..bfb8f9b 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -12,6 +12,8 @@ import Avatar from './avatar'
+ import { cuando, type Recordatorio } from '@/lib/tablon'
+ import { leerPerfil } from '@/lib/perfil'
+ import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
++import { casasDe } from '@/lib/casas'
++import Casas from './casas'
+ 
+ export const dynamic = 'force-dynamic'
+ 
+@@ -86,6 +88,10 @@ export default async function Inicio({
+   const hogarId = await miHogar(supabase, user.id)
+   if (!hogarId) redirect('/empezar')
+ 
++  /* En cuántas casas está, y si le han invitado a alguna. Con una sola
++     —o sea, casi siempre— esto no pinta nada en la pantalla. */
++  const casas = await casasDe(supabase, user.id)
++
+   const CAMPOS =
+     'id, titulo, tipo, asignado_a, creado_por, fecha, hora, estado, nota, documento_origen_id'
+ 
+@@ -208,6 +214,12 @@ export default async function Inicio({
+       </Cabecera>
+ 
+       <div className="relative z-10 mx-auto w-full max-w-md px-5 pt-1">
++        {/* ── En qué casa estás, y las que te han ofrecido ── */}
++        {/* Va lo primero, encima del saludo del día: si alguien te ha
++            dado acceso a los papeles de su casa, eso no puede quedar
++            debajo de la lista de la compra. */}
++        <Casas casas={casas} />
++
+         {/* ── Saludo ── */}
+         <p className="mt-2.5 text-[14.5px] font-bold text-tenue">{hoyEnPalabras()}</p>
+         {/* Nunca "Buenas tardes," a secas: si no hubiera nombre, se
+diff --git a/app/tablon/nuevo/page.tsx b/app/tablon/nuevo/page.tsx
+index b5a6b5e..3e6ad48 100644
+--- a/app/tablon/nuevo/page.tsx
++++ b/app/tablon/nuevo/page.tsx
+@@ -1,6 +1,7 @@
+ import { redirect } from 'next/navigation'
+ import { clienteSesion } from '@/lib/supabase/sesion'
+ import { quien } from '@/lib/supabase/quien'
++import { miHogar } from '@/lib/hogar'
+ import Nuevo from './formulario'
+ 
+ export const dynamic = 'force-dynamic'
+@@ -15,5 +16,42 @@ export default async function PaginaNuevo() {
+     .select('id, nombre')
+     .order('nombre')
+ 
+-  return <Nuevo perfiles={perfiles ?? []} yo={user.id} />
++  /*
++    ─────────────────────────────────────────────────────────────
++    SOLO LOS QUE ESTÁN DENTRO
++
++    «Para quién» no puede ofrecer a alguien que todavía no ha aceptado
++    la invitación: dejarle un recado a quien no ha entrado es dejarlo
++    en un sitio donde nadie lo va a leer. Y con varias casas, quien
++    tenga dos aparece en las dos listas de perfiles.
++
++    Envuelto: si el SQL 34 no está, se comporta como hasta hoy.
++  */
++  let dentro: string[] | null = null
++  try {
++    const hogarId = await miHogar(supabase, user.id)
++    if (hogarId) {
++      const { data, error } = await supabase
++        .from('miembros')
++        .select('perfil_id, aceptado_en')
++        .eq('hogar_id', hogarId)
++
++      if (!error && data) {
++        dentro = data
++          .filter((m: { aceptado_en: string | null }) => m.aceptado_en)
++          .map((m: { perfil_id: string }) => m.perfil_id)
++      }
++    }
++  } catch {
++    /* Se queda como estaba. */
++  }
++
++  /* Si la lista sale vacía por lo que sea, NO se recorta: quedarse sin
++     poder asignar nada es peor que ofrecer a alguien de más. */
++  const gente =
++    dentro && dentro.length > 0
++      ? (perfiles ?? []).filter((p) => dentro!.includes(p.id as string))
++      : (perfiles ?? [])
++
++  return <Nuevo perfiles={gente} yo={user.id} />
+ }
+diff --git a/lib/casas.ts b/lib/casas.ts
+new file mode 100644
+index 0000000..581dd0d
+--- /dev/null
++++ b/lib/casas.ts
+@@ -0,0 +1,80 @@
++import type { SupabaseClient } from '@supabase/supabase-js'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LAS CASAS DE UNA PERSONA
++  ═══════════════════════════════════════════════════════════════
++
++  Casi todo el mundo tendrá una y no verá nada de esto nunca. Pero el
++  hijo que tiene su HUBI y además ayuda con el de sus padres tiene dos,
++  y necesita saber cuál está mirando y poder cambiar.
++
++  ─────────────────────────────────────────────────────────────
++  TODO ESTO VA ENVUELTO
++
++  `aceptado_en` y `casa_activa` son columnas nuevas. Si el SQL 34 no se
++  ha ejecutado, Postgres no dice «esa columna no existe»: rechaza la
++  consulta ENTERA. Y esto lo lee la cabecera, que sale en todas las
++  pantallas — un fallo aquí dejaría a alguien sin poder navegar.
++
++  Sin las columnas se comporta como antes: una casa, sin selector.
++*/
++
++export type Casa = {
++  id: string
++  nombre: string
++  /** La que está mirando ahora mismo. */
++  mirando: boolean
++  /** Se la han ofrecido y todavía no ha contestado. */
++  pendiente: boolean
++}
++
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
++type Cliente = SupabaseClient<any, any, any>
++
++export async function casasDe(supabase: Cliente, perfilId: string): Promise<Casa[]> {
++  try {
++    const { data: filas, error } = await supabase
++      .from('miembros')
++      .select('hogar_id, aceptado_en')
++      .eq('perfil_id', perfilId)
++      .order('unido_en')
++
++    if (error || !filas || filas.length === 0) return []
++
++    const ids = filas.map((m: { hogar_id: string }) => m.hogar_id)
++
++    const { data: casas } = await supabase.from('hogares').select('id, nombre').in('id', ids)
++
++    const nombreDe = new Map(
++      (casas ?? []).map((h: { id: string; nombre: string }) => [h.id, h.nombre])
++    )
++
++    /* Cuál mira. Si no ha elegido ninguna, la primera aceptada — que
++       es exactamente lo que contesta `mi_hogar()`. Las dos reglas
++       tienen que decir lo mismo o la cabecera enseñaría una casa y la
++       aplicación estaría en otra. */
++    const { data: perfil } = await supabase
++      .from('perfiles')
++      .select('casa_activa')
++      .eq('id', perfilId)
++      .maybeSingle()
++
++    const aceptadas = filas.filter((m: { aceptado_en: string | null }) => m.aceptado_en)
++
++    const elegida =
++      (perfil?.casa_activa as string | null) &&
++      aceptadas.some((m: { hogar_id: string }) => m.hogar_id === perfil?.casa_activa)
++        ? (perfil?.casa_activa as string)
++        : (aceptadas[0]?.hogar_id ?? null)
++
++    return filas.map((m: { hogar_id: string; aceptado_en: string | null }) => ({
++      id: m.hogar_id,
++      nombre: nombreDe.get(m.hogar_id) ?? 'Una casa',
++      mirando: m.hogar_id === elegida,
++      pendiente: !m.aceptado_en,
++    }))
++  } catch {
++    return []
++  }
++}
+diff --git a/lib/hogar.ts b/lib/hogar.ts
+index adfa6cb..94f28a4 100644
+--- a/lib/hogar.ts
++++ b/lib/hogar.ts
+@@ -34,11 +34,69 @@ import type { SupabaseClient } from '@supabase/supabase-js'
+ export const SIN_CASA =
+   'Tu cuenta todavía no está en ninguna casa, así que no hay dónde guardar esto. Avisa a quien te invitó.'
+ 
+-/** El hogar de esta persona, o null si todavía no tiene ninguno. */
++/*
++  ─────────────────────────────────────────────────────────────
++  ¿QUÉ CASA ESTÁ MIRANDO?
++
++  Esto tiene que contestar EXACTAMENTE lo mismo que la función
++  `mi_hogar()` de la base de datos. Si las dos discrepan, la pantalla
++  enseña una casa y las políticas dejan ver otra: se vería una carpeta
++  vacía sin explicación, o —peor— un botón de guardar que archiva en el
++  sitio equivocado.
++
++  La regla, en las dos:
++
++    1. La casa que ha elegido mirar (`perfiles.casa_activa`), siempre
++       que siga siendo miembro ACEPTADO de ella.
++    2. Si no ha elegido, o eligió una de la que ya no forma parte: la
++       primera casa aceptada, por antigüedad.
++
++  Las invitaciones sin contestar (`aceptado_en is null`) no cuentan:
++  que alguien te ofrezca su casa no te mete dentro.
++
++  ─────────────────────────────────────────────────────────────
++  Y VA EN DOS INTENTOS
++
++  `aceptado_en` y `casa_activa` son columnas del SQL 34. Pedir una
++  columna que no existe no devuelve «esa columna no existe»: Postgres
++  rechaza la consulta ENTERA, y esta consulta la hacen casi todas las
++  pantallas. Si el SQL no se ha ejecutado todavía, HUBI se queda sin
++  saber de quién es nada.
++
++  Así que si el primer intento falla, se pregunta como antes.
++*/
+ export async function miHogar(
+   supabase: SupabaseClient,
+   perfilId: string
+ ): Promise<string | null> {
++  try {
++    const { data: filas, error } = await supabase
++      .from('miembros')
++      .select('hogar_id, aceptado_en')
++      .eq('perfil_id', perfilId)
++      .order('unido_en')
++
++    if (!error && filas) {
++      const aceptadas = filas.filter((m: { aceptado_en: string | null }) => m.aceptado_en)
++      if (aceptadas.length === 0) return null
++
++      const { data: perfil } = await supabase
++        .from('perfiles')
++        .select('casa_activa')
++        .eq('id', perfilId)
++        .maybeSingle()
++
++      const elegida = (perfil?.casa_activa as string | null) ?? null
++      if (elegida && aceptadas.some((m: { hogar_id: string }) => m.hogar_id === elegida)) {
++        return elegida
++      }
++
++      return (aceptadas[0]?.hogar_id as string | null) ?? null
++    }
++  } catch {
++    /* Cae al modo de antes. */
++  }
++
+   try {
+     const { data } = await supabase
+       .from('miembros')
+@@ -74,6 +132,20 @@ export async function losDeLaCasa(
+   admin: any,
+   hogarId: string
+ ): Promise<string[]> {
++  /* Los que están DENTRO. A quien todavía no ha contestado a la
++     invitación no se le manda un aviso de una casa en la que no ha
++     entrado. */
++  const { data: dentro, error } = await admin
++    .from('miembros')
++    .select('perfil_id, aceptado_en')
++    .eq('hogar_id', hogarId)
++
++  if (!error && dentro) {
++    return dentro
++      .filter((m: { aceptado_en: string | null }) => m.aceptado_en)
++      .map((m: { perfil_id: string }) => m.perfil_id)
++  }
++
+   const { data } = await admin.from('miembros').select('perfil_id').eq('hogar_id', hogarId)
+   return (data ?? []).map((m: { perfil_id: string }) => m.perfil_id)
+ }
+@@ -121,6 +193,38 @@ export async function hogarDe(
+   admin: any,
+   perfilId: string
+ ): Promise<string | null> {
++  /* Misma regla que `miHogar`, y por el mismo motivo: si el aviso se
++     manda a la casa equivocada, le suena el teléfono a gente que no
++     tiene nada que ver. En dos intentos, porque las columnas son del
++     SQL 34. */
++  try {
++    const { data: filas, error } = await admin
++      .from('miembros')
++      .select('hogar_id, aceptado_en')
++      .eq('perfil_id', perfilId)
++      .order('unido_en')
++
++    if (!error && filas) {
++      const aceptadas = filas.filter((m: { aceptado_en: string | null }) => m.aceptado_en)
++      if (aceptadas.length === 0) return null
++
++      const { data: perfil } = await admin
++        .from('perfiles')
++        .select('casa_activa')
++        .eq('id', perfilId)
++        .maybeSingle()
++
++      const elegida = (perfil?.casa_activa as string | null) ?? null
++      if (elegida && aceptadas.some((m: { hogar_id: string }) => m.hogar_id === elegida)) {
++        return elegida
++      }
++
++      return (aceptadas[0]?.hogar_id as string | null) ?? null
++    }
++  } catch {
++    /* Cae al modo de antes. */
++  }
++
+   const { data } = await admin
+     .from('miembros')
+     .select('hogar_id')
+@@ -153,15 +257,26 @@ export async function hogarDe(
+ */
+ export async function mandaEnSuCasa(
+   supabase: SupabaseClient,
+-  perfilId: string
++  perfilId: string,
++  hogarId?: string | null
+ ): Promise<boolean> {
+   try {
++    /*
++      En LA CASA QUE ESTÁ MIRANDO, no en la primera que tenga.
++
++      Quien tiene su propia casa y además ayuda en la de sus padres
++      manda en la suya y no en la de ellos. Preguntando por la primera
++      fila, mandaría en las dos: vería el botón de conectar el Drive de
++      una casa que no es suya, y podría invitar gente a ella.
++    */
++    const casa = hogarId ?? (await miHogar(supabase, perfilId))
++    if (!casa) return false
++
+     const { data } = await supabase
+       .from('miembros')
+       .select('papel')
+       .eq('perfil_id', perfilId)
+-      .order('unido_en')
+-      .limit(1)
++      .eq('hogar_id', casa)
+       .maybeSingle()
+ 
+     if (data?.papel === 'propietario') return true
+diff --git a/sql/34-varias-casas.sql b/sql/34-varias-casas.sql
+new file mode 100644
+index 0000000..861c331
+--- /dev/null
++++ b/sql/34-varias-casas.sql
+@@ -0,0 +1,210 @@
++-- ═══════════════════════════════════════════════════════════════
++-- 34 · UNA PERSONA PUEDE ESTAR EN VARIAS CASAS
++-- ═══════════════════════════════════════════════════════════════
++--
++-- Hasta hoy, invitar a alguien que ya usaba HUBI se rechazaba: «cada
++-- persona pertenece a una sola casa». Era una limitación técnica
++-- convertida en regla de producto, y estaba mal.
++--
++-- El caso real es este: el hijo de Juan Miguel tiene su HUBI y además
++-- quiere ayudar con el de sus padres. Hoy tiene que elegir. Y HUBI le
++-- castigaba por haber entrado primero.
++--
++-- ─────────────────────────────────────────────────────────────
++-- DE DÓNDE VENÍA EL MIEDO, Y POR QUÉ SE ARREGLA EN UN SITIO
++--
++-- Las cuarenta políticas de la base de datos preguntan lo mismo:
++-- `mi_hogar()`. Y esa función contestaba «la primera casa donde te
++-- encuentre» — con dos casas habría contestado una u otra según el
++-- orden en que uno se apuntó, cambiando sin avisar y sin dar ningún
++-- error.
++--
++-- Ahora contesta **la casa que estás mirando**: una elección guardada.
++-- Las políticas no se tocan. Se toca la función.
++--
++-- ─────────────────────────────────────────────────────────────
++-- Y LA INVITACIÓN PASA A SER DE DOS
++--
++-- Meter sin permiso a alguien que ya usa HUBI no se sostiene. Se
++-- resuelve sin tabla nueva: la fila de miembro se crea igual, pero con
++-- `aceptado_en` a nulo. Mientras esté a nulo, esa casa NO existe para
++-- esa persona — ni la ve, ni cuenta como suya, ni se le puede activar.
++--
++-- Una fila pendiente en vez de una tabla de invitaciones significa que
++-- los permisos por carpeta se pueden preparar desde el primer momento
++-- con lo que ya está hecho, y aceptar es cambiar una fecha.
++--
++-- Se puede ejecutar dos veces seguidas sin romper nada.
++-- ═══════════════════════════════════════════════════════════════
++
++
++-- ── 1 · Aceptada o pendiente ───────────────────────────────
++alter table miembros
++  add column if not exists aceptado_en timestamptz;
++
++/*
++  Quien ya estaba dentro entró de verdad: se le pone la fecha de
++  cuando se unió. Sin esto, la primera consulta después de ejecutar
++  este archivo dejaría a Juan Miguel y a Conchita fuera de su propia
++  casa — que es exactamente el tipo de «mejora» que rompe lo que
++  funcionaba.
++*/
++update miembros set aceptado_en = unido_en where aceptado_en is null;
++
++
++-- ── 2 · Cuál estoy mirando ─────────────────────────────────
++/*
++  Va en `perfiles` y no en una cookie a propósito: la base de datos
++  tiene que poder leerlo para decidir qué te enseña, y una cookie no
++  llega ahí. Además así la elección viaja con la persona entre el
++  móvil y el ordenador.
++*/
++alter table perfiles
++  add column if not exists casa_activa uuid references hogares(id) on delete set null;
++
++
++-- ── 3 · Todas mis casas ────────────────────────────────────
++/*
++  `security definer` por lo de siempre: lee `miembros` por debajo de
++  las políticas. Sin eso se muerde la cola — para saber en qué casas
++  estás haría falta ya poder leer en qué casas estás.
++*/
++create or replace function mis_casas() returns setof uuid
++language sql
++stable
++security definer
++set search_path = public
++as $$
++  select hogar_id from miembros
++  where perfil_id = auth.uid() and aceptado_en is not null
++$$;
++
++/** Las que me han ofrecido y todavía no he contestado. */
++create or replace function mis_invitaciones() returns setof uuid
++language sql
++stable
++security definer
++set search_path = public
++as $$
++  select hogar_id from miembros
++  where perfil_id = auth.uid() and aceptado_en is null
++$$;
++
++
++-- ── 4 · LA FUNCIÓN. La que sostiene todo lo demás ──────────
++/*
++  Tres reglas, en este orden:
++
++  1 · La casa que has elegido mirar — PERO solo si sigues siendo
++      miembro aceptado de ella. Esa comprobación no es paranoia: sin
++      ella, quedarse apuntado un identificador viejo bastaría para
++      seguir viendo una casa de la que te han sacado.
++
++  2 · Si no has elegido ninguna, la primera que aceptaste. Es lo que
++      hacía antes, y es lo que hace que a quien solo tiene una casa
++      —o sea, a todo el mundo hoy— no le cambie absolutamente nada.
++
++  3 · Nulo si no estás en ninguna. Y con nulo, todas las políticas
++      devuelven cero filas: no ves nada. Que es lo correcto.
++*/
++create or replace function mi_hogar() returns uuid
++language sql
++stable
++security definer
++set search_path = public
++as $$
++  select coalesce(
++    (
++      select p.casa_activa
++      from perfiles p
++      where p.id = auth.uid()
++        and p.casa_activa is not null
++        and exists (
++          select 1 from miembros m
++          where m.perfil_id = auth.uid()
++            and m.hogar_id = p.casa_activa
++            and m.aceptado_en is not null
++        )
++    ),
++    (
++      select m.hogar_id from miembros m
++      where m.perfil_id = auth.uid() and m.aceptado_en is not null
++      order by m.unido_en
++      limit 1
++    )
++  )
++$$;
++
++
++-- ── 5 · Ver las otras casas, lo justo para elegir ──────────
++/*
++  Para pintar el selector y la invitación hacen falta dos cosas que
++  antes no: el NOMBRE de una casa que todavía no estás mirando, y tu
++  propia fila de miembro pendiente.
++
++  Y nada más. Ver el nombre de una casa a la que te han invitado no
++  enseña ni un papel de dentro: todo lo demás sigue colgando de
++  `mi_hogar()`, que solo devuelve la que estás mirando.
++*/
++drop policy if exists hogares_leer on hogares;
++create policy hogares_leer on hogares
++  for select to authenticated using (
++    id in (select mis_casas()) or id in (select mis_invitaciones())
++  );
++
++/*
++  Y las filas de miembro: las de la casa que miras, y SIEMPRE las
++  tuyas. Sin ese «siempre las tuyas», una invitación pendiente sería
++  invisible para quien la ha recibido.
++*/
++drop policy if exists miembros_leer on miembros;
++create policy miembros_leer on miembros
++  for select to authenticated using (
++    perfil_id = auth.uid() or hogar_id = mi_hogar()
++  );
++
++/*
++  Aceptar o rechazar lo hace la propia persona, y solo sobre SU fila.
++  El `with check` impide lo único que podría intentarse por aquí:
++  cambiarse el papel a propietario al aceptar.
++*/
++drop policy if exists miembros_contesto on miembros;
++create policy miembros_contesto on miembros
++  for update to authenticated
++  using (perfil_id = auth.uid())
++  with check (perfil_id = auth.uid());
++
++
++-- ── 6 · Comprobación ───────────────────────────────────────
++/*
++  TRES resultados:
++
++  1 · Las tres funciones, `definer` las tres.
++  2 · Nadie con `aceptado_en` a nulo entre los que ya estaban. Si sale
++      alguno, ese se ha quedado fuera de su casa y hay que mirarlo.
++  3 · Una fila por persona: en cuántas casas está y cuál mira. Hoy
++      todos deberían salir con 1 casa y `mira` a nulo — nadie ha
++      elegido nada todavía, así que cae en la segunda regla.
++*/
++select
++  p.proname as funcion,
++  case when p.prosecdef then 'definer' else '⚠ invoker' end as seguridad
++from pg_proc p
++join pg_namespace n on n.oid = p.pronamespace
++where n.nspname = 'public'
++  and p.proname in ('mi_hogar', 'mis_casas', 'mis_invitaciones')
++order by p.proname;
++
++select
++  count(*)                                        as filas_de_miembro,
++  count(*) filter (where aceptado_en is not null) as aceptadas,
++  count(*) filter (where aceptado_en is null)     as pendientes
++from miembros;
++
++select
++  pe.nombre                                                     as persona,
++  (select count(*) from miembros m
++    where m.perfil_id = pe.id and m.aceptado_en is not null)     as casas,
++  (select h.nombre from hogares h where h.id = pe.casa_activa)   as mira
++from perfiles pe
++order by pe.nombre;
+-- 
+2.43.0
+

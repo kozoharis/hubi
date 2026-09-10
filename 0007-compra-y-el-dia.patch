@@ -1,0 +1,2257 @@
+From c6caf51642b46180d8e1a35ebed1b2bcd325877d Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 23:21:35 +0000
+Subject: [PATCH] =?UTF-8?q?La=20compra=20que=20se=20pod=C3=ADa=20apuntar?=
+ =?UTF-8?q?=20y=20no=20tocar,=20y=20el=20d=C3=ADa=20de=20quien=20ayuda?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+CUATRO COSAS, Y LA PRIMERA ES UN FALLO DE VERDAD.
+
+1 · LO RECIÉN APUNTADO NO SE PODÍA TACHAR NI QUITAR
+
+La pantalla pintaba la línea al instante con un identificador
+inventado —«nuevo-1757…»— y no tenía con qué sustituirlo: la ruta de
+apuntar no devolvía las filas creadas. El primer toque iba a una
+dirección que no existía.
+
+Y encima `useState(inicial)` copiaba la lista AL ABRIR la pantalla y
+no volvía a mirar, así que `router.refresh()` traía la lista buena del
+servidor y aquí no entraba nunca. De ahí las tres cosas que se notaban:
+lo apuntado no se podía tocar, lo que apuntaba el otro no aparecía, y
+la lista solo se ponía al día saliendo y volviendo a entrar —que es lo
+que se sentía como «hay que darle a guardar».
+
+Ahora POST devuelve las filas con su identificador, se cambia el
+provisional por el de verdad, y la pantalla se vuelve a leer del
+servidor comparando por contenido y no por identidad del array.
+
+2 · «YA HE COMPRADO» CIERRA LA COMPRA ENTERA
+
+Antes archivaba lo tachado y punto: la lista seguía viva y lo comprado
+desaparecía sin dejar rastro. Se perdía la foto del conjunto.
+
+Ahora, si no queda nada pendiente, la lista se cierra —guardada entera—
+y se abre otra vacía con el mismo nombre. Si tachaste ocho de doce no
+se cierra nada: la compra no ha terminado.
+
+3 · EL TICKET, ENGANCHADO A ESA COMPRA
+
+Sale justo al cerrarla, que es el único momento en que se tiene el
+papel en la mano. Y va a `listas_compra.ticket_id`, no suelto en una
+carpeta: dentro de tres meses, la lista del 8 de septiembre y lo que
+costó están en el mismo sitio.
+
+4 · Y SE PUEDE RECUPERAR UNA DE OTRA SEMANA
+
+«¿Recuperas una de otra semana?» con las seis últimas, y solo con la
+lista vacía. Lo repetido no entra dos veces.
+
+─────────────────────────────────────────────────────────────
+Y «LA CASA HOY» SE VA DEL INICIO
+
+Estaba entera ahí: cinco líneas con casillas que ocupaban media
+pantalla todos los días para decir algo que casi siempre se resume en
+«0 de 4» — mientras empujaba hacia abajo el médico de las diez.
+
+Arriba queda UNA tarjeta con el número y el color de quien lo lleva.
+Dentro, en /lacasa, cabe lo que no cabía: las tareas, las horas y lo
+que quiera contar del día.
+
+EL PARTE LO ESCRIBE ELLA Y NADIE MÁS. Ni quien creó la casa. Es lo
+único que hace que el número valga algo a fin de mes, y lo dicen
+también las políticas del SQL 40, no solo la pantalla. Las horas van a
+toques de media hora, sin teclado. Y se dice en la propia pantalla que
+son apuntes para cuadrar el mes y NO un registro de jornada: fingir
+que cumple requisitos legales que no cumple sería lo peor que podemos
+hacer ahí.
+
+Y LA BARRA, OTRA VEZ. `overscroll-behavior-y: none` no bastó: en
+Safari el documento se sigue estirando. Ahora el <body> es el que se
+desliza, con altura de pantalla y desborde propio — el rebote ocurre
+dentro y lo que está `fixed` se queda quieto.
+
+Falta ejecutar sql/40-el-dia-y-la-compra.sql.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/api/compra/listas/route.ts    |  41 +++-
+ app/api/compra/recuperar/route.ts | 152 ++++++++++++++
+ app/api/compra/route.ts           | 123 ++++++++++-
+ app/api/dia/route.ts              | 120 +++++++++++
+ app/compra/lista.tsx              | 297 ++++++++++++++++++++++++++-
+ app/compra/page.tsx               |  74 ++++++-
+ app/globals.css                   |  24 +++
+ app/guardar/formulario.tsx        |  28 +++
+ app/guardar/page.tsx              |   9 +-
+ app/lacasa/page.tsx               | 183 +++++++++++++++++
+ app/lacasa/parte.tsx              | 331 ++++++++++++++++++++++++++++++
+ app/page.tsx                      | 131 +++++++++---
+ lib/dia.ts                        |  98 +++++++++
+ sql/40-el-dia-y-la-compra.sql     | 182 ++++++++++++++++
+ 14 files changed, 1745 insertions(+), 48 deletions(-)
+ create mode 100644 app/api/compra/recuperar/route.ts
+ create mode 100644 app/api/dia/route.ts
+ create mode 100644 app/lacasa/page.tsx
+ create mode 100644 app/lacasa/parte.tsx
+ create mode 100644 lib/dia.ts
+ create mode 100644 sql/40-el-dia-y-la-compra.sql
+
+diff --git a/app/api/compra/listas/route.ts b/app/api/compra/listas/route.ts
+index 6c47e47..8cd172e 100644
+--- a/app/api/compra/listas/route.ts
++++ b/app/api/compra/listas/route.ts
+@@ -87,9 +87,9 @@ export async function PATCH(peticion: NextRequest) {
+     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
+   }
+ 
+-  let cuerpo: Entrada & { id?: string }
++  let cuerpo: Entrada & { id?: string; ticket_id?: string | null }
+   try {
+-    cuerpo = (await peticion.json()) as Entrada & { id?: string }
++    cuerpo = (await peticion.json()) as Entrada & { id?: string; ticket_id?: string | null }
+   } catch {
+     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
+   }
+@@ -97,6 +97,43 @@ export async function PATCH(peticion: NextRequest) {
+   const id = String(cuerpo.id ?? '')
+   if (!id) return NextResponse.json({ error: 'Falta la lista.' }, { status: 400 })
+ 
++  /*
++    ── ENGANCHAR EL TICKET ──
++
++    Un camino corto y aparte del resto: viene de la pantalla de
++    guardar un documento, justo después de subir el ticket del súper,
++    y no toca ni el nombre ni la fecha ni la tarea de la Agenda.
++
++    Mezclarlo con lo de abajo obligaría a mandar el resto de campos
++    para no borrarlos, desde una pantalla que no los conoce.
++
++    El ticket es un documento de los de siempre: aquí solo se guarda
++    la referencia. Duplicar el archivo sería tener dos sitios donde
++    mirar y uno de los dos quedaría desactualizado.
++  */
++  if (cuerpo.ticket_id !== undefined) {
++    const ticket = String(cuerpo.ticket_id ?? '') || null
++
++    const { data, error } = await supabase
++      .from('listas_compra')
++      .update({ ticket_id: ticket })
++      .eq('id', id)
++      .select('id')
++
++    if (error || !data || data.length === 0) {
++      console.error('[HUBI] No se ha podido enganchar el ticket:', error)
++      return NextResponse.json(
++        {
++          error: 'No se ha podido guardar el ticket en la lista.',
++          detalle: error?.message ?? 'Puede que falte ejecutar el SQL 40.',
++        },
++        { status: 500 }
++      )
++    }
++
++    return NextResponse.json({ ok: true, ticket_id: ticket })
++  }
++
+   const { data: antes } = await supabase
+     .from('listas_compra')
+     .select('id, nombre, seccion_id, recordatorio_id')
+diff --git a/app/api/compra/recuperar/route.ts b/app/api/compra/recuperar/route.ts
+new file mode 100644
+index 0000000..9b2da10
+--- /dev/null
++++ b/app/api/compra/recuperar/route.ts
+@@ -0,0 +1,152 @@
++import { NextResponse, type NextRequest } from 'next/server'
++import { clienteSesion } from '@/lib/supabase/sesion'
++import { quien } from '@/lib/supabase/quien'
++
++export const dynamic = 'force-dynamic'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  RECUPERAR UNA COMPRA DE OTRA SEMANA
++  ═══════════════════════════════════════════════════════════════
++
++  La compra de casa se repite casi igual: leche, pan, huevos, fruta,
++  papel. Volver a escribirla entera cada semana es trabajo inventado —
++  y encima es donde se olvidan cosas, porque se escribe de memoria.
++
++  Aquí se copian los artículos de una lista ya cerrada a la que está
++  abierta. Se copian, no se mueven: la cerrada se queda como está,
++  porque es el registro de lo que se compró aquel día.
++
++  ─────────────────────────────────────────────────────────────
++  Y NO SE REPITE LO QUE YA ESTÁ
++
++  Si en la lista de ahora ya hay leche, no entran dos leches. Una
++  lista con la mitad de las líneas repetidas se convierte en algo que
++  hay que limpiar antes de ir al súper, y entonces no ha ahorrado
++  nada.
++*/
++export async function POST(peticion: NextRequest) {
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) {
++    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
++  }
++
++  let cuerpo: { de?: string; a?: string }
++  try {
++    cuerpo = (await peticion.json()) as { de?: string; a?: string }
++  } catch {
++    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
++  }
++
++  const de = String(cuerpo.de ?? '')
++  const a = String(cuerpo.a ?? '')
++
++  if (!de || !a) {
++    return NextResponse.json({ error: 'Falta saber de qué lista y a cuál.' }, { status: 400 })
++  }
++  if (de === a) {
++    return NextResponse.json({ error: 'Es la misma lista.' }, { status: 400 })
++  }
++
++  /* Que las dos sean de esta casa: las políticas ya lo garantizan,
++     pero si una no lo fuera esto devolvería «cero cosas» y nadie
++     entendería por qué. Mejor decirlo. */
++  const { data: laVieja } = await supabase
++    .from('listas_compra')
++    .select('id, seccion_id')
++    .eq('id', de)
++    .maybeSingle()
++
++  const { data: laNueva } = await supabase
++    .from('listas_compra')
++    .select('id, seccion_id')
++    .eq('id', a)
++    .maybeSingle()
++
++  if (!laVieja || !laNueva) {
++    return NextResponse.json({ error: 'Esa lista ya no está.' }, { status: 404 })
++  }
++
++  const { data: viejas, error: alLeer } = await supabase
++    .from('compra')
++    .select('que, cantidad, seccion_id')
++    .eq('lista_id', de)
++
++  if (alLeer) {
++    console.error('[HUBI] No se ha podido leer la lista vieja:', alLeer)
++    return NextResponse.json(
++      { error: 'No se ha podido leer esa compra.', detalle: alLeer.message },
++      { status: 500 }
++    )
++  }
++
++  if (!viejas || viejas.length === 0) {
++    return NextResponse.json({ error: 'Esa compra no tenía nada dentro.' }, { status: 409 })
++  }
++
++  /* Lo que ya está apuntado, para no repetirlo. Se compara en
++     minúsculas y sin acentos: «Plátanos» y «platanos» son lo mismo
++     para quien va al súper, y salir con las dos líneas es salir con
++     una lista sucia. */
++  const { data: yaHay } = await supabase
++    .from('compra')
++    .select('que')
++    .eq('lista_id', a)
++    .is('archivado_en', null)
++
++  const igual = (t: string) =>
++    t
++      .toLowerCase()
++      .normalize('NFD')
++      .replace(/[̀-ͯ]/g, '')
++      .replace(/\s+/g, ' ')
++      .trim()
++
++  const puestas = new Set((yaHay ?? []).map((c) => igual(c.que as string)))
++
++  const nuevas: { que: string; cantidad: string | null; seccion_id: string | null }[] = []
++  const vistas = new Set<string>()
++
++  for (const v of viejas) {
++    const clave = igual(v.que as string)
++    if (!clave || puestas.has(clave) || vistas.has(clave)) continue
++    vistas.add(clave)
++    nuevas.push({
++      que: v.que as string,
++      cantidad: (v.cantidad as string | null) ?? null,
++      seccion_id: (v.seccion_id as string | null) ?? null,
++    })
++  }
++
++  if (nuevas.length === 0) {
++    return NextResponse.json(
++      { ok: true, cuantas: 0, aviso: 'Ya tenías todo eso apuntado.' },
++      { status: 200 }
++    )
++  }
++
++  const { data, error } = await supabase
++    .from('compra')
++    .insert(
++      nuevas.map((n) => ({
++        ...n,
++        lista_id: a,
++        anadido_por: user.id,
++        comprado: false,
++      }))
++    )
++    .select('id, que, cantidad, comprado, seccion_id, lista_id')
++
++  /* El `.select()`: sin él, una inserción que las políticas no
++     permitan devuelve «todo bien» habiendo metido cero filas. */
++  if (error || !data || data.length === 0) {
++    console.error('[HUBI] No se ha podido recuperar la compra:', error)
++    return NextResponse.json(
++      { error: 'No se ha podido recuperar.', detalle: error?.message },
++      { status: 500 }
++    )
++  }
++
++  return NextResponse.json({ ok: true, cuantas: data.length, apuntadas: data })
++}
+diff --git a/app/api/compra/route.ts b/app/api/compra/route.ts
+index 791a1ca..586fba6 100644
+--- a/app/api/compra/route.ts
++++ b/app/api/compra/route.ts
+@@ -154,7 +154,9 @@ export async function POST(peticion: NextRequest) {
+   cosas.length = 0
+   cosas.push(...buenas)
+ 
+-  let { data, error } = await supabase.from('compra').insert(cosas).select('id, que')
++  const CAMPOS = 'id, que, cantidad, comprado, seccion_id, lista_id'
++
++  let { data, error } = await supabase.from('compra').insert(cosas).select(CAMPOS)
+ 
+   /*
+     ÚLTIMA RED. Si aun así la rechaza por la columna nueva, se apunta
+@@ -164,7 +166,7 @@ export async function POST(peticion: NextRequest) {
+   if (error && /lista_id|listas_compra/.test(error.message)) {
+     faltaElSql = true
+     const sinLista = cosas.map(({ lista_id: _fuera, ...resto }) => resto)
+-    ;({ data, error } = await supabase.from('compra').insert(sinLista).select('id, que'))
++    ;({ data, error } = await supabase.from('compra').insert(sinLista).select(CAMPOS))
+   }
+ 
+   if (error) {
+@@ -195,6 +197,15 @@ export async function POST(peticion: NextRequest) {
+     ok: true,
+     cuantas: data?.length ?? cosas.length,
+     lista_id: listaId,
++    /*
++      LAS FILAS DE VERDAD, CON SU IDENTIFICADOR.
++
++      Faltaban, y por eso no se podía tachar lo recién apuntado: la
++      pantalla pintaba la línea al instante con un identificador
++      inventado y no tenía con qué sustituirlo. El primer toque iba a
++      una dirección que no existía.
++    */
++    apuntadas: data ?? [],
+     /* Si algo se ha caído por no ser un producto, se DICE cuántas: que
+        alguien dicte cinco cosas, se apunten tres y no se entere es
+        peor que apuntar las cinco. */
+@@ -206,25 +217,58 @@ export async function POST(peticion: NextRequest) {
+ }
+ 
+ /*
+-  "Ya he comprado": guardar lo tachado.
++  ═══════════════════════════════════════════════════════════════
++  "YA HE COMPRADO": SE CIERRA LA LISTA ENTERA
++  ═══════════════════════════════════════════════════════════════
++
++  Antes esto archivaba lo tachado y ya está: la lista seguía viva y lo
++  comprado desaparecía sin dejar rastro. Se perdía la foto del
++  conjunto —qué se compró aquel día y cuánto costó— que es justo lo
++  que hace falta para poder mirar atrás.
++
++  Ahora, si no queda nada pendiente, la lista se CIERRA: queda
++  guardada con lo que llevaba dentro, se le puede enganchar el ticket
++  del súper, y se abre otra vacía con el mismo nombre.
+ 
+-  No se borra. Deja de verse en la lista y sigue contando para saber
+-  qué compráis a menudo — así, la próxima vez, HUBI puede ofrecer la
+-  leche sin que nadie la escriba.
++  ─────────────────────────────────────────────────────────────
++  Y SOLO SI NO QUEDA NADA
++
++  Si has tachado ocho de doce, la compra no ha terminado: se archivan
++  esas ocho y la lista sigue con las cuatro que faltan. Cerrarla ahí
++  sería dejar cuatro cosas sin comprar en un cajón que ya nadie mira.
++
++  Lo demás no se toca: los artículos archivados siguen contando para
++  saber qué compráis a menudo, que es de donde sale «lo que soléis
++  comprar».
+ */
+-export async function PATCH() {
++export async function PATCH(peticion: NextRequest) {
+   const supabase = await clienteSesion()
+   const user = await quien(supabase)
+   if (!user) {
+     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
+   }
+ 
+-  const { data, error } = await supabase
++  let cuerpo: { lista_id?: string | null } = {}
++  try {
++    cuerpo = (await peticion.json()) as { lista_id?: string | null }
++  } catch {
++    /* Sin cuerpo se comporta como siempre: archiva lo tachado y no
++       cierra ninguna lista. La pantalla vieja sigue funcionando. */
++  }
++
++  const listaId = (cuerpo.lista_id || null) as string | null
++
++  /* Lo tachado, fuera de la vista. No se borra: sigue contando para
++     saber qué compráis a menudo. */
++  let archivar = supabase
+     .from('compra')
+     .update({ archivado_en: new Date().toISOString() })
+     .eq('comprado', true)
+     .is('archivado_en', null)
+-    .select('id')
++
++  if (listaId) archivar = archivar.eq('lista_id', listaId)
++
++  const { data, error } = await archivar.select('id')
+ 
+   if (error) {
+     console.error('[HUBI] Fallo cerrando la compra:', error)
+@@ -234,5 +278,64 @@ export async function PATCH() {
+     )
+   }
+ 
+-  return NextResponse.json({ ok: true, cuantas: data?.length ?? 0 })
++  const cuantas = data?.length ?? 0
++
++  if (!listaId) return NextResponse.json({ ok: true, cuantas })
++
++  // ── ¿Queda algo por comprar en esta lista? ─────────────────
++  let cerrada: { id: string; nombre: string } | null = null
++  let nueva: { id: string; nombre: string } | null = null
++
++  try {
++    const { count } = await supabase
++      .from('compra')
++      .select('id', { count: 'exact', head: true })
++      .eq('lista_id', listaId)
++      .is('archivado_en', null)
++
++    if ((count ?? 0) === 0 && cuantas > 0) {
++      const { data: laLista } = await supabase
++        .from('listas_compra')
++        .select('id, nombre, seccion_id')
++        .eq('id', listaId)
++        .maybeSingle()
++
++      if (laLista) {
++        const { data: cerrandola } = await supabase
++          .from('listas_compra')
++          .update({ archivada_en: new Date().toISOString(), cerrada_por: user.id })
++          .eq('id', listaId)
++          .select('id, nombre')
++          .maybeSingle()
++
++        if (cerrandola) {
++          cerrada = { id: cerrandola.id as string, nombre: cerrandola.nombre as string }
++
++          /* Y otra vacía con el mismo nombre, para que mañana haya
++             dónde apuntar sin tener que crearla a mano. */
++          const { data: siguiente } = await supabase
++            .from('listas_compra')
++            .insert({
++              nombre: laLista.nombre,
++              seccion_id: laLista.seccion_id,
++              creada_por: user.id,
++            })
++            .select('id, nombre')
++            .maybeSingle()
++
++          if (siguiente) {
++            nueva = { id: siguiente.id as string, nombre: siguiente.nombre as string }
++          }
++        }
++      }
++    }
++  } catch (e) {
++    /* Sin las columnas del SQL 40 no se cierra nada, y no pasa nada:
++       lo tachado YA está archivado, que es lo que se pidió. Una
++       función nueva a medio instalar no puede tumbar la que
++       funcionaba. */
++    console.error('[HUBI] Compra archivada, lista sin cerrar:', e)
++  }
++
++  return NextResponse.json({ ok: true, cuantas, cerrada, nueva })
+ }
+diff --git a/app/api/dia/route.ts b/app/api/dia/route.ts
+new file mode 100644
+index 0000000..9b188c2
+--- /dev/null
++++ b/app/api/dia/route.ts
+@@ -0,0 +1,120 @@
++import { NextResponse, type NextRequest } from 'next/server'
++import { clienteSesion } from '@/lib/supabase/sesion'
++import { quien } from '@/lib/supabase/quien'
++import { miHogar, SIN_CASA } from '@/lib/hogar'
++import { hoyAqui } from '@/lib/tablon'
++
++export const dynamic = 'force-dynamic'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  EL PARTE DEL DÍA
++  ═══════════════════════════════════════════════════════════════
++
++  Cuántas horas y qué pasó. Un solo verbo: se manda el parte entero y
++  se guarda encima del que hubiera de ese día.
++
++  ─────────────────────────────────────────────────────────────
++  Y SOLO SE PUEDE ESCRIBIR EL PROPIO
++
++  `quien` no se acepta del navegador: se coge de la sesión. Aunque
++  alguien mandara el identificador de otra persona, aquí se ignora — y
++  además las políticas del SQL 40 lo cortan por su lado.
++
++  No es paranoia: es lo único que hace que el número valga algo a fin
++  de mes. Un parte que el empleador puede escribir no es el parte de
++  ella.
++*/
++export async function POST(peticion: NextRequest) {
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) {
++    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
++  }
++
++  const hogarId = await miHogar(supabase, user.id)
++  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
++
++  let cuerpo: { horas?: number | string | null; nota?: string | null; fecha?: string }
++  try {
++    cuerpo = (await peticion.json()) as typeof cuerpo
++  } catch {
++    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
++  }
++
++  /* La fecha la pone el servidor salvo que se pida otra, y nunca con
++     `new Date()` a secas: la hora del servidor puede ir un día por
++     delante de la de aquí, y un parte de las once de la noche se
++     apuntaría en el día siguiente. */
++  const fecha =
++    typeof cuerpo.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(cuerpo.fecha)
++      ? cuerpo.fecha
++      : hoyAqui()
++
++  /* Se admite «7,5» además de «7.5»: en un teclado español la coma es
++     lo que sale, y rechazarla sería culpar a la persona de escribir
++     su idioma. */
++  const bruto =
++    typeof cuerpo.horas === 'string'
++      ? Number(cuerpo.horas.replace(',', '.'))
++      : typeof cuerpo.horas === 'number'
++        ? cuerpo.horas
++        : null
++
++  const horas =
++    bruto == null || Number.isNaN(bruto) ? null : Math.min(24, Math.max(0, Math.round(bruto * 4) / 4))
++
++  const nota = String(cuerpo.nota ?? '').trim().slice(0, 600) || null
++
++  /* Un parte sin horas y sin nota no es un parte: es un borrado. Se
++     dice así en vez de guardar una fila vacía que luego nadie entiende
++     qué hace ahí. */
++  if (horas == null && !nota) {
++    const { error } = await supabase
++      .from('dias_en_casa')
++      .delete()
++      .eq('quien', user.id)
++      .eq('fecha', fecha)
++
++    if (error) {
++      return NextResponse.json(
++        { error: 'No se ha podido quitar el parte.', detalle: error.message },
++        { status: 500 }
++      )
++    }
++    return NextResponse.json({ bien: true, vacio: true })
++  }
++
++  /* `upsert` y no `insert`: el parte de un día se corrige, y dos
++     toques seguidos con mala cobertura darían un error de clave
++     repetida sobre algo que en realidad estaba guardado. */
++  const { data, error } = await supabase
++    .from('dias_en_casa')
++    .upsert(
++      {
++        hogar_id: hogarId,
++        quien: user.id,
++        fecha,
++        horas,
++        nota,
++        cambiado_en: new Date().toISOString(),
++      },
++      { onConflict: 'quien,fecha' }
++    )
++    .select('fecha')
++
++  /* El `.select()`: sin él, un guardado que las políticas no permitan
++     afecta a cero filas y contesta que todo ha ido bien. */
++  if (error || !data || data.length === 0) {
++    console.error('[HUBI] No se ha podido guardar el parte:', error)
++    return NextResponse.json(
++      {
++        error: 'No se ha podido guardar.',
++        detalle: error?.message ?? 'Puede que falte ejecutar el SQL 40.',
++      },
++      { status: 500 }
++    )
++  }
++
++  return NextResponse.json({ bien: true, fecha, horas, nota })
++}
+diff --git a/app/compra/lista.tsx b/app/compra/lista.tsx
+index 302ced2..9373a6e 100644
+--- a/app/compra/lista.tsx
++++ b/app/compra/lista.tsx
+@@ -1,6 +1,6 @@
+ 'use client'
+ 
+-import { useState, useTransition } from 'react'
++import { useEffect, useRef, useState, useTransition } from 'react'
+ import Link from 'next/link'
+ import { useRouter } from 'next/navigation'
+ import { pasilloDe, PASILLOS } from '@/lib/comprables'
+@@ -28,6 +28,20 @@ export type ListaCompra = {
+ 
+ type Seccion = { id: string; nombre: string; segmento: string }
+ 
++/*
++  Una compra que ya se hizo. Se guarda entera —con lo que llevaba
++  dentro y con su ticket— para dos cosas: mirar atrás, y volver a
++  usarla la semana siguiente sin escribirla de nuevo.
++*/
++export type Cerrada = {
++  id: string
++  nombre: string
++  seccion_id: string | null
++  cerrada: string | null
++  cosas: number
++  ticket_id: string | null
++}
++
+ /*
+   Qué secciones NO se ofrecen como destino de la compra.
+ 
+@@ -69,6 +83,7 @@ export default function Pantalla({
+   habituales,
+   secciones,
+   listas,
++  anteriores = [],
+   ticketEn,
+ }: {
+   inicial: Cosa[]
+@@ -77,6 +92,8 @@ export default function Pantalla({
+   habituales: string[]
+   secciones: Seccion[]
+   listas: ListaCompra[]
++  /** Las compras ya cerradas, para poder recuperarlas. */
++  anteriores?: Cerrada[]
+   /** La carpeta donde va el ticket del súper. Null si esta casa no la tiene. */
+   ticketEn: string | null
+ }) {
+@@ -84,6 +101,51 @@ export default function Pantalla({
+   const [, empezar] = useTransition()
+ 
+   const [cosas, setCosas] = useState<Cosa[]>(inicial)
++
++  /*
++    ═══════════════════════════════════════════════════════════
++    LA LISTA SE VUELVE A LEER DEL SERVIDOR. ESTO FALTABA.
++    ═══════════════════════════════════════════════════════════
++
++    `useState(inicial)` copia lo que había AL ABRIR la pantalla y no
++    vuelve a mirar. Con `router.refresh()` el servidor mandaba la
++    lista nueva y aquí no entraba nunca — así que:
++
++      · lo recién apuntado se quedaba con su identificador
++        provisional, y al tocarlo para tacharlo el servidor contestaba
++        que esa cosa no existe;
++      · lo que apuntaba el otro desde su móvil no aparecía;
++      · y la lista solo se ponía al día saliendo y volviendo a entrar,
++        que es justo lo que se notaba como «hay que darle a guardar».
++
++    Se compara por CONTENIDO y no por identidad del array: React manda
++    un array nuevo en cada dibujado, y comparar la referencia haría
++    que esto se disparara siempre y pisara lo que se acaba de tocar.
++  */
++  const huella = inicial
++    .map((c) => `${c.id}:${c.comprado ? 1 : 0}:${c.que}:${c.lista_id ?? ''}`)
++    .join('|')
++  const ultimaHuella = useRef(huella)
++
++  /* Un contador para los identificadores provisionales. Antes iba con
++     `Date.now()`, que es impuro y además puede repetirse si se apuntan
++     dos cosas en el mismo milisegundo. */
++  const nuevos = useRef(0)
++
++  /* La compra que se acaba de cerrar, para ofrecer el ticket ahí
++     mismo. Se guarda en la pantalla y no viene del servidor: solo
++     tiene sentido en los segundos siguientes a cerrarla. */
++  const [recienCerrada, setReciencerrada] = useState<{ id: string; nombre: string } | null>(null)
++  const [recuperando, setRecuperando] = useState<string | null>(null)
++
++  useEffect(() => {
++    if (ultimaHuella.current === huella) return
++    ultimaHuella.current = huella
++    setCosas(inicial)
++    /* `inicial` va fuera a propósito: lo que decide si hay que
++       recargar es la huella, no el array. */
++    // eslint-disable-next-line react-hooks/exhaustive-deps
++  }, [huella])
+   const [texto, setTexto] = useState('')
+   const [aviso, setAviso] = useState<string | null>(null)
+   const [cerrando, setCerrando] = useState(false)
+@@ -170,6 +232,10 @@ export default function Pantalla({
+ 
+     return c.lista_id === listaId
+   })
++  /* Las compras cerradas de esta misma categoría. La de la finca no
++     se ofrece cuando estás en la de casa: son dos compras distintas. */
++  const anterioresDeAqui = anteriores.filter((c) => (c.seccion_id ?? null) === destino)
++
+   const pendientes = deEstaLista.filter((c) => !c.comprado)
+   const tachadas = deEstaLista.filter((c) => c.comprado)
+ 
+@@ -220,7 +286,7 @@ export default function Pantalla({
+       apuntó. Aparece ya; si falla, se quita y se dice.
+     */
+     const provisional: Cosa = {
+-      id: `nuevo-${Date.now()}`,
++      id: `nuevo-${++nuevos.current}`,
+       que: limpio,
+       cantidad: null,
+       comprado: false,
+@@ -236,7 +302,33 @@ export default function Pantalla({
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ que: limpio, seccion_id: destino, lista_id: listaId }),
+       })
+-      if (!r.ok) throw new Error((await r.json()).error)
++      const d = (await r.json().catch(() => null)) as {
++        ok?: boolean
++        error?: string
++        apuntadas?: { id: string; que: string; cantidad: string | null; lista_id: string | null }[]
++      } | null
++
++      if (!r.ok || d?.ok !== true) throw new Error(d?.error ?? 'No se ha podido apuntar.')
++
++      /*
++        SE CAMBIA EL PROVISIONAL POR EL DE VERDAD.
++
++        Sin esto, la línea se queda con un identificador inventado —
++        «nuevo-1757…»— y el primer toque para tacharla o quitarla va a
++        una dirección que no existe. Era exactamente lo que pasaba: se
++        apuntaba bien y luego no se podía tocar.
++      */
++      const real = d.apuntadas?.[0]
++      if (real) {
++        setCosas((c) =>
++          c.map((x) =>
++            x.id === provisional.id
++              ? { ...x, id: real.id, que: real.que, cantidad: real.cantidad, lista_id: real.lista_id }
++              : x
++          )
++        )
++        ultimaHuella.current = ''
++      }
+       empezar(() => router.refresh())
+     } catch (e) {
+       setCosas((c) => c.filter((x) => x.id !== provisional.id))
+@@ -255,6 +347,11 @@ export default function Pantalla({
+         body: JSON.stringify({ comprado: !antes }),
+       })
+       if (!r.ok) throw new Error((await r.json()).error)
++      /* Se vuelve a leer para que el otro móvil y éste digan lo mismo.
++         La huella se limpia primero: si no, el efecto vería la misma
++         de antes y descartaría la recarga. */
++      ultimaHuella.current = ''
++      empezar(() => router.refresh())
+     } catch (e) {
+       setCosas((c) => c.map((x) => (x.id === cosa.id ? { ...x, comprado: antes } : x)))
+       setAviso(e instanceof Error ? e.message : 'No se ha podido cambiar.')
+@@ -268,19 +365,47 @@ export default function Pantalla({
+     try {
+       const r = await fetch(`/api/compra/${cosa.id}`, { method: 'DELETE' })
+       if (!r.ok) throw new Error((await r.json()).error)
++      ultimaHuella.current = ''
++      empezar(() => router.refresh())
+     } catch (e) {
+       setCosas(copia)
+       setAviso(e instanceof Error ? e.message : 'No se ha podido quitar.')
+     }
+   }
+ 
++  /*
++    ── YA HE COMPRADO ──
++
++    Archiva lo tachado y, si no queda nada pendiente, CIERRA la lista:
++    queda guardada entera y se abre otra vacía con el mismo nombre.
++
++    Así la compra de un día es una cosa con principio y final a la que
++    se le puede enganchar el ticket — y a la que se puede volver la
++    semana que viene sin escribirla de nuevo.
++  */
+   async function yaHeComprado() {
+     setCerrando(true)
+     setAviso(null)
+     try {
+-      const r = await fetch('/api/compra', { method: 'PATCH' })
+-      if (!r.ok) throw new Error((await r.json()).error)
++      const r = await fetch('/api/compra', {
++        method: 'PATCH',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({ lista_id: listaId }),
++      })
++      const d = (await r.json().catch(() => null)) as {
++        ok?: boolean
++        error?: string
++        cerrada?: { id: string; nombre: string } | null
++      } | null
++
++      if (!r.ok || d?.ok !== true) throw new Error(d?.error ?? 'No se ha podido guardar.')
++
+       setCosas((c) => c.filter((x) => !x.comprado))
++      /* Se recuerda cuál se acaba de cerrar para ofrecer el ticket
++         justo ahí: es el único momento en que la persona tiene el
++         papel en la mano. */
++      if (d.cerrada) setReciencerrada(d.cerrada)
++      ultimaHuella.current = ''
+       empezar(() => router.refresh())
+     } catch (e) {
+       setAviso(e instanceof Error ? e.message : 'No se ha podido guardar.')
+@@ -288,6 +413,35 @@ export default function Pantalla({
+     setCerrando(false)
+   }
+ 
++  /* Copiar una compra de otra semana a la de ahora. Se copia, no se
++     mueve: la vieja es el registro de lo que se compró aquel día. */
++  async function recuperar(deLista: Cerrada) {
++    setRecuperando(deLista.id)
++    setAviso(null)
++    try {
++      const r = await fetch('/api/compra/recuperar', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({ de: deLista.id, a: listaId }),
++      })
++      const d = (await r.json().catch(() => null)) as {
++        ok?: boolean
++        error?: string
++        cuantas?: number
++        aviso?: string
++      } | null
++
++      if (!r.ok || d?.ok !== true) throw new Error(d?.error ?? 'No se ha podido recuperar.')
++
++      if (d.aviso) setAviso(d.aviso)
++      ultimaHuella.current = ''
++      empezar(() => router.refresh())
++    } catch (e) {
++      setAviso(e instanceof Error ? e.message : 'No se ha podido recuperar.')
++    }
++    setRecuperando(null)
++  }
++
+   return (
+     <>
+       {/*
+@@ -571,6 +725,106 @@ export default function Pantalla({
+         </>
+       )}
+ 
++      {/*
++        ═══════════════════════════════════════════════════════
++        LA COMPRA QUE SE ACABA DE CERRAR
++        ═══════════════════════════════════════════════════════
++
++        Sale al terminar y no antes. Es el único momento en que la
++        persona tiene el papel del súper en la mano — dos minutos
++        después ya está en el bolsillo del abrigo y no vuelve a
++        aparecer hasta que se lava.
++
++        Y el ticket va enganchado A ESTA COMPRA, no suelto en una
++        carpeta: así, dentro de tres meses, «la compra del 8 de
++        septiembre» tiene su lista y su importe en el mismo sitio.
++      */}
++      {recienCerrada && (
++        <div
++          className="mt-5 rounded-[20px] px-4 py-4"
++          style={{
++            background: 'color-mix(in srgb, var(--color-verde) 12%, transparent)',
++            border: '1px solid color-mix(in srgb, var(--color-verde) 32%, transparent)',
++          }}
++        >
++          <p className="flex items-center gap-2 text-[17.5px] font-extrabold tracking-tight">
++            <Ico nombre="check" tam={20} grosor={2.4} className="text-verde" />
++            Compra guardada
++          </p>
++          <p className="mt-1.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
++            «{recienCerrada.nombre}» queda guardada entera. La lista de arriba empieza
++            vacía, y puedes recuperar ésta cuando quieras.
++          </p>
++
++          {ticketEn && (
++            <Link
++              href={`/guardar?en=${ticketEn}&lista=${recienCerrada.id}`}
++              className="mt-3 flex h-[58px] w-full items-center justify-center gap-2.5 rounded-[18px] bg-boton text-[17px] font-extrabold text-boton-texto"
++            >
++              <Ico nombre="foto" tam={21} grosor={2.2} />
++              Guardar el ticket
++            </Link>
++          )}
++          <button
++            onClick={() => setReciencerrada(null)}
++            className="mt-2 h-[50px] w-full rounded-[16px] text-[16px] font-bold text-tinta-suave underline underline-offset-4"
++          >
++            Ahora no
++          </button>
++        </div>
++      )}
++
++      {/*
++        ═══════════════════════════════════════════════════════
++        ¿RECUPERAS UNA DE OTRA SEMANA?
++        ═══════════════════════════════════════════════════════
++
++        La compra de casa se repite casi igual: leche, pan, huevos,
++        fruta, papel. Escribirla entera cada semana es trabajo
++        inventado — y es donde se olvidan cosas, porque se escribe de
++        memoria en vez de mirar la de la semana pasada.
++
++        Sale solo con la lista VACÍA. Con cosas apuntadas ya se está
++        haciendo la de esta semana, y ofrecerlo ahí sería un botón que
++        estorba en la pantalla donde más prisa hay.
++
++        Y lo repetido no entra dos veces: la que se recupera se cruza
++        con lo que ya haya puesto.
++      */}
++      {pendientes.length === 0 && !recienCerrada && anterioresDeAqui.length > 0 && (
++        <section className="mt-6">
++          <h2 className="rotulo">¿Recuperas una de otra semana?</h2>
++          <p className="mt-1.5 text-[15px] font-semibold leading-snug text-tenue">
++            Se copian sus cosas aquí. La de aquel día se queda como está.
++          </p>
++          <ul className="mt-3 space-y-2">
++            {anterioresDeAqui.map((c) => (
++              <li key={c.id}>
++                <button
++                  onClick={() => recuperar(c)}
++                  disabled={recuperando !== null || !listaId}
++                  className="flex w-full items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-3.5 text-left disabled:opacity-50"
++                >
++                  <span className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px] bg-fondo text-tinta-suave">
++                    <Ico nombre="bolsa" tam={21} grosor={2.1} />
++                  </span>
++                  <span className="min-w-0 flex-1">
++                    <span className="block truncate text-[17px] font-extrabold tracking-tight">
++                      {cuandoSeCerro(c.cerrada)}
++                    </span>
++                    <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
++                      {c.cosas === 1 ? '1 cosa' : `${c.cosas} cosas`}
++                      {c.ticket_id ? ' · con ticket' : ''}
++                    </span>
++                  </span>
++                  <Ico nombre="mas" tam={20} grosor={2.4} className="shrink-0 text-tinta-suave" />
++                </button>
++              </li>
++            ))}
++          </ul>
++        </section>
++      )}
++
+       {/* ── Lo de siempre ── */}
+       {habituales.length > 0 && (
+         <>
+@@ -710,3 +964,36 @@ function Linea({
+     </li>
+   )
+ }
++
++/*
++  «Hoy» · «Ayer» · «El lunes» · «El 28 de agosto»
++
++  En días y no en fecha: al buscar la compra de la semana pasada nadie
++  piensa «la del 1 de septiembre», piensa «la del lunes». La fecha
++  entera solo cuando ya está lejos y el día de la semana no ayuda.
++*/
++function cuandoSeCerro(iso: string | null): string {
++  if (!iso) return 'Una compra de antes'
++
++  const cuando = new Date(iso)
++  if (Number.isNaN(cuando.getTime())) return 'Una compra de antes'
++
++  const hoy = new Date()
++  hoy.setHours(0, 0, 0, 0)
++  const dia = new Date(cuando)
++  dia.setHours(0, 0, 0, 0)
++
++  const dias = Math.round((hoy.getTime() - dia.getTime()) / 86_400_000)
++
++  if (dias <= 0) return 'La de hoy'
++  if (dias === 1) return 'La de ayer'
++
++  const nombres = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
++  if (dias < 7) return `La del ${nombres[dia.getDay()]}`
++
++  const meses = [
++    'enero','febrero','marzo','abril','mayo','junio',
++    'julio','agosto','septiembre','octubre','noviembre','diciembre',
++  ]
++  return `La del ${dia.getDate()} de ${meses[dia.getMonth()]}`
++}
+diff --git a/app/compra/page.tsx b/app/compra/page.tsx
+index 9f36c29..cd8f511 100644
+--- a/app/compra/page.tsx
++++ b/app/compra/page.tsx
+@@ -4,7 +4,7 @@ import { quien } from '@/lib/supabase/quien'
+ import Barra from '../barra'
+ import Cabecera from '../cabecera'
+ import { Pastilla } from '../iconos'
+-import Pantalla, { type ListaCompra } from './lista'
++import Pantalla, { type Cerrada, type ListaCompra } from './lista'
+ 
+ export const dynamic = 'force-dynamic'
+ 
+@@ -77,6 +77,77 @@ export default async function Compra() {
+     .is('archivada_en', null)
+     .order('creada_en')
+ 
++  /*
++    ── LAS COMPRAS QUE YA SE HICIERON ──
++
++    Para poder recuperarlas: la de casa se repite casi igual todas las
++    semanas, y volver a escribirla entera es trabajo inventado — y es
++    donde se olvidan cosas, porque se escribe de memoria.
++
++    Seis, no todas. Con el histórico entero esto sería una pantalla
++    que hay que leer; con las seis últimas se contesta «la del lunes
++    pasado» de un vistazo.
++
++    Envuelto y con dos intentos: `cerrada_por` y `ticket_id` son del
++    SQL 40, y si no está, Postgres rechaza la consulta ENTERA en vez
++    de decir «esa columna no existe». La compra no puede dejar de
++    funcionar porque falte una función nueva.
++  */
++  const anteriores: Cerrada[] = []
++
++  try {
++    const columnasC = 'id, nombre, seccion_id, archivada_en'
++    const conTicket = await supabase
++      .from('listas_compra')
++      .select(`${columnasC}, ticket_id`)
++      .not('archivada_en', 'is', null)
++      .order('archivada_en', { ascending: false })
++      .limit(6)
++
++    const cerradas = conTicket.error
++      ? (
++          await supabase
++            .from('listas_compra')
++            .select(columnasC)
++            .not('archivada_en', 'is', null)
++            .order('archivada_en', { ascending: false })
++            .limit(6)
++        ).data
++      : conTicket.data
++
++    const ids = (cerradas ?? []).map((c) => c.id as string)
++
++    /* Cuántas cosas llevaba cada una. De una vez para todas: con seis
++       listas, una consulta por cada una serían seis viajes a la base
++       de datos para pintar una fila de botones. */
++    const cuantas = new Map<string, number>()
++    if (ids.length > 0) {
++      const { data: suyas } = await supabase
++        .from('compra')
++        .select('lista_id')
++        .in('lista_id', ids)
++
++      for (const c of suyas ?? []) {
++        const k = c.lista_id as string
++        cuantas.set(k, (cuantas.get(k) ?? 0) + 1)
++      }
++    }
++
++    for (const c of cerradas ?? []) {
++      anteriores.push({
++        id: c.id as string,
++        nombre: c.nombre as string,
++        seccion_id: (c.seccion_id as string | null) ?? null,
++        cerrada: (c.archivada_en as string | null) ?? null,
++        cosas: cuantas.get(c.id as string) ?? 0,
++        ticket_id: ((c as { ticket_id?: string | null }).ticket_id as string | null) ?? null,
++      })
++    }
++  } catch {
++    /* Sin la tabla o sin las columnas: no se ofrece recuperar nada y
++       la compra sigue funcionando igual. */
++  }
++
+   /*
+     ── LA COMPRA ──
+ 
+@@ -191,6 +262,7 @@ export default async function Compra() {
+           yo={user.id}
+           habituales={habituales}
+           listas={(listas ?? []) as ListaCompra[]}
++          anteriores={anteriores}
+           secciones={(raices ?? []).map((r) => ({
+             id: r.id,
+             nombre: r.nombre,
+diff --git a/app/globals.css b/app/globals.css
+index 607f034..43fcdee 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -117,9 +117,27 @@
+   hay que apagarlo. Sigue habiendo una red debajo en `.barra-abajo`,
+   para el navegador que no lo respete.
+ */
++/*
++  ── Y NO BASTABA CON PEDIRLO ──
++
++  `overscroll-behavior-y: none` a secas no lo arregló: en Safari, el
++  rebote del DOCUMENTO se sigue produciendo, y con él se descolocan la
++  barra de abajo y la cabecera, que son las dos cosas clavadas.
++
++  El arreglo de verdad es que el documento no sea lo que se desliza.
++  El <body> pasa a ser el contenedor con altura de pantalla y desbordé
++  propio: el rebote ocurre AHÍ DENTRO, y lo que está `fixed` —que se
++  coloca respecto a la ventana, no respecto al body— se queda quieto.
++
++  `100dvh` y no `100vh`: con la barra del navegador apareciendo y
++  desapareciendo, `100vh` deja un hueco por abajo en iPhone. Se
++  mantiene `100vh` delante como respaldo para el navegador que no
++  entienda `dvh`.
++*/
+ html {
+   -webkit-text-size-adjust: 100%;
+   background: var(--t-fondo);
++  height: 100%;
+   overscroll-behavior-y: none;
+ }
+ 
+@@ -128,7 +146,13 @@ body {
+   color: var(--t-tinta);
+   font-family: var(--font-texto);
+   -webkit-font-smoothing: antialiased;
++
++  height: 100vh;
++  height: 100dvh;
++  overflow-y: auto;
++  overflow-x: hidden;
+   overscroll-behavior-y: none;
++  -webkit-overflow-scrolling: touch;
+ }
+ 
+ /* Nada importante depende de pasar el ratón por encima:
+diff --git a/app/guardar/formulario.tsx b/app/guardar/formulario.tsx
+index f1a2bd2..c39398e 100644
+--- a/app/guardar/formulario.tsx
++++ b/app/guardar/formulario.tsx
+@@ -40,10 +40,20 @@ export default function Formulario({
+   categorias,
+   esPropietario = false,
+   enCarpeta = null,
++  paraLista = null,
+ }: {
+   categorias: Categoria[]
+   /* El buscador de Drive abre la cuenta de quien conectó Google. */
+   esPropietario?: boolean
++  /*
++    LA COMPRA A LA QUE ENGANCHAR ESTE TICKET.
++
++    Viene de «Guardar el ticket» al cerrar una compra. Con ella, el
++    ticket deja de ser un papel suelto en una carpeta y pasa a ser EL
++    ticket de aquella compra: dentro de tres meses, la lista del 8 de
++    septiembre y lo que costó están en el mismo sitio.
++  */
++  paraLista?: string | null
+   /*
+     LA CARPETA DE DONDE VIENE.
+ 
+@@ -565,6 +575,24 @@ export default function Formulario({
+         repetida: respuesta.repetida ?? null,
+       })
+       setPaso('guardado')
++
++      /*
++        Y se engancha a la compra, si venía de ahí.
++
++        SIN ESPERARLO Y SIN QUE PUEDA ROMPER NADA: el documento ya está
++        guardado en Drive y en la base de datos. Si el enganche falla
++        —falta el SQL 40, se ha ido la conexión— lo peor que pasa es
++        que el ticket queda en su carpeta sin apuntar a la compra, que
++        es exactamente lo que pasaba antes. Lo que no puede pasar es
++        que un extra tumbe el guardado.
++      */
++      if (paraLista && respuesta.id) {
++        fetch('/api/compra/listas', {
++          method: 'PATCH',
++          headers: { 'Content-Type': 'application/json' },
++          body: JSON.stringify({ id: paraLista, ticket_id: respuesta.id }),
++        }).catch(() => {})
++      }
+     } catch {
+       setAviso('No hay conexión. Comprueba tu internet e inténtalo otra vez.')
+     }
+diff --git a/app/guardar/page.tsx b/app/guardar/page.tsx
+index f091d5f..6c1428d 100644
+--- a/app/guardar/page.tsx
++++ b/app/guardar/page.tsx
+@@ -12,9 +12,9 @@ export const dynamic = 'force-dynamic'
+ export default async function Guardar({
+   searchParams,
+ }: {
+-  searchParams: Promise<{ en?: string }>
++  searchParams: Promise<{ en?: string; lista?: string }>
+ }) {
+-  const { en } = await searchParams
++  const { en, lista: laCompra } = await searchParams
+ 
+   const supabase = await clienteSesion()
+ 
+@@ -86,6 +86,11 @@ export default async function Guardar({
+       categorias={lista}
+       esPropietario={Boolean(perfil?.es_propietario_drive)}
+       enCarpeta={enCarpeta}
++      /* La compra a la que engancharle este ticket, si se ha venido
++         desde ahí. Sin comprobar aquí que existe: si no existe, el
++         enganche falla en silencio y el documento se guarda igual —
++         que es lo único que no puede fallar. */
++      paraLista={laCompra ?? null}
+     />
+   )
+ }
+diff --git a/app/lacasa/page.tsx b/app/lacasa/page.tsx
+new file mode 100644
+index 0000000..41c335b
+--- /dev/null
++++ b/app/lacasa/page.tsx
+@@ -0,0 +1,183 @@
++import { redirect } from 'next/navigation'
++import { clienteSesion } from '@/lib/supabase/sesion'
++import { quien } from '@/lib/supabase/quien'
++import Barra from '../barra'
++import Cabecera from '../cabecera'
++import { Volver } from '../iconos'
++import { miHogar } from '@/lib/hogar'
++import { genteDeLaCasa, type Quien } from '@/lib/gente'
++import { loDeHoy } from '@/lib/rutinas'
++import { parteDe, partesDe, primeroDelMes, type Parte } from '@/lib/dia'
++import { hoyAqui } from '@/lib/tablon'
++import RutinasHoy, { type Deber } from '../rutinas-hoy'
++import ParteDelDia from './parte'
++
++export const dynamic = 'force-dynamic'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LA CASA HOY
++  ═══════════════════════════════════════════════════════════════
++
++  Todo lo de un día, en un sitio: qué tocaba, qué se ha hecho, cuántas
++  horas y qué hay que contar.
++
++  ─────────────────────────────────────────────────────────────
++  POR QUÉ SE FUE DEL INICIO
++
++  Estaba entero ahí: cinco líneas con casillas, debajo de las tarjetas.
++  Y ocupaba media pantalla todos los días para decir algo que casi
++  siempre se resume en «0 de 4» — mientras empujaba hacia abajo el
++  médico de las diez, que es lo que de verdad hay que ver al abrir.
++
++  Arriba queda UNA tarjeta con el número. Lo demás está aquí, a un
++  toque, que es donde puede ocupar lo que necesite.
++
++  ─────────────────────────────────────────────────────────────
++  Y AQUÍ CABE LO QUE NO CABÍA
++
++  Marcar tareas era todo lo que se podía hacer, y el día tiene más:
++  cuántas horas estuvo, y qué pasó —«no pude planchar, no había
++  plancha», «me quedé una hora más»—. Eso en el Inicio no cabe, y sin
++  sitio propio acaba en un WhatsApp.
++*/
++
++export default async function LaCasaHoy({
++  searchParams,
++}: {
++  searchParams: Promise<{ dia?: string }>
++}) {
++  const { dia } = await searchParams
++
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) redirect('/entrar')
++
++  const hogarId = await miHogar(supabase, user.id)
++  if (!hogarId) redirect('/empezar')
++
++  /* Un día concreto si se pide; si no, hoy. Nunca `new Date()`: la
++     hora del servidor puede ir un día por delante de la de aquí. */
++  const fecha = dia && /^\d{4}-\d{2}-\d{2}$/.test(dia) ? dia : hoyAqui()
++  const esHoy = fecha === hoyAqui()
++
++  const gente = await genteDeLaCasa(supabase, hogarId)
++  const yo = gente.find((g) => g.id === user.id)
++  const soyLaAyuda = yo?.rol === 'ayuda'
++
++  /* Quien ayuda en casa ve lo suyo; la familia ve todo lo del día. Es
++     la misma regla del Inicio, y la de verdad la aplican las políticas
++     de la base de datos: aquí solo se decide qué se pide. */
++  const filas = await loDeHoy(supabase, soyLaAyuda ? user.id : null, fecha)
++
++  const nombreDe = new Map(gente.map((g) => [g.id, g.nombre.split(' ')[0]]))
++
++  const deberes: Deber[] = filas.map((r) => ({
++    id: r.id,
++    que: r.que,
++    hora: r.hora,
++    hecha: r.hecha,
++    deQuien: r.para ? (nombreDe.get(r.para) ?? null) : null,
++  }))
++
++  /*
++    ── DE QUIÉN ES ESTE DÍA ──
++
++    De quien ayuda en casa, si hay alguien con ese papel. Es de quien
++    se enseña el parte y quien lo escribe. Con varias personas
++    ayudando, la primera aceptada — y ése es el día que habrá que
++    elegir cuál, no antes.
++  */
++  const laAyuda: Quien | null = soyLaAyuda
++    ? (yo ?? null)
++    : (gente.find((g) => g.rol === 'ayuda' && !g.pendiente) ?? null)
++
++  const suParte: Parte | null = laAyuda ? await parteDe(supabase, laAyuda.id, fecha) : null
++
++  /* Lo que lleva del mes. Solo si hay alguien de quien contarlo. */
++  const delMes = laAyuda ? await partesDe(supabase, laAyuda.id, primeroDelMes(fecha)) : []
++  const horasDelMes = delMes.reduce((n, p) => n + Number(p.horas ?? 0), 0)
++
++  const hechas = deberes.filter((d) => d.hecha).length
++
++  return (
++    <main className="min-h-screen pb-40">
++      <Cabecera>
++        <Volver href="/" texto="Inicio" />
++        <div className="flex h-14 items-center gap-3">
++          {laAyuda && (
++            <span
++              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
++              style={{ background: laAyuda.color }}
++            >
++              {laAyuda.nombre.charAt(0).toUpperCase()}
++            </span>
++          )}
++          <span className="min-w-0">
++            <h1 className="truncate text-[25px] font-extrabold leading-tight tracking-tight">
++              {esHoy ? 'La casa hoy' : enPalabras(fecha)}
++            </h1>
++            <p className="text-[14.5px] font-bold text-tenue">
++              {laAyuda
++                ? `${laAyuda.nombre.split(' ')[0]} · ${hechas} de ${deberes.length}`
++                : `${hechas} de ${deberes.length}`}
++            </p>
++          </span>
++        </div>
++      </Cabecera>
++
++      <div className="mx-auto w-full max-w-md px-5 pt-1">
++        {deberes.length > 0 ? (
++          <RutinasHoy
++            rutinas={deberes}
++            puedeMarcar={yo?.rol !== 'mirar' && yo?.rol !== 'asesor'}
++            soloMias={soyLaAyuda}
++            titulo="Lo que toca"
++          />
++        ) : (
++          <p className="mt-5 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium leading-snug text-tinta-suave">
++            {esHoy ? 'Hoy no toca nada.' : 'Ese día no tocaba nada.'}
++          </p>
++        )}
++
++        {/*
++          ── EL PARTE ──
++
++          Lo escribe ella y solo ella, y por eso a los demás se les
++          enseña, no se les ofrece. No es una limitación de la pantalla:
++          las políticas de la base de datos dicen lo mismo, y si aquí
++          saliera un formulario para la familia, fallaría al guardar.
++        */}
++        {laAyuda && (
++          <ParteDelDia
++            deQuien={laAyuda.nombre.split(' ')[0]}
++            color={laAyuda.color}
++            fecha={fecha}
++            esHoy={esHoy}
++            mio={soyLaAyuda}
++            parte={
++              suParte ? { horas: suParte.horas, nota: suParte.nota } : { horas: null, nota: null }
++            }
++            horasDelMes={horasDelMes}
++            diasDelMes={delMes.filter((p) => Number(p.horas ?? 0) > 0).length}
++          />
++        )}
++      </div>
++
++      <Barra activa={null} voz={false} />
++    </main>
++  )
++}
++
++/** «2026-09-08» → «Martes, 8 de septiembre». */
++function enPalabras(iso: string): string {
++  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
++  const meses = [
++    'enero','febrero','marzo','abril','mayo','junio',
++    'julio','agosto','septiembre','octubre','noviembre','diciembre',
++  ]
++  const [a, m, d] = iso.split('-').map(Number)
++  if (!a || !m || !d) return iso
++  const f = new Date(a, m - 1, d)
++  return `${dias[f.getDay()]}, ${d} de ${meses[m - 1]}`
++}
+diff --git a/app/lacasa/parte.tsx b/app/lacasa/parte.tsx
+new file mode 100644
+index 0000000..ee0d2e8
+--- /dev/null
++++ b/app/lacasa/parte.tsx
+@@ -0,0 +1,331 @@
++'use client'
++
++import { useState } from 'react'
++import { useRouter } from 'next/navigation'
++import { Ico } from '../iconos'
++import { enHoras } from '@/lib/dia'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  EL PARTE DEL DÍA
++  ═══════════════════════════════════════════════════════════════
++
++  Cuántas horas ha estado y qué tiene que decir de ese día.
++
++  ─────────────────────────────────────────────────────────────
++  LO ESCRIBE ELLA. A LOS DEMÁS SE LES ENSEÑA.
++
++  No es una cortesía de la pantalla: las políticas del SQL 40 dicen
++  exactamente lo mismo, así que si aquí saliera un formulario para la
++  familia, fallaría al guardar y nadie entendería por qué.
++
++  Y es lo único que hace que el número valga algo a fin de mes. Un
++  parte que el empleador puede escribir no es el parte de ella.
++
++  ─────────────────────────────────────────────────────────────
++  Y SE DICE LO QUE ES, EN LA PANTALLA
++
++  «Apuntes para cuadrar el mes», no un registro de jornada. Un
++  registro de jornada tiene requisitos legales que HUBI no cumple, y
++  dejar que alguien crea que sí los cumple sería lo peor que podemos
++  hacer aquí.
++
++  ─────────────────────────────────────────────────────────────
++  LAS HORAS, A TOQUES
++
++  Un campo numérico en un móvil, con el teclado tapando media
++  pantalla, para escribir «7,5». Los botones de −½ y +½ lo resuelven
++  sin teclado y sin errores: nadie apunta 75 horas por un dedo gordo.
++*/
++
++export default function Parte({
++  deQuien,
++  color,
++  fecha,
++  esHoy,
++  mio,
++  parte,
++  horasDelMes,
++  diasDelMes,
++}: {
++  deQuien: string
++  color: string
++  fecha: string
++  esHoy: boolean
++  /** ¿Es mi parte? Solo entonces se puede escribir. */
++  mio: boolean
++  parte: { horas: number | null; nota: string | null }
++  horasDelMes: number
++  diasDelMes: number
++}) {
++  const router = useRouter()
++
++  const [horas, setHoras] = useState<number | null>(parte.horas)
++  const [nota, setNota] = useState(parte.nota ?? '')
++  const [abierto, setAbierto] = useState(false)
++  const [ocupado, setOcupado] = useState(false)
++  const [fallo, setFallo] = useState<string | null>(null)
++  const [guardado, setGuardado] = useState(false)
++
++  const cambiado = horas !== parte.horas || nota !== (parte.nota ?? '')
++
++  function mover(paso: number) {
++    setGuardado(false)
++    setHoras((h) => {
++      const n = Math.round(((h ?? 0) + paso) * 4) / 4
++      return n <= 0 ? null : Math.min(24, n)
++    })
++  }
++
++  async function guardar() {
++    setFallo(null)
++    setOcupado(true)
++
++    const r = await fetch('/api/dia', {
++      method: 'POST',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ fecha, horas, nota: nota.trim() || null }),
++    })
++
++    const d = (await r.json().catch(() => null)) as {
++      bien?: boolean
++      error?: string
++      detalle?: string
++    } | null
++
++    setOcupado(false)
++
++    if (!r.ok || d?.bien !== true) {
++      setFallo(
++        d
++          ? [d.error ?? 'No se ha podido guardar.', d.detalle].filter(Boolean).join(' · ')
++          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
++      )
++      return
++    }
++
++    setGuardado(true)
++    setAbierto(false)
++    router.refresh()
++  }
++
++  // ── Lo que ve la familia: el parte, sin poder tocarlo ────
++  if (!mio) {
++    return (
++      <section className="mt-6">
++        <h2 className="rotulo">El día de {deQuien}</h2>
++
++        {parte.horas == null && !parte.nota ? (
++          <p className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4 text-[16px] font-semibold leading-snug text-tenue">
++            {esHoy
++              ? `${deQuien} todavía no ha apuntado nada de hoy.`
++              : `${deQuien} no apuntó nada ese día.`}
++          </p>
++        ) : (
++          <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4">
++            {parte.horas != null && (
++              <p className="text-[26px] font-extrabold leading-none tracking-tight" style={{ color }}>
++                {enHoras(parte.horas)}
++              </p>
++            )}
++            {parte.nota && (
++              <p className="mt-2.5 whitespace-pre-wrap text-[16.5px] font-semibold leading-snug">
++                {parte.nota}
++              </p>
++            )}
++            <p className="mt-3 border-t border-borde pt-2.5 text-[13.5px] font-semibold leading-snug text-tenue">
++              Lo apunta {deQuien}. Tú lo ves y no lo puedes cambiar.
++            </p>
++          </div>
++        )}
++
++        {horasDelMes > 0 && <DelMes horas={horasDelMes} dias={diasDelMes} color={color} />}
++      </section>
++    )
++  }
++
++  // ── Y lo que ve ella: su parte, para escribirlo ─────────
++  return (
++    <section className="mt-6">
++      <h2 className="rotulo">Tu día</h2>
++
++      {!abierto ? (
++        <button
++          onClick={() => setAbierto(true)}
++          className="mt-2.5 flex w-full items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-4 text-left"
++        >
++          <span
++            className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[15px]"
++            style={{ background: `color-mix(in srgb, ${color} 16%, transparent)`, color }}
++          >
++            <Ico nombre="reloj" tam={23} grosor={2.1} />
++          </span>
++          <span className="min-w-0 flex-1">
++            {parte.horas == null && !parte.nota ? (
++              <>
++                <span className="block text-[17.5px] font-extrabold tracking-tight">
++                  Apuntar tus horas
++                </span>
++                <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
++                  Y lo que quieras contar del día
++                </span>
++              </>
++            ) : (
++              <>
++                <span className="block text-[17.5px] font-extrabold tracking-tight">
++                  {parte.horas != null ? enHoras(parte.horas) : 'Sin horas'}
++                </span>
++                <span className="mt-0.5 block truncate text-[14.5px] font-bold text-tenue">
++                  {parte.nota ?? 'Toca para cambiarlo'}
++                </span>
++              </>
++            )}
++          </span>
++          <Ico nombre="lapiz" tam={19} grosor={2.2} className="shrink-0 text-tinta-suave" />
++        </button>
++      ) : (
++        <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4">
++          <p className="text-[17px] font-extrabold leading-snug">
++            {esHoy ? '¿Cuántas horas has estado hoy?' : '¿Cuántas horas estuviste?'}
++          </p>
++
++          {/* Media hora arriba y media abajo. Sin teclado: en un móvil,
++              con el teclado tapando media pantalla, escribir «7,5» es
++              donde se cuelan los errores. */}
++          <div className="mt-3 flex items-center gap-2">
++            <button
++              onClick={() => mover(-0.5)}
++              disabled={ocupado || horas == null}
++              aria-label="Media hora menos"
++              className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[16px] border border-borde text-[26px] font-light leading-none text-tinta-suave disabled:opacity-40"
++            >
++              −
++            </button>
++            <span className="flex h-[58px] flex-1 items-center justify-center rounded-[16px] border border-borde text-[24px] font-extrabold tracking-tight">
++              {horas == null ? <span className="text-tenue">Sin apuntar</span> : enHoras(horas)}
++            </span>
++            <button
++              onClick={() => mover(0.5)}
++              disabled={ocupado}
++              aria-label="Media hora más"
++              className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[16px] border border-borde text-[26px] font-light leading-none text-tinta-suave disabled:opacity-40"
++            >
++              +
++            </button>
++          </div>
++
++          {/* Los de siempre, de un toque. Cuatro, seis y ocho horas
++              cubren casi todos los días de casi todas las casas. */}
++          <div className="mt-2 flex gap-2">
++            {[2, 4, 6, 8].map((h) => (
++              <button
++                key={h}
++                onClick={() => {
++                  setGuardado(false)
++                  setHoras(h)
++                }}
++                className="h-[44px] flex-1 rounded-[13px] text-[15.5px] font-extrabold"
++                style={
++                  horas === h
++                    ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
++                    : {
++                        background: 'var(--t-fondo)',
++                        color: 'var(--t-tenue)',
++                        border: '1px solid var(--t-borde)',
++                      }
++                }
++              >
++                {h} h
++              </button>
++            ))}
++          </div>
++
++          <label htmlFor="nota" className="mt-5 block text-[17px] font-extrabold leading-snug">
++            ¿Algo que contar? <span className="font-bold text-tenue">· si quieres</span>
++          </label>
++          <textarea
++            id="nota"
++            value={nota}
++            onChange={(e) => {
++              setGuardado(false)
++              setNota(e.target.value)
++            }}
++            rows={3}
++            maxLength={600}
++            placeholder="No pude planchar, no había plancha. Me quedé una hora más."
++            className="entrada mt-2.5 min-h-[92px] py-3 leading-snug"
++          />
++
++          <div className="mt-3 flex gap-2">
++            <button
++              onClick={guardar}
++              disabled={ocupado || !cambiado}
++              className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
++            >
++              <Ico nombre="check" tam={19} grosor={2.3} />
++              {ocupado ? 'Guardando…' : 'Guardar'}
++            </button>
++            <button
++              onClick={() => {
++                setHoras(parte.horas)
++                setNota(parte.nota ?? '')
++                setAbierto(false)
++              }}
++              disabled={ocupado}
++              className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
++            >
++              Dejarlo
++            </button>
++          </div>
++
++          {fallo && (
++            <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
++              {fallo}
++            </p>
++          )}
++        </div>
++      )}
++
++      {guardado && !abierto && (
++        <p className="mt-2 text-[14.5px] font-bold text-verde">Guardado.</p>
++      )}
++
++      {horasDelMes > 0 && <DelMes horas={horasDelMes} dias={diasDelMes} color={color} />}
++
++      {/*
++        SE DICE LO QUE ES. Y se dice aquí, donde se escribe.
++
++        Llamar a esto «registro de jornada» sería mentir: un registro
++        de jornada tiene requisitos legales que HUBI no cumple. Dejar
++        que alguien crea que sí los cumple es lo peor que podríamos
++        hacer en esta pantalla.
++      */}
++      <p className="mt-3 rounded-[16px] border border-borde px-4 py-3 text-[14px] font-semibold leading-snug text-tenue">
++        Esto son apuntes para cuadrar el mes entre vosotros, no un registro de jornada
++        oficial. Los escribes tú y nadie más los puede cambiar.
++      </p>
++    </section>
++  )
++}
++
++/*
++  Lo que lleva del mes.
++
++  Es el número por el que se hace todo esto: nadie apunta horas por
++  gusto, se apuntan para que a fin de mes los dos miren lo mismo.
++*/
++function DelMes({ horas, dias, color }: { horas: number; dias: number; color: string }) {
++  return (
++    <div className="mt-2.5 flex items-center gap-3.5 rounded-[20px] border border-borde px-4 py-3.5">
++      <span className="min-w-0 flex-1">
++        <span className="block text-[14.5px] font-bold text-tenue">Este mes</span>
++        <span className="mt-0.5 block text-[22px] font-extrabold leading-tight tracking-tight">
++          {enHoras(horas)}
++        </span>
++      </span>
++      <span className="shrink-0 text-[14.5px] font-bold" style={{ color }}>
++        {dias === 1 ? '1 día' : `${dias} días`}
++      </span>
++    </div>
++  )
++}
+diff --git a/app/page.tsx b/app/page.tsx
+index a1a0acf..2280887 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -20,7 +20,7 @@ import { eurosRedondo } from '@/lib/periodos'
+ import { loDeHoy } from '@/lib/rutinas'
+ import { genteDeLaCasa, elAsesor } from '@/lib/gente'
+ import Casas from './casas'
+-import RutinasHoy, { type Deber } from './rutinas-hoy'
++import { type Deber } from './rutinas-hoy'
+ 
+ export const dynamic = 'force-dynamic'
+ 
+@@ -242,7 +242,6 @@ export default async function Inicio({
+     rompe por eso.
+   */
+   const deberes: Deber[] = []
+-  let puedoMarcar = false
+ 
+   try {
+     const mias = rol === 'ayuda'
+@@ -276,9 +275,6 @@ export default async function Inicio({
+       }
+     }
+ 
+-    /* Quien solo mira no marca. Y el asesor tampoco ve esto siquiera:
+-       el plan de trabajo de una casa no es asunto suyo. */
+-    puedoMarcar = rol !== 'mirar' && rol !== 'asesor'
+   } catch {
+     /* Sin las tablas todavía. El Inicio sigue entero. */
+   }
+@@ -313,11 +309,18 @@ export default async function Inicio({
+     tarjeta le lleva al mismo sitio con el nombre de la casa.
+   */
+   let deLaGestoria: { nombre: string; color: string; esperando: number } | null = null
++  /* Quien ayuda en casa, para poner su nombre y su color en la tarjeta
++     del día. Se saca de la misma lectura de gente: pedirla dos veces
++     sería un viaje de más para pintar la misma pantalla. */
++  let deLaAyuda: { nombre: string; color: string } | null = null
+ 
+   try {
+     const gente = await genteDeLaCasa(supabase, hogarId)
+     const yoSoy = gente.find((g) => g.id === user.id)
+ 
++    const ayuda = gente.find((g) => g.rol === 'ayuda' && !g.pendiente)
++    if (ayuda) deLaAyuda = { nombre: ayuda.nombre.split(' ')[0], color: ayuda.color }
++
+     const conQuien =
+       yoSoy?.rol === 'asesor'
+         ? (gente.find((g) => g.id !== user.id && g.rol !== 'asesor') ?? null)
+@@ -359,31 +362,33 @@ export default async function Inicio({
+   }
+ 
+   /*
+-    ── DÓNDE VA «LO DE HOY» ──
+-
+-    Se pinta una sola vez, pero no en el mismo sitio para todos, y ésa
+-    es toda la idea de los roles:
++    ── «LA CASA HOY» ES UNA TARJETA, NO UNA LISTA ──
+ 
+-      · Quien ayuda en casa lo ve ARRIBA. Es a lo que viene. Debajo de
+-        la agenda de la familia sería pedirle que se desplace por
+-        cosas que no son suyas para llegar a las que sí.
++    Estaba entera aquí: cinco líneas con sus casillas, debajo de las
++    tarjetas. Y ocupaba media pantalla todos los días para decir algo
++    que casi siempre se resume en «0 de 4» — mientras empujaba hacia
++    abajo el médico de las diez, que es lo que de verdad hay que ver
++    al abrir.
+ 
+-      · La familia lo ve ABAJO, después de lo suyo. Que hoy toque
+-        planchar no puede quedar por encima del médico de las diez.
++    Ahora es una tarjeta con el número, del color de quien tiene ese
++    trabajo, y dentro está todo: las tareas, sus horas y lo que quiera
++    contar del día. Cabe lo que necesite porque ya no compite con
++    nada.
+ 
+-    Ordenar por rol y no por importancia general: para cada uno lo
+-    importante es otra cosa, y eso es exactamente lo que HUBI tiene
+-    que saber.
++    Sigue arriba para quien ayuda en casa —es a lo que viene— y debajo
++    de lo suyo para la familia.
+   */
+-  const bloqueDeHoy =
+-    ve.agenda && deberes.length > 0 ? (
+-      <RutinasHoy
+-        rutinas={deberes}
+-        puedeMarcar={puedoMarcar}
+-        soloMias={rol === 'ayuda'}
+-        titulo={rol === 'ayuda' ? 'Lo de hoy' : 'La casa hoy'}
+-      />
+-    ) : null
++  const casaHoy =
++    ve.agenda && deberes.length > 0
++      ? {
++          hechas: deberes.filter((d) => d.hecha).length,
++          total: deberes.length,
++          /* De quién es el día. Con el color de esa persona, que es
++             el mismo con el que sale en la agenda y en el corcho. */
++          nombre: deLaAyuda?.nombre ?? null,
++          color: deLaAyuda?.color ?? '#0EA5E9',
++        }
++      : null
+ 
+   return (
+     <main className="relative min-h-screen pb-40">
+@@ -768,7 +773,7 @@ export default async function Inicio({
+           </p>
+         )}
+ 
+-        {rol === 'ayuda' && bloqueDeHoy}
++        {rol === 'ayuda' && casaHoy && <TarjetaCasa {...casaHoy} mia />}
+ 
+         {/* ── Hoy ── */}
+         {ve.agenda && hoy.length > 0 && (
+@@ -836,7 +841,7 @@ export default async function Inicio({
+           </section>
+         )}
+ 
+-        {rol !== 'ayuda' && bloqueDeHoy}
++        {rol !== 'ayuda' && casaHoy && <TarjetaCasa {...casaHoy} />}
+ 
+         {ve.agenda &&
+           hoy.length === 0 &&
+@@ -963,3 +968,73 @@ function enCuanto(fecha: string | null): string {
+   if (dias < 45) return `en ${dias} días`
+   return `en ${Math.round(dias / 30)} meses`
+ }
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LA CASA HOY, EN UNA TARJETA
++  ═══════════════════════════════════════════════════════════════
++
++  El número grande y quién lo lleva. Nada más: lo que hay dentro se ve
++  entrando, y lo que se contesta desde aquí —«¿va bien la mañana?»— se
++  contesta con «2 de 5» sin abrir nada.
++
++  Cuando está todo hecho cambia de tono en vez de desaparecer: haberlo
++  terminado es una noticia, y quitarle la tarjeta a quien acaba de
++  terminar sería quitarle el acuse de recibo.
++*/
++function TarjetaCasa({
++  hechas,
++  total,
++  nombre,
++  color,
++  mia = false,
++}: {
++  hechas: number
++  total: number
++  nombre: string | null
++  color: string
++  /** Es mi día: entonces la tarjeta habla en segunda persona. */
++  mia?: boolean
++}) {
++  const todo = hechas === total
++
++  return (
++    <Link
++      href="/lacasa"
++      className="mt-2.5 flex h-[76px] items-center gap-3.5 rounded-[22px] px-4"
++      style={{
++        background: `color-mix(in srgb, ${color} ${todo ? 10 : 16}%, transparent)`,
++        border: `1px solid color-mix(in srgb, ${color} ${todo ? 26 : 42}%, transparent)`,
++      }}
++    >
++      {/* El número, que es todo lo que hay que leer de un vistazo. */}
++      <span
++        className="flex h-[48px] w-[48px] shrink-0 flex-col items-center justify-center rounded-[15px] bg-superficie leading-none"
++        style={{ color }}
++      >
++        <span className="text-[19px] font-extrabold tracking-tight">{hechas}</span>
++        <span className="mt-0.5 text-[10.5px] font-bold opacity-70">de {total}</span>
++      </span>
++
++      <span className="min-w-0 flex-1">
++        <span className="block whitespace-nowrap text-[19px] font-extrabold tracking-tight">
++          {mia ? 'Lo de hoy' : 'La casa hoy'}
++        </span>
++        <span className="block truncate text-[14.5px] font-bold" style={{ color }}>
++          {todo
++            ? mia
++              ? '¡Todo hecho!'
++              : `${nombre ?? 'Todo'} lo ha terminado`
++            : mia
++              ? `Te quedan ${total - hechas}`
++              : nombre
++                ? `${nombre} · faltan ${total - hechas}`
++                : `Faltan ${total - hechas}`}
++        </span>
++      </span>
++      <span className="shrink-0" style={{ color }}>
++        <Ico nombre="flecha" tam={22} grosor={2.2} />
++      </span>
++    </Link>
++  )
++}
+diff --git a/lib/dia.ts b/lib/dia.ts
+new file mode 100644
+index 0000000..46283bb
+--- /dev/null
++++ b/lib/dia.ts
+@@ -0,0 +1,98 @@
++import type { SupabaseClient } from '@supabase/supabase-js'
++import { hoyAqui } from './tablon'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  EL PARTE DEL DÍA
++  ═══════════════════════════════════════════════════════════════
++
++  Cuántas horas estuvo y qué tiene que decir de ese día. Lo escribe
++  ella y nadie más — ni siquiera quien creó la casa—, que es lo único
++  que hace que el número valga algo a fin de mes.
++
++  ─────────────────────────────────────────────────────────────
++  APUNTES PARA CUADRAR EL MES, NO UN REGISTRO DE JORNADA
++
++  Se dice aquí y se dice en la pantalla. Un registro de jornada tiene
++  requisitos legales que HUBI no cumple, y fingir que los cumple sería
++  peor que no tenerlo.
++
++  ─────────────────────────────────────────────────────────────
++  TODO ENVUELTO
++
++  La tabla es del SQL 40. Sin ella esto devuelve «no hay parte» y
++  ninguna pantalla se rompe.
++*/
++
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
++type Cliente = SupabaseClient<any, any, any>
++
++export type Parte = {
++  quien: string
++  fecha: string
++  horas: number | null
++  nota: string | null
++  apuntado_en: string
++}
++
++/** El parte de una persona en un día. */
++export async function parteDe(
++  supabase: Cliente,
++  quien: string,
++  fecha?: string
++): Promise<Parte | null> {
++  try {
++    const { data, error } = await supabase
++      .from('dias_en_casa')
++      .select('quien, fecha, horas, nota, apuntado_en')
++      .eq('quien', quien)
++      .eq('fecha', fecha ?? hoyAqui())
++      .maybeSingle()
++
++    if (error || !data) return null
++    return data as Parte
++  } catch {
++    return null
++  }
++}
++
++/** Los últimos partes de una persona, para cuadrar el mes. */
++export async function partesDe(
++  supabase: Cliente,
++  quien: string,
++  desde: string
++): Promise<Parte[]> {
++  try {
++    const { data, error } = await supabase
++      .from('dias_en_casa')
++      .select('quien, fecha, horas, nota, apuntado_en')
++      .eq('quien', quien)
++      .gte('fecha', desde)
++      .order('fecha', { ascending: false })
++
++    if (error || !data) return []
++    return data as Parte[]
++  } catch {
++    return []
++  }
++}
++
++/** «7,5 h» · «45 min». Nunca «7.5». */
++export function enHoras(h: number | null): string {
++  if (h == null) return ''
++  if (h < 1) return `${Math.round(h * 60)} min`
++  const texto = Number.isInteger(h) ? String(h) : h.toFixed(2).replace(/0$/, '')
++  return `${texto.replace('.', ',')} h`
++}
++
++/**
++ * El primer día del mes de una fecha.
++ *
++ * Nunca `new Date()` a secas para esto: la hora del servidor puede ir
++ * un día por delante de la de aquí, y el día 1 a las once de la noche
++ * eso cambiaría de mes.
++ */
++export function primeroDelMes(iso?: string): string {
++  const [a, m] = (iso ?? hoyAqui()).split('-')
++  return `${a}-${m}-01`
++}
+diff --git a/sql/40-el-dia-y-la-compra.sql b/sql/40-el-dia-y-la-compra.sql
+new file mode 100644
+index 0000000..2f1012b
+--- /dev/null
++++ b/sql/40-el-dia-y-la-compra.sql
+@@ -0,0 +1,182 @@
++-- ═══════════════════════════════════════════════════════════════
++-- 40 · EL PARTE DEL DÍA, Y LA COMPRA QUE SE CIERRA
++-- ═══════════════════════════════════════════════════════════════
++--
++-- Dos cosas que no tienen que ver entre sí, pero las dos son «lo que
++-- pasó hoy» y por eso van juntas.
++--
++-- ─────────────────────────────────────────────────────────────
++-- 1 · EL PARTE DEL DÍA
++--
++-- Quien ayuda en casa marca lo que ha hecho, y hasta aquí llegábamos.
++-- Falta lo otro: cuántas horas ha estado, y si tiene algo que decir de
++-- ese día —«no pude planchar, no había plancha», «me quedé una hora
++-- más»—.
++--
++-- APUNTES PARA CUADRAR EL MES. NO UN REGISTRO DE JORNADA.
++--
++-- Esto hay que decirlo aquí y decirlo en la pantalla. Un registro de
++-- jornada laboral tiene requisitos legales —conservación cuatro años,
++-- inalterabilidad, entrega a la Inspección— que HUBI no cumple y que
++-- no vamos a fingir que cumple. Lo que hay es una libreta compartida
++-- para que a fin de mes los dos miren el mismo número.
++--
++-- Y POR ESO SOLO ESCRIBE ELLA.
++--
++-- Es lo único que hace que el número valga: si el empleador pudiera
++-- corregirlo, no sería el parte de ella, sería el del empleador. Él lo
++-- ve y no lo toca. Ella puede corregir el suyo mientras el día esté
++-- cerca; después queda como está.
++--
++-- ─────────────────────────────────────────────────────────────
++-- 2 · LA COMPRA SE CIERRA Y SE GUARDA ENTERA
++--
++-- Hasta hoy, «Ya he comprado» archivaba los artículos tachados y ya
++-- está: la lista seguía viva y lo comprado desaparecía. Se perdía la
++-- foto del conjunto — qué se compró aquel día, y cuánto costó.
++--
++-- Ahora la lista se CIERRA: queda guardada con lo que llevaba dentro,
++-- se le puede enganchar el ticket del súper, y se abre una nueva
++-- vacía. Con eso hay trazabilidad —esta lista, este ticket, este
++-- importe— y además se puede recuperar: la compra de casa se repite
++-- casi igual todas las semanas.
++--
++-- Se puede ejecutar más de una vez sin estropear nada.
++-- ═══════════════════════════════════════════════════════════════
++
++
++-- ── 1 · El parte del día ───────────────────────────────────
++create table if not exists dias_en_casa (
++  hogar_id    uuid not null references hogares(id) on delete cascade,
++  quien       uuid not null references perfiles(id) on delete cascade,
++  fecha       date not null,
++
++  /* Las horas del día. Nulas si solo dejó una nota — que también es
++     un parte válido: «hoy no vine, tenía médico». */
++  horas       numeric(4,2) check (horas is null or (horas >= 0 and horas <= 24)),
++
++  -- Lo que quiera contar de ese día. En sus palabras.
++  nota        text,
++
++  apuntado_en timestamptz not null default now(),
++  cambiado_en timestamptz,
++
++  /* Uno por persona y día. Sin esto, dos toques con mala cobertura
++     dejarían dos partes del mismo lunes y la cuenta del mes saldría
++     inflada — el mismo fallo que ya evitamos en `rutinas_hechas`. */
++  primary key (quien, fecha)
++);
++
++create index if not exists idx_dias_en_casa
++  on dias_en_casa (hogar_id, fecha desc);
++
++
++-- ── 2 · Quién ve y quién toca ──────────────────────────────
++alter table dias_en_casa enable row level security;
++
++/*
++  LEER: la casa. Salvo quien ayuda, que ve el suyo.
++
++  Es la misma regla que ya tienen los recordatorios y las notas desde
++  el SQL 37: quien entra a trabajar no tiene por qué ver las horas de
++  nadie más — y con dos personas ayudando en la misma casa, eso
++  importa de verdad.
++*/
++drop policy if exists dias_leer on dias_en_casa;
++create policy dias_leer on dias_en_casa
++  for select to authenticated using (
++    hogar_id = mi_hogar()
++    and (
++      coalesce(mi_rol(), 'familia') <> 'ayuda'
++      or quien = auth.uid()
++    )
++  );
++
++/*
++  ESCRIBIR: SOLO ELLA, Y SOLO LO SUYO.
++
++  `quien = auth.uid()` sin excepciones, ni siquiera para quien creó la
++  casa. Es lo único que hace que el número valga algo: un parte que el
++  empleador puede escribir no es el parte de ella.
++*/
++drop policy if exists dias_crear on dias_en_casa;
++create policy dias_crear on dias_en_casa
++  for insert to authenticated with check (
++    hogar_id = mi_hogar() and quien = auth.uid()
++  );
++
++/*
++  Y corregir, mientras el día esté cerca. Una semana: da margen para
++  el «se me olvidó apuntar el martes» sin convertir el histórico en
++  algo que se puede reescribir meses después.
++*/
++drop policy if exists dias_editar on dias_en_casa;
++create policy dias_editar on dias_en_casa
++  for update to authenticated using (
++    hogar_id = mi_hogar()
++    and quien = auth.uid()
++    and fecha >= current_date - 7
++  );
++
++drop policy if exists dias_borrar on dias_en_casa;
++create policy dias_borrar on dias_en_casa
++  for delete to authenticated using (
++    hogar_id = mi_hogar()
++    and quien = auth.uid()
++    and fecha >= current_date - 7
++  );
++
++
++-- ── 3 · La compra que se cierra ────────────────────────────
++/*
++  `archivada_en` ya existía y significaba «esta lista ya no se usa».
++  Se le añade lo que le faltaba para que cerrarla sirva de algo: quién
++  la cerró y con qué ticket.
++
++  El ticket es un documento de los de siempre —está en Drive, tiene su
++  carpeta y su importe—, así que aquí solo va la referencia. Duplicar
++  el archivo sería tener dos sitios donde mirar y uno de los dos
++  quedaría desactualizado.
++*/
++alter table listas_compra
++  add column if not exists cerrada_por uuid references perfiles(id) on delete set null;
++
++alter table listas_compra
++  add column if not exists ticket_id uuid references documentos(id) on delete set null;
++
++comment on column listas_compra.ticket_id is
++  'El ticket del súper de esta compra. Es un documento de Drive, no una copia.';
++
++create index if not exists idx_listas_cerradas
++  on listas_compra (seccion_id, archivada_en desc) where archivada_en is not null;
++
++
++-- ── 4 · Comprobación ───────────────────────────────────────
++/*
++  TRES resultados.
++
++  1 · Las cuatro políticas del parte. Las de escribir tienen que decir
++      `auth.uid()` en el `quien`: si alguna no lo dice, el empleador
++      puede escribir el parte de ella y esto deja de servir.
++
++  2 · Las columnas nuevas de `listas_compra`. Tres filas.
++
++  3 · La tabla vacía y con RLS puesto. `rls = true` no es un detalle:
++      sin él, cualquiera con una sesión vería las horas de todas las
++      casas de HUBI.
++*/
++select policyname as politica, cmd as para_que,
++       coalesce(qual, with_check) ilike '%auth.uid()%' as solo_ella
++from pg_policies
++where tablename = 'dias_en_casa'
++order by policyname;
++
++select column_name as columna, data_type as tipo
++from information_schema.columns
++where table_name = 'listas_compra'
++  and column_name in ('archivada_en', 'cerrada_por', 'ticket_id')
++order by column_name;
++
++select
++  (select count(*) from dias_en_casa) as partes,
++  (select relrowsecurity from pg_class where relname = 'dias_en_casa') as rls_partes;
+-- 
+2.43.0
+

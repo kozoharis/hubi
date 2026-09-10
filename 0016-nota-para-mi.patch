@@ -1,0 +1,172 @@
+From 3c975612030d255c980d55257ee116af3910b1e2 Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Mon, 7 Sep 2026 19:33:44 +0000
+Subject: [PATCH] Faltabas en tu propia lista de notas
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Dejarse una nota a uno mismo —lo que hace cualquiera con un papel en
+la nevera— no se podía. Y estaba cerrado por los dos lados:
+
+    notas.tsx:61   const otros = gente.filter((g) => g.id !== yo)
+    api/notas:65   if (pedido && pedido !== user.id) { … }
+
+La pantalla te quitaba de la lista, y el servidor, si le llegaba tu
+identificador de todos modos, lo descartaba EN SILENCIO y guardaba la
+nota como «para la casa». Fallar habría sido mejor: hacía otra cosa
+sin decirlo.
+
+Y no es la misma cosa. Una nota a la casa no sale en tu Inicio y no se
+queda ahí hasta que la despachas, que es justo lo que se busca al
+apuntarse algo uno mismo.
+
+Ahora el desplegable es «Para la casa · Para mí · Para Conchita», y
+las tres hacen cosas distintas — dicho debajo, antes de pulsar, porque
+no se adivina mirando la pastilla:
+
+    la casa   no avisa a nadie
+    para mí   se queda en tu Inicio hasta que la marcas vista
+    para otro le suena el móvil
+
+«Para mí» y no tu nombre: leerse a uno mismo en tercera persona, en
+una lista donde están los demás, hace dudar de si ése eres tú.
+
+Y a ti mismo no se te manda aviso. Que vibre el móvil por algo que
+acabas de escribir tú es la forma más rápida de que apagues los avisos
+—y de que dejes de enterarte de los que sí importan—.
+
+El desplegable sigue sin salir si vives solo en HUBI: ahí «Para la
+casa» y «Para mí» son la misma cosa, y elegir entre dos cosas iguales
+es trabajo inventado.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/api/notas/route.ts | 24 ++++++++++++++++++++--
+ app/notas/notas.tsx    | 46 ++++++++++++++++++++++++++++++++----------
+ 2 files changed, 57 insertions(+), 13 deletions(-)
+
+diff --git a/app/api/notas/route.ts b/app/api/notas/route.ts
+index d42999f..fad441e 100644
+--- a/app/api/notas/route.ts
++++ b/app/api/notas/route.ts
+@@ -62,7 +62,24 @@ export async function POST(peticion: NextRequest) {
+   let para: string | null = null
+   const pedido = String(cuerpo.para ?? '').trim()
+ 
+-  if (pedido && pedido !== user.id) {
++  if (pedido === user.id) {
++    /*
++      A TI MISMO, QUE ES LO MÁS NORMAL DEL MUNDO.
++
++      Antes esta línea decía `pedido && pedido !== user.id`: tu propio
++      identificador se descartaba EN SILENCIO y la nota acababa siendo
++      «para la casa». O sea que dejarte una nota a ti no fallaba, que
++      habría sido mejor — hacía otra cosa sin decirlo.
++
++      Y una nota a la casa no es lo mismo: la de la casa no sale en tu
++      Inicio y no se queda hasta que la despachas. Es justo eso lo que
++      se busca al apuntarse algo uno mismo.
++
++      Aquí no hace falta comprobar que estás en esta casa: `miHogar`
++      acaba de devolverla y es la tuya.
++    */
++    para = pedido
++  } else if (pedido) {
+     const { data: esDeCasa } = await supabase
+       .from('miembros')
+       .select('perfil_id')
+@@ -103,7 +120,10 @@ export async function POST(peticion: NextRequest) {
+     vibrar dos móviles cada vez que alguien apunta «queda poca leña»
+     es la manera más rápida de que los dos apaguen los avisos.
+   */
+-  if (para) {
++  /* Y a ti mismo no, claro. Que te vibre el móvil por algo que
++     acabas de escribir tú es la manera más rápida de que apagues los
++     avisos — y de que dejes de enterarte de los que sí importan. */
++  if (para && para !== user.id) {
+     try {
+       const yo = await leerPerfil(supabase, user.id, user.email)
+       const quienEs = yo.nombre.split(' ')[0]
+diff --git a/app/notas/notas.tsx b/app/notas/notas.tsx
+index 7364fd5..8c2d41e 100644
+--- a/app/notas/notas.tsx
++++ b/app/notas/notas.tsx
+@@ -25,6 +25,11 @@ import type { NotaVista } from '@/lib/notas'
+   única opción —tú— es una decisión inventada. Sale cuando hay otra
+   persona en la casa.
+ 
++  Pero cuando sale, TÚ estás en él. Es «Para la casa · Para mí · Para
++  Conchita», y las tres hacen cosas distintas: la de la casa no avisa
++  a nadie, la tuya se te queda en el Inicio hasta que la despachas, y
++  la de otra persona le hace sonar el móvil.
++
+   ─────────────────────────────────────────────────────────────
+   Y LAS NOTAS NO SON PRIVADAS
+ 
+@@ -59,6 +64,25 @@ export default function Notas({
+   const [borrador, setBorrador] = useState('')
+ 
+   const otros = gente.filter((g) => g.id !== yo)
++
++  /*
++    ── Y TÚ TAMBIÉN ──
++
++    Faltabas en tu propia lista. Dejarse una nota a uno mismo es lo que
++    hace cualquiera con un papel en la nevera, y hasta ahora aquí no se
++    podía: te quedaba «para la casa», que no es lo mismo — la de la
++    casa no sale en tu Inicio ni se queda ahí hasta que la despachas.
++
++    Vas después de «Para la casa» y antes que los demás, porque es el
++    destino que más se usa después del común. Y no sale tu nombre sino
++    «Para mí»: leerse a uno mismo en tercera persona en una lista donde
++    están los demás hace dudar de si ése eres tú.
++  */
++  const destinos: { id: string | null; etiqueta: string }[] = [
++    { id: null, etiqueta: 'Para la casa' },
++    { id: yo, etiqueta: 'Para mí' },
++    ...otros.map((g) => ({ id: g.id, etiqueta: `Para ${g.nombre.split(' ')[0]}` })),
++  ]
+   const nombreDe = new Map(gente.map((g) => [g.id, g.nombre]))
+   /* El color de quien la escribió. Con cuatro personas en la casa,
+      saber de quién es cada nota obliga hoy a leerse la firma de cada
+@@ -141,24 +165,24 @@ export default function Notas({
+             <>
+               <p className="mt-4 text-[17px] font-extrabold leading-snug">¿Para quién?</p>
+               <div className="mt-2.5 flex flex-wrap gap-2">
+-                <Pastilla
+-                  texto="Para la casa"
+-                  puesta={para === null}
+-                  alPulsar={() => setPara(null)}
+-                />
+-                {otros.map((g) => (
++                {destinos.map((d) => (
+                   <Pastilla
+-                    key={g.id}
+-                    texto={`Para ${g.nombre.split(' ')[0]}`}
+-                    puesta={para === g.id}
+-                    alPulsar={() => setPara(g.id)}
++                    key={d.id ?? 'casa'}
++                    texto={d.etiqueta}
++                    puesta={para === d.id}
++                    alPulsar={() => setPara(d.id)}
+                   />
+                 ))}
+               </div>
++              {/* Lo que va a pasar, dicho antes de pulsar. Los tres
++                  destinos hacen tres cosas distintas y ninguna se
++                  adivina mirando la pastilla. */}
+               <p className="mt-2.5 text-[14.5px] font-semibold leading-snug text-tenue">
+                 {para === null
+                   ? 'La verá todo el mundo en casa. No suena ningún teléfono.'
+-                  : 'Le llega un aviso al móvil. La nota la sigue viendo toda la casa.'}
++                  : para === yo
++                    ? 'Te saldrá en tu Inicio hasta que la marques como vista. No suena ningún teléfono.'
++                    : 'Le llega un aviso al móvil. La nota la sigue viendo toda la casa.'}
+               </p>
+             </>
+           )}
+-- 
+2.43.0
+

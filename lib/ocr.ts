@@ -37,6 +37,10 @@ export type Lectura = {
      de la casa. La cuota no se lee: se calcula del total, así el
      desglose cuadra siempre. */
   impuesto_tipo?: number | null
+  /* Los euros de impuesto que vienen IMPRESOS. Es la salida para el
+     ticket de súper con tres tipos a la vez: no tiene UN tipo, pero sí
+     tiene una cuota total, y esa cuota es un hecho, no una suposición. */
+  impuesto_cuota?: number | null
   /* Si además cuadró con una cifra escrita en el papel. Lo leído y
      comprobado se puede dar por bueno; lo leído a secas se enseña para
      que alguien lo mire. */
@@ -60,7 +64,13 @@ const ESQUEMA = {
       type: 'number',
       nullable: true,
       description:
-        'El PORCENTAJE de IVA o IGIC que aparece impreso en el documento (7, 21, 9.5…). Solo si está escrito. Nunca la cuota en euros.',
+        'El PORCENTAJE de IVA o IGIC impreso en el documento (7, 21, 9.5…), SOLO si hay uno y gobierna el total. Nunca la cuota en euros.',
+    },
+    impuesto_cuota: {
+      type: 'number',
+      nullable: true,
+      description:
+        'Los EUROS de IVA o IGIC impresos en el documento. Si hay varios tipos, la SUMA de todos ("Total IVA 3,47"). Solo si está escrito.',
     },
     fecha: {
       type: 'string',
@@ -104,8 +114,29 @@ const ESQUEMA = {
 }
 
 function instrucciones(categorias: Categoria[], rutaDe: (c: Categoria) => string) {
+  /*
+    ── CADA CARPETA DICE SI SUMA DINERO ──
+
+    Antes esta lista era solo `id → ruta`, y el modelo no tenía forma de
+    saber que unas carpetas alimentan el balance y otras no. Con eso, la
+    factura de una actividad podía acabar perfectamente archivada en
+    «Weaver → Documentos → Otros papeles» —que es una carpeta razonable
+    para una factura— y el importe NO se apuntaba en ningún sitio: esa
+    rama es 'neutro' por diseño, porque ahí van contratos y pólizas.
+
+    El documento quedaba bien guardado y el balance se quedaba corto,
+    sin que nada lo dijera. Ahora el modelo lo sabe al elegir.
+  */
   const lista = categorias
-    .map((c) => `- ${c.id} → ${rutaDe(c)}`)
+    .map((c) => {
+      const marca =
+        c.naturaleza === 'gasto'
+          ? ' [GASTO · suma al balance]'
+          : c.naturaleza === 'ingreso'
+            ? ' [INGRESO · suma al balance]'
+            : ' [papeles · NO suma]'
+      return `- ${c.id} → ${rutaDe(c)}${marca}`
+    })
     .join('\n')
 
   return `Eres el asistente documental de una familia española. Vas a leer la fotografía o el PDF de un documento doméstico y extraer sus datos.
@@ -115,7 +146,10 @@ REGLAS:
 - El importe es el TOTAL del documento, en euros, como número. "127,43 €" es 127.43.
 - Las fechas van en formato AAAA-MM-DD. Ojo: en España el formato es día/mes/año, así que 03/09/2026 es el 3 de septiembre.
 - "vencimiento" solo si el documento indica expresamente una caducidad, renovación o próxima revisión.
-- "impuesto_tipo" es el PORCENTAJE de IVA o IGIC impreso en el documento: en "IGIC 7% 0,20 €" es 7, en "IVA (21%)" es 21. NUNCA los euros de la cuota. Si el documento no lo dice, o lleva VARIOS tipos distintos, déjalo vacío: es un dato contable y una suposición aquí sale cara. En Canarias es IGIC (0, 3, 7, 9.5, 15, 20) y en la península IVA (0, 4, 10, 21).
+- "impuesto_tipo" es el PORCENTAJE de IVA o IGIC impreso: en "IGIC 7% 0,20 €" es 7, en "IVA (21%)" es 21. NUNCA los euros. Ponlo SOLO si hay UN tipo y gobierna el total del documento. Si el papel lleva varios tipos distintos —un ticket de súper con 4%, 10% y 21%— déjalo VACÍO: ese documento no tiene un tipo único y elegir uno sería inventarse el desglose. En Canarias es IGIC (0, 3, 7, 9.5, 15, 20) y en la península IVA (0, 4, 10, 21).
+- "impuesto_cuota" son los EUROS de impuesto impresos en el papel. Si hay un solo tipo, la cuota de esa línea ("IVA 10% ..... 1,23" → 1.23). Si hay VARIOS tipos, la SUMA total del impuesto ("TOTAL IVA 3,47" → 3.47, o la suma de las líneas si el papel no la totaliza). Este campo es importante y se te olvida a menudo: rellénalo SIEMPRE que el papel imprima el impuesto en euros, aunque también hayas rellenado el tipo. Es lo que permite cuadrar el desglose sin suponer nada.
+- Un ticket de supermercado con 10% en la comida NO lleva 21%. No apliques nunca el tipo general "por defecto": si no está impreso, deja los dos campos vacíos y ya se preguntará.
+- LA CARPETA: si el documento es dinero que ENTRA o que SALE —una factura, un ticket, un recibo, una nómina, un justificante de pago o de cobro— elige SIEMPRE una carpeta marcada [GASTO] o [INGRESO]. Las marcadas [papeles] son para lo que no es dinero: contratos, pólizas, licencias, escrituras, informes. Una factura archivada en una carpeta de papeles se guarda bien pero NO cuenta en las cuentas de la casa, y eso casi nunca es lo que quiere quien la fotografía.
 - "titulo" debe ser algo que una persona mayor entienda de un vistazo: "Factura de la luz de agosto", "Seguro del coche", "Informe del cardiólogo".
 - EN UN TICKET DE TIENDA lo que importa son cuatro cosas: el COMERCIO, la FECHA, el TOTAL y QUÉ se compró. El "proveedor" es el nombre del comercio tal y como está impreso arriba —"STRADIVARIUS", "Mercadona"—, nunca la razón social del pie ni el centro comercial. El "importe" es la línea TOTAL, no el precio de un artículo suelto. Y el "titulo" resume la compra: "Stradivarius · 2 camisas", "Mercadona · compra semanal".
 - Si la foto está arrugada o con sombras, lee lo que puedas y baja la confianza. No te inventes un nombre porque una línea parezca uno: si no distingues el comercio, deja "proveedor" vacío.

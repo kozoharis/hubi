@@ -1,0 +1,87 @@
+From 99b40d6ab3c4a0a3f98770702a55e869e92a595f Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Mon, 7 Sep 2026 18:10:34 +0000
+Subject: [PATCH] =?UTF-8?q?=C2=ABPara=20ti=C2=BB=20dice=20cu=C3=A1ntas=20a?=
+ =?UTF-8?q?ntes=20de=20decir=20cu=C3=A1les?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Del widget de recordatorios del iPhone —un número grande y poco más—
+sirve la estructura, no el tamaño: allí el número mide 13 px y HUBI
+tiene escrito desde el primer día que nada que haya que leer baja de
+17. Copiarlo entero habría sido empeorar la pantalla para parecernos
+a otra.
+
+Lo que se coge es el orden de las dos preguntas. Al abrir el Inicio la
+primera es «¿tengo algo?» y se contesta de lejos y sin gafas con un
+número de 44. La segunda es «¿el qué?», y ésa ya la contestaba el
+texto de siempre, que sigue donde estaba.
+
+En el widget del teléfono el número SUSTITUYE al texto, y por eso allí
+hay que entrar para enterarte. Aquí se suma: por eso no contradice la
+decisión que ya estaba tomada en este mismo bloque —«se enseña el
+texto, no un número»— sino que la completa.
+
+Notas y nada más. Se valoró juntar aquí los recordatorios asignados a
+ti, que es lo que pide el punto 18. No se hace: hoy esta pantalla no
+separa por TIPO —nota, tarea, evento— sino por DUEÑO. «Para ti» es lo
+que alguien te ha dejado a ti; «Hoy» es lo de la casa entera. Juntarlo
+obligaba a perder una de las dos cosas, y ninguna sobra.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/page.tsx | 29 ++++++++++++++++++++++++-----
+ 1 file changed, 24 insertions(+), 5 deletions(-)
+
+diff --git a/app/page.tsx b/app/page.tsx
+index b5995c4..07a7242 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -562,9 +562,17 @@ export default async function Inicio({
+           dejado a ti en concreto — y lo que se pone debajo de seis
+           tarjetas se lee mañana.
+ 
+-          Se enseña el texto, no un número: «2 · una es para ti»
+-          obligaba a entrar para saber qué era, y una nota que hay que
+-          ir a buscar es una nota que a veces no se lee.
++          Se enseña el texto, SIEMPRE. Hubo una versión que ponía «2 ·
++          una es para ti» y nada más: obligaba a entrar para saber qué
++          era, y una nota que hay que ir a buscar es una nota que a
++          veces no se lee.
++
++          El número de delante no vuelve atrás en eso — se suma. De
++          lejos y sin gafas contesta lo primero que se pregunta al
++          abrir («¿tengo algo?») y el texto sigue debajo contestando
++          lo segundo («¿el qué?»). Es la idea del widget del teléfono,
++          pero a 17 px y sin quitar nada: allí el número SUSTITUYE al
++          texto, y por eso allí hay que entrar.
+ 
+           Desaparece sola en cuanto dices que la has visto, desde
+           Notas. Si se quedara, el Inicio acabaría con una lista fija
+@@ -572,8 +580,19 @@ export default async function Inicio({
+         */}
+         {tuyas.length > 0 && (
+           <section className="mt-4">
+-            <h2 className="rotulo">Para ti</h2>
+-            <ul className="mt-2 space-y-2">
++            {/* El número y su rótulo, en una fila. `tabular-nums` para
++                que al pasar de 9 a 10 no baile lo de al lado. */}
++            <div className="flex items-center gap-3">
++              <span className="text-[44px] font-extrabold leading-none tracking-tight tabular-nums">
++                {tuyas.length}
++              </span>
++              <h2 className="rotulo leading-[1.3]">
++                {tuyas.length === 1 ? 'Nota que' : 'Notas que'}
++                <br />
++                te han dejado
++              </h2>
++            </div>
++            <ul className="mt-3 space-y-2">
+               {tuyas.map((n) => (
+                 <li key={n.id}>
+                   <Link
+-- 
+2.43.0
+

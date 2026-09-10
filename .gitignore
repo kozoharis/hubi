@@ -39,13 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# ── Lo que no es el producto ──
-# Entregas, demos, capturas y zips: material de trabajo nuestro,
-# no código de HUBI. Fuera del repositorio.
-*.patch
-*.zip
-/*.html
-/web/
-/Claude outputs/
-comprobar.mjs

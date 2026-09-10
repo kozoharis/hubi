@@ -1,0 +1,133 @@
+From fe76a9ead9405c7a7aee00bbbffbe331671daa93 Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 22:54:49 +0000
+Subject: [PATCH] =?UTF-8?q?El=20bot=C3=B3n=20de=20Ajustes:=20sin=20halo=20?=
+ =?UTF-8?q?y=20sin=20flecha?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Tenía las dos cosas y las dos sobraban.
+
+El halo —dos sombras de color alrededor— hacía que el botón PARECIERA
+ENCENDIDO, como si estuviera avisando de algo. Y no avisa de nada: es
+un sitio al que se va. En una pantalla donde lo único que de verdad
+tiene que reclamar la mirada es una nota que te han dejado o algo que
+vence mañana, un botón que brilla por decoración está robando esa
+atención.
+
+La flecha sobraba por otra razón: la ponen las filas de las listas
+para decir «esto se abre», y aquí ya lo dice la propia píldora.
+
+Queda solo la línea del degradado, que es lo que se pidió. Y sin la
+flecha el botón baja de 34 a 30 px de alto, con el icono de 18 a 16.
+
+La zona donde cae el dedo NO encoge: el relleno invisible sube de 7 a
+9 px, así que se sigue tocando en 48. Lo que se hace pequeño es el
+dibujo, no el botón.
+
+La maqueta de `web/hubi-en-movimiento.html` va con el mismo cambio: una
+demostración que enseña un botón que ya no existe deja de servir para
+enseñar nada.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/iconos.tsx | 39 +++++++++++++++++++++++++++------------
+ app/page.tsx   |  8 +++++---
+ 2 files changed, 32 insertions(+), 15 deletions(-)
+
+diff --git a/app/iconos.tsx b/app/iconos.tsx
+index aaa51ab..89457d9 100644
+--- a/app/iconos.tsx
++++ b/app/iconos.tsx
+@@ -202,8 +202,27 @@ export function Pastilla({
+   Y LOS COLORES DEL BORDE ESTÁN MEDIDOS, NO ELEGIDOS
+ 
+   #00F4FC en el extremo izquierdo, #628BFC arriba a la derecha,
+-  #AE62F7 en el derecho. Son los píxeles de su archivo. Y el resplandor
+-  de alrededor, en los dos colores de las puntas.
++  #AE62F7 en el derecho. Son los píxeles de su archivo.
++
++  ─────────────────────────────────────────────────────────────
++  SIN RESPLANDOR, Y SIN FLECHA
++
++  Tenía las dos cosas y las dos sobraban.
++
++  El halo —dos sombras de color alrededor— hacía que el botón
++  PARECIERA ENCENDIDO, como si estuviera avisando de algo. Y no avisa
++  de nada: es un sitio al que se va. En una pantalla donde lo único
++  que de verdad reclama la mirada es una nota que te han dejado o algo
++  que vence mañana, un botón que brilla por decoración está robando
++  esa atención.
++
++  La flecha sobraba por otra razón: la ponen las filas de las listas
++  para decir «esto se abre», y aquí ya lo dice la propia píldora. Con
++  una flecha dentro, el botón mide 34 px de alto y pide su sitio; sin
++  ella baja a 30 y se queda donde le toca —arriba a la derecha, a
++  mano, sin competir con nada.
++
++  Queda solo la línea del degradado, que es lo que él pidió.
+ 
+   ─────────────────────────────────────────────────────────────
+   POR QUÉ MANDOS Y NO UNA RUEDA
+@@ -231,14 +250,13 @@ export function Pastilla({
+ export function BotonAjustes() {
+   return (
+     <span
+-      className="block rounded-full p-[1.2px]"
++      className="block rounded-full p-[1.1px]"
+       style={{
+         background: 'linear-gradient(102deg, #00F4FC 0%, #628BFC 55%, #AE62F7 100%)',
+-        boxShadow: '0 0 14px -3px rgba(0,244,252,.28), 0 0 14px -3px rgba(174,98,247,.26)',
+       }}
+     >
+       <span
+-        className="flex h-[34px] items-center gap-1.5 rounded-full pl-2.5 pr-1.5"
++        className="flex h-[30px] items-center gap-1.5 rounded-full px-2.5"
+         style={{
+           background: 'color-mix(in srgb, var(--t-fondo) 80%, transparent)',
+           backdropFilter: 'blur(8px)',
+@@ -249,14 +267,11 @@ export function BotonAjustes() {
+         <img
+           src="/ajustes-mando.png"
+           alt=""
+-          width={18}
+-          height={18}
+-          style={{ width: 18, height: 18, display: 'block' }}
++          width={16}
++          height={16}
++          style={{ width: 16, height: 16, display: 'block' }}
+         />
+-        <span className="text-[14px] font-extrabold tracking-tight text-tinta">Ajustes</span>
+-        {/* Blanca y con el trazo algo más grueso, como en su dibujo.
+-            No es la flecha gris de las listas: aquí es parte del botón. */}
+-        <Ico nombre="flecha" tam={15} grosor={2.6} className="text-tinta" />
++        <span className="text-[13.5px] font-extrabold tracking-tight text-tinta">Ajustes</span>
+       </span>
+     </span>
+   )
+diff --git a/app/page.tsx b/app/page.tsx
+index 2835c62..a1a0acf 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -455,11 +455,13 @@ export default async function Inicio({
+             El dibujo del botón está en `iconos.tsx`, con el porqué de
+             cada pieza.
+           */}
+-          {/* El margen invisible arriba y abajo: la píldora se ve de 34
++          {/* El margen invisible arriba y abajo: la píldora se ve de 30
+               px y se toca de 48. Ninguna pantalla de HUBI tiene algo
+               pulsable por debajo de esa medida, y este botón no iba a
+-              ser la excepción por quedar más fino. */}
+-          <Link href="/ajustes" className="-mr-1 shrink-0 py-[7px] pl-2">
++              ser la excepción por quedar más fino. Al bajar de 34 a 30
++              el relleno sube de 7 a 9: lo que encoge es el dibujo, no
++              la zona donde cae el dedo. */}
++          <Link href="/ajustes" className="-mr-1 shrink-0 py-[9px] pl-2">
+             <BotonAjustes />
+           </Link>
+         </div>
+-- 
+2.43.0
+

@@ -1,0 +1,963 @@
+<title>Auditoría de interfaz de HUBI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+:root{
+  --papel:#FDFDFB; --mesa:#EDEDE7;
+  --tinta:#15181D; --tinta-2:#4A4F58; --tinta-3:#7C828C;
+  --linea:#D8D8D0; --linea-fina:#E6E6DF;
+  --azul:#1F4FD8; --azul-velo:#E7ECFB;
+  --alerta:#B03A0E; --alerta-velo:#F8E9E1;
+  --bien:#0E6F63; --bien-velo:#E2F0ED;
+  --amarillo:#8A6A08; --amarillo-velo:#F6EEDC;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --papel:#15171B; --mesa:#0D0E11;
+    --tinta:#EDEDE8; --tinta-2:#B4B9C2; --tinta-3:#858B95;
+    --linea:#2C3038; --linea-fina:#22252B;
+    --azul:#87A6FF; --azul-velo:#1A2138;
+    --alerta:#F09468; --alerta-velo:#2E1D14;
+    --bien:#5DC4B4; --bien-velo:#12292A;
+    --amarillo:#D6B45C; --amarillo-velo:#2A2317;
+  }
+}
+:root[data-theme="dark"]{
+  --papel:#15171B; --mesa:#0D0E11;
+  --tinta:#EDEDE8; --tinta-2:#B4B9C2; --tinta-3:#858B95;
+  --linea:#2C3038; --linea-fina:#22252B;
+  --azul:#87A6FF; --azul-velo:#1A2138;
+  --alerta:#F09468; --alerta-velo:#2E1D14;
+  --bien:#5DC4B4; --bien-velo:#12292A;
+  --amarillo:#D6B45C; --amarillo-velo:#2A2317;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--mesa); color:var(--tinta);
+  font-family:"Source Serif 4",Georgia,serif;
+  font-size:17px; line-height:1.62; margin:0; padding:0 20px 100px;
+}
+.hoja{
+  max-width:880px; margin:0 auto; background:var(--papel);
+  border-left:1px solid var(--linea-fina); border-right:1px solid var(--linea-fina);
+  padding:0 clamp(20px,5vw,66px);
+}
+h1,h2,h3,h4,.ui{font-family:"Archivo",system-ui,sans-serif}
+code,.mono,.num{font-family:"JetBrains Mono",ui-monospace,monospace}
+
+header{padding:clamp(44px,7vw,80px) 0 34px;border-bottom:2px solid var(--tinta)}
+.sello{
+  font-family:"JetBrains Mono",monospace;font-size:11.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--azul);display:flex;flex-wrap:wrap;gap:14px 22px;
+}
+h1{font-size:clamp(38px,7vw,62px);font-weight:700;letter-spacing:-.028em;line-height:1.03;margin:22px 0 0;text-wrap:balance}
+h1 em{font-style:normal;color:var(--tinta-3)}
+.bajada{font-size:19px;color:var(--tinta-2);max-width:56ch;margin:18px 0 0;line-height:1.55}
+
+.tesis{margin:36px 0 0;padding:26px 28px;background:var(--azul-velo);border-left:3px solid var(--azul)}
+.tesis p{margin:0;font-size:20px;line-height:1.5}
+.tesis p+p{margin-top:14px;font-size:17px;color:var(--tinta-2)}
+
+.cifras{display:grid;grid-template-columns:repeat(auto-fit,minmax(142px,1fr));border-top:1px solid var(--linea);margin-top:40px}
+.cifra{border-bottom:1px solid var(--linea-fina);border-right:1px solid var(--linea-fina);padding:16px 16px 18px}
+.cifra b{display:block;font-family:"Archivo",sans-serif;font-size:34px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.cifra span{display:block;margin-top:7px;font-family:"Archivo",sans-serif;font-size:12.5px;line-height:1.35;color:var(--tinta-2)}
+.cifra.mal b{color:var(--alerta)}
+
+/* índice */
+.indice{margin:40px 0 0;border-top:2px solid var(--tinta);padding-top:20px}
+.indice h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-3);margin:0 0 14px;font-weight:600}
+.indice ol{list-style:none;margin:0;padding:0;columns:2;column-gap:36px;font-family:"Archivo",sans-serif;font-size:15px}
+.indice li{margin:0 0 7px;padding:0;break-inside:avoid}
+.indice li::before{display:none}
+.indice a{text-decoration:none;color:var(--tinta);border-bottom:1px solid var(--linea)}
+.indice a:hover{border-bottom-color:var(--azul);color:var(--azul)}
+.indice .n{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--tinta-3);margin-right:8px}
+
+section{padding-top:56px;scroll-margin-top:16px}
+.marca{display:flex;align-items:baseline;gap:14px;border-bottom:2px solid var(--tinta);padding-bottom:10px;margin-bottom:26px}
+.letra{font-family:"Archivo",sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;color:var(--papel);background:var(--tinta);padding:4px 9px;flex:none}
+.letra.az{background:var(--azul)}
+h2{font-size:clamp(23px,3.5vw,30px);font-weight:600;letter-spacing:-.022em;margin:0;line-height:1.15;text-wrap:balance}
+h3{font-size:18.5px;font-weight:600;letter-spacing:-.012em;margin:30px 0 8px}
+h4.sub{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--tinta-3);margin:26px 0 10px;font-weight:600}
+p{margin:0 0 15px;max-width:72ch}
+ul{margin:0 0 16px;padding-left:0;list-style:none;max-width:74ch}
+li{margin:0 0 11px;padding-left:20px;position:relative}
+li::before{content:"";position:absolute;left:2px;top:.72em;width:7px;height:1.5px;background:var(--tinta-3)}
+strong{font-weight:600}
+code{font-size:13.5px;background:var(--mesa);padding:1px 5px;border:1px solid var(--linea-fina);white-space:nowrap}
+a{color:var(--azul)}
+
+.veredicto{
+  font-family:"Archivo",sans-serif;font-size:18.5px;font-weight:600;letter-spacing:-.012em;
+  line-height:1.45;margin:0 0 18px;padding:14px 0 14px 18px;border-left:3px solid var(--azul);max-width:66ch;
+}
+.veredicto.mal{border-left-color:var(--alerta)}
+.veredicto.bien{border-left-color:var(--bien)}
+
+.hallazgo{display:grid;grid-template-columns:38px 1fr;gap:0 16px;padding:18px 0;border-top:1px solid var(--linea-fina)}
+.hallazgo:last-of-type{border-bottom:1px solid var(--linea-fina)}
+.hn{font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:600;color:var(--tinta-3);padding-top:3px}
+.ht{font-family:"Archivo",sans-serif;font-size:18px;font-weight:600;letter-spacing:-.012em;margin:0 0 6px;line-height:1.3}
+.hallazgo p{margin:0 0 9px;max-width:66ch}
+.hallazgo p:last-child{margin-bottom:0}
+.prueba{
+  font-family:"JetBrains Mono",monospace;font-size:12.5px;line-height:1.65;color:var(--tinta-2);
+  background:var(--mesa);border-left:2px solid var(--linea);padding:9px 12px;margin:0 0 9px;
+  overflow-x:auto;white-space:pre-wrap;word-break:break-word;
+}
+.grave{background:var(--alerta-velo);border-left-color:var(--alerta);color:var(--tinta)}
+
+.etq{display:inline-block;font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;vertical-align:2px;margin-left:8px}
+.e-alto{background:var(--alerta-velo);color:var(--alerta)}
+.e-medio{background:var(--amarillo-velo);color:var(--amarillo)}
+.e-bien{background:var(--bien-velo);color:var(--bien)}
+
+.tabla{width:100%;border-collapse:collapse;margin:8px 0 20px;font-size:15px}
+.tabla th{font-family:"Archivo",sans-serif;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-3);text-align:left;padding:0 12px 7px 0;border-bottom:1px solid var(--linea);font-weight:600}
+.tabla td{padding:9px 12px 9px 0;border-bottom:1px solid var(--linea-fina);vertical-align:top}
+.tabla .mono{font-size:12.5px}
+.swatch{display:inline-block;width:13px;height:13px;border:1px solid rgba(0,0,0,.22);vertical-align:-2px;margin-right:7px}
+.grad{display:inline-block;width:56px;height:13px;border:1px solid rgba(0,0,0,.22);vertical-align:-2px;margin-right:8px}
+.envoltura{overflow-x:auto}
+
+.plan{border-top:2px solid var(--tinta);margin-top:8px}
+.paso{display:grid;grid-template-columns:40px 1fr auto;gap:4px 16px;align-items:start;padding:16px 0;border-bottom:1px solid var(--linea-fina)}
+.pn{font-family:"Archivo",sans-serif;font-size:22px;font-weight:700;color:var(--azul);font-variant-numeric:tabular-nums;line-height:1.1}
+.pt{font-family:"Archivo",sans-serif;font-size:17.5px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em;line-height:1.3}
+.paso p{margin:0;font-size:15.5px;color:var(--tinta-2);max-width:60ch}
+.esf{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--tinta-3);white-space:nowrap;padding-top:5px}
+
+.nota{display:grid;grid-template-columns:1fr 44px 100px;gap:0 14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--linea-fina)}
+.nota:first-of-type{border-top:1px solid var(--linea)}
+.nn{font-family:"Archivo",sans-serif;font-size:16px;font-weight:500}
+.nv{font-family:"Archivo",sans-serif;font-size:23px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.barra{height:7px;background:var(--linea-fina);position:relative}
+.barra i{position:absolute;inset:0 auto 0 0;background:var(--tinta-3)}
+.b-mal i{background:var(--alerta)} .b-med i{background:var(--amarillo)} .b-ok i{background:var(--bien)}
+.media{display:flex;justify-content:space-between;align-items:baseline;padding:16px 0 0;font-family:"Archivo",sans-serif}
+.media span{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-3);font-weight:600}
+.media b{font-size:34px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+
+footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--tinta);font-family:"Archivo",sans-serif;font-size:13.5px;color:var(--tinta-3);line-height:1.6}
+:focus-visible{outline:2px solid var(--azul);outline-offset:3px}
+@media (max-width:600px){
+  body{font-size:16.5px;padding:0 0 80px}
+  .hoja{border:0}
+  .indice ol{columns:1}
+  .hallazgo{grid-template-columns:1fr;gap:0}
+  .hn{padding:0 0 4px}
+  .paso{grid-template-columns:32px 1fr}
+  .esf{grid-column:2;grid-row:2;padding-top:6px}
+  .nota{grid-template-columns:1fr 40px 68px}
+}
+</style>
+
+<div class="hoja">
+
+<header>
+  <div class="sello">
+    <span>Auditoría de interfaz</span>
+    <span>HUBI · producción</span>
+    <span>9 septiembre 2026</span>
+    <span>44 pantallas · ~15.000 líneas</span>
+  </div>
+  <h1>Un producto con voz propia<br><em>y sin sistema que la sostenga</em></h1>
+  <p class="bajada">Revisión completa de la interfaz: identidad, color, modos, Inicio, navegación, asistente, Papeles, Agenda, coherencia entre módulos, sistema de diseño, móvil y accesibilidad. Sin tocar una línea de código.</p>
+</header>
+
+<div class="tesis">
+  <p>HUBI ya sabe <strong>hablar</strong>. Los textos son cálidos, específicos y humanos: «Te escucho», «Hoy no hay nada apuntado», «Este seguro vence el 12 de noviembre». Eso es lo más difícil de conseguir y ya está conseguido.</p>
+  <p>Lo que no existe todavía es un <strong>sistema</strong> que lo sostenga. No hay capa de componentes: cada pantalla reescribe a mano la tarjeta, el botón, el renglón y el vacío. Por eso conviven tres generaciones de estilo, por eso cada pantalla nueva empeora un poco el conjunto, y por eso el asistente se construyó como una isla. No es un problema de gusto: es estructural, y se arregla en un sitio.</p>
+</div>
+
+<div class="cifras">
+  <div class="cifra mal"><b>17</b><span>tamaños de letra solo en Inicio</span></div>
+  <div class="cifra mal"><b>11</b><span>radios de esquina para «tarjeta»</span></div>
+  <div class="cifra mal"><b>10</b><span>alturas del botón principal</span></div>
+  <div class="cifra mal"><b>17</b><span>controles a la vez en Agenda · Semana</span></div>
+  <div class="cifra mal"><b>11</b><span>nombres para lo mismo en Agenda</span></div>
+  <div class="cifra mal"><b>0</b><span>componentes de tarjeta o botón compartidos</span></div>
+</div>
+
+<nav class="indice">
+  <h4>Los doce análisis</h4>
+  <ol>
+    <li><a href="#a1"><span class="n">01</span>Identidad visual</a></li>
+    <li><a href="#a2"><span class="n">02</span>Color</a></li>
+    <li><a href="#a3"><span class="n">03</span>Oscuro frente a claro</a></li>
+    <li><a href="#a4"><span class="n">04</span>Inicio</a></li>
+    <li><a href="#a5"><span class="n">05</span>Navegación</a></li>
+    <li><a href="#a6"><span class="n">06</span>El asistente HUBI</a></li>
+    <li><a href="#a7"><span class="n">07</span>Documentos / Papeles</a></li>
+    <li><a href="#a8"><span class="n">08</span>Agenda</a></li>
+    <li><a href="#a9"><span class="n">09</span>Notas · Compra · Cuentas</a></li>
+    <li><a href="#a10"><span class="n">10</span>Sistema de diseño</a></li>
+    <li><a href="#a11"><span class="n">11</span>Móvil: 360 · 390 · 430</a></li>
+    <li><a href="#a12"><span class="n">12</span>Accesibilidad y edades</a></li>
+  </ol>
+  <h4 style="margin-top:22px">El informe</h4>
+  <ol>
+    <li><a href="#A"><span class="n">A</span>Lo que está muy bien</a></li>
+    <li><a href="#B"><span class="n">B</span>Bien, por pulir</a></li>
+    <li><a href="#C"><span class="n">C</span>Problemas reales</a></li>
+    <li><a href="#D"><span class="n">D</span>Incoherencias</a></li>
+    <li><a href="#E"><span class="n">E</span>Qué eliminaría</a></li>
+    <li><a href="#F"><span class="n">F</span>Navegación</a></li>
+    <li><a href="#G"><span class="n">G</span>El asistente</a></li>
+    <li><a href="#H"><span class="n">H</span>Oscuro / claro</a></li>
+    <li><a href="#I"><span class="n">I</span>Lógica de color</a></li>
+    <li><a href="#J"><span class="n">J</span>Las diez intervenciones</a></li>
+    <li><a href="#nota"><span class="n">···</span>Puntuación</a></li>
+  </ol>
+</nav>
+
+
+<!-- ════════ 01 IDENTIDAD ════════ -->
+<section id="a1">
+  <div class="marca"><span class="letra az">01</span><h2>Identidad visual</h2></div>
+
+  <p class="veredicto">¿Parece HUBI o podría ser cualquier aplicación? <strong>Hoy podría ser cualquier aplicación bien hecha.</strong> Tiene señas de identidad reales —el logo, el aro de colores del micrófono, la voz de los textos— pero están concentradas en dos sitios y el 90 % de las pantallas no lleva ninguna.</p>
+
+  <h3>Lo que sí identifica</h3>
+  <ul>
+    <li><strong>El aro cónico que gira alrededor del micrófono.</strong> Cinco colores de marca en un degradado cónico recortado por máscara. Es la única pieza de la aplicación que no se parece a nada más y que además <em>significa</em> algo (mientras gira, escucha). Es el activo visual más fuerte que tienes.</li>
+    <li><strong>La barra de cinco colores del arranque</strong> (<code>#14B8A6 → #3B82F6 → #8B5CF6 → #FF6B6B → #F59E0B</code>). Coherente con el aro.</li>
+    <li><strong>El «glow» está reservado.</strong> En toda la aplicación solo hay <strong>tres</strong> <code>boxShadow</code> reales, y los tres son del botón de voz. Que la sombra teal signifique «HUBI está aquí» y nada más es una decisión de sistema, seguramente sin querer. <span class="etq e-bien">consérvalo</span></li>
+  </ul>
+
+  <h3>Lo que la debilita</h3>
+
+  <div class="hallazgo">
+    <div class="hn">1.1</div>
+    <div>
+      <p class="ht">No hay UN degradado HUBI. Hay cuatro, y uno usa colores que no existen.<span class="etq e-alto">identidad</span></p>
+      <div class="prueba"><span class="grad" style="background:linear-gradient(90deg,#2DD4BF,#14B8A6 45%,#3B82F6)"></span>voz · barra · invitación   linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)
+<span class="grad" style="background:linear-gradient(90deg,#00F4FC,#628BFC 55%,#AE62F7)"></span>botón de Ajustes           linear-gradient(102deg,#00F4FC,#628BFC 55%,#AE62F7)
+<span class="grad" style="background:linear-gradient(90deg,#8B5CF6,#7C4DEC)"></span>balance · horas de más     linear-gradient(135deg,#8B5CF6,#7C4DEC)
+<span class="grad" style="background:linear-gradient(90deg,#14B8A6,#3B82F6,#8B5CF6,#FF6B6B,#F59E0B)"></span>arranque · aro del micro   los cinco colores</div>
+      <p>El del botón de Ajustes —cian eléctrico a violeta— <strong>no comparte un solo color con la paleta declarada</strong>. <code>#00F4FC</code>, <code>#628BFC</code> y <code>#AE62F7</code> no aparecen en ningún otro sitio del producto. Está en la esquina superior derecha de Inicio, junto al logo: el peor lugar posible para un color que no es de la marca.</p>
+      <p>Y <code>#2DD4BF</code>, que abre el degradado de la voz, tampoco está declarado. Son cuatro colores de marca fuera del manual, en las dos piezas más visibles.</p>
+    </div>
+  </div>
+
+  <div class="hallazgo">
+    <div class="hn">1.2</div>
+    <div>
+      <p class="ht">Tipografía: la fuente es buena y la escala no existe</p>
+      <p>Plus Jakarta Sans es una elección con carácter y correcta para el propósito. El problema es que <strong>título y texto son la misma familia</strong> (<code>--font-titulo</code> y <code>--font-texto</code> apuntan al mismo valor), así que la jerarquía depende solo del tamaño y el peso — y hay 17 tamaños en Inicio. Todo es <code>font-bold</code> o <code>font-extrabold</code>: prácticamente no existe el peso normal en la interfaz, lo que hace que nada destaque porque todo grita igual.</p>
+    </div>
+  </div>
+
+  <div class="hallazgo">
+    <div class="hn">1.3</div>
+    <div>
+      <p class="ht">Radios y densidad: sin sistema</p>
+      <div class="prueba">9 · 12 · 13 · 14 · 15 · 16 · 18 · 20 · 22 · 24 · 32 px  +  rounded-2xl · rounded-3xl · rounded-full</div>
+      <p>En <code>cuentas.tsx</code> conviven tarjetas hermanas a 20 y 18 px. La densidad tampoco es una: hay pantallas muy aireadas (guardar, vencimientos) junto a pantallas apretadas (ajustes con 25 controles, agenda con 17).</p>
+    </div>
+  </div>
+
+  <div class="hallazgo">
+    <div class="hn">1.4</div>
+    <div>
+      <p class="ht">Iconografía: 36 iconos de trazo, consistentes… y usados mal</p>
+      <p>El juego en sí está bien: trazo único, grosor variable, un solo estilo. Los fallos son de asignación, no de dibujo: <code>euro</code> se usa a la vez para «gasto» y para «ingreso» en dos botones contiguos; <code>aviso</code> (triángulo) se usa como papelera; <code>hoja</code> es a la vez «Menús» y «preguntar por las cuentas»; y el icono que promete el asistente por fuera (<code>onda</code>) no es el que lo representa por dentro (<code>micro</code>). Falta además <code>camara</code>, en un producto cuyo lema es «fotografiar».</p>
+    </div>
+  </div>
+
+  <div class="hallazgo">
+    <div class="hn">1.5</div>
+    <div>
+      <p class="ht">El fondo claro es el gris azulado por defecto de Tailwind<span class="etq e-medio">1 línea</span></p>
+      <div class="prueba">--t-fondo: #F1F5F9;   /* slate-100 */</div>
+      <p>Es la superficie más grande del producto y el valor más genérico del fichero. El planteamiento pide «fondos claros y ligeramente cálidos»; lo que hay es frío. Un blanco roto cálido (<code>#F7F5F1</code>) cambia la temperatura del producto entero con una línea.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════ 02 COLOR ════════ -->
+<section id="a2">
+  <div class="marca"><span class="letra az">02</span><h2>Color</h2></div>
+
+  <p class="veredicto mal">¿Existe una lógica clara? <strong>No.</strong> ¿Usamos demasiado color? <strong>Sí, pero el problema no es la cantidad: es que cada color significa cuatro cosas a la vez.</strong> ¿Demasiadas superficies coloreadas? <strong>Sí — Inicio tiene 13 fondos teñidos con <code>color-mix</code>.</strong> ¿Se conseguiría algo más premium con menos color? <strong>Sí, y por mucho.</strong></p>
+
+  <h3>Lo que dice el manual y lo que ocurre de verdad</h3>
+  <div class="envoltura">
+  <table class="tabla">
+    <thead><tr><th>Color</th><th>Manual</th><th>Uso real</th></tr></thead>
+    <tbody>
+      <tr><td class="mono"><span class="swatch" style="background:#14B8A6"></span>#14B8A6 teal</td><td>Finca</td><td>Finca · acción principal · «hecho» · ingresos · anillo de foco · «visto»</td></tr>
+      <tr><td class="mono"><span class="swatch" style="background:#FF6B6B"></span>#FF6B6B coral</td><td>Salud</td><td>Salud · vencimientos · gastos · error · borrar · «ahora» en el día</td></tr>
+      <tr><td class="mono"><span class="swatch" style="background:#8B5CF6"></span>#8B5CF6 violeta</td><td>Vehículos</td><td>Vehículos · balance económico · horas de más · pagos fijos · calendario</td></tr>
+      <tr><td class="mono"><span class="swatch" style="background:#F59E0B"></span>#F59E0B naranja</td><td>Casa</td><td>Casa · tareas · pestaña activa de notas · avisos</td></tr>
+      <tr><td class="mono"><span class="swatch" style="background:#3B82F6"></span>#3B82F6 azul</td><td>Seguros · documentos</td><td>casi solo en degradados; su papel real lo ocupa el cian</td></tr>
+      <tr><td class="mono"><span class="swatch" style="background:#0EA5E9"></span>#0EA5E9 cian</td><td>— no declarado —</td><td>La compra · Cuentas de casa · semana de ajustes</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>El caso que lo resume: <strong>el mismo degradado violeta es la tarjeta de «balance económico» y la de «horas de más»</strong>. Mismo formato, mismo color, mismo tamaño de cifra. Uno es dinero y el otro es tiempo. Cuando dos cosas sin relación se pintan igual, el color ha dejado de informar y ha pasado a decorar.</p>
+
+  <h3>Superficies completas coloreadas</h3>
+  <p>Solo Inicio tiene <strong>13 usos de <code>color-mix</code></strong>: cada tarjeta se tiñe al 10–20 % de su color y cambia de intensidad según si «avisa». El resultado es una pantalla donde seis bloques de colores distintos compiten por la atención y ninguno gana. En una interfaz premium el color casi nunca rellena: <strong>marca</strong>.</p>
+  <p>Regla práctica: <em>una superficie grande de color debe ganárselo</em>. La única que se lo gana hoy es el botón de voz, porque es la acción principal del producto.</p>
+
+  <h3>La lógica que propongo</h3>
+
+  <p><strong>1 · Color de estado.</strong> Dos colores, un significado cada uno, jamás usados para identificar una sección:</p>
+  <div class="prueba"><span class="swatch" style="background:#14B8A6"></span>verde   bien · hecho · entra dinero
+<span class="swatch" style="background:#FF6B6B"></span>coral   atención · vence · sale dinero · error</div>
+
+  <p><strong>2 · Color de sitio.</strong> Cada sección tiene un color, y ese color aparece <em>solo</em> en su pastilla de icono y en su cabecera. Nunca en un botón, nunca en una cifra, nunca en un fondo grande. Es una etiqueta de identificación, no un tema.</p>
+
+  <p><strong>3 · El botón principal tiene un color y solo uno,</strong> idéntico en claro y oscuro, y no es el de la sección. Que sea siempre el mismo es lo que hace que se encuentre sin buscarlo.</p>
+
+  <p><strong>4 · Los números no llevan color propio.</strong> Un importe es tinta. Verde o coral solo cuando el signo importa, y entonces el color <em>es</em> el signo. Las horas de más son tinta sobre papel, no una tarjeta violeta.</p>
+
+  <p><strong>5 · Un degradado HUBI, uno solo:</strong> el de la voz. Retirar el cian-violeta del botón de Ajustes, declarar <code>#2DD4BF</code>, y decidir si <code>#0EA5E9</code> entra en el manual o se sustituye por el azul que ya existe. Y borrar <code>--color-terracota</code>, alias muerto del coral con dos usos vivos.</p>
+
+  <p>Con esta regla, en cualquier pantalla un color solo puede querer decir tres cosas: <em>esto va bien</em>, <em>esto pide atención</em>, o <em>esto es de esta sección</em>. Hoy puede querer decir once.</p>
+</section>
+
+
+<!-- ════════ 03 DARK / LIGHT ════════ -->
+<section id="a3">
+  <div class="marca"><span class="letra az">03</span><h2>Oscuro frente a claro</h2></div>
+
+  <p class="veredicto"><strong>El claro es el producto. El oscuro es una variante.</strong> Y no porque el oscuro esté mal hecho, sino porque HUBI tiene hoy más personalidad en oscuro por un motivo que no es sostenible: las dos pantallas con más carácter —<em>Entrar</em> y el <em>asistente</em>— son oscuras <strong>fijas</strong>, ignoran el tema y no se parecen al resto de la aplicación.</p>
+
+  <h3>Dónde está realmente la personalidad</h3>
+  <p>Si comparas honestamente: en <strong>modo oscuro real</strong> (el de los tokens), HUBI es un azul marino <code>#0B1220</code> con tarjetas <code>#182133</code> — competente, frío, indistinguible de cualquier herramienta de desarrollo. En <strong>modo claro</strong> es un gris azulado genérico con tarjetas blancas. Ninguno de los dos tiene identidad.</p>
+  <p>La personalidad está en <code>entrar</code> (fondo <code>#01071B</code>, manchas de color animadas, tarjeta de cristal) y en <code>/hablar</code> (fondo oscuro, transparencias blancas, aro girando). Los dos <strong>son oscuros pase lo que pase</strong>, e ignoran lo que el usuario haya elegido. Eso significa que:</p>
+  <ul>
+    <li>Quien tiene el teléfono en claro <strong>entra por una pantalla nocturna y aterriza en una aplicación blanca</strong>. Es el primer segundo del producto y no coincide con nada de lo que viene después.</li>
+    <li>El asistente, que debería sentirse parte del producto, se siente literalmente otra aplicación — y en la sección 06 se ve que esa sensación tiene causas de fondo, no solo de fondo de pantalla.</li>
+  </ul>
+
+  <h3>La recomendación</h3>
+  <p><strong>Claro como lenguaje principal, oscuro como variante que sigue al teléfono.</strong> La identidad que has descrito —cálida, humana, serena, un espacio digital familiar— es una identidad de modo claro. Hacer un oscuro genuinamente cálido es un proyecto de paleta entero, y no lo pagan dos usuarios que, por lo que has contado, no lo usan.</p>
+  <p>Pero <em>invierte</em> el trato en un punto: <strong>el momento de más carácter de HUBI —la voz— debería funcionar también en claro.</strong> Hoy la única forma que tiene el producto de sentirse especial es apagar la luz. Eso es una debilidad del lenguaje claro, no una virtud del oscuro.</p>
+
+  <h4 class="sub">Tres fallos concretos del modo oscuro</h4>
+  <ul>
+    <li><strong>El botón principal cambia de color entre modos.</strong> <code>--t-boton</code> es marino en claro y verde en oscuro. Sumado a que media aplicación usa <code>bg-verde</code> fijo, en claro conviven botones marinos y verdes para la misma acción.</li>
+    <li><strong><code>/comprobacion</code> no tiene modo oscuro</strong> porque no usa un solo token del tema.</li>
+    <li><strong>Contraste dudoso:</strong> <code>--t-tenue: #94A3B8</code> sobre tarjetas teñidas al 12–18 % del color de sección. Son los pies de las tarjetas de Inicio. Merece medición.</li>
+  </ul>
+</section>
+
+
+<!-- ════════ 04 INICIO ════════ -->
+<section id="a4">
+  <div class="marca"><span class="letra az">04</span><h2>Inicio</h2></div>
+
+  <p class="veredicto mal">¿Hay jerarquía clara? <strong>No.</strong> ¿Demasiadas tarjetas? <strong>Sí: hasta 19 elementos pulsables.</strong> ¿Compiten los colores? <strong>Sí, seis a la vez.</strong> ¿Tiene la voz suficiente protagonismo? <strong>No — y en algunos casos desaparece del todo.</strong></p>
+
+  <h3>Lo que hay hoy, en orden</h3>
+  <div class="prueba">saludo → banner de rol → invitación de voz (74px) → aviso de Drive → banner de avisos
+→ Guardar documento (76px) → Para ti + 2 notas → [La compra | Notas] (2 cuadrados)
+→ Menús (76px) → Asesor (76px) → Cuentas de casa (76px) → La casa hoy (76px)
+→ HOY (hasta 4 filas) → PRÓXIMAMENTE (hasta 3 filas)</div>
+  <p>Siete tarjetas de acceso donde el planteamiento pedía cinco, todas de la misma altura y el mismo peso visual. <strong>Menús pesa exactamente lo mismo que Guardar documento.</strong> No hay primero, segundo ni tercero: hay una pila.</p>
+
+  <h3>Los tres fallos por orden de gravedad</h3>
+
+  <div class="hallazgo">
+    <div class="hn">4.1</div>
+    <div>
+      <p class="ht">La voz desaparece si Google Drive no está conectado<span class="etq e-alto">grave</span></p>
+      <div class="prueba grave">app/page.tsx  →  &lt;Barra activa="inicio" voz={false} /&gt;
+app/page.tsx  →  {conectado && &lt;Invitacion /&gt;}</div>
+      <p>La barra oculta el botón flotante a propósito, porque la invitación de arriba ya lo lleva. Pero esa invitación <strong>solo se pinta si Drive está conectado</strong>. Una casa recién creada, o una con el permiso caducado, se queda con la pantalla principal <em>sin ninguna entrada al asistente</em>. La función que define el producto es la primera que se apaga.</p>
+    </div>
+  </div>
+
+  <div class="hallazgo">
+    <div class="hn">4.2</div>
+    <div>
+      <p class="ht">La voz es la tarjeta más pequeña de la pantalla</p>
+      <p>La invitación mide <strong>74 px</strong>. Las siete tarjetas que tiene debajo miden <strong>76</strong>. Si el principio del producto es «hablar · fotografiar · consultar», la pieza que abre esos tres verbos no puede ser dos píxeles más baja que «Menús».</p>
+    </div>
+  </div>
+
+  <div class="hallazgo">
+    <div class="hn">4.3</div>
+    <div>
+      <p class="ht">Dos enlaces a Notas separados por unos píxeles</p>
+      <div class="prueba">page.tsx:692  tarjeta «Notas que te han dejado»  →  /notas
+page.tsx:741  cuadro «Notas»                   →  /notas</div>
+      <p>Síntoma inequívoco de que Inicio ya no se diseña: se acumula.</p>
+    </div>
+  </div>
+
+  <h3>Qué haría con Inicio</h3>
+  <p><strong>Tres zonas, en este orden, y nada más:</strong></p>
+  <ul>
+    <li><strong>1 · Preguntar y guardar.</strong> El campo de HUBI a lo ancho, con altura de protagonista, y el botón de cámara al lado. Es lo único de la pantalla que es <em>acción</em>. Debe funcionar sin Drive y aceptar texto.</li>
+    <li><strong>2 · Hoy y lo que viene.</strong> Lo que hay que recordar, sin tarjeta y sin color de fondo: una lista limpia. Es <em>información</em>, no navegación, y hoy compite con las tarjetas por estar pintada igual.</li>
+    <li><strong>3 · Un único acceso, y solo si hay algo que decir.</strong> Cuentas, compra, notas, menús y la casa dejan de ser cinco tarjetas fijas y pasan a la pestaña «La casa» (sección 05). Lo que quede en Inicio es lo que <em>reclama</em> atención hoy: «3 cosas en la compra», «Conchita te ha dejado una nota». Un aviso, no un menú.</li>
+  </ul>
+  <p>El resultado: de 19 elementos pulsables a 6–8, con un protagonista evidente. Y sin quitar ninguna función del producto.</p>
+</section>
+
+
+<!-- ════════ 05 NAVEGACIÓN ════════ -->
+<section id="a5">
+  <div class="marca"><span class="letra az">05</span><h2>Navegación</h2></div>
+
+  <p class="veredicto"><strong>Tenías razón con Alquileres y Weaver</strong>, y el problema es más de fondo que esas dos pestañas.</p>
+
+  <h3>El error de categoría</h3>
+  <p>La barra mezcla dos clases de cosa que no son comparables. <em>Inicio · Papeles · Agenda</em> son secciones universales: existen en toda casa y significan lo mismo para todo el mundo. <em>Alquileres · Weaver</em> son unidades de negocio de <strong>esta</strong> casa. En la casa de otra familia esas dos pestañas dicen otra cosa.</p>
+  <p>Eso convierte la navegación principal en una superficie de configuración por cliente — exactamente la sensación de ERP que quieres evitar, en el sitio más visible del producto: los dos botones que se ven el 100 % del tiempo. Y para HUBI como producto multifamilia es un problema estructural, no cosmético.</p>
+
+  <h3>Y lo que ese error empuja fuera</h3>
+  <p>Al gastar dos de las cinco pestañas en actividades, todo lo demás se queda sin sitio y acaba apilado en Inicio o escondido:</p>
+  <ul>
+    <li><code>/pagos</code> solo se alcanza desde dentro de las cuentas de una sección. Ni desde Inicio ni desde Ajustes.</li>
+    <li><code>/gastos</code> solo desde una tarjeta de Inicio. <code>/helechos</code> es huérfana: ningún enlace la apunta.</li>
+    <li><code>/comprobacion</code> es huérfana total: 406 líneas sin un solo enlace entrante.</li>
+    <li><code>/menus</code>, <code>/notas</code>, <code>/compra</code>, <code>/lacasa</code>, <code>/horas</code>: cada una cuelga de una tarjeta distinta de Inicio.</li>
+  </ul>
+
+  <h3>La arquitectura que propongo</h3>
+  <div class="prueba">Inicio  ·  Papeles  ·  Agenda  ·  La casa            [ HUBI ]</div>
+  <ul>
+    <li><strong>Cuatro pestañas fijas, idénticas para todas las familias.</strong> La barra deja de depender de quién eres o de cuántas actividades tienes.</li>
+    <li><strong>«La casa»</strong> recoge lo doméstico que hoy no tiene sitio: compra, notas, menús, cuentas, pagos fijos, horas, el día de quien ayuda. Una pantalla índice, no un cajón.</li>
+    <li><strong>Las actividades</strong> —Finca, Los Helechos, Alquileres, Weaver— salen de la barra y entran en <em>Papeles</em> (sus carpetas) y en <em>La casa</em> (sus cuentas), que es donde la gente ya las busca.</li>
+    <li>Cuatro pestañas dan <strong>~80 px por botón a 360 px</strong>, cómodamente por encima del suelo de 48. Con cinco vas justo y con seis incumples tu propia regla.</li>
+    <li>Los roles siguen filtrando el <em>contenido</em> en la base de datos, que es donde debe filtrarse. La navegación deja de ser un mecanismo de permisos.</li>
+  </ul>
+
+  <h4 class="sub">Escalabilidad</h4>
+  <p>Con esta estructura, una familia con ocho actividades y una con una ven <strong>la misma barra</strong>. Añadir un ámbito nuevo —mascotas, un barco, la casa del pueblo— no toca la navegación: crea una sección dentro de Papeles y un libro dentro de La casa. Eso es lo que hace que HUBI pueda crecer sin convertirse en un menú.</p>
+
+  <h4 class="sub">Tres arreglos que van con esto</h4>
+  <ul>
+    <li>Retirar el espacio de nombres <code>/tablon</code>: el detalle y el alta viven ahí todavía. Su «Volver» va a <code>/tablon</code> → redirige a <code>/agenda</code> y <strong>pierde la vista, el mes y el filtro</strong> desde los que venías. Y la pantalla de éxito dice «Ver el tablón», palabra que ya no existe en la interfaz.</li>
+    <li>Dar salida a <code>/pagos</code> desde La casa.</li>
+    <li>«Añadir documento» debe llevar siempre la carpeta precargada: hoy cuesta 1 toque desde una carpeta y 4 desde una sección, siendo el mismo botón.</li>
+  </ul>
+</section>
+
+
+<!-- ════════ 06 ASISTENTE ════════ -->
+<section id="a6">
+  <div class="marca"><span class="letra az">06</span><h2>El asistente HUBI</h2></div>
+
+  <p class="veredicto mal">¿Comunicamos «Pregunta a HUBI» o parece un botón de micrófono? <strong>Parece un botón de micrófono.</strong> Y estructuralmente lo es: HUBI no es una capacidad del producto, es una pantalla del producto.</p>
+
+  <h3>Por qué se siente añadido — cuatro razones estructurales</h3>
+  <ul>
+    <li><strong>Vive en su propia URL.</strong> <code>/hablar</code> es una navegación completa: sales de donde estabas, haces una cosa, y vuelves. No es una capa sobre la aplicación, es otro sitio.</li>
+    <li><strong>No sabe de dónde vienes.</strong> Estés en Papeles, en Agenda o en la Compra, el asistente arranca idéntico, con los mismos seis ejemplos genéricos. No hay contexto que aprovechar porque no se le pasa ninguno.</li>
+    <li><strong>Habla otro idioma visual.</strong> Fondo oscuro fijo, transparencias blancas (<code>bg-white/[.07]</code>, <code>border-white/15</code>, <code>/20</code>, <code>/35</code>), botones de 62 y 64 px donde el resto usa 60. Parece una aplicación distinta porque está construido como una aplicación distinta.</li>
+    <li><strong>Compite con un buscador que hace lo mismo.</strong> La caja «¿Qué estás buscando?» de Papeles hace búsqueda de texto; el asistente entiende «busca la última factura del seguro del coche». <strong>Dos motores para la misma pregunta</strong>, y la persona tiene que saber a cuál acudir. Es justo lo contrario de «no busques, pregunta a HUBI».</li>
+  </ul>
+
+  <h3>Los tres fallos que hay que arreglar antes que nada</h3>
+  <ul>
+    <li><strong>Se apaga sin Drive</strong> (4.1). La entrada al asistente no puede depender de una integración de almacenamiento.</li>
+    <li><strong>No acepta texto. Cero <code>&lt;input&gt;</code> en toda la carpeta.</strong> Si el micrófono falla, el único mensaje es «Este navegador no puede grabar. Prueba con Chrome o con Safari» y ahí acaba el camino. Un asistente que solo funciona por voz no es un asistente: es una función de voz. Y en una casa con alguien de 70 años, la voz falla más a menudo, no menos.</li>
+    <li><strong>El icono que lo promete no es el que lo representa.</strong> Fuera <code>onda</code>, dentro <code>micro</code>. Uno de los dos, siempre.</li>
+  </ul>
+
+  <h3>La solución de producto: HUBI como campo, no como pantalla</h3>
+  <p>La forma correcta no es un chatbot flotante ni un asistente que interrumpe. Es más simple: <strong>que la caja de preguntar sea el mismo componente en todas partes, y que sepa dónde está.</strong></p>
+  <ul>
+    <li><strong>Un solo componente</strong>, con micrófono y teclado en el mismo campo. La voz es la forma preferida, no la única.</li>
+    <li><strong>Sustituye a los buscadores existentes.</strong> En Papeles no hay «buscador» y «asistente»: hay HUBI. La caja que ya está ahí, haciendo más.</li>
+    <li><strong>El contexto cambia la sugerencia, no el comportamiento.</strong> En Papeles propone «la última póliza del coche»; en la Compra, «añade leche»; en Cuentas, «cuánto llevamos este trimestre». Escribas lo que escribas, funciona igual — la sugerencia solo enseña qué se puede pedir <em>aquí</em>. Eso es lo que convierte una función en una capacidad: aparece donde estás y habla de lo que estás mirando.</li>
+    <li><strong>La respuesta se da en el sitio</strong> siempre que se pueda, no navegando a otra pantalla. Preguntar «¿qué tengo mañana?» desde Agenda debería responder en Agenda.</li>
+    <li><strong>El botón flotante se queda</strong>, pero como atajo a lo mismo, no como única puerta.</li>
+  </ul>
+  <p>Con eso, la promesa «no busques, pregunta» deja de ser un eslogan y pasa a ser cómo funciona la interfaz: <em>solo hay una caja, y está donde estés</em>.</p>
+
+  <h4 class="sub">Detalles del interior que restan</h4>
+  <ul>
+    <li>Cuatro rótulos distintos para «empezar de nuevo» y tres para «guardando». Uno de cada.</li>
+    <li>«Un momento…» significa dos cosas: título de la pantalla de espera <em>y</em> rótulo del botón guardando.</li>
+    <li>Cuando no entiende, ofrece <strong>nueve botones de 66 px</strong> justo en el momento de más frustración. Con cuatro y un «otra cosa» se cubre casi todo.</li>
+    <li><code>callar</code> está importado y sin usar: si sales mientras HUBI habla, sigue hablando.</li>
+    <li>El diagnóstico de fallo (<code>HTTP 500 · audio 84 KB</code>) se guarda en un estado que no se pinta. Con lo útil que fue esa línea gris en el lector de documentos, aquí falta.</li>
+    <li>Textos con nombres propios escritos a mano: «Recuérdale a Conchita lo del médico», «Ver la Finca», «Apuntado en la finca». Falsos en cuanto entra la segunda familia.</li>
+  </ul>
+</section>
+
+
+<!-- ════════ 07 PAPELES ════════ -->
+<section id="a7">
+  <div class="marca"><span class="letra az">07</span><h2>Documentos / Papeles</h2></div>
+
+  <p class="veredicto"><strong>«Papeles», sin dudarlo.</strong> Y el problema es que ahora mismo usas las dos, más una tercera.</p>
+
+  <h3>El lenguaje</h3>
+  <div class="prueba">pestaña de la barra ····· «Papeles»
+h1 de la pantalla ······· «Documentos»
+ruta ···················· /documentos
+tarjeta de Inicio ······· «Guardar documento»
+opción de voz ··········· «Buscar un papel»
+mensajes de error ······· «No se han podido leer los papeles»</div>
+  <p>«Documento» es lenguaje de software: nadie en una casa dice «voy a archivar un documento». Dice «guarda ese papel», «¿dónde están los papeles del coche?». <strong>Papeles</strong> además tiene la ventaja de admitir lo que realmente entra ahí: una factura arrugada, una receta, el resguardo de la ITV. «Documento» suena a contrato.</p>
+  <p>Decisión: <strong>Papeles en toda la interfaz</strong>, y «documento» solo si algún día hace falta un término formal para el asesor. El coste es un buscar-y-sustituir.</p>
+
+  <h3>Arquitectura y búsqueda</h3>
+  <p>La estructura Sección → Carpeta → Papel es correcta y se entiende. Los problemas son de continuidad:</p>
+  <ul>
+    <li><strong>El buscador solo existe en la raíz.</strong> Ni en sección, ni en carpeta. En cuanto entras un nivel, la única forma de encontrar algo es mirar.</li>
+    <li><strong>Los filtros de año y trimestre se heredan por URL pero no se pueden cambiar ni quitar dentro de una carpeta.</strong> Entras filtrado por T3 y no hay forma de ver el resto sin retroceder.</li>
+    <li><strong>Tres estilos de fila distintos</strong> en tres pantallas contiguas: pastilla de 44 px en documentos y sección, un rectángulo «Hoja» de 52×66 px en carpeta, y un tercer diseño en resultados.</li>
+    <li><strong>Cinco estados vacíos distintos</strong> con cinco redacciones y tres cajas: uno con botón de acción, otros sin nada.</li>
+    <li><strong>Cinco mensajes de error para el mismo suceso</strong> («no se ha podido leer»), con dos radios distintos, y unos añaden la frase tranquilizadora «Siguen guardados» y otros no.</li>
+  </ul>
+
+  <h3>Jerarquía y nombres de archivo</h3>
+  <p>La generación automática de nombres (<code>2026-08-14_ENDESA_LUZ_127-43EUR.jpg</code>) es una de las decisiones más acertadas del producto y no se ve en ninguna parte de la interfaz. Debería: cuando alguien duda de si un papel está bien guardado, ver su nombre real le da la confianza que ningún mensaje de «✓ guardado» consigue.</p>
+</section>
+
+
+<!-- ════════ 08 AGENDA ════════ -->
+<section id="a8">
+  <div class="marca"><span class="letra az">08</span><h2>Agenda</h2></div>
+
+  <p class="veredicto mal">¿Mezclamos tiempo con estado de tareas? <strong>Sí, y de la peor manera: no se pueden combinar y cambiar uno destruye el otro en silencio.</strong> ¿Demasiados selectores? <strong>17 controles simultáneos en la vista de semana.</strong></p>
+
+  <h3>Lo que ve la persona antes de leer una sola tarea</h3>
+  <div class="prueba">fila 1  Semana · Mes · (El día)                        ← tiempo,  en la cabecera
+fila 2  Por hacer · N   Vencidas · N   Hechas          ← estado,  solo en Semana
+fila 3  Los dos · Conchita · Juan · Actualizar          ← calendarios de Google
+fila 4  ‹  Esta semana / 24 – 30 de agosto  ›          ← navegación temporal
+fila 5  L M X J V S D  (7 casillas pulsables)          ← otro selector de día
+─────
+        17 controles, cinco filas, antes del contenido.</div>
+
+  <h3>El fallo de fondo: los dos ejes no se pueden cruzar</h3>
+  <p><strong>Las pestañas de estado solo existen dentro de la vista Semana.</strong> Si pasas a Mes o a Día, el parámetro de estado se ignora por completo y las pestañas desaparecen. No hay forma de ver «las hechas de este mes» ni «lo vencido de hoy».</p>
+  <p>Y peor: <strong>todos los enlaces son literales, sin conservar los otros parámetros.</strong> Consecuencias reales, comprobadas en el código:</p>
+  <div class="prueba grave">Estás en marzo → pulsas «Mes» → vuelves al mes actual.
+Estás en la semana del 20 de octubre, filtrado por el calendario de Conchita
+  → pulsas «Por hacer» → vuelves a esta semana y a «Los dos».
+Estás en «Hechas» → filtras por una persona → vuelves a «Por hacer».</div>
+  <p>Eso no es un problema de diseño de información: es la pantalla deshaciendo el trabajo del usuario sin avisar. Y en una interfaz pensada para que nadie tenga que entender cómo funciona un calendario, es el fallo más caro de toda la aplicación.</p>
+
+  <h3>Dos sistemas de color en la misma pantalla</h3>
+  <p>La vista Mes tiene una <strong>leyenda de tres colores</strong> al pie: «Por hacer» verde, «Sin hacer o vence» coral, «Hecho» gris. Esos colores solo se usan en los puntos de la cuadrícula. Los renglones de la lista que hay <em>justo encima</em> usan otra paleta de siete colores derivada de palabras clave del título. <strong>La leyenda explica unos colores y la lista usa otros.</strong></p>
+
+  <h3>Once nombres para lo mismo</h3>
+  <div class="prueba">Agenda · cosa · tarea · recordar · hacer · apuntar · aviso
+vencimiento · cita · tablón · calendario</div>
+  <p>El planteamiento decía: <em>«para ellos todo debe ser cosas que tengo que recordar»</em>. La interfaz usa once palabras distintas, y dos de ellas —«tablón» y «calendario»— nombran secciones que ya no existen en la navegación. El botón «Ver el tablón» lleva a una pantalla titulada «Agenda».</p>
+
+  <h3>Un campo del planteamiento que no se puede rellenar</h3>
+  <div class="prueba grave">aviso_previo   se MUESTRA en el detalle («30 minutos antes», «Un día antes»…)
+               pero no existe en ningún formulario de crear ni de editar
+               y solo se enseña si tipo === 'vencimiento', tipo que solo
+               se consigue escribiendo «vence», «caduca» o «renov» en el título.</div>
+  <p>Es exactamente lo que pedía el punto 15 del planteamiento («¿quieres que te avisemos? 1 mes / 1 semana / 1 día antes») y hoy es un campo de solo lectura inalcanzable.</p>
+
+  <h4 class="sub">Y un fallo de zona horaria</h4>
+  <div class="prueba grave">tablon/nuevo/formulario.tsx:10   new Date().toISOString().slice(0,10)   ← UTC
+resto de la app                  hoyAqui()  con Atlantic/Canary</div>
+  <p>Entre las 23:00 y las 24:00 en horario de verano canario, el botón «Hoy» del formulario guarda <strong>mañana</strong>.</p>
+
+  <h3>Cómo simplificaría Agenda sin perder potencia</h3>
+  <ul>
+    <li><strong>Un solo eje visible: el tiempo.</strong> Semana · Mes. Nada más en la cabecera. «El día» se alcanza tocando un día, que es como ya funciona.</li>
+    <li><strong>El estado deja de ser una pestaña y pasa a ser el orden natural de la lista.</strong> Lo vencido arriba, en coral, siempre —sin que haya que ir a buscarlo a una pestaña que aparece y desaparece—. Lo hecho, atenuado en su día, como ya hace la vista Mes. «Hechas» se convierte en un enlace discreto al final: «Ver lo ya hecho».</li>
+    <li><strong>Los parámetros se conservan al cambiar de vista.</strong> Cambiar de semana a mes debe llevarte al mes de esa semana, no a hoy.</li>
+    <li><strong>El filtro de calendarios de Google baja a un icono</strong>, o desaparece de la vista principal. Hoy son tres botones más que casi nunca se tocan y que siempre parten la fila en dos líneas a 360 px.</li>
+    <li><strong>Una palabra, no once.</strong> Todo lo que hay en Agenda se llama igual en toda la interfaz.</li>
+    <li><strong>Añadir el aviso previo al formulario</strong>, que es lo que el planteamiento pedía y hoy no se puede poner.</li>
+  </ul>
+  <p>Resultado: de 17 controles a 5, sin quitar ninguna capacidad real.</p>
+</section>
+
+
+<!-- ════════ 09 MÓDULOS ════════ -->
+<section id="a9">
+  <div class="marca"><span class="letra az">09</span><h2>Notas · Compra · Cuentas · Espacios</h2></div>
+
+  <p class="veredicto mal">¿Parecen partes del mismo HUBI? <strong>No. Cada módulo ha desarrollado su propio dialecto</strong>, y se puede demostrar elemento por elemento.</p>
+
+  <div class="envoltura">
+  <table class="tabla">
+    <thead><tr><th>Elemento</th><th>Variantes encontradas</th></tr></thead>
+    <tbody>
+      <tr><td>Botón principal</td><td><code>bg-boton</code> en notas, asesor, partidas, carpetas, programar · <code>bg-verde</code> fijo en pagos, menús, finca/apuntar, entrar. <strong>Dos «Guardar» de distinto color en pantallas contiguas.</strong></td></tr>
+      <tr><td>Altura del botón</td><td>76 · 68 · 64 · 62 · 60 · 58 · 56 · 54 · 52 · 50 px</td></tr>
+      <tr><td>Cancelar</td><td>«Dejarlo» · «Ahora no» · «No» · «Volver» · «Dejarlo como está» — <strong>las dos primeras dentro del mismo fichero</strong></td></tr>
+      <tr><td>Pestañas / píldoras</td><td>h-11 (44) · h-12 (48) · h-[46px] · h-[52px] · <code>.pildora</code> global sin usar en las pantallas que la duplican a mano</td></tr>
+      <tr><td>Tarjetas</td><td>9 · 12 · 13 · 14 · 15 · 16 · 18 · 20 · 22 · 24 · 32 px + <code>rounded-2xl</code> + <code>rounded-3xl</code></td></tr>
+      <tr><td>Encabezado (h1)</td><td>25 · 27 · 28 · 30 · 34 px + <code>text-4xl</code></td></tr>
+      <tr><td>Estados vacíos</td><td>5 cajas distintas: <code>py-6</code> · <code>py-8</code> · <code>py-10</code> · texto suelto sin caja · con botón de acción</td></tr>
+      <tr><td>Confirmar borrado</td><td><code>window.confirm()</code> nativo (3 sitios) · panel propio con <code>#E11D48</code> · panel propio con <code>bg-coral</code></td></tr>
+      <tr><td>Volver</td><td>componente <code>&lt;Volver&gt;</code> · botón casero con <code>Ico atras</code> · enlace-caja <code>rounded-2xl</code> · texto subrayado · <code>window.location.href</code> (recarga entera)</td></tr>
+      <tr><td>Interruptores</td><td>34×58 (perilla 28) · 32×54 (perilla 26) · perilla 22</td></tr>
+      <tr><td>Formulario de importe</td><td><code>font-titulo text-4xl</code> en finca/apuntar · <code>.entrada</code> de 19 px en pagos/fijos. Mismo dato, dos gramáticas.</td></tr>
+      <tr><td>Cifra grande</td><td>44 (notas) · 40 (horas) · 38 (balance) · 28 · 24 · 23 · 22 · 21 px. <strong>El número más grande del producto es un contador de notas, no el balance.</strong></td></tr>
+      <tr><td>Pestaña activa abajo</td><td>menús enciende «Inicio» · pagos usa la clave <code>"finca"</code> que ya no existe · compra, notas, casa, horas y asesor no encienden nada</td></tr>
+      <tr><td>Tipografía</td><td>tres generaciones: <code>text-[27px]</code> moderna · <code>text-xl / text-4xl</code> antigua en tablón, avisos y finca · paleta y escala completamente ajenas en <code>comprobacion</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Ninguna de estas variantes es una decisión: son los restos de escribir la misma pieza cuarenta y cuatro veces. Es la sección 10.</p>
+</section>
+
+
+<!-- ════════ 10 DESIGN SYSTEM ════════ -->
+<section id="a10">
+  <div class="marca"><span class="letra az">10</span><h2>¿Hace falta un sistema de diseño?</h2></div>
+
+  <p class="veredicto bien"><strong>Sí, y ya. Pero no el que estás pensando.</strong> No hacen falta documentación, Figma, ni nomenclatura de tokens. Hace falta <strong>un fichero de piezas de React</strong> y siete decisiones cerradas. Un día de trabajo, y es lo que decide si HUBI puede crecer.</p>
+
+  <h3>Por qué es urgente y no «cuando haya tiempo»</h3>
+  <p>Lo único compartido hoy es <code>Cabecera</code> (19 líneas, solo envuelve), <code>Ico</code>, <code>Pastilla</code> y <code>Volver</code>. La tarjeta, el renglón, el botón principal, el secundario, el vacío, el error, la píldora y el interruptor están <strong>escritos a mano en cada una de las 44 pantallas</strong>. Existe un componente <code>Vacio()</code>… dentro de <code>lista.tsx</code>, y nadie más lo importa.</p>
+  <p>De ahí salen todas las cifras de la sección 09. Y de ahí saldrán las de dentro de seis meses: <strong>cualquier limpieza que hagamos hoy se deshace sola con la próxima pantalla.</strong> Ese es el argumento entero.</p>
+
+  <h3>Lo mínimo que hay que fijar antes de seguir</h3>
+
+  <h4 class="sub">1 · Tipografía — cinco pasos</h4>
+  <div class="prueba">27  título de pantalla        (uno, no seis)
+19  cifra o dato protagonista
+17  texto de lectura            ← el mínimo que ya declaras
+15  apoyo y pies
+13  rótulo en mayúsculas        (.rotulo, ya existe)</div>
+  <p>Los otros doce tamaños se reparten al más cercano. Y recuperar el peso normal: hoy todo es bold o extrabold, y por eso nada destaca.</p>
+
+  <h4 class="sub">2 · Radios — tres</h4>
+  <div class="prueba">20  tarjeta        16  campo y botón        999  píldora</div>
+
+  <h4 class="sub">3 · Espaciado — una rejilla de 4</h4>
+  <p>Y tres huecos: 10 dentro de una pieza, 16 entre piezas, 28 entre bloques. Hoy hay <code>py-3</code>, <code>py-3.5</code>, <code>py-4</code>, <code>py-5</code>, <code>py-6</code>, <code>py-8</code> y <code>py-10</code> sin regla.</p>
+
+  <h4 class="sub">4 · Superficies — tres, y solo tres</h4>
+  <div class="prueba">fondo        el papel de la pantalla
+superficie   la tarjeta: papel + borde de 1px, sin sombra
+teñida       superficie + 10% de un color, SOLO para lo que reclama atención hoy</div>
+  <p>La sombra queda reservada al botón de voz. Es la única pieza que flota, y por eso significa algo.</p>
+
+  <h4 class="sub">5 · Botones — dos, y una altura</h4>
+  <div class="prueba">principal    h-60  ·  r-16  ·  18px  ·  UN color, igual en claro y oscuro
+secundario   h-60  ·  r-16  ·  18px  ·  borde, sin relleno
+destructivo  = secundario con texto coral, nunca relleno de rojo</div>
+
+  <h4 class="sub">6 · Las siete piezas de <code>app/piezas.tsx</code></h4>
+  <div class="prueba">Tarjeta · Fila · BotonPrincipal · BotonSecundario · Vacio · Aviso · Cifra</div>
+  <p>Extraer lo que ya existe repetido. <strong>El primer día no cambia nada visualmente</strong>: solo deja de haber cuarenta y cuatro copias.</p>
+
+  <h4 class="sub">7 · Vocabulario — una página</h4>
+  <p>Un «cancelar». Un nombre por sección. Una palabra para lo de Agenda. Media hora de decisiones y una tarde de sustituciones, y elimina más incoherencia percibida que cualquier cambio visual.</p>
+
+  <p style="margin-top:24px">Lo que <strong>no</strong> hace falta ahora: variantes de componente, temas configurables, escala de sombras, sistema de iconos parametrizado, tokens semánticos de tres niveles. Eso es burocracia para un producto de dos usuarios.</p>
+</section>
+
+
+<!-- ════════ 11 MOBILE ════════ -->
+<section id="a11">
+  <div class="marca"><span class="letra az">11</span><h2>Móvil: 360 · 390 · 430 px</h2></div>
+
+  <p class="veredicto">El trabajo de móvil <strong>es real y bueno</strong> — el arreglo del rebote de iOS, las áreas seguras, la barra de scroll oculta solo en pantalla táctil, la sustitución del desenfoque por un degradado porque un Android normal se atascaba. Pero <strong>a 360 px hay cuatro sitios donde la interfaz se rompe de verdad</strong>, y ninguno está en pantallas secundarias.</p>
+
+  <p>Ancho útil real a 360 px: <code>max-w-md</code> + <code>px-5</code> = <strong>320 px</strong>. Es la cifra con la que hay que diseñar.</p>
+
+  <div class="hallazgo">
+    <div class="hn">11.1</div>
+    <div>
+      <p class="ht">Agenda · Día: los bloques solapados dejan 46 px de texto<span class="etq e-alto">grave</span></p>
+      <div class="prueba grave">contenedor left-[50px] → 270px
+3 solapados: calc(33.33% - 4px) = 86px − px-2.5 = 66px de texto
+4 solapados:                                      46px de texto
+texto a 14.5px extrabold con truncate → 4-6 caracteres visibles</div>
+      <p>Un martes con cuatro citas se convierte en cuatro cajas ilegibles. Es el peor punto de la aplicación en móvil.</p>
+    </div>
+  </div>
+
+  <div class="hallazgo">
+    <div class="hn">11.2</div>
+    <div>
+      <p class="ht">Agenda: la pestaña más importante es la que se trunca</p>
+      <div class="prueba">3 pestañas · gap-1.5 → 102,6px cada una − px-2 = 86px útiles
+«Por hacer · 6» a 14.5px extrabold ≈ 90px  →  «Por hace…»</div>
+      <p>En cuanto hay algo vencido, la pestaña por defecto se corta. El <code>truncate</code> lo disimula, que es lo que hace que no se haya detectado.</p>
+    </div>
+  </div>
+
+  <div class="hallazgo">
+    <div class="hn">11.3</div>
+    <div>
+      <p class="ht">Casillas de día a 42,3 px — por debajo de tu propio suelo</p>
+      <div class="prueba">tira de 7 días  y  cuadrícula del mes
+(320 − 24) / 7 = 42,3px de ancho
+globals.css declara 48px como mínimo para lo que hay que pulsar
+lista.tsx declara 44px como objetivo de esta pieza</div>
+      <p>Y la celda del mes contiene un número de 16 px más hasta cinco puntos: 37 px de contenido en 42 px de caja, sin <code>shrink-0</code>. Cualquier ajuste de tamaño de letra del sistema lo desborda.</p>
+    </div>
+  </div>
+
+  <div class="hallazgo">
+    <div class="hn">11.4</div>
+    <div>
+      <p class="ht">Con cinco pestañas la barra inferior va justa; con cuatro, cómoda</p>
+      <div class="prueba">360px / 5 pestañas = 72px  (icono 25 + texto 12px: «Documentos» no cabría)
+360px / 4 pestañas = 90px</div>
+      <p>Argumento adicional, y medible, para la arquitectura de cuatro pestañas de la sección 05.</p>
+    </div>
+  </div>
+
+  <h4 class="sub">Riesgos medios</h4>
+  <ul>
+    <li><strong>La fila de filtros de Agenda siempre parte en dos líneas</strong> con dos calendarios (≈407 px de contenido en 320), empujando el contenido hacia abajo antes de que se lea nada.</li>
+    <li><strong>La leyenda del mes ocupa 296 de 320 px</strong> con <code>whitespace-nowrap</code>. Cabe por 24 px; con la letra del sistema un punto más grande, rompe.</li>
+    <li><strong>El renglón de Agenda deja 231 px para el título</strong> (hora fija de 40 px + barra + huecos + bordes = 89 px de cromo). «Recoger la medicación en la farmacia» se corta en las tres vistas.</li>
+    <li><strong>Los campos nativos de fecha y hora de iOS</strong> tienen ancho mínimo propio; en la tarjeta de editar tarea (150 px y 117 px) pueden desbordar. Ya pasó una vez y se arregló con <code>min-width: 0</code> global; conviene revisar que ese arreglo llega a todos.</li>
+    <li><strong>Nombres largos sin <code>truncate</code></strong>: la cabecera «JUAN MIGUEL → CONCHITA» del tablón y los rótulos «Hoy · miércoles 26 / Ver el día» no tienen red de seguridad.</li>
+  </ul>
+
+  <h4 class="sub">Uso con una mano</h4>
+  <p>Bien resuelto en lo esencial: la barra abajo, el botón de voz abajo a la derecha, las acciones principales al final del scroll. El punto flojo es el <strong>botón de Ajustes en la esquina superior derecha</strong> — la zona más difícil de alcanzar con el pulgar en un teléfono grande (430 px). No es crítico porque a Ajustes se entra poco, pero es donde también vive el cambio de casa.</p>
+  <p>A 390 y 430 px no aparece ningún problema nuevo: todo lo que falla, falla a 360. Y 360 sigue siendo un ancho muy común en Android de gama media, que es exactamente el teléfono que más gente de 70 años tiene.</p>
+</section>
+
+
+<!-- ════════ 12 ACCESIBILIDAD ════════ -->
+<section id="a12">
+  <div class="marca"><span class="letra az">12</span><h2>Accesibilidad y edades</h2></div>
+
+  <p class="veredicto">Has hecho lo difícil —las reglas están escritas y son buenas— y fallas en lo fácil: <strong>no se cumplen en el propio código que las declara.</strong></p>
+
+  <h4 class="sub">Lo que ya está bien <span class="etq e-bien">no tocar</span></h4>
+  <ul>
+    <li><strong>Anillo de foco de 3 px con separación de 3.</strong> Mejor que el de la mayoría de productos comerciales.</li>
+    <li><strong><code>prefers-reduced-motion</code> respetado en todo</strong>: manchas, pulsos, órbitas, latido.</li>
+    <li><strong>16 px mínimo en los campos</strong> para que iOS no haga zoom al escribir. Detalle que casi nadie contempla.</li>
+    <li><strong>El lenguaje.</strong> Es la mayor ventaja de accesibilidad que tiene el producto y no aparece en ninguna guía: los mensajes explican en vez de disculparse.</li>
+  </ul>
+
+  <h4 class="sub">Lo que falla</h4>
+  <ul>
+    <li><strong>Tres suelos táctiles declarados en tres ficheros:</strong> 48 px en <code>globals.css</code>, 44 en <code>rutinas-hoy</code>, 60 en <code>estancia</code>. Y en uso real hay controles a 42,3 · 44 · 46 px. Un suelo, y que se cumpla.</li>
+    <li><strong>Botones destructivos con solo un icono, y el icono es un triángulo de aviso.</strong> Contradice directamente tu propia regla («iconos siempre acompañados por texto») y usa el símbolo de advertencia como si fuera una papelera. Nadie puede adivinarlo.</li>
+    <li><strong>Dependencia exclusiva del color en Agenda:</strong> el estado de una tarea se codifica solo en el color del punto y de la barra lateral. Sin forma (relleno / hueco / tachado), quien no distinga verde de coral no distingue «hecho» de «vencido».</li>
+    <li><strong><code>window.confirm()</code> para borrar</strong>, en tres sitios. Letra pequeña, botones diminutos, en inglés en algunos teléfonos, y rompe la ilusión de producto justo en el momento de más riesgo.</li>
+    <li><strong>Mensajes de infraestructura en pantalla:</strong> «Falta ejecutar el sql/47», «Falta ejecutar el sql/48», y el mensaje crudo de Postgres impreso en una tarjeta de La compra. Nadie debe leer nunca la palabra SQL.</li>
+    <li><strong>Botón principal apagado y mudo:</strong> al guardar un papel, si el lector no acertó la carpeta, «Guardar» aparece gris sin decir por qué. Debería decir «Dime dónde lo guardo» y abrir el selector.</li>
+    <li><strong>Contraste por medir:</strong> <code>--t-tenue</code> sobre superficies teñidas al 10–18 %, en los dos modos. Es el texto de apoyo de casi todas las tarjetas.</li>
+  </ul>
+
+  <h4 class="sub">Recuperación de errores</h4>
+  <p>Aquí hay una fortaleza que conviene nombrar: la línea gris que explica <em>por qué</em> el lector de documentos ha fallado resolvió en un paso lo que tres rondas de conjeturas no consiguieron. Ese patrón —<strong>cuando algo se degrada, dilo y di por qué</strong>— debería ser una regla del sistema, no un hallazgo suelto. En el asistente falta exactamente eso: el diagnóstico existe en el código y no se pinta.</p>
+</section>
+
+
+<!-- ═══════════ INFORME ═══════════ -->
+
+<section id="A">
+  <div class="marca"><span class="letra">A</span><h2>Lo que está muy bien y no tocaría</h2></div>
+  <ul>
+    <li><strong>La redacción.</strong> Ningún texto suena a software. Es el activo principal del producto y no se puede comprar.</li>
+    <li><strong>El trabajo de móvil real:</strong> rebote de iOS, áreas seguras, scrollbar solo en ratón, el degradado en lugar del desenfoque.</li>
+    <li><strong>El anillo de foco y <code>prefers-reduced-motion</code>.</strong></li>
+    <li><strong>El aro cónico del micrófono</strong> — la única pieza visual que solo puede ser de HUBI, y además significa algo.</li>
+    <li><strong>Que la sombra esté reservada al botón de voz.</strong> Un sistema de una sola regla, y correcta.</li>
+    <li><strong>La barra de abajo adaptada al rol.</strong> Una pestaña vacía se lee como «roto», y eso ya está resuelto.</li>
+    <li><strong>El armazón de carga con 280 ms de retardo.</strong></li>
+    <li><strong>La progresión de preguntas del vencimiento.</strong> Una decisión por pantalla, en lenguaje de persona, con un «QUEDARÁ ASÍ» al final. Es el mejor flujo de la aplicación y debería ser el molde de los demás.</li>
+    <li><strong>Los nombres de archivo automáticos.</strong> Excelentes, e invisibles: enséñalos.</li>
+  </ul>
+</section>
+
+<section id="B">
+  <div class="marca"><span class="letra">B</span><h2>Bien, pero necesita pulirse</h2></div>
+  <ul>
+    <li><strong>El fondo claro</strong> — <code>#F1F5F9</code> a un blanco roto cálido. Una línea, y cambia la temperatura del producto entero.</li>
+    <li><strong>La paleta</strong> — cuatro de los cinco colores son valores por defecto de Tailwind. Bajarles 8–12 % de saturación y moverlos hacia el cálido los haría tuyos sin cambiar ninguna sección.</li>
+    <li><strong>El flujo de guardar</strong> — bueno y largo. «¿Tiene más páginas?» debería ser un botón dentro de la vista previa, no una pantalla.</li>
+    <li><strong>La cabecera de Papeles</strong> — el título vive en el cuerpo y se pierde al hacer scroll en unas pantallas y no en otras.</li>
+    <li><strong>El botón de Ajustes</strong> — retirar el degradado cian-violeta que no pertenece a la marca.</li>
+    <li><strong>El peso tipográfico</strong> — recuperar el normal. Hoy todo es bold y por eso nada destaca.</li>
+  </ul>
+</section>
+
+<section id="C">
+  <div class="marca"><span class="letra">C</span><h2>Problemas reales de UX/UI</h2></div>
+  <ol style="list-style:none;padding:0">
+    <li><strong>C1 · No existe capa de componentes.</strong> Es la causa de casi todo lo demás. <span class="etq e-alto">raíz</span></li>
+    <li><strong>C2 · El asistente se apaga si Drive no está conectado.</strong> <span class="etq e-alto">grave</span></li>
+    <li><strong>C3 · El asistente no acepta texto.</strong> Si el micrófono falla, no hay camino. <span class="etq e-alto">grave</span></li>
+    <li><strong>C4 · Agenda destruye el contexto al cambiar de vista o de filtro,</strong> en silencio y en las dos direcciones. <span class="etq e-alto">grave</span></li>
+    <li><strong>C5 · Mensajes de SQL y errores crudos de Postgres en pantalla.</strong> <span class="etq e-alto">grave</span></li>
+    <li><strong>C6 · El aviso previo de un vencimiento no se puede poner</strong> — es de solo lectura e inalcanzable, y era el punto 15 del planteamiento.</li>
+    <li><strong>C7 · Botones destructivos con solo un triángulo de aviso</strong>, más <code>window.confirm()</code> en tres sitios.</li>
+    <li><strong>C8 · Zonas pulsables por debajo del mínimo que el propio código declara</strong> (42,3 px en las casillas de día).</li>
+    <li><strong>C9 · Agenda·Día deja 46 px de texto</strong> con cuatro citas solapadas a 360 px.</li>
+    <li><strong>C10 · Inicio es una pila de 19 elementos</strong> sin jerarquía entre ellos.</li>
+    <li><strong>C11 · El espacio <code>/tablon</code> sigue vivo bajo Agenda</strong> y rompe el Volver.</li>
+    <li><strong>C12 · «Apuntar otro» manda siempre a HELECHOS</strong> en cualquier sección con unidades. Fallo funcional.</li>
+    <li><strong>C13 · Bug de zona horaria</strong> en el formulario de apuntar: entre las 23 y las 24 h, «Hoy» guarda mañana.</li>
+    <li><strong>C14 · Nombres propios escritos a mano</strong> en el asistente y en la invitación. Falsos con la segunda familia.</li>
+  </ol>
+</section>
+
+<section id="D">
+  <div class="marca"><span class="letra">D</span><h2>Inconsistencias entre pantallas</h2></div>
+  <p>La tabla completa está en la <a href="#a9">sección 09</a>. Las cinco que más se notan:</p>
+  <ul>
+    <li><strong>Dos colores para el mismo «Guardar»</strong> (<code>bg-boton</code> / <code>bg-verde</code>), en pantallas contiguas.</li>
+    <li><strong>Cinco palabras para «cancelar»</strong>, dos de ellas en el mismo fichero.</li>
+    <li><strong>Diez alturas del botón principal, once radios, seis tamaños de <code>h1</code>, diecisiete tamaños de letra en Inicio.</strong></li>
+    <li><strong>El número más grande del producto es un contador de notas</strong> (44 px), por encima del balance (38 px).</li>
+    <li><strong>Tres generaciones tipográficas</strong> conviviendo, y una pantalla (<code>comprobacion</code>) con paleta propia sin modo oscuro.</li>
+  </ul>
+</section>
+
+<section id="E">
+  <div class="marca"><span class="letra">E</span><h2>Qué eliminaría o simplificaría</h2></div>
+  <ul>
+    <li><strong><code>/comprobacion</code> fuera del producto.</strong> 406 líneas, huérfana total, paleta ajena, y textos como «Cruzar tablas YA NO FUNCIONA» o «falta GEMINI_API_KEY». Ella misma dice «esta pantalla no forma parte de HUBI».</li>
+    <li><strong>El bloque IGIC/IVA fuera de la primera pantalla de cuentas.</strong> Es una liquidación trimestral donde alguien mira cuánto se gastó en agua. Detrás de «Para la gestoría».</li>
+    <li><strong>Ajustes partido en tres:</strong> Tú (perfil, tema, salir) · La casa (gente, permisos, actividades) · Conexiones (Google, avisos, impuesto). Hoy son diez bloques y ~25 controles en una pantalla.</li>
+    <li><strong>Doce de los diecisiete controles de Agenda</strong> (sección 08).</li>
+    <li><strong>La pantalla «¿Tiene más páginas?»</strong> como paso obligatorio.</li>
+    <li><strong>Cinco de las nueve opciones</strong> de «¿qué quieres que haga con esto?» del asistente.</li>
+    <li><strong>El filtro de calendarios de Google</strong> de la vista principal de Agenda.</li>
+  </ul>
+</section>
+
+<section id="F">
+  <div class="marca"><span class="letra">F</span><h2>Qué cambiaría en la navegación</h2></div>
+  <p>Detalle en la <a href="#a5">sección 05</a>. En una línea:</p>
+  <div class="prueba">Inicio  ·  Papeles  ·  Agenda  ·  La casa            [ HUBI ]</div>
+  <p>Cuatro pestañas idénticas para todas las familias; las actividades salen de la barra y entran en Papeles y en La casa; «La casa» da hogar a compra, notas, menús, cuentas, pagos y horas; y a 360 px cada botón pasa de 72 a 90 px.</p>
+</section>
+
+<section id="G">
+  <div class="marca"><span class="letra">G</span><h2>Qué haría con el asistente</h2></div>
+  <p>Detalle en la <a href="#a6">sección 06</a>. Resumen:</p>
+  <ul>
+    <li>Arreglar primero los tres fallos que lo dejan inservible: dependencia de Drive, ausencia de texto, icono incoherente.</li>
+    <li>Convertirlo de <strong>pantalla</strong> en <strong>campo</strong>: un solo componente, con voz y teclado, presente donde hoy hay un buscador.</li>
+    <li>Que <strong>sustituya</strong> al buscador de Papeles en lugar de competir con él. Una sola caja para preguntar.</li>
+    <li>Que el contexto cambie <em>la sugerencia</em>, no el comportamiento: en Compra propone «añade leche», en Cuentas «cuánto llevamos este trimestre». Funciona igual escribas lo que escribas.</li>
+    <li>Que responda <strong>en el sitio</strong> cuando pueda, en vez de navegar a otra pantalla.</li>
+    <li>Subirlo a lo alto de Inicio con altura de protagonista, junto a la cámara.</li>
+  </ul>
+</section>
+
+<section id="H">
+  <div class="marca"><span class="letra">H</span><h2>Recomendación sobre oscuro y claro</h2></div>
+  <p class="veredicto"><strong>Claro como lenguaje principal. Oscuro como variante que sigue al teléfono, sin inversión de diseño.</strong></p>
+  <p>Con una condición que importa: hoy HUBI <em>parece</em> tener más carácter en oscuro solo porque sus dos pantallas más bonitas —Entrar y el asistente— son oscuras fijas e ignoran el tema. Eso no es una virtud del modo oscuro; es una debilidad del claro. <strong>El momento de más personalidad del producto, la voz, tiene que funcionar también con la luz encendida.</strong></p>
+  <p>Y tres arreglos concretos: un solo color de botón principal igual en ambos modos; que Entrar respete el tema (o al menos no contradiga lo que viene después); y tokens en <code>comprobacion</code> si esa pantalla se queda.</p>
+</section>
+
+<section id="I">
+  <div class="marca"><span class="letra">I</span><h2>Propuesta de lógica de color</h2></div>
+  <p>Desarrollada en la <a href="#a2">sección 02</a>. Las cinco reglas:</p>
+  <ol style="list-style:none;padding:0">
+    <li><strong>1 ·</strong> Dos colores de estado con un significado cada uno: verde = bien / hecho / entra. Coral = atención / vence / sale / error. Nunca para identificar una sección.</li>
+    <li><strong>2 ·</strong> El color de sección solo en su pastilla y su cabecera. Nunca en un botón, una cifra o un fondo grande.</li>
+    <li><strong>3 ·</strong> Un solo color de botón principal, idéntico en los dos modos.</li>
+    <li><strong>4 ·</strong> Los números son tinta. Verde o coral solo cuando el color <em>es</em> el signo.</li>
+    <li><strong>5 ·</strong> Un degradado HUBI, el de la voz. Retirar el cian-violeta de Ajustes, declarar <code>#2DD4BF</code>, resolver <code>#0EA5E9</code> y borrar el alias muerto <code>terracota</code>.</li>
+  </ol>
+  <p>El objetivo: que en cualquier pantalla un color solo pueda querer decir tres cosas. Hoy puede querer decir once.</p>
+</section>
+
+<section id="J">
+  <div class="marca"><span class="letra">J</span><h2>Las diez intervenciones de mayor efecto y menor cambio</h2></div>
+  <p>En este orden: cada una apoya la siguiente. Las cinco primeras no mueven una sola pantalla de sitio.</p>
+
+  <div class="plan">
+    <div class="paso"><div class="pn">01</div><div>
+      <p class="pt">El fichero de piezas: <span class="mono">app/piezas.tsx</span></p>
+      <p>Extraer <code>Tarjeta</code>, <code>Fila</code>, <code>BotonPrincipal</code>, <code>BotonSecundario</code>, <code>Vacio</code>, <code>Aviso</code>, <code>Cifra</code>. El primer día no cambia nada visualmente. Es lo único que impide que todo vuelva a separarse.</p>
+    </div><div class="esf">alto · base de todo</div></div>
+
+    <div class="paso"><div class="pn">02</div><div>
+      <p class="pt">Cinco tamaños de letra, tres radios, una altura de botón</p>
+      <p><code>27·19·17·15·13</code> · <code>20·16·999</code> · <code>h-60</code>. De 17 tamaños, 11 radios y 10 alturas a cinco, tres y una.</p>
+    </div><div class="esf">medio</div></div>
+
+    <div class="paso"><div class="pn">03</div><div>
+      <p class="pt">Un botón principal: un color, igual en claro y oscuro</p>
+      <p>Sustituir los <code>bg-verde</code> primarios por <code>bg-boton</code>. Es el elemento que más importa que sea reconocible y hoy es el que menos lo es.</p>
+    </div><div class="esf">bajo</div></div>
+
+    <div class="paso"><div class="pn">04</div><div>
+      <p class="pt">El fondo cálido</p>
+      <p><code>--t-fondo: #F1F5F9 → #F7F5F1</code>. Una línea. Más efecto visual por esfuerzo que nada más de la lista.</p>
+    </div><div class="esf">una línea</div></div>
+
+    <div class="paso"><div class="pn">05</div><div>
+      <p class="pt">Sacar el andamiaje de la vista</p>
+      <p>Los tres mensajes de SQL, el error crudo de Postgres, los tres <code>window.confirm()</code>, los botones de borrar con solo un triángulo, y <code>/comprobacion</code> fuera. Nada de esto es diseño: es obra vista desde el salón.</p>
+    </div><div class="esf">bajo</div></div>
+
+    <div class="paso"><div class="pn">06</div><div>
+      <p class="pt">Que el asistente no dependa de Drive y acepte texto</p>
+      <p>Quitar el <code>voz={false}</code> de Inicio y añadir teclado junto al micrófono. Arregla los dos únicos fallos que dejan el producto sin su función principal.</p>
+    </div><div class="esf">medio</div></div>
+
+    <div class="paso"><div class="pn">07</div><div>
+      <p class="pt">Agenda: conservar los parámetros y colapsar los selectores</p>
+      <p>Que cambiar de vista o de filtro no borre en silencio dónde estabas. De 17 controles a 5, sin perder ninguna capacidad. Y añadir el aviso previo, que hoy no se puede poner.</p>
+    </div><div class="esf">medio</div></div>
+
+    <div class="paso"><div class="pn">08</div><div>
+      <p class="pt">Subir HUBI a lo alto de Inicio y vaciar la pila</p>
+      <p>Preguntar y fotografiar arriba con altura de protagonista; «Hoy» y «Próximamente» debajo como información; el resto de tarjetas a «La casa». De 19 elementos a 6–8.</p>
+    </div><div class="esf">medio</div></div>
+
+    <div class="paso"><div class="pn">09</div><div>
+      <p class="pt">Cuatro pestañas: Inicio · Papeles · Agenda · La casa</p>
+      <p>Sacar las actividades de la navegación estructural. Es lo que permite que HUBI sea de cualquier familia, y de paso da 90 px por botón a 360 px.</p>
+    </div><div class="esf">alto · estructural</div></div>
+
+    <div class="paso"><div class="pn">10</div><div>
+      <p class="pt">Un vocabulario, escrito en una página</p>
+      <p>Un «cancelar». «Papeles» en todas partes. Una sola palabra para lo de Agenda, no once. Retirar «tablón». Media hora de decisiones y una tarde de sustituciones.</p>
+    </div><div class="esf">bajo</div></div>
+  </div>
+</section>
+
+
+<!-- ═══════════ PUNTUACIÓN ═══════════ -->
+<section id="nota">
+  <div class="marca"><span class="letra">···</span><h2>Puntuación del producto actual</h2></div>
+  <p>Del 1 al 10, contra el estándar de un producto comercial terminado — no contra otros proyectos de dos personas.</p>
+
+  <div class="nota"><span class="nn">Identidad de marca</span><span class="nv">5</span><span class="barra b-med"><i style="width:50%"></i></span></div>
+  <div class="nota"><span class="nn">Calidad visual</span><span class="nv">6</span><span class="barra b-med"><i style="width:60%"></i></span></div>
+  <div class="nota"><span class="nn">Coherencia</span><span class="nv">3</span><span class="barra b-mal"><i style="width:30%"></i></span></div>
+  <div class="nota"><span class="nn">Facilidad de uso</span><span class="nv">7</span><span class="barra b-ok"><i style="width:70%"></i></span></div>
+  <div class="nota"><span class="nn">Mobile UX</span><span class="nv">6</span><span class="barra b-med"><i style="width:60%"></i></span></div>
+  <div class="nota"><span class="nn">Jerarquía</span><span class="nv">4</span><span class="barra b-mal"><i style="width:40%"></i></span></div>
+  <div class="nota"><span class="nn">Accesibilidad</span><span class="nv">6</span><span class="barra b-med"><i style="width:60%"></i></span></div>
+  <div class="nota"><span class="nn">Escalabilidad del diseño</span><span class="nv">3</span><span class="barra b-mal"><i style="width:30%"></i></span></div>
+  <div class="nota"><span class="nn">Integración del asistente</span><span class="nv">4</span><span class="barra b-mal"><i style="width:40%"></i></span></div>
+  <div class="nota"><span class="nn">Sensación de producto terminado</span><span class="nv">5</span><span class="barra b-med"><i style="width:50%"></i></span></div>
+
+  <div class="media"><span>Media</span><b>4,9</b></div>
+
+  <h3>Cómo leer estas notas</h3>
+  <p>Las cuatro bajas —<strong>coherencia 3</strong>, <strong>escalabilidad 3</strong>, <strong>jerarquía 4</strong>, <strong>asistente 4</strong>— son la misma nota escrita cuatro veces. Todas salen de C1: sin capa de componentes, cada pantalla se reinventa; sin escala, no hay jerarquía; y el asistente se construyó como una isla porque no había continente al que engancharlo.</p>
+  <p><strong>Identidad 5</strong> y <strong>producto terminado 5</strong> bajan respecto a una primera impresión por dos motivos concretos: hay cuatro degradados distintos compitiendo por ser «el de HUBI» —uno con colores que no existen en la marca— y hay pantallas de diagnóstico, mensajes de SQL y diálogos del navegador visibles para el usuario final.</p>
+  <p><strong>Mobile 6</strong>, no 7, por los cuatro puntos de ruptura a 360 px: son pantallas principales, no rincones.</p>
+  <p>Y por eso las notas altas son reales: <strong>facilidad de uso 7</strong> se ha conseguido <em>a pesar</em> de la falta de sistema, pantalla a pantalla, con criterio. El criterio está. Lo que falta es el andamio.</p>
+  <p class="ui" style="font-size:18.5px;font-weight:600;letter-spacing:-.01em;margin-top:22px">Con las cinco primeras intervenciones —ninguna mueve una pantalla de sitio— la coherencia sube a 7, la jerarquía a 7 y la sensación de producto acabado a 8. Es, con diferencia, el mejor rendimiento por esfuerzo que tiene ahora mismo el proyecto.</p>
+</section>
+
+<footer>
+  Auditoría realizada leyendo el código de producción: 44 pantallas, 21 componentes raíz, <span class="mono">globals.css</span>, <span class="mono">barra.tsx</span>, <span class="mono">iconos.tsx</span> y los ficheros de cada sección. Todas las cifras, medidas y fragmentos citados están verificados en el repositorio, no recordados. Los anchos de móvil están calculados sobre el contenedor real (<span class="mono">max-w-md</span> + <span class="mono">px-5</span> = 320 px a 360).<br><br>
+  Ningún fichero ha sido modificado.
+</footer>
+
+</div>

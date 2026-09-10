@@ -1,0 +1,608 @@
+<title>HUBI Fase 1 · antes y después</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+:root{
+  --pg-fondo:#F1F5F9;--pg-papel:#FFF;--pg-borde:#E2E8F0;
+  --pg-tinta:#0F172A;--pg-tinta2:#475569;--pg-tenue:#64748B;
+  --pg-acento:#0E9C8B;--pg-acento-velo:#DFF7F3;
+  --pg-mal:#B03A0E;--pg-mal-velo:#FDECE4;
+  --pg-cod:#F1F5F9;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --pg-fondo:#0B1220;--pg-papel:#182133;--pg-borde:#253148;
+  --pg-tinta:#F1F5F9;--pg-tinta2:#CBD5E1;--pg-tenue:#94A3B8;
+  --pg-acento:#2DD4BF;--pg-acento-velo:#10322F;
+  --pg-mal:#F09468;--pg-mal-velo:#2E1D14;
+  --pg-cod:#0F172A;
+}}
+:root[data-theme="dark"]{
+  --pg-fondo:#0B1220;--pg-papel:#182133;--pg-borde:#253148;
+  --pg-tinta:#F1F5F9;--pg-tinta2:#CBD5E1;--pg-tenue:#94A3B8;
+  --pg-acento:#2DD4BF;--pg-acento-velo:#10322F;
+  --pg-mal:#F09468;--pg-mal-velo:#2E1D14;
+  --pg-cod:#0F172A;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:0 18px 110px;background:var(--pg-fondo);color:var(--pg-tinta);
+  font-family:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;font-size:16.5px;line-height:1.6;font-weight:500;-webkit-font-smoothing:antialiased}
+.pag{max-width:1100px;margin:0 auto}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px}
+code{background:var(--pg-cod);border:1px solid var(--pg-borde);padding:1px 5px;border-radius:5px;white-space:nowrap}
+a{color:var(--pg-acento)}
+
+header{padding:60px 0 28px}
+.kick{font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--pg-acento);display:flex;gap:20px;flex-wrap:wrap}
+h1{font-size:clamp(34px,5.6vw,54px);font-weight:800;letter-spacing:-.03em;line-height:1.04;margin:18px 0 0;text-wrap:balance}
+h1 em{font-style:normal;color:var(--pg-tenue)}
+.lead{font-size:19px;color:var(--pg-tinta2);max-width:60ch;margin:16px 0 0;line-height:1.55}
+
+section{padding-top:54px;scroll-margin-top:14px}
+.cab{display:flex;align-items:baseline;gap:14px;border-bottom:2px solid var(--pg-tinta);padding-bottom:10px;margin-bottom:8px}
+.num{font-size:12px;font-weight:800;letter-spacing:.14em;background:var(--pg-tinta);color:var(--pg-fondo);padding:4px 9px;border-radius:6px;flex:none}
+h2{font-size:clamp(22px,3.3vw,29px);font-weight:800;letter-spacing:-.025em;margin:0;line-height:1.15}
+h3{font-size:19px;font-weight:800;letter-spacing:-.015em;margin:34px 0 12px}
+h4{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--pg-tenue);margin:26px 0 12px}
+p{margin:0 0 14px;max-width:74ch}
+ul{margin:0 0 16px;padding-left:0;list-style:none;max-width:76ch}
+li{margin:0 0 10px;padding-left:19px;position:relative}
+li::before{content:"";position:absolute;left:2px;top:.72em;width:7px;height:2px;border-radius:2px;background:var(--pg-tenue)}
+.regla{font-size:17.5px;font-weight:700;line-height:1.45;margin:0 0 18px;padding:13px 0 13px 17px;border-left:3px solid var(--pg-acento);max-width:68ch}
+
+/* P0 */
+.p0{display:grid;grid-template-columns:1fr;gap:0;border-top:2px solid var(--pg-tinta);margin-top:6px}
+.p0 .fila{display:grid;grid-template-columns:26px 1fr;gap:0 14px;padding:16px 0;border-bottom:1px solid var(--pg-borde);align-items:start}
+.tick{width:22px;height:22px;border-radius:50%;background:var(--pg-acento);color:var(--pg-fondo);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-top:2px}
+.p0 b{display:block;font-size:16.5px;font-weight:800;letter-spacing:-.012em;line-height:1.3;margin-bottom:4px}
+.p0 p{margin:0 0 6px;font-size:15px;color:var(--pg-tinta2);max-width:none;line-height:1.5}
+.p0 .como{font-size:14px;color:var(--pg-acento);font-weight:700}
+.p0 .ruta{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--pg-tenue)}
+
+pre.salida{font-family:"JetBrains Mono",monospace;font-size:12.5px;line-height:1.6;background:var(--pg-cod);border:1px solid var(--pg-borde);border-radius:12px;padding:14px 16px;overflow-x:auto;color:var(--pg-tinta2);margin:0 0 20px}
+
+/* comparativa de pantallas */
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 0 10px}
+@media (max-width:820px){.vs{grid-template-columns:1fr}}
+.tel{border-radius:24px;border:1px solid var(--pg-borde);overflow:hidden;background:var(--pg-papel)}
+.tel>.et{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:9px 15px;border-bottom:1px solid var(--pg-borde)}
+.et-a{background:var(--pg-mal-velo);color:var(--pg-mal)}
+.et-b{background:var(--pg-acento-velo);color:var(--pg-acento)}
+.pantalla{padding:16px 14px 20px;font-family:"Plus Jakarta Sans",sans-serif}
+.porque{font-size:14.5px;color:var(--pg-tinta2);margin:0 0 32px;max-width:78ch;font-weight:600;line-height:1.55}
+.porque b{color:var(--pg-tinta);font-weight:800}
+
+/* tokens de HUBI dentro de las maquetas */
+.hubi.claro{--h-fondo:#F1F5F9;--h-sup:#FFF;--h-borde:#E2E8F0;--h-tinta:#0F172A;--h-suave:#334155;--h-tenue:#64748B;--h-apagado:#94A3B8;
+  --h-accion:#14B8A6;--h-accion-tinta:#04211D;--h-bien:#0E9C8B;--h-alerta:#E0453F;--h-bien-velo:#DFF7F3;--h-alerta-velo:#FDE8E7}
+.hubi.oscuro{--h-fondo:#0B1220;--h-sup:#182133;--h-borde:#253148;--h-tinta:#F1F5F9;--h-suave:#CBD5E1;--h-tenue:#94A3B8;--h-apagado:#64748B;
+  --h-accion:#14B8A6;--h-accion-tinta:#04211D;--h-bien:#2DD4BF;--h-alerta:#FF7B75;--h-bien-velo:#10322F;--h-alerta-velo:#3A1D22}
+.hubi{background:var(--h-fondo);color:var(--h-tinta)}
+.hubi *{box-sizing:border-box}
+
+.tt{font-size:27px;font-weight:800;letter-spacing:-.025em;line-height:1.15;margin:0}
+.tc{font-size:17px;font-weight:600;line-height:1.45;margin:0}
+.ta{font-size:15px;font-weight:600;line-height:1.4;color:var(--h-tenue);margin:0}
+.tr{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--h-tenue);margin:0}
+.ttar{font-size:19px;font-weight:800;letter-spacing:-.012em;line-height:1.25;margin:0}
+
+.past{display:flex;align-items:center;justify-content:center;flex:none}
+.card{background:var(--h-sup);border:1px solid var(--h-borde);border-radius:20px}
+.fila{display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 14px}
+.btn{display:flex;width:100%;align-items:center;justify-content:center;gap:10px;border:1px solid transparent;font-family:inherit}
+.ico{display:block;flex:none}
+.trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.med{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--pg-tenue);letter-spacing:.02em;margin-top:8px;display:block}
+
+/* tabla */
+.tab{width:100%;border-collapse:collapse;font-size:14.5px;margin:0 0 20px}
+.tab th{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--pg-tenue);text-align:left;padding:0 12px 8px 0;border-bottom:2px solid var(--pg-borde)}
+.tab td{padding:10px 12px 10px 0;border-bottom:1px solid var(--pg-borde);vertical-align:top}
+.tab td:first-child{font-weight:800;white-space:nowrap}
+.scr{overflow-x:auto}
+.sw{display:inline-block;width:13px;height:13px;border:1px solid rgba(0,0,0,.22);vertical-align:-2px;margin-right:7px;border-radius:3px}
+
+.nota{border:1px solid var(--pg-borde);border-radius:18px;padding:16px 18px;margin:0 0 12px;background:var(--pg-papel)}
+.nota b{display:block;font-size:16.5px;font-weight:800;letter-spacing:-.015em;margin-bottom:6px}
+.nota p{margin:0;font-size:15px;color:var(--pg-tinta2);max-width:none;line-height:1.55}
+
+footer{margin-top:60px;padding-top:22px;border-top:2px solid var(--pg-tinta);font-size:14px;color:var(--pg-tenue);line-height:1.6}
+:focus-visible{outline:2px solid var(--pg-acento);outline-offset:3px}
+</style>
+
+<div class="pag">
+
+<header>
+  <div class="kick"><span>HUBI</span><span>Fase 1 · hecho</span><span>P0 + sistema + 3 pantallas</span><span>9 sept 2026</span></div>
+  <h1>Ocho fallos cerrados,<br>el sistema construido<br><em>y tres pantallas de prueba</em></h1>
+  <p class="lead">Todo compila, pasa el comprobador de tipos y pasa el linter. Las otras cuarenta y una pantallas siguen exactamente como estaban: no se ha migrado ninguna más.</p>
+</header>
+
+<!-- ═══════ P0 ═══════ -->
+<section id="p0">
+  <div class="cab"><span class="num">01</span><h2>Los ocho P0, y cómo se ha comprobado cada uno</h2></div>
+  <p class="regla">Sin rediseñar ninguna pantalla y sin tocar ningún P1. Al buscar los mensajes técnicos aparecieron <strong>más de los que había en la lista</strong>: estaban en el campo <code>detalle</code> de las respuestas de la API, que sí se pinta en diez pantallas distintas.</p>
+
+  <div class="p0">
+    <div class="fila"><span class="tick">✓</span><div>
+      <b>El asistente desaparecía si Drive no estaba conectado</b>
+      <p>Inicio pasaba <code>voz={false}</code> a la barra porque la invitación de arriba ya llevaba el botón — pero esa invitación solo se pinta si Drive está conectado. Ahora es <code>voz={!conectado}</code>: la regla de «un solo botón» se sigue cumpliendo, pero mirando si el otro existe de verdad.</p>
+      <p class="como">Comprobado: leyendo las dos condiciones. Con Drive → invitación, sin botón flotante. Sin Drive → botón flotante. Nunca los dos, nunca ninguno.</p>
+      <p class="ruta">app/page.tsx</p>
+    </div></div>
+
+    <div class="fila"><span class="tick">✓</span><div>
+      <b>El asistente no aceptaba texto: si fallaba el micro, no había camino</b>
+      <p>Cero <code>&lt;input&gt;</code> en toda la carpeta. Ahora hay una caja de escribir en la pantalla de reposo, que llama a <code>interpretar(texto)</code> — la misma función que ya usaba el atajo de Siri y que entiende exactamente lo mismo. No hacía falta nada nuevo por debajo.</p>
+      <p>Y el mensaje de «este navegador no puede grabar» ha dejado de ser un final: ahora dice «escríbelo aquí abajo y te entiendo igual».</p>
+      <p class="como">Comprobado: el envío del formulario entra por la misma función que la voz.</p>
+      <p class="ruta">app/hablar/grabar.tsx</p>
+    </div></div>
+
+    <div class="fila"><span class="tick">✓</span><div>
+      <b>Mensajes de SQL visibles al usuario</b>
+      <p>Había dos en la lista y han salido <strong>diecinueve</strong> repartidos por catorce ficheros. Los dos de la lista eran texto en pantalla; los otros diecisiete vivían en el campo <code>detalle</code> de las respuestas de la API — y <code>detalle</code> se pinta en diez pantallas (menús, la compra, el asesor, entrar, la casa, ajustes…).</p>
+      <p class="como">Comprobado con una búsqueda en todo el proyecto: no queda ninguna cadena con «SQL» o «sql/» que pueda llegar a la pantalla. Las dos que quedan son <code>console.warn</code> del servidor, que es donde deben estar.</p>
+    </div></div>
+
+    <div class="fila"><span class="tick">✓</span><div>
+      <b>Error crudo de Postgres impreso en La compra</b>
+      <p>Se pintaba <code>{falloCompra.message}</code> dentro de una tarjeta. El motivo técnico va ahora al registro del servidor —y se añadió el registro del <em>segundo</em> intento, que tampoco lo tenía—. En pantalla queda lo que hace falta saber: que lo apuntado sigue guardado.</p>
+      <p class="ruta">app/compra/page.tsx:254</p>
+    </div></div>
+
+    <div class="fila"><span class="tick">✓</span><div>
+      <b>«Apuntar otro» mandaba siempre a HELECHOS</b>
+      <p>Cualquier sección con unidades que no fuera Los Helechos —una obra, unos pisos, otra familia— acababa apuntando allí. El resto del fichero ya estaba parametrizado; esa línea se quedó con la constante. Ahora se devuelve el mismo parámetro con el que se entró.</p>
+      <p class="ruta">app/finca/apuntar/formulario.tsx:130 · page.tsx</p>
+    </div></div>
+
+    <div class="fila"><span class="tick">✓</span><div>
+      <b>Bug de zona horaria en «Hoy» — y mi diagnóstico estaba al revés</b>
+      <p>En la auditoría dije que «Hoy» guardaba <em>mañana</em>. Al reproducirlo resultó ser lo contrario: Canarias va a UTC+1 en verano, así que entre las 00:00 y la 01:00 de una noche de verano, <code>toISOString()</code> devuelve el día ANTERIOR. Quien apuntaba algo «para hoy» a las doce y media de la noche se lo encontraba <strong>puesto para ayer, y ya vencido</strong>.</p>
+      <p class="como">Comprobado con un instante concreto: el 1 de julio de 2026 a las 00:30 en Canarias, el código viejo daba 2026-06-30 y <code>hoyAqui()</code> da 2026-07-01.</p>
+      <p class="ruta">app/tablon/nuevo/formulario.tsx:10</p>
+    </div></div>
+
+    <div class="fila"><span class="tick">✓</span><div>
+      <b>La Agenda destruía el contexto al cambiar de vista o de filtro</b>
+      <p>Todos los enlaces eran direcciones enteras escritas a mano, así que cada uno se llevaba por delante el mes, la semana y el filtro. Ahora hay una función —<code>enlaceAgenda</code>— que parte de lo que hay y solo cambia lo que se le pide.</p>
+      <p class="como">Comprobado con 13 pruebas automáticas sobre los casos exactos del informe, y en cuatro zonas horarias.</p>
+      <p class="ruta">lib/agenda-enlace.ts (nuevo) · agenda/page.tsx · agenda/lista.tsx</p>
+    </div></div>
+
+    <div class="fila"><span class="tick">✓</span><div>
+      <b>El aviso previo de un vencimiento no se podía poner</b>
+      <p>Se enseñaba en la ficha pero no existía en ningún formulario, y encima solo salía si el tipo era «vencimiento» — tipo que solo se conseguía escribiendo «vence» o «caduca» en el título. Era, literalmente, un dato de solo lectura inalcanzable.</p>
+      <p>Ahora se puede poner al crear y al corregir (Sin aviso · 30 minutos · un día · una semana · un mes), y en la ficha se ve <strong>siempre que esté puesto</strong>, no solo en los vencimientos. «30 minutos antes» solo aparece si hay hora.</p>
+      <p class="ruta">tablon/nuevo/formulario.tsx · tablon/[id]/editar.tsx · tablon/[id]/page.tsx</p>
+    </div></div>
+  </div>
+
+  <h4>La salida de las pruebas</h4>
+  <pre class="salida">── P0-7 · la Agenda ya no pierde el contexto ──
+  ✓ en marzo, pulsar «Mes» sigue en marzo y conserva el filtro
+  ✓ filtrada la semana del 20-oct, «Por hacer» conserva semana y filtro
+  ✓ en «Hechas», filtrar por persona NO devuelve a «Por hacer»
+  ✓ «Los dos» conserva la pestaña
+  ✓ la flecha de semana conserva pestaña y filtro
+  ✓ sin parámetros sigue siendo /agenda
+  ✓ los vacíos no ensucian la dirección
+  ✓ del 2026-10-21 (miércoles) se sale al lunes 2026-10-19
+  ✓ un domingo va al lunes anterior
+  ✓ fin de mes cruzado: 2026-03-01 (domingo) → 2026-02-23
+  ✓ el orden de los parámetros es siempre el mismo
+
+── P0-6 · «Hoy» ya no es ayer ──
+  ✓ «Mañana» es el día siguiente a «Hoy»
+  ✓ 31 de octubre → 1 de noviembre (con cambio de hora en medio)
+  ✓ 28 de febrero de un bisiesto → 29
+  ✓ el domingo del cambio de hora de marzo
+
+21 comprobaciones · 4 zonas horarias (Londres · Canarias · Los Ángeles · Auckland)
+✓ TODO BIEN</pre>
+
+  <pre class="salida">$ npx tsc --noEmit      → sin errores
+$ npx next build        → ✓ Compiled successfully
+$ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
+</section>
+
+
+<!-- ═══════ TOKENS ═══════ -->
+<section id="tokens">
+  <div class="cab"><span class="num">02</span><h2>Tokens definitivos</h2></div>
+  <p>Se han <strong>añadido</strong> a <code>globals.css</code>, no sustituyen a nada. Las 41 pantallas sin migrar siguen usando los de siempre y funcionan igual.</p>
+
+  <div class="scr">
+  <table class="tab">
+    <thead><tr><th>Token</th><th>Claro</th><th>Oscuro</th><th>Para qué</th></tr></thead>
+    <tbody>
+      <tr><td>--color-accion</td><td class="mono"><span class="sw" style="background:#14B8A6"></span>#14B8A6</td><td class="mono"><span class="sw" style="background:#14B8A6"></span>#14B8A6</td><td>relleno del botón principal · <strong>el mismo en los dos modos</strong></td></tr>
+      <tr><td>--color-accion-tinta</td><td class="mono"><span class="sw" style="background:#04211D"></span>#04211D</td><td class="mono"><span class="sw" style="background:#04211D"></span>#04211D</td><td>su texto. No blanco: no llegaba al contraste</td></tr>
+      <tr><td>--color-bien</td><td class="mono"><span class="sw" style="background:#0E9C8B"></span>#0E9C8B</td><td class="mono"><span class="sw" style="background:#2DD4BF"></span>#2DD4BF</td><td>hecho · visto · ingreso</td></tr>
+      <tr><td>--color-atencion</td><td class="mono"><span class="sw" style="background:#C77A05"></span>#C77A05</td><td class="mono"><span class="sw" style="background:#F0B440"></span>#F0B440</td><td>vence pronto · falta un papel</td></tr>
+      <tr><td>--color-alerta</td><td class="mono"><span class="sw" style="background:#E0453F"></span>#E0453F</td><td class="mono"><span class="sw" style="background:#FF7B75"></span>#FF7B75</td><td>vencido · error · gasto · borrar</td></tr>
+      <tr><td>--color-ambito-azul</td><td class="mono" colspan="2"><span class="sw" style="background:#6B93D6"></span>#6B93D6 · igual en los dos</td><td>Casa · Seguros</td></tr>
+      <tr><td>--color-ambito-violeta</td><td class="mono" colspan="2"><span class="sw" style="background:#9482D9"></span>#9482D9</td><td>Vehículos · dinero</td></tr>
+      <tr><td>--color-ambito-rosa</td><td class="mono" colspan="2"><span class="sw" style="background:#D07E97"></span>#D07E97</td><td>Salud · Personal</td></tr>
+      <tr><td>--color-ambito-verde</td><td class="mono" colspan="2"><span class="sw" style="background:#6FA88A"></span>#6FA88A</td><td><strong>Finca</strong> y actividades · D2 aplicada</td></tr>
+      <tr><td>--color-ambito-arena</td><td class="mono" colspan="2"><span class="sw" style="background:#C09A62"></span>#C09A62</td><td>Documentos · Los Helechos</td></tr>
+      <tr><td>--color-ambito-pizarra</td><td class="mono" colspan="2"><span class="sw" style="background:#7A8899"></span>#7A8899</td><td>sin asignar</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Escala tipográfica · clases sueltas, para poder adoptarlas de una en una</h4>
+  <pre class="salida">.t-titulo    27 / 800    título de pantalla · siempre en la cabecera
+.t-seccion   21 / 800    bloque dentro de una pantalla
+.t-tarjeta   19 / 800    título de tarjeta · texto de botón
+.t-cuerpo    17 / 600    el texto que hay que leer
+.t-apoyo     15 / 600    pie de tarjeta
+.rotulo      13 / 800    mayúsculas, +.12em   (ya existía)
+.t-cifra     34 / 800    tabular-nums
+.t-cifra-2   23 / 800    tabular-nums
+
+.r-tarjeta   20px    .r-campo   16px    .r-pildora   redondo</pre>
+  <p class="porque">Dos pesos, <b>600 y 800</b>. El 700 desaparece. Y toda cifra lleva <code>tabular-nums</code>: sin eso una columna de importes baila de renglón en renglón y deja de poder compararse de un vistazo, que es justo para lo que se mira.</p>
+</section>
+
+
+<!-- ═══════ PIEZAS ═══════ -->
+<section id="piezas">
+  <div class="cab"><span class="num">03</span><h2><span class="mono" style="font-size:.75em">app/piezas.tsx</span> · 703 líneas</h2></div>
+  <div class="scr">
+  <table class="tab">
+    <thead><tr><th>Pieza</th><th>Qué sustituye</th></tr></thead>
+    <tbody>
+      <tr><td>BotonPrincipal</td><td>10 alturas y 2 colores → 60 px, radio 16, teal con tinta oscura. Con <code>porQue</code>: si está apagado, dice por qué</td></tr>
+      <tr><td>BotonSecundario</td><td>«Dejarlo», «Ahora no», «No», «Volver» — misma caja para todos</td></tr>
+      <tr><td>BotonTerciario</td><td>48 px, sin fondo. «Ver todo», «añadir hora…»</td></tr>
+      <tr><td>BotonDestructivo</td><td>borde y texto de alerta. <strong>Nunca relleno rojo</strong></td></tr>
+      <tr><td>Tarjeta</td><td>11 radios → 20. Neutra por defecto; <code>ambito</code> la tiñe al 3–5 %; <code>estado</code> cuando reclama hoy</td></tr>
+      <tr><td>TarjetaAccion</td><td>la de 76 px con pastilla, título, pie y flecha</td></tr>
+      <tr><td>Fila</td><td>4 maneras de pintar una fila → 1. Marca de ámbito al borde, no dentro</td></tr>
+      <tr><td>PastillaAmbito</td><td>24 · 40 · 44 · 48 px. Es por donde entra el color en una tarjeta</td></tr>
+      <tr><td>Cifra</td><td>8 tamaños de cifra → 2. Tinta salvo que el color <em>sea</em> el signo</td></tr>
+      <tr><td>Pildora</td><td>4 alturas → 48. Activa = relleno de tinta, no del color de sección</td></tr>
+      <tr><td>Campo</td><td>etiqueta en rótulo encima, ayuda o error debajo</td></tr>
+      <tr><td>Vacio</td><td>5 versiones → 1. Título + explicación + salida</td></tr>
+      <tr><td>Aviso</td><td>bien / atención / alerta. Dice qué ha pasado <strong>y qué sigue funcionando</strong></td></tr>
+      <tr><td>Hecho</td><td>la pantalla de «Guardado»</td></tr>
+      <tr><td>ambitoDe()</td><td>de la carpeta de Drive al color apagado. <strong>Aquí es donde la Finca deja el teal</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3><span class="mono" style="font-size:.8em">app/hubi-input.tsx</span> · 237 líneas · la pieza, no todavía el asistente</h3>
+  <p>Definida y sin conectar, como acordamos. Seis estados: <strong>reposo · escuchando · pensando · respondiendo · no entendido · sin micrófono</strong>. Voz y teclado en la misma caja; la sugerencia cambia según la pantalla y el comportamiento no.</p>
+  <p class="porque">Lo que esta pieza <b>fija desde ya</b>, aunque no se use: el degradado HUBI y la sombra teal viven solo aquí y en el botón flotante — donde aparecen, hay inteligencia detrás, y en ningún otro sitio. Es tu distinción entre <b>teal sólido = acción</b> y <b>degradado = HUBI</b>, hecha regla de código.</p>
+</section>
+
+
+<!-- ═══════ PANTALLA 1 ═══════ -->
+<section id="p1">
+  <div class="cab"><span class="num">04</span><h2>Papeles · el listado</h2></div>
+
+  <div class="vs">
+    <div class="tel"><div class="et et-a">Antes</div><div class="pantalla hubi claro">
+      <p style="font-size:27px;font-weight:800;letter-spacing:-.025em;margin:0 0 10px">Documentos</p>
+      <div style="display:flex;align-items:center;gap:12px;height:54px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px;margin-bottom:16px">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-tenue)" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <span style="font-size:16px;font-weight:600;color:var(--h-tenue)">¿Qué estás buscando?</span>
+      </div>
+      <p class="tr" style="margin-bottom:10px">Lo último guardado</p>
+      <div style="display:grid;gap:10px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:14px;border-radius:20px;border:1px solid var(--h-borde);background:var(--h-sup);padding:12px 14px">
+          <span class="past" style="width:44px;height:44px;border-radius:14px;background:#DFF7F3;color:#14B8A6"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4-1-7-4-7-9 4 0 7 1 9 4 2-4 5-6 7-6 0 6-4 11-9 11Z"/></svg></span>
+          <span style="min-width:0;flex:1">
+            <span class="trunc" style="display:block;font-size:17.5px;font-weight:700">Factura Endesa agosto</span>
+            <span style="display:block;font-size:15px;font-weight:600;color:var(--h-tenue)">Luz · 14 ago</span></span>
+          <svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--h-borde)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;border-radius:20px;border:1px solid var(--h-borde);background:var(--h-sup);padding:12px 14px">
+          <span class="past" style="width:44px;height:44px;border-radius:14px;background:#EEE8FE;color:#8B5CF6"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16l-2-5H6Z"/><circle cx="7.5" cy="16" r="1.5"/><circle cx="16.5" cy="16" r="1.5"/></svg></span>
+          <span style="min-width:0;flex:1">
+            <span class="trunc" style="display:block;font-size:17.5px;font-weight:700">Póliza MAPFRE coche</span>
+            <span style="display:block;font-size:15px;font-weight:600;color:var(--h-tenue)">Seguro · 12 sep</span></span>
+          <svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--h-borde)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+      </div>
+      <p class="tr" style="margin-bottom:10px">Todo, por carpetas</p>
+      <div style="display:grid;gap:10px">
+        <div style="display:flex;align-items:center;gap:14px;border-radius:20px;border:1px solid var(--h-borde);background:var(--h-sup);padding:12px 14px">
+          <span class="past" style="width:46px;height:46px;border-radius:15px;background:#DFF7F3;color:#14B8A6"><svg class="ico" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4-1-7-4-7-9 4 0 7 1 9 4 2-4 5-6 7-6 0 6-4 11-9 11Z"/></svg></span>
+          <span style="min-width:0;flex:1">
+            <span style="display:block;font-size:18px;font-weight:800;letter-spacing:-.02em">Finca</span>
+            <span style="display:block;font-size:15px;font-weight:600;color:var(--h-tenue)">34 papeles · 14 ago</span></span>
+          <svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--h-borde)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;border-radius:20px;border:1px solid var(--h-borde);background:var(--h-sup);padding:12px 14px">
+          <span class="past" style="width:46px;height:46px;border-radius:15px;background:#FFE7E7;color:#FF6B6B"><svg class="ico" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-7-9a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 4.5-7 9-7 9Z"/></svg></span>
+          <span style="min-width:0;flex:1">
+            <span style="display:block;font-size:18px;font-weight:800;letter-spacing:-.02em">Salud</span>
+            <span style="display:block;font-size:15px;font-weight:600;color:var(--h-tenue)">9 papeles · 3 sep</span></span>
+          <svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--h-borde)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+      </div>
+      <span class="med">buscador 54 · r16 &nbsp;·&nbsp; filas r20, pastillas 44 y 46 &nbsp;·&nbsp; títulos 17,5/700 y 18/800 &nbsp;·&nbsp; chevron en color de BORDE</span>
+    </div></div>
+
+    <div class="tel"><div class="et et-b">Después</div><div class="pantalla hubi claro">
+      <p class="tt" style="margin-bottom:10px">Documentos</p>
+      <div style="display:flex;align-items:center;gap:12px;height:58px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px;margin-bottom:16px">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-tenue)" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <span class="tc" style="color:var(--h-tenue);font-weight:500">¿Qué estás buscando?</span>
+      </div>
+      <p class="tr" style="margin-bottom:10px">Lo último guardado</p>
+      <div style="display:grid;gap:10px;margin-bottom:20px">
+        <div class="card fila">
+          <span class="past" style="width:44px;height:44px;border-radius:14px;background:color-mix(in srgb,#6FA88A 16%,var(--h-sup));color:#6FA88A"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4-1-7-4-7-9 4 0 7 1 9 4 2-4 5-6 7-6 0 6-4 11-9 11Z"/></svg></span>
+          <span style="min-width:0;flex:1">
+            <span class="tc trunc" style="display:block;font-weight:800">Factura Endesa agosto</span>
+            <span class="ta trunc" style="display:block">Luz · 14 ago</span></span>
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-apagado)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+        <div class="card fila">
+          <span class="past" style="width:44px;height:44px;border-radius:14px;background:color-mix(in srgb,#9482D9 16%,var(--h-sup));color:#9482D9"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16l-2-5H6Z"/><circle cx="7.5" cy="16" r="1.5"/><circle cx="16.5" cy="16" r="1.5"/></svg></span>
+          <span style="min-width:0;flex:1">
+            <span class="tc trunc" style="display:block;font-weight:800">Póliza MAPFRE coche</span>
+            <span class="ta trunc" style="display:block">Seguro · 12 sep</span></span>
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-apagado)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+      </div>
+      <p class="tr" style="margin-bottom:10px">Todo, por carpetas</p>
+      <div style="display:grid;gap:10px">
+        <div class="card fila" style="min-height:76px">
+          <span class="past" style="width:48px;height:48px;border-radius:16px;background:color-mix(in srgb,#6FA88A 16%,var(--h-sup));color:#6FA88A"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4-1-7-4-7-9 4 0 7 1 9 4 2-4 5-6 7-6 0 6-4 11-9 11Z"/></svg></span>
+          <span style="min-width:0;flex:1">
+            <span class="ttar trunc" style="display:block">Finca</span>
+            <span class="ta trunc" style="display:block">34 papeles · 14 ago</span></span>
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-apagado)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+        <div class="card fila" style="min-height:76px">
+          <span class="past" style="width:48px;height:48px;border-radius:16px;background:color-mix(in srgb,#D07E97 16%,var(--h-sup));color:#D07E97"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-7-9a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 4.5-7 9-7 9Z"/></svg></span>
+          <span style="min-width:0;flex:1">
+            <span class="ttar trunc" style="display:block">Salud</span>
+            <span class="ta trunc" style="display:block">9 papeles · 3 sep</span></span>
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-apagado)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
+      </div>
+      <span class="med">buscador 58 · r16 &nbsp;·&nbsp; una sola Fila &nbsp;·&nbsp; escala 19/17/15/13 &nbsp;·&nbsp; ámbitos apagados &nbsp;·&nbsp; chevron legible</span>
+    </div></div>
+  </div>
+  <p class="porque">Lo que cambia de verdad no es el aspecto: es que <b>las cuatro maneras de pintar una fila se han convertido en una</b>. El teal de la Finca pasa al verde apagado (D2) y el violeta saturado a violeta de ámbito. Y el chevron dejó de pintarse con <code>text-borde</code> —el color de las líneas, casi invisible— y pasa a <code>text-apagado</code>.</p>
+</section>
+
+
+<!-- ═══════ PANTALLA 2 ═══════ -->
+<section id="p2">
+  <div class="cab"><span class="num">05</span><h2>Papeles · la ficha de un documento</h2></div>
+
+  <div class="vs">
+    <div class="tel"><div class="et et-a">Antes</div><div class="pantalla hubi claro">
+      <span style="display:inline-flex;align-items:center;gap:6px;height:44px;border-radius:999px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px 0 12px;font-size:16.5px;font-weight:800;margin-bottom:16px">
+        <svg class="ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>Volver</span>
+      <div style="border-radius:20px;border:1px solid var(--h-borde);background:var(--h-sup);height:96px;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--h-suave);font-size:17px;font-weight:700;margin-bottom:14px">
+        <svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/></svg>2026-08-14_ENDESA.jpg</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="past" style="width:24px;height:24px;border-radius:7px;background:#DFF7F3;color:#14B8A6"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4-1-7-4-7-9 4 0 7 1 9 4 2-4 5-6 7-6 0 6-4 11-9 11Z"/></svg></span>
+        <span style="font-size:13.5px;font-weight:800;letter-spacing:.06em;color:var(--h-tenue)">FINCA › GASTOS › LUZ</span></div>
+      <p style="font-size:27px;font-weight:800;letter-spacing:-.02em;line-height:1.2;margin:6px 0 14px">Factura Endesa agosto</p>
+      <div style="border-radius:20px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px 4px">
+        <div style="display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--h-borde);padding:12px 0"><span style="font-size:15px;font-weight:700;color:var(--h-tenue)">Proveedor</span><span style="font-size:16.5px;font-weight:700">ENDESA</span></div>
+        <div style="display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--h-borde);padding:12px 0"><span style="font-size:15px;font-weight:700;color:var(--h-tenue)">Fecha</span><span style="font-size:16.5px;font-weight:700">14 de agosto</span></div>
+        <div style="display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--h-borde);padding:12px 0"><span style="font-size:15px;font-weight:700;color:var(--h-tenue)">Importe</span><span style="font-size:18px;font-weight:800;color:#14B8A6">127,43 €</span></div>
+        <div style="display:flex;justify-content:space-between;gap:16px;padding:12px 0"><span style="font-size:15px;font-weight:700;color:var(--h-tenue)">Lo guardó</span><span style="font-size:16.5px;font-weight:700">Juan Miguel</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;border-radius:18px;border:1px solid var(--h-borde);background:var(--h-sup);padding:12px 16px;margin-top:12px">
+        <span class="past" style="width:40px;height:40px;border-radius:12px;background:#EEE8FE;color:#8B5CF6"><svg class="ico" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M15 6a6 6 0 1 0 0 12M4 10h8M4 14h8"/></svg></span>
+        <span style="flex:1;min-width:0"><span style="display:block;font-size:17px;font-weight:700">Cuenta como gasto</span><span style="font-size:14.5px;font-weight:600;color:var(--h-tenue)">127,43 € en la Finca</span></span>
+        <svg class="ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--h-borde)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></div>
+      <button class="btn" style="height:62px;border-radius:18px;background:#14B8A6;color:#fff;font-size:18px;font-weight:800;margin-top:16px">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>Ver el papel</button>
+      <button class="btn" style="height:56px;border-radius:18px;border:1px solid var(--h-borde);background:var(--h-sup);color:var(--h-tinta);font-size:17px;font-weight:800;margin-top:10px">
+        <svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16Z"/></svg>Corregir o borrar</button>
+      <span class="med">el título vive en el CUERPO · importe en color de sección · botón blanco sobre teal (contraste 2,4:1) · 62 y 56 px</span>
+    </div></div>
+
+    <div class="tel"><div class="et et-b">Después</div><div class="pantalla hubi claro">
+      <span style="display:inline-flex;align-items:center;gap:6px;height:44px;border-radius:999px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px 0 12px;font-size:16.5px;font-weight:800">
+        <svg class="ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>Volver</span>
+      <p class="tt" style="margin:10px 0 4px">Factura Endesa agosto</p>
+      <div style="height:1px;background:var(--h-borde);margin:14px -14px 14px"></div>
+      <div style="border-radius:20px;border:1px solid var(--h-borde);background:var(--h-sup);height:96px;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--h-suave);font-size:17px;font-weight:700;margin-bottom:14px">
+        <svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/></svg>2026-08-14_ENDESA.jpg</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span class="past" style="width:24px;height:24px;border-radius:8px;background:color-mix(in srgb,#6FA88A 16%,var(--h-sup));color:#6FA88A"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4-1-7-4-7-9 4 0 7 1 9 4 2-4 5-6 7-6 0 6-4 11-9 11Z"/></svg></span>
+        <span class="tr trunc">FINCA › GASTOS › LUZ</span></div>
+      <div style="border-radius:20px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px 4px">
+        <div style="display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--h-borde);padding:12px 0"><span class="ta">Proveedor</span><span class="tc" style="font-weight:800">ENDESA</span></div>
+        <div style="display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--h-borde);padding:12px 0"><span class="ta">Fecha</span><span class="tc" style="font-weight:800">14 de agosto</span></div>
+        <div style="display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--h-borde);padding:12px 0"><span class="ta">Importe</span><span class="ttar">127,43 €</span></div>
+        <div style="display:flex;justify-content:space-between;gap:16px;padding:12px 0"><span class="ta">Lo guardó</span><span class="tc" style="font-weight:800">Juan Miguel</span></div>
+      </div>
+      <div class="card fila" style="margin-top:12px">
+        <span class="past" style="width:40px;height:40px;border-radius:13px;background:color-mix(in srgb,#9482D9 16%,var(--h-sup));color:#9482D9"><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M15 6a6 6 0 1 0 0 12M4 10h8M4 14h8"/></svg></span>
+        <span style="flex:1;min-width:0"><span class="tc" style="display:block;font-weight:800">Cuenta como gasto</span><span class="ta" style="display:block">127,43 € en la Finca</span></span>
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-apagado)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></div>
+      <button class="btn" style="height:60px;border-radius:16px;background:var(--h-accion);color:var(--h-accion-tinta);font-size:19px;font-weight:800;margin-top:16px">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>Ver el papel</button>
+      <button class="btn" style="height:60px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);color:var(--h-tinta);font-size:19px;font-weight:800;margin-top:10px">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16Z"/></svg>Corregir o borrar</button>
+      <span class="med">título en la CABECERA (D6) · importe en tinta · tinta oscura sobre teal (10,9:1) · 60 y 60</span>
+    </div></div>
+  </div>
+  <p class="porque">Tres cosas de fondo. <b>El título sube a la cabecera</b>: antes vivía en el cuerpo y desaparecía al hacer scroll — se acababa mirando una ficha sin saber de qué papel era, mientras que la pantalla de al lado sí lo tenía arriba. <b>El importe deja de llevar el color de la sección</b> y pasa a tinta: un número no lleva color propio. Y el botón principal pasa de <b>blanco sobre teal</b> —2,4:1, por debajo del mínimo legible— a <b>tinta oscura sobre teal</b>, 10,9:1.</p>
+</section>
+
+
+<!-- ═══════ PANTALLA 3 ═══════ -->
+<section id="p3">
+  <div class="cab"><span class="num">06</span><h2>Agenda · el formulario de apuntar</h2></div>
+  <p>Es la pantalla de la generación más antigua: usaba <code>font-titulo</code> a 40 px —la única del producto—, <code>rounded-2xl border-2</code>, <code>text-xl</code> y un botón de 24 px de letra.</p>
+
+  <div class="vs">
+    <div class="tel"><div class="et et-a">Antes</div><div class="pantalla hubi claro">
+      <p style="font-size:40px;font-weight:700;line-height:1.15;letter-spacing:-.02em;margin:0 0 22px">Apuntar algo</p>
+      <p style="font-size:20px;font-weight:500;margin:0 0 10px">¿Qué hay que recordar?</p>
+      <div style="border-radius:16px;border:2px solid var(--h-borde);background:var(--h-fondo);padding:14px 18px;font-size:20px;font-weight:500;line-height:1.35;min-height:88px;margin-bottom:26px">Recoger la medicación en la farmacia</div>
+      <p style="font-size:20px;font-weight:500;margin:0 0 10px">¿Cuándo?</p>
+      <div style="display:grid;gap:12px;margin-bottom:22px">
+        <button style="width:100%;border-radius:20px;border:2px solid #14B8A6;background:#DFF7F3;color:#14B8A6;padding:18px 22px;text-align:left;font-size:20px;font-weight:500;font-family:inherit">✓ Hoy</button>
+        <button style="width:100%;border-radius:20px;border:2px solid var(--h-borde);background:var(--h-sup);color:var(--h-tinta);padding:18px 22px;text-align:left;font-size:20px;font-weight:500;font-family:inherit">Mañana</button>
+        <button style="width:100%;border-radius:20px;border:2px solid var(--h-borde);background:var(--h-sup);color:var(--h-tinta);padding:18px 22px;text-align:left;font-size:20px;font-weight:500;font-family:inherit">Cuando se pueda</button>
+      </div>
+      <p style="font-size:18px;color:var(--h-suave);margin:0 0 8px">O elige un día</p>
+      <div style="border-radius:16px;border:2px solid var(--h-borde);background:var(--h-fondo);padding:14px 18px;font-size:17px;margin-bottom:26px;color:var(--h-tinta)">09/09/2026</div>
+      <p style="text-align:center;font-size:18px;font-weight:500;color:var(--h-suave);text-decoration:underline;text-underline-offset:4px;margin:0 0 30px">Añadir hora, aviso, nota o repetirlo</p>
+      <button class="btn" style="border-radius:16px;background:#14B8A6;color:#fff;padding:24px;font-size:24px;font-weight:600">Apuntar</button>
+      <span class="med">título 40 · font-titulo · etiquetas 20 · opciones 62–66 px con «✓ » que DESPLAZA el texto · botón 24 px</span>
+    </div></div>
+
+    <div class="tel"><div class="et et-b">Después</div><div class="pantalla hubi claro">
+      <p class="tt" style="margin:0 0 22px">Apuntar algo</p>
+      <p class="tr" style="margin:0 0 8px">¿Qué hay que recordar?</p>
+      <div style="border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);padding:14px 16px;font-size:19px;font-weight:700;line-height:1.35;min-height:92px;margin-bottom:26px">Recoger la medicación en la farmacia</div>
+      <p class="tr" style="margin:0 0 8px">¿Cuándo?</p>
+      <div style="display:grid;gap:10px;margin-bottom:22px">
+        <button style="display:flex;align-items:center;gap:10px;width:100%;min-height:60px;border-radius:16px;border:1px solid var(--h-accion);background:var(--h-bien-velo);color:var(--h-tinta);padding:12px 16px;text-align:left;font-family:inherit">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--h-accion);color:var(--h-accion-tinta);display:flex;align-items:center;justify-content:center;flex:none"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg></span>
+          <span class="tc" style="font-weight:800">Hoy</span></button>
+        <button style="display:flex;align-items:center;gap:10px;width:100%;min-height:60px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);color:var(--h-tinta);padding:12px 16px;text-align:left;font-family:inherit">
+          <span style="width:22px;height:22px;border-radius:50%;border:2px solid var(--h-borde);flex:none"></span>
+          <span class="tc" style="font-weight:800">Mañana</span></button>
+        <button style="display:flex;align-items:center;gap:10px;width:100%;min-height:60px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);color:var(--h-tinta);padding:12px 16px;text-align:left;font-family:inherit">
+          <span style="width:22px;height:22px;border-radius:50%;border:2px solid var(--h-borde);flex:none"></span>
+          <span class="tc" style="font-weight:800">Cuando se pueda</span></button>
+      </div>
+      <p class="tr" style="margin:0 0 8px">O elige un día</p>
+      <div style="height:58px;display:flex;align-items:center;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px;font-size:19px;font-weight:700;margin-bottom:24px">09/09/2026</div>
+      <button class="btn" style="height:48px;border-radius:16px;background:transparent;color:var(--h-tinta);font-size:17px;font-weight:800;margin-bottom:24px">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Añadir hora, aviso, nota o repetirlo</button>
+      <button class="btn" style="height:60px;border-radius:16px;background:var(--h-accion);color:var(--h-accion-tinta);font-size:19px;font-weight:800">Apuntar</button>
+      <span class="med">título 27 · rótulos 13 · opciones 60 px con marca de sitio fijo · botón 60 · un solo peso de borde</span>
+    </div></div>
+  </div>
+  <p class="porque">El detalle que más se nota al usarlo: el <b>«✓ » iba pegado al texto</b>, así que la etiqueta se desplazaba dos caracteres al elegirla y <b>toda la lista bailaba</b>. Ahora la marca ocupa su sitio siempre, elegida o no. Y el botón «Apuntar» dejó de apagarse al 40 % sin decir nada: si falta el título, dice «Escribe primero qué hay que recordar».</p>
+</section>
+
+
+<!-- ═══════ DARK ═══════ -->
+<section id="dark">
+  <div class="cab"><span class="num">07</span><h2>Las tres, en oscuro</h2></div>
+  <p class="regla">Un sistema, dos apariencias. El único color que <strong>no</strong> cambia entre modos es el de acción: el botón principal es el mismo teal con la misma tinta oscura de día y de noche, que es lo que hace que se reconozca sin buscarlo.</p>
+
+  <div class="vs" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="tel"><div class="et" style="background:var(--pg-cod);color:var(--pg-tenue)">Papeles</div><div class="pantalla hubi oscuro">
+      <p class="tt" style="margin-bottom:10px">Documentos</p>
+      <div style="display:flex;align-items:center;gap:12px;height:58px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px;margin-bottom:16px">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-tenue)" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <span class="tc" style="color:var(--h-tenue);font-weight:500">¿Qué estás buscando?</span></div>
+      <p class="tr" style="margin-bottom:10px">Lo último guardado</p>
+      <div style="display:grid;gap:10px">
+        <div class="card fila">
+          <span class="past" style="width:44px;height:44px;border-radius:14px;background:color-mix(in srgb,#6FA88A 22%,var(--h-sup));color:#9DC7B2"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4-1-7-4-7-9 4 0 7 1 9 4 2-4 5-6 7-6 0 6-4 11-9 11Z"/></svg></span>
+          <span style="min-width:0;flex:1"><span class="tc trunc" style="display:block;font-weight:800">Factura Endesa</span><span class="ta trunc" style="display:block">Luz · 14 ago</span></span>
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-apagado)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></div>
+        <div class="card fila" style="min-height:76px">
+          <span class="past" style="width:48px;height:48px;border-radius:16px;background:color-mix(in srgb,#D07E97 22%,var(--h-sup));color:#E5A4B6"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-7-9a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 4.5-7 9-7 9Z"/></svg></span>
+          <span style="min-width:0;flex:1"><span class="ttar trunc" style="display:block">Salud</span><span class="ta trunc" style="display:block">9 papeles</span></span>
+          <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-apagado)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></div>
+      </div>
+    </div></div>
+
+    <div class="tel"><div class="et" style="background:var(--pg-cod);color:var(--pg-tenue)">Ficha</div><div class="pantalla hubi oscuro">
+      <p class="tt" style="margin:0 0 14px">Factura Endesa</p>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span class="past" style="width:24px;height:24px;border-radius:8px;background:color-mix(in srgb,#6FA88A 22%,var(--h-sup));color:#9DC7B2"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4-1-7-4-7-9 4 0 7 1 9 4 2-4 5-6 7-6 0 6-4 11-9 11Z"/></svg></span>
+        <span class="tr trunc">FINCA › GASTOS › LUZ</span></div>
+      <div style="border-radius:20px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px 4px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--h-borde);padding:12px 0"><span class="ta">Proveedor</span><span class="tc" style="font-weight:800">ENDESA</span></div>
+        <div style="display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--h-borde);padding:12px 0"><span class="ta">Importe</span><span class="ttar">127,43 €</span></div>
+        <div style="display:flex;justify-content:space-between;gap:16px;padding:12px 0"><span class="ta">Vence</span><span class="tc" style="font-weight:800;color:var(--h-alerta)">12 de noviembre</span></div>
+      </div>
+      <button class="btn" style="height:60px;border-radius:16px;background:var(--h-accion);color:var(--h-accion-tinta);font-size:19px;font-weight:800">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>Ver el papel</button>
+      <button class="btn" style="height:60px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);color:var(--h-tinta);font-size:19px;font-weight:800;margin-top:10px">Corregir o borrar</button>
+    </div></div>
+
+    <div class="tel"><div class="et" style="background:var(--pg-cod);color:var(--pg-tenue)">Apuntar</div><div class="pantalla hubi oscuro">
+      <p class="tt" style="margin:0 0 18px">Apuntar algo</p>
+      <p class="tr" style="margin:0 0 8px">¿Qué hay que recordar?</p>
+      <div style="border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);padding:14px 16px;font-size:19px;font-weight:700;line-height:1.35;min-height:76px;margin-bottom:20px">Recoger la medicación</div>
+      <p class="tr" style="margin:0 0 8px">¿Cuándo?</p>
+      <div style="display:grid;gap:10px;margin-bottom:20px">
+        <button style="display:flex;align-items:center;gap:10px;width:100%;min-height:60px;border-radius:16px;border:1px solid var(--h-accion);background:var(--h-bien-velo);color:var(--h-tinta);padding:12px 16px;font-family:inherit">
+          <span style="width:22px;height:22px;border-radius:50%;background:var(--h-accion);color:var(--h-accion-tinta);display:flex;align-items:center;justify-content:center;flex:none"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5.5 5.5L20 7"/></svg></span>
+          <span class="tc" style="font-weight:800">Hoy</span></button>
+        <button style="display:flex;align-items:center;gap:10px;width:100%;min-height:60px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);color:var(--h-tinta);padding:12px 16px;font-family:inherit">
+          <span style="width:22px;height:22px;border-radius:50%;border:2px solid var(--h-borde);flex:none"></span>
+          <span class="tc" style="font-weight:800">Mañana</span></button>
+      </div>
+      <button class="btn" style="height:60px;border-radius:16px;background:var(--h-accion);color:var(--h-accion-tinta);font-size:19px;font-weight:800">Apuntar</button>
+      <div style="border-radius:20px;border:1px solid color-mix(in srgb,var(--h-alerta) 45%,transparent);background:var(--h-alerta-velo);padding:14px 16px;margin-top:14px">
+        <p class="tc" style="font-weight:800;color:var(--h-alerta);margin:0">No se ha podido apuntar</p>
+        <p style="font-size:15px;font-weight:600;color:var(--h-suave);margin:4px 0 0;line-height:1.4">No hay conexión. Inténtalo otra vez.</p></div>
+    </div></div>
+  </div>
+</section>
+
+
+<!-- ═══════ PROBLEMAS ═══════ -->
+<section id="problemas">
+  <div class="cab"><span class="num">08</span><h2>Qué ha aparecido al aplicarlo a producto real</h2></div>
+  <p class="regla">Ocho cosas que en el showcase no se veían. Ninguna invalida el sistema, pero seis de ellas hay que resolverlas antes de migrar las otras cuarenta y una.</p>
+
+  <div class="nota"><b>1 · El botón principal es <code>w-full</code> y a veces no debe serlo</b>
+  <p>En un estado vacío centrado, el botón tiene que encogerse. Lo resolví con un <code>!w-auto px-7</code> por encima, que es un parche. La pieza necesita una propiedad <code>ancho</code> en vez de que cada pantalla lo fuerce.</p></div>
+
+  <div class="nota"><b>2 · «Ver el papel» no puede ser <code>BotonPrincipal</code></b>
+  <p>Es un <code>&lt;a target="_blank"&gt;</code> que abre el archivo fuera, no un <code>Link</code> de Next. Tuve que repetir los estilos del botón a mano — que es exactamente lo que el sistema viene a evitar. La pieza tiene que aceptar enlaces externos.</p></div>
+
+  <div class="nota"><b>3 · <code>Fila</code> necesita dos tamaños</b>
+  <p>Los papeles piden 64 px y las secciones 76. Lo forcé con <code>!min-h-[76px]</code>. O <code>Fila</code> lleva una variante, o esas filas deberían usar <code>TarjetaAccion</code> — que existe y no llegué a usar en ningún sitio.</p></div>
+
+  <div class="nota"><b>4 · Hay tres componentes llamados <code>Dato</code>, en tres ficheros, con tres diseños</b>
+  <p>En la ficha de un papel (<code>py-3</code>, 16,5 px), en la de una tarea (<code>py-5</code>, <code>text-xl</code>) y en la pantalla de guardar (<code>py-5</code>, 18 px). Solo migré el primero. <code>Dato</code> tiene que estar en <code>piezas.tsx</code>.</p></div>
+
+  <div class="nota"><b>5 · Con seis ámbitos y ocho secciones, hay colisiones</b>
+  <p>Salud y Personal comparten el rosa; Casa y Seguros comparten el azul. Con la paleta apagada se nota menos que antes, pero hace falta una regla para cuando una familia cree su séptima actividad. O más hues, o una segunda señal (el icono ya lo es).</p></div>
+
+  <div class="nota"><b>6 · El icono y el color salen de dos mapas distintos</b>
+  <p><code>SECCIONES</code> decide el icono y <code>ambitoDe</code> el color, y los dos leen el mismo <code>segmento_drive</code>. Funciona, pero son dos sitios donde mantener la misma lista. Deberían ser uno.</p></div>
+
+  <div class="nota"><b>7 · El chevron se pintaba con <code>text-borde</code></b>
+  <p>Es decir, con el color de las <em>líneas</em>: casi invisible sobre la propia tarjeta. Estaba así en las tres pantallas de Papeles. Ahora es <code>text-apagado</code>. No estaba en la auditoría porque solo se ve comparando.</p></div>
+
+  <div class="nota"><b>8 · Dos P1 que he dejado a propósito dentro de la ficha migrada</b>
+  <p>La tarjeta de «Cuenta como gasto» sigue diciendo <b>«en la Finca»</b> y enlazando a <code>/finca</code> para cualquier movimiento, venga de donde venga. Es un P1 y dijiste que no lo tocara, así que lo he restilado sin arreglarlo — pero está a la vista en la comparación de arriba, y en cuanto entre la segunda familia ese texto es falso.</p></div>
+</section>
+
+
+<!-- ═══════ QUÉ SIGUE ═══════ -->
+<section id="sigue">
+  <div class="cab"><span class="num">09</span><h2>Lo que NO se ha tocado</h2></div>
+  <ul>
+    <li><strong>Las otras 41 pantallas.</strong> Siguen exactamente como estaban, con sus tokens de siempre.</li>
+    <li><strong>La navegación.</strong> Weaver y Alquileres siguen donde estaban. El cuarto concepto queda abierto para la Fase 2 — llevas razón en que «La casa» se queda corto.</li>
+    <li><strong>Inicio.</strong> Ni reordenado ni vaciado.</li>
+    <li><strong>La arquitectura del asistente.</strong> Solo se arreglaron sus dos P0; <code>hubi-input.tsx</code> está definido y sin conectar.</li>
+    <li><strong>Agenda</strong> más allá de sus P0: los 17 controles siguen siendo 17.</li>
+    <li><strong>El fondo global</strong> sigue en <code>#F1F5F9</code>, como acordamos para la Fase 3.</li>
+    <li><strong>«Papeles» frente a «Documentos»</strong>, la estructura de Ajustes y el resto del vocabulario.</li>
+    <li><strong>Los 14 P1</strong> de la lista.</li>
+  </ul>
+
+  <h3>Cuando apruebes estas tres</h3>
+  <p>Primero cierro los seis problemas de la sección 08 —son de la propia <code>piezas.tsx</code> y afectan a todo lo que venga después—, y luego migro en tandas por familia: primero el resto de Papeles, después las cuentas, después la compra y las notas. Agenda la dejaría para el final, porque su rediseño es de Fase 2 y migrarla dos veces sería trabajo tirado.</p>
+</section>
+
+<footer>
+  Fase 1 · P0 corregidos, sistema construido y tres pantallas migradas.<br>
+  <code>npx tsc --noEmit</code> sin errores · <code>npx next build</code> correcto · <code>eslint</code> sin avisos en los ficheros tocados · 21 pruebas automáticas en 4 zonas horarias.<br><br>
+  Las maquetas de esta página reproducen el marcado real de las tres pantallas, antes y después, con los tokens de HUBI.
+</footer>
+
+</div>

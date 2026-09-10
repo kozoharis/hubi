@@ -1,0 +1,375 @@
+From 9f655327f8b35f616437ce74fd28f586c5b1a776 Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 23:34:31 +0000
+Subject: [PATCH] La barra de abajo, a la tercera. Y lo que te han dejado a ti
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+LA BARRA. Empeoró con lo último y esta vez el porqué está claro.
+
+Lo intentado, y por qué no bastó:
+
+ 1 · `overscroll-behavior-y: none` en html y body. Safari lo ignora
+     para el rebote del DOCUMENTO. No cambió nada.
+
+ 2 · Hacer del <body> el que se desliza, con `height: 100dvh`. Salió
+     PEOR, y con razón: `100dvh` cambia cuando la barra del navegador
+     aparece y desaparece, así que el suelo del body se movía debajo
+     de una barra clavada a la ventana. La despegaba más que antes.
+     Ese fui yo.
+
+Lo que sí funciona, y es lo que hace cualquier aplicación: QUE EL
+DOCUMENTO NO SE DESLICE EN ABSOLUTO.
+
+    body     alto de pantalla, `overflow: hidden` — no se mueve
+    .marco   dentro, con el desbordé y todo el contenido
+
+El rebote pasa a ocurrir dentro del marco, y lo que está `fixed` —que
+se coloca respecto a la ventana— se queda quieto pase lo que pase. No
+hay rebote del documento que descolocar.
+
+`contain` y no `none` en el marco: `none` apagaría también el «tirar
+para recargar» de Android, que ahí sí es un gesto que se usa.
+
+Y con esto hace falta `app/marco.tsx`: al navegar, Next sube la
+VENTANA, que ya no es la que baja. Sin ese reinicio, entrar a un
+documento desde el final de una lista larga lo abriría a media página
+—con el título fuera de la pantalla— y se notaría como que no ha
+cargado.
+
+─────────────────────────────────────────────────────────────
+PARA TI
+
+Una nota dirigida a alguien solo salía como un número: «Notas · 2 ·
+una es para ti». Y un número no dice QUÉ te han dejado, así que había
+que entrar a mirarlo — y una nota que hay que ir a buscar es una nota
+que a veces no se lee.
+
+Ahora sale el texto, arriba del todo, antes que las tarjetas y antes
+que la agenda: es lo único de esa pantalla que alguien te ha dejado a
+ti en concreto. Con la barra del color de quien la escribió, como en
+el corcho.
+
+Desaparece sola en cuanto dices que la has visto. Si se quedara, el
+Inicio acabaría con una lista fija que se deja de mirar en una semana.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/globals.css | 51 ++++++++++++++++++++++++---------
+ app/layout.tsx  | 11 +++++++-
+ app/marco.tsx   | 37 ++++++++++++++++++++++++
+ app/page.tsx    | 75 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ lib/notas.ts    | 35 +++++++++++++++++++++++
+ 5 files changed, 193 insertions(+), 16 deletions(-)
+ create mode 100644 app/marco.tsx
+
+diff --git a/app/globals.css b/app/globals.css
+index 206e3bb..0aed1b5 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -118,27 +118,45 @@
+   para el navegador que no lo respete.
+ */
+ /*
+-  ── Y NO BASTABA CON PEDIRLO ──
++  ═══════════════════════════════════════════════════════════
++  LA BARRA DE ABAJO NO SE DESPEGA. TERCERA VEZ, Y AHORA BIEN.
++  ═══════════════════════════════════════════════════════════
+ 
+-  `overscroll-behavior-y: none` a secas no lo arregló: en Safari, el
+-  rebote del DOCUMENTO se sigue produciendo, y con él se descolocan la
+-  barra de abajo y la cabecera, que son las dos cosas clavadas.
++  Al llegar al final y seguir arrastrando, iOS estira la página. La
++  barra y la cabecera están clavadas y se descolocan con ella.
+ 
+-  El arreglo de verdad es que el documento no sea lo que se desliza.
+-  El <body> pasa a ser el contenedor con altura de pantalla y desbordé
+-  propio: el rebote ocurre AHÍ DENTRO, y lo que está `fixed` —que se
+-  coloca respecto a la ventana, no respecto al body— se queda quieto.
++  Lo intentado, y por qué no bastó:
+ 
+-  `100dvh` y no `100vh`: con la barra del navegador apareciendo y
+-  desapareciendo, `100vh` deja un hueco por abajo en iPhone. Se
+-  mantiene `100vh` delante como respaldo para el navegador que no
+-  entienda `dvh`.
++  1 · `overscroll-behavior-y: none` en html y body.
++      Safari lo ignora para el rebote del DOCUMENTO. No cambió nada.
++
++  2 · Hacer del <body> el que se desliza, con `height: 100dvh`.
++      Salió PEOR: `100dvh` cambia cuando la barra del navegador
++      aparece y desaparece, así que el suelo del body se movía debajo
++      de una barra clavada a la ventana. Se despegaba más que antes.
++
++  Lo que sí funciona, y es lo que hace cualquier aplicación:
++  QUE EL DOCUMENTO NO SE DESLICE EN ABSOLUTO.
++
++      body     alto de pantalla, `overflow: hidden` — no se mueve
++      .marco   dentro, con el desbordé y todo el contenido
++
++  El rebote pasa a ocurrir DENTRO del marco, y lo que está `fixed`
++  —que se coloca respecto a la ventana, no respecto al marco— se queda
++  quieto pase lo que pase. No hay rebote del documento que descolocar.
++
++  `overscroll-behavior-y: contain` en el marco, y no `none`: `none`
++  también apagaría el «tirar para recargar» de Android, que ahí sí es
++  un gesto que la gente usa.
++
++  Y `100dvh` con `100vh` delante como respaldo: en un navegador que no
++  entienda `dvh` se queda con el de siempre, que es peor pero no está
++  roto.
+ */
+ html {
+   -webkit-text-size-adjust: 100%;
+   background: var(--t-fondo);
+   height: 100%;
+-  overscroll-behavior-y: none;
+ }
+ 
+ body {
+@@ -149,9 +167,14 @@ body {
+ 
+   height: 100vh;
+   height: 100dvh;
++  overflow: hidden;
++}
++
++.marco {
++  height: 100%;
+   overflow-y: auto;
+   overflow-x: hidden;
+-  overscroll-behavior-y: none;
++  overscroll-behavior-y: contain;
+   -webkit-overflow-scrolling: touch;
+ }
+ 
+diff --git a/app/layout.tsx b/app/layout.tsx
+index 2f396a5..f045793 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -4,6 +4,7 @@ import './globals.css'
+ import { clienteSesion } from '@/lib/supabase/sesion'
+ import { actividadesDe, type Actividad } from '@/lib/actividades'
+ import { ProveedorActividades } from './actividades-contexto'
++import Marco from './marco'
+ 
+ const fuente = Plus_Jakarta_Sans({
+   subsets: ['latin'],
+@@ -198,8 +199,16 @@ export default async function RootLayout({
+         />
+       </head>
+       <body>
++        {/*
++          TODO VA DENTRO DEL MARCO, y el marco es lo que se desliza.
++
++          El <body> se queda quieto —alto de pantalla y sin desbordé—
++          para que el rebote del final ocurra aquí dentro y no arrastre
++          consigo la barra de abajo ni la cabecera, que están clavadas
++          a la ventana. El porqué largo está en `globals.css`.
++        */}
+         <ProveedorActividades casa={{ actividades, rol, usaCompra }}>
+-          {children}
++          <Marco>{children}</Marco>
+         </ProveedorActividades>
+       </body>
+     </html>
+diff --git a/app/marco.tsx b/app/marco.tsx
+new file mode 100644
+index 0000000..bad0415
+--- /dev/null
++++ b/app/marco.tsx
+@@ -0,0 +1,37 @@
++'use client'
++
++import { useEffect } from 'react'
++import { usePathname } from 'next/navigation'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  ARRIBA DEL TODO AL CAMBIAR DE PANTALLA
++  ═══════════════════════════════════════════════════════════════
++
++  Hace falta por lo mismo que arregló la barra de abajo: el que se
++  desliza ya no es el documento, es `.marco`. Y Next, al navegar,
++  sube la VENTANA — que ahora no se mueve, porque no es la que baja.
++
++  Sin esto pasaría lo que pasa en cualquier aplicación mal hecha:
++  entras a un documento desde el final de una lista larga y aparece a
++  media página, con el título fuera de la pantalla. Se nota como que
++  «no ha cargado».
++
++  `instant` y no suave: al cambiar de pantalla no hay nada que seguir
++  con la vista. Un desplazamiento animado de dos mil píxeles es un
++  mareo, y encima tapa el primer instante de la pantalla nueva.
++*/
++export default function Marco({ children }: { children: React.ReactNode }) {
++  const donde = usePathname()
++
++  useEffect(() => {
++    const marco = document.getElementById('marco')
++    if (marco) marco.scrollTo({ top: 0, behavior: 'instant' })
++  }, [donde])
++
++  return (
++    <div id="marco" className="marco">
++      {children}
++    </div>
++  )
++}
+diff --git a/app/page.tsx b/app/page.tsx
+index 2280887..b5995c4 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -13,7 +13,7 @@ import { cuando, type Recordatorio } from '@/lib/tablon'
+ import { leerPerfil } from '@/lib/perfil'
+ import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
+ import { casasDe } from '@/lib/casas'
+-import { cuantasNotas } from '@/lib/notas'
++import { cuantasNotas, paraMi, cuandoSePuso } from '@/lib/notas'
+ import { gastadoEnCasa } from '@/lib/gastos-casa'
+ import { queVeEnInicio } from '@/lib/roles'
+ import { eurosRedondo } from '@/lib/periodos'
+@@ -313,6 +313,8 @@ export default async function Inicio({
+      del día. Se saca de la misma lectura de gente: pedirla dos veces
+      sería un viaje de más para pintar la misma pantalla. */
+   let deLaAyuda: { nombre: string; color: string } | null = null
++  /** Las notas que te están esperando a ti, con quién las dejó. */
++  const tuyas: { id: string; texto: string; de: string; color: string; cuando: string }[] = []
+ 
+   try {
+     const gente = await genteDeLaCasa(supabase, hogarId)
+@@ -321,6 +323,32 @@ export default async function Inicio({
+     const ayuda = gente.find((g) => g.rol === 'ayuda' && !g.pendiente)
+     if (ayuda) deLaAyuda = { nombre: ayuda.nombre.split(' ')[0], color: ayuda.color }
+ 
++    /*
++      ── LO QUE TE HAN DEJADO A TI ──
++
++      Hasta ahora solo salía el número —«2 · una es para ti»—. Y un
++      número no dice QUÉ te han dejado, así que había que entrar a
++      mirarlo: una nota que hay que ir a buscar es una nota que a veces
++      no se lee.
++
++      Se leen aquí porque ya tenemos los nombres y los colores de la
++      casa: pedirlos otra vez sería un viaje de más para pintar la
++      misma pantalla.
++    */
++    if (ve.notas) {
++      const suyas = await paraMi(supabase, user.id, 2)
++      for (const n of suyas) {
++        const dequien = gente.find((g) => g.id === n.escrita_por)
++        tuyas.push({
++          id: n.id,
++          texto: n.texto,
++          de: dequien?.nombre.split(' ')[0] ?? 'Alguien',
++          color: dequien?.color ?? '#64748B',
++          cuando: cuandoSePuso(n.creada_en),
++        })
++      }
++    }
++
+     const conQuien =
+       yoSoy?.rol === 'asesor'
+         ? (gente.find((g) => g.id !== user.id && g.rol !== 'asesor') ?? null)
+@@ -524,6 +552,51 @@ export default async function Inicio({
+           </p>
+         )}
+ 
++        {/*
++          ═══════════════════════════════════════════════════════
++          PARA TI
++          ═══════════════════════════════════════════════════════
++
++          Va ARRIBA, antes que las tarjetas y antes que la agenda. Es
++          lo único de esta pantalla que alguien de tu casa te ha
++          dejado a ti en concreto — y lo que se pone debajo de seis
++          tarjetas se lee mañana.
++
++          Se enseña el texto, no un número: «2 · una es para ti»
++          obligaba a entrar para saber qué era, y una nota que hay que
++          ir a buscar es una nota que a veces no se lee.
++
++          Desaparece sola en cuanto dices que la has visto, desde
++          Notas. Si se quedara, el Inicio acabaría con una lista fija
++          que se deja de mirar en una semana.
++        */}
++        {tuyas.length > 0 && (
++          <section className="mt-4">
++            <h2 className="rotulo">Para ti</h2>
++            <ul className="mt-2 space-y-2">
++              {tuyas.map((n) => (
++                <li key={n.id}>
++                  <Link
++                    href="/notas"
++                    className="block rounded-[20px] border bg-superficie px-4 py-3.5"
++                    style={{
++                      borderColor: `color-mix(in srgb, ${n.color} 42%, transparent)`,
++                      borderLeft: `4px solid ${n.color}`,
++                    }}
++                  >
++                    <span className="block text-[16.5px] font-semibold leading-snug">
++                      {n.texto.length > 140 ? `${n.texto.slice(0, 140)}…` : n.texto}
++                    </span>
++                    <span className="mt-1 block text-[13.5px] font-bold text-tenue">
++                      {n.de} · {n.cuando.toLowerCase()}
++                    </span>
++                  </Link>
++                </li>
++              ))}
++            </ul>
++          </section>
++        )}
++
+         {conectado && <Invitacion />}
+ 
+         {aviso && (
+diff --git a/lib/notas.ts b/lib/notas.ts
+index 11cf64d..e0acbd0 100644
+--- a/lib/notas.ts
++++ b/lib/notas.ts
+@@ -100,6 +100,41 @@ export async function cuantasNotas(
+   }
+ }
+ 
++/**
++ * Las notas que te están esperando A TI.
++ *
++ * Es lo único del Inicio que va dirigido a una persona en concreto, y
++ * hasta ahora solo salía como un número —«2 · una es para ti»—. Un
++ * número no dice qué te han dejado, así que había que entrar a
++ * mirarlo; y una nota que hay que ir a buscar es una nota que a veces
++ * no se lee.
++ *
++ * Solo las NO VISTAS: en cuanto dices que la has visto deja de
++ * reclamarte. Si siguiera saliendo, el Inicio acabaría con una lista
++ * fija que se deja de mirar en una semana.
++ */
++export async function paraMi(
++  supabase: Cliente,
++  perfilId: string,
++  cuantas = 3
++): Promise<Nota[]> {
++  try {
++    const { data, error } = await supabase
++      .from('notas')
++      .select('id, texto, para, escrita_por, creada_en, cambiada_en, vista_en, guardada_en')
++      .eq('para', perfilId)
++      .is('vista_en', null)
++      .is('guardada_en', null)
++      .order('creada_en', { ascending: false })
++      .limit(cuantas)
++
++    if (error || !data) return []
++    return data as Nota[]
++  } catch {
++    return []
++  }
++}
++
+ /**
+  * Una nota con su fecha ya escrita en palabras.
+  *
+-- 
+2.43.0
+

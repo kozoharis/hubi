@@ -152,7 +152,66 @@ export function tipoQueToca({
   if (deLaCasa === 'ninguno') return null
   if (delApunte != null && Number.isFinite(delApunte)) return delApunte
   if (deLaPartida != null && Number.isFinite(deLaPartida)) return deLaPartida
-  return tipoHabitual(deLaCasa)
+  return null
+}
+
+/*
+  ─────────────────────────────────────────────────────────────
+  AQUÍ HABÍA UN 21% INVENTADO, Y COSTÓ CARO
+
+  Este último paso devolvía `tipoHabitual(deLaCasa)` — o sea, el tipo
+  general: 21% en la península, 7% en Canarias. El razonamiento escrito
+  entonces era «mejor un desglose con el tipo normal, que acierta casi
+  siempre y se ve y se corrige, que ningún desglose».
+
+  Era falso por dos motivos, y Haris lo encontró con un ticket:
+
+  1. NO ACIERTA CASI SIEMPRE. La comida va al 10% y muchos productos al
+     4%. Un ticket de súper español es justo el papel que más se
+     fotografía y el que peor acierta el 21%.
+
+  2. NO SE VE. El desglose no se enseña en ninguna pantalla del flujo
+     de fotografiar: se escribe en la base de datos y aparece meses
+     después, sumado, en la cuenta del trimestre. «Se corrige» exige
+     antes «se nota», y no se notaba.
+
+  Y sobre todo choca de frente con el punto 8 del planteamiento:
+  NUNCA GUARDAR SILENCIOSAMENTE INFORMACIÓN DUDOSA. Un número inventado
+  que suma en una cuenta de impuestos no es una sugerencia: es un error
+  contable con apariencia de dato.
+
+  Ahora, si nadie lo ha dicho y el papel no lo pone, el apunte se queda
+  SIN DESGLOSAR. Eso no pierde nada —el total, que es lo que importa,
+  no se toca nunca— y `cuentaDelImpuesto` ya sabe contarlos aparte y
+  decir cuántos son.
+*/
+
+/*
+  ─────────────────────────────────────────────────────────────
+  EL TIPO, DEDUCIDO DE LA CUOTA IMPRESA
+
+  Para el caso que no tiene tipo único: el ticket del súper con 4%, 10%
+  y 21% a la vez. No hay un porcentaje que valga, pero el papel casi
+  siempre imprime los euros («TOTAL IVA 3,47»), y esos euros son un
+  HECHO, no una suposición.
+
+  Se guarda esa cuota tal cual. Y si además resulta que cuadra con
+  alguno de los tipos legales, se guarda también el tipo: así el apunte
+  queda completo cuando se puede, y con la cuota sola cuando no.
+
+  Dos céntimos de margen porque cada papel redondea a su manera.
+*/
+export function tipoQueCuadra(
+  total: number,
+  cuota: number,
+  deLaCasa: Impuesto
+): number | null {
+  if (deLaCasa === 'ninguno') return null
+  for (const t of TIPOS[deLaCasa]) {
+    if (t <= 0) continue
+    if (Math.abs(desglose(total, t).cuota - cuota) <= 0.02) return t
+  }
+  return null
 }
 
 /*
@@ -177,6 +236,10 @@ export async function desgloseQueToca(
     total: number
     /** Lo que haya dicho la pantalla para ESTE apunte. Manda siempre. */
     tipoDicho?: number | null
+    /* Los EUROS de impuesto leídos del papel. Es la salida del ticket
+       con varios tipos: no tiene un porcentaje único, pero la cuota
+       impresa es un hecho y vale igual para la cuenta del trimestre. */
+    cuotaDicha?: number | null
   }
 ): Promise<{ impuesto_tipo: number | null; impuesto_cuota: number | null }> {
   const sinNada = { impuesto_tipo: null, impuesto_cuota: null }
@@ -209,10 +272,37 @@ export async function desgloseQueToca(
       deLaPartida,
       deLaCasa: casa.impuesto,
     })
-    if (tipo === null) return sinNada
+    if (tipo !== null) {
+      const { cuota } = desglose(datos.total, tipo)
+      return { impuesto_tipo: tipo, impuesto_cuota: cuota }
+    }
 
-    const { cuota } = desglose(datos.total, tipo)
-    return { impuesto_tipo: tipo, impuesto_cuota: cuota }
+    /*
+      Sin tipo, pero con los euros impresos en el papel.
+
+      Se guarda la cuota LEÍDA, no una calculada: es lo que pone el
+      documento y es lo que tendría que cuadrar con la declaración. Y
+      si además coincide con alguno de los tipos legales, se anota
+      también el tipo — pero el que manda es el euro leído.
+    */
+    const cuota = datos.cuotaDicha
+    if (
+      cuota != null &&
+      Number.isFinite(cuota) &&
+      cuota > 0 &&
+      cuota <= Math.abs(datos.total)
+    ) {
+      const redondeada = Math.round(cuota * 100) / 100
+      return {
+        impuesto_tipo: tipoQueCuadra(datos.total, redondeada, casa.impuesto),
+        impuesto_cuota: redondeada,
+      }
+    }
+
+    /* Nadie lo ha dicho y el papel no lo pone. Sin desglosar, y se
+       cuenta aparte: inventar aquí un 21% es lo que rompía los
+       tickets del súper. */
+    return sinNada
   } catch {
     /* Sin las columnas todavía. Apuntar no puede depender de esto. */
     return sinNada

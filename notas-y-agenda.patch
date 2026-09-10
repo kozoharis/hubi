@@ -1,0 +1,1995 @@
+From e06bd937b24f5663c09aed6c0ccee08a7d64672c Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 13:31:36 +0000
+Subject: [PATCH] =?UTF-8?q?Notas=20compartidas,=20la=20semana=20de=20un=20?=
+ =?UTF-8?q?vistazo,=20y=20fuera=20=C2=ABFamily=20Hub=C2=BB?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Cuatro cosas que venían de mirar la aplicación en el móvil.
+
+  · NOTAS. Lo que el planteamiento llama TABLÓN. Una nota no tiene
+    fecha y no se «hace»: es el papel de la nevera. Por eso NO va en
+    `recordatorios` —saldría para siempre en «Por hacer · 14», que es
+    como una lista de tareas deja de mirarse— sino en su tabla.
+    Para la casa o para una persona, con «Visto» cuando es para
+    alguien. Quitar guarda, no borra.
+
+  · LA SEMANA, EN UNA FILA. Siete casillas con puntos, y debajo el día
+    que toques. La lista corrida se leía de arriba abajo, pero para
+    saber si el jueves había algo había que recorrerla entera — que es
+    justo lo que una agenda de papel contesta sin leer nada. Y la
+    pestaña «Lista» pasa a «Semana»: las dos vistas acaban enseñando
+    una lista, lo que las diferencia es cuánto abarcan.
+
+  · NADA ESCRITO A MANO. «Family Hub» ya no aparece en ningún sitio, y
+    «Juan Miguel» tampoco: quien conecta el Drive se lee de la casa.
+    Los ejemplos de la pantalla de voz salen de la casa de verdad —
+    alguien que vive contigo y una actividad tuya—, porque en una
+    pantalla de voz el ejemplo no es adorno: es lo único que te dice
+    qué puedes pedir.
+
+  · `puedeEscribir()`. Quien solo mira ya no ve botones que le van a
+    fallar. La base de datos lo impedía desde el 31; la pantalla no se
+    había enterado.
+
+Falta ejecutar `sql/35-notas.sql`. Hasta entonces no hay notas y todo
+lo demás funciona igual: la tabla se pide envuelta.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/agenda/lista.tsx                     | 202 +++++++++--
+ app/agenda/page.tsx                      |   8 +-
+ app/ajustes/mi-calendario.tsx            |   2 +-
+ app/api/analizar/route.ts                |   2 +-
+ app/api/comprobacion/route.ts            |   4 +-
+ app/api/documentos/[id]/archivo/route.ts |   2 +-
+ app/api/documentos/route.ts              |  10 +-
+ app/api/movimientos/route.ts             |   2 +-
+ app/api/notas/route.ts                   | 245 +++++++++++++
+ app/api/push/probar/route.ts             |   4 +-
+ app/api/push/suscribir/route.ts          |   2 +-
+ app/api/voz/route.ts                     |   2 +-
+ app/comprobacion/page.tsx                |   4 +-
+ app/error.tsx                            |   2 +-
+ app/guardar/page.tsx                     |  10 +-
+ app/hablar/grabar.tsx                    |  53 ++-
+ app/hablar/page.tsx                      |  61 +++-
+ app/notas/notas.tsx                      | 415 +++++++++++++++++++++++
+ app/notas/page.tsx                       | 103 ++++++
+ app/page.tsx                             |  56 +++
+ lib/hogar.ts                             |  38 +++
+ lib/notas.ts                             | 162 +++++++++
+ sql/35-notas.sql                         | 165 +++++++++
+ 23 files changed, 1502 insertions(+), 52 deletions(-)
+ create mode 100644 app/api/notas/route.ts
+ create mode 100644 app/notas/notas.tsx
+ create mode 100644 app/notas/page.tsx
+ create mode 100644 lib/notas.ts
+ create mode 100644 sql/35-notas.sql
+
+diff --git a/app/agenda/lista.tsx b/app/agenda/lista.tsx
+index b2d45e5..9926c7b 100644
+--- a/app/agenda/lista.tsx
++++ b/app/agenda/lista.tsx
+@@ -56,10 +56,12 @@ export default async function Lista({
+   ver,
+   semana,
+   de,
++  dia,
+ }: {
+   ver?: string
+   semana?: string
+   de?: string
++  dia?: string
+ }) {
+   const viendoHechas = ver === 'hechas'
+   const viendoAdelante = ver === 'adelante'
+@@ -120,13 +122,48 @@ export default async function Lista({
+   const dueno = de && calendarios.some((c) => c.id === de) ? de : null
+   const suyas = await citasDeLaFamilia(user.id, desde, hasta, dueno)
+ 
+-  const dias = Array.from({ length: 7 }, (_, i) => iso(sumar(lunes, i)))
+-    .map((f) => ({
+-      fecha: f,
+-      lista: deLaSemana.filter((r) => r.fecha === f),
+-      google: suyas.filter((c) => c.fecha === f),
+-    }))
+-    .filter((d) => d.lista.length > 0 || d.google.length > 0)
++  /*
++    LOS SIETE DÍAS, TODOS. También los vacíos.
++
++    Antes se quitaban los días sin nada —cuatro renglones diciendo
++    «nada» ocupaban media pantalla para no contar nada— y eso valía
++    cuando la pantalla era una lista corrida. Con la tira de arriba ya
++    no: la tira ES los siete días, y un lunes que no aparece en una
++    semana deja un hueco donde debería haber un lunes.
++
++    Los vacíos siguen sin ocupar espacio: en la tira son una casilla
++    sin puntos.
++  */
++  const dias = Array.from({ length: 7 }, (_, i) => iso(sumar(lunes, i))).map((f) => ({
++    fecha: f,
++    lista: deLaSemana.filter((r) => r.fecha === f),
++    google: suyas.filter((c) => c.fecha === f),
++  }))
++
++  /*
++    ── QUÉ DÍA SE ESTÁ MIRANDO ──
++
++    Toda la semana de un vistazo arriba, y debajo UN día entero. Antes
++    era la semana entera abierta en una lista corrida: se lee de
++    arriba abajo, pero para saber si el jueves hay algo hay que
++    recorrerla — que es justo lo que una agenda de papel contesta sin
++    leer nada.
++
++    Si no se ha elegido ninguno, se abre en el que interesa: hoy si
++    estamos en esta semana, y si no el primer día que tenga algo. Una
++    semana futura que se abriera vacía en su lunes haría pensar que no
++    hay nada en toda la semana.
++  */
++  const conAlgo = dias.filter((d) => d.lista.length > 0 || d.google.length > 0)
++
++  const elegido =
++    dia && dias.some((d) => d.fecha === dia)
++      ? dia
++      : enEstaSemana && dias.some((d) => d.fecha === hoyISO)
++        ? hoyISO
++        : (conAlgo[0]?.fecha ?? desde)
++
++  const abierto = dias.find((d) => d.fecha === elegido) ?? dias[0]
+ 
+   // Lo que viene después de la semana que se está mirando.
+   const adelante = pendientes.filter((r) => r.fecha && r.fecha > hasta)
+@@ -260,28 +297,35 @@ export default async function Lista({
+             </Link>
+           </div>
+ 
+-          {dias.length === 0 ? (
+-            <Vacio
+-              texto={
+-                enEstaSemana
+-                  ? 'Nada más esta semana.'
+-                  : 'Nada esta semana.'
+-              }
+-            />
+-          ) : (
+-            dias.map((d) => (
+-              <section key={d.fecha} className="mt-5">
+-                <h2 className="rotulo">{diaEnPalabras(d.fecha, hoyISO)}</h2>
++          {/* ── La semana entera, en una fila ── */}
++          <Tira dias={dias} elegido={elegido} hoyISO={hoyISO} desde={desde} de={dueno} />
++
++          {/* ── Y debajo, el día que se esté mirando ── */}
++          {abierto && (
++            <section className="mt-5">
++              <h2 className="rotulo">{diaEnPalabras(abierto.fecha, hoyISO)}</h2>
++
++              {abierto.lista.length === 0 && abierto.google.length === 0 ? (
++                <Vacio
++                  texto={
++                    conAlgo.length === 0
++                      ? enEstaSemana
++                        ? 'Nada más esta semana.'
++                        : 'Nada esta semana.'
++                      : 'Este día no tienes nada.'
++                  }
++                />
++              ) : (
+                 <ul className="mt-2.5 space-y-2.5">
+-                  {d.lista.map((r) => (
++                  {abierto.lista.map((r) => (
+                     <Tarjeta key={r.id} r={r} nombres={nombres} yo={user.id} />
+                   ))}
+-                  {d.google.map((c) => (
++                  {abierto.google.map((c) => (
+                     <DeGoogle key={c.uid} c={c} conVarios={calendarios.length > 1} />
+                   ))}
+                 </ul>
+-              </section>
+-            ))
++              )}
++            </section>
+           )}
+ 
+           {/* Lo que queda más allá NO se esconde: se dice cuánto hay. */}
+@@ -308,6 +352,118 @@ export default async function Lista({
+   )
+ }
+ 
++/*
++  ═══════════════════════════════════════════════════════════════
++  LA TIRA DE LA SEMANA
++  ═══════════════════════════════════════════════════════════════
++
++  Los siete días en una fila, como en una agenda de papel: la letra
++  arriba, el número debajo, y unos puntos que dicen cuánto hay ese
++  día. Se toca uno y debajo sale lo suyo.
++
++  ─────────────────────────────────────────────────────────────
++  POR QUÉ PUNTOS Y NO EL NÚMERO
++
++  Un «3» pequeño dentro de una casilla de 44 px hay que leerlo. Tres
++  puntos se ven sin leer, incluso de reojo — y el reojo es como se
++  mira una agenda. A partir de cuatro cosas los puntos dejarían de
++  distinguirse, así que a partir de ahí se ponen tres y se ensancha
++  el tercero: la diferencia que importa es «hay poco» / «hay lío», no
++  si son cinco o seis.
++
++  ─────────────────────────────────────────────────────────────
++  LA CASILLA ENTERA ES EL BOTÓN
++
++  44 px de ancho por 62 de alto. Está por encima del mínimo que nos
++  hemos puesto para lo que hay que pulsar, y sobre todo no exige
++  puntería: el dedo cae en la casilla, no en el número.
++
++  Y el día elegido no se marca SOLO con color: lleva el fondo relleno
++  y el número en negrita. Quien no distinga bien los colores tiene que
++  poder saber igualmente en qué día está.
++*/
++function Tira({
++  dias,
++  elegido,
++  hoyISO,
++  desde,
++  de,
++}: {
++  dias: { fecha: string; lista: Recordatorio[]; google: CitaDeAlguien[] }[]
++  elegido: string
++  hoyISO: string
++  desde: string
++  de: string | null
++}) {
++  const LETRAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
++
++  return (
++    <div className="mt-4 flex justify-between gap-1">
++      {dias.map((d, i) => {
++        const puesto = d.fecha === elegido
++        const esHoy = d.fecha === hoyISO
++        const cuantos = d.lista.length + d.google.length
++        const numero = Number(d.fecha.slice(8, 10))
++
++        return (
++          <Link
++            key={d.fecha}
++            href={`/agenda?semana=${desde}&dia=${d.fecha}${de ? `&de=${de}` : ''}`}
++            aria-current={puesto ? 'date' : undefined}
++            aria-label={`${SEMANA[(i + 1) % 7]} ${numero}${
++              cuantos === 0 ? ', sin nada' : cuantos === 1 ? ', 1 cosa' : `, ${cuantos} cosas`
++            }`}
++            className="flex h-[62px] min-w-0 flex-1 flex-col items-center justify-center gap-[3px] rounded-[14px]"
++            style={
++              puesto
++                ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
++                : {
++                    background: 'var(--t-superficie)',
++                    color: 'var(--t-tinta-suave)',
++                    border: '1px solid var(--t-borde)',
++                  }
++            }
++          >
++            <span className="text-[12px] font-bold uppercase tracking-wider opacity-70">
++              {LETRAS[i]}
++            </span>
++            <span
++              className="text-[17px] font-extrabold leading-none"
++              /* Hoy va subrayado por debajo del número, no de otro
++                 color: el color ya lo usa el día elegido y dos cosas
++                 distintas del mismo color no se distinguen. */
++              style={
++                esHoy && !puesto
++                  ? { color: 'var(--t-tinta)', textDecoration: 'underline', textUnderlineOffset: 3 }
++                  : undefined
++              }
++            >
++              {numero}
++            </span>
++
++            {/* El renglón de los puntos existe siempre, con o sin
++                puntos: si apareciera solo en los días con algo, las
++                casillas tendrían alturas distintas y la fila bailaría. */}
++            <span className="flex h-[6px] items-center gap-[3px]" aria-hidden>
++              {Array.from({ length: Math.min(cuantos, 3) }, (_, k) => (
++                <span
++                  key={k}
++                  className="h-[5px] rounded-full"
++                  style={{
++                    width: k === 2 && cuantos > 3 ? 11 : 5,
++                    background: puesto ? 'var(--t-boton-texto)' : '#F59E0B',
++                    opacity: puesto ? 0.75 : 1,
++                  }}
++                />
++              ))}
++            </span>
++          </Link>
++        )
++      })}
++    </div>
++  )
++}
++
+ /*
+   Todo lo que viene después de la semana, por meses.
+ 
+diff --git a/app/agenda/page.tsx b/app/agenda/page.tsx
+index 0f91694..5f20af8 100644
+--- a/app/agenda/page.tsx
++++ b/app/agenda/page.tsx
+@@ -55,7 +55,11 @@ export default async function Agenda({
+         {/* Las dos formas de mirar lo mismo. Con texto, no solo icono:
+             un dibujo suelto obliga a adivinar. */}
+         <div className="mt-2 flex gap-2" role="group" aria-label="Cómo verlo">
+-          <Ojo texto="Lista" icono="check" puesto={!enMes} href="/agenda" />
++          {/* «Semana» y no «Lista»: las dos vistas acaban enseñando una
++              lista —al tocar un día del Mes también sale una—, así que
++              «Lista» no distinguía nada. Lo que las diferencia es
++              cuánto abarcan. */}
++          <Ojo texto="Semana" icono="check" puesto={!enMes} href="/agenda" />
+           <Ojo texto="Mes" icono="calendario" puesto={enMes} href="/agenda?vista=mes" />
+         </div>
+       </Cabecera>
+@@ -64,7 +68,7 @@ export default async function Agenda({
+         {enMes ? (
+           <Mes mes={p.mes} dia={p.dia} de={p.de} />
+         ) : (
+-          <Lista ver={p.ver} semana={p.semana} de={p.de} />
++          <Lista ver={p.ver} semana={p.semana} de={p.de} dia={p.dia} />
+         )}
+       </div>
+ 
+diff --git a/app/ajustes/mi-calendario.tsx b/app/ajustes/mi-calendario.tsx
+index e9480e2..0504aa3 100644
+--- a/app/ajustes/mi-calendario.tsx
++++ b/app/ajustes/mi-calendario.tsx
+@@ -185,7 +185,7 @@ export default function MiCalendario({
+ 
+             <ol className="mt-3 space-y-2.5">
+               <Paso n={1}>
+-                Entra en <b>calendar.google.com</b> con la cuenta de Juan Miguel.
++                Entra en <b>calendar.google.com</b> con tu cuenta de Google.
+               </Paso>
+               <Paso n={2}>
+                 A la izquierda, pon el ratón encima de tu calendario (el que lleva
+diff --git a/app/api/analizar/route.ts b/app/api/analizar/route.ts
+index 821094f..e134e2f 100644
+--- a/app/api/analizar/route.ts
++++ b/app/api/analizar/route.ts
+@@ -210,7 +210,7 @@ export async function POST(peticion: NextRequest) {
+     })
+   } catch (e) {
+     const motivo = e instanceof Error ? e.message : ''
+-    console.error('[Family Hub] Fallo leyendo el documento:', e)
++    console.error('[HUBI] Fallo leyendo el documento:', e)
+ 
+     if (motivo === 'SIN_CLAVE_OCR') {
+       return NextResponse.json(
+diff --git a/app/api/comprobacion/route.ts b/app/api/comprobacion/route.ts
+index d022f75..4791807 100644
+--- a/app/api/comprobacion/route.ts
++++ b/app/api/comprobacion/route.ts
+@@ -482,7 +482,7 @@ export async function GET() {
+           const motivo = e instanceof Error ? e.message : ''
+           resultado.drive.diagnostico =
+             motivo === 'PERMISO_CADUCADO'
+-              ? 'Google ha rechazado el permiso. Juan Miguel debe volver a conectarlo.'
++              ? 'Google ha rechazado el permiso. Quien creó la casa debe volver a conectarlo.'
+               : 'Google no devuelve acceso. Revisa GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET.'
+         }
+       }
+@@ -502,7 +502,7 @@ export async function GET() {
+ 
+   if (!resultado.calendario.permisoConcedido) {
+     resultado.calendario.diagnostico =
+-      'Este permiso es anterior al calendario. Juan Miguel tiene que volver a conectar.'
++      'Este permiso es anterior al calendario. Quien creó la casa tiene que volver a conectar.'
+   } else if (!cal.creado) {
+     resultado.calendario.diagnostico =
+       'Permiso concedido. Falta pulsar «Calendario en Google» en Ajustes.'
+diff --git a/app/api/documentos/[id]/archivo/route.ts b/app/api/documentos/[id]/archivo/route.ts
+index eff72ba..688a73d 100644
+--- a/app/api/documentos/[id]/archivo/route.ts
++++ b/app/api/documentos/[id]/archivo/route.ts
+@@ -57,7 +57,7 @@ export async function GET(
+       },
+     })
+   } catch (e) {
+-    console.error('[Family Hub] Fallo descargando de Drive:', e)
++    console.error('[HUBI] Fallo descargando de Drive:', e)
+     return new NextResponse('No se ha podido abrir el documento.', { status: 502 })
+   }
+ }
+diff --git a/app/api/documentos/route.ts b/app/api/documentos/route.ts
+index 178087f..4206ea3 100644
+--- a/app/api/documentos/route.ts
++++ b/app/api/documentos/route.ts
+@@ -146,11 +146,11 @@ export async function POST(peticion: NextRequest) {
+     )
+   } catch (e) {
+     const motivo = e instanceof Error ? e.message : ''
+-    console.error('[Family Hub] Fallo subiendo a Drive:', e)
++    console.error('[HUBI] Fallo subiendo a Drive:', e)
+ 
+     if (motivo === 'DRIVE_SIN_CONECTAR') {
+       return NextResponse.json(
+-        { error: 'Google Drive todavía no está conectado. Juan Miguel debe conectarlo.' },
++        { error: 'El Google Drive de esta casa todavía no está conectado. Tiene que hacerlo quien la creó.' },
+         { status: 409 }
+       )
+     }
+@@ -158,7 +158,7 @@ export async function POST(peticion: NextRequest) {
+       return NextResponse.json(
+         {
+           error:
+-            'El permiso de Google Drive ha caducado. Juan Miguel tiene que volver a conectarlo.',
++            'El permiso de Google Drive ha caducado. Quien creó esta casa tiene que volver a conectarlo.',
+         },
+         { status: 409 }
+       )
+@@ -220,7 +220,7 @@ export async function POST(peticion: NextRequest) {
+     .single()
+ 
+   if (error) {
+-    console.error('[Family Hub] Subido a Drive pero no registrado:', error)
++    console.error('[HUBI] Subido a Drive pero no registrado:', error)
+     return NextResponse.json(
+       {
+         error:
+@@ -259,7 +259,7 @@ export async function POST(peticion: NextRequest) {
+        eso hay que DECIRLO — es la diferencia entre "ya lo tenías" y
+        un ingreso que se pierde en silencio. */
+     if (fallo) {
+-      console.error('[Family Hub] Documento guardado sin apunte:', fallo)
++      console.error('[HUBI] Documento guardado sin apunte:', fallo)
+       if (fallo.code === '23505' && referencia) repetida = referencia
+     }
+   }
+diff --git a/app/api/movimientos/route.ts b/app/api/movimientos/route.ts
+index bd0766e..660f6f6 100644
+--- a/app/api/movimientos/route.ts
++++ b/app/api/movimientos/route.ts
+@@ -89,7 +89,7 @@ export async function POST(peticion: NextRequest) {
+         { status: 409 }
+       )
+     }
+-    console.error('[Family Hub] Fallo apuntando movimiento:', error)
++    console.error('[HUBI] Fallo apuntando movimiento:', error)
+     return NextResponse.json({ error: 'No se ha podido apuntar.' }, { status: 500 })
+   }
+ 
+diff --git a/app/api/notas/route.ts b/app/api/notas/route.ts
+new file mode 100644
+index 0000000..d42999f
+--- /dev/null
++++ b/app/api/notas/route.ts
+@@ -0,0 +1,245 @@
++import { NextResponse, type NextRequest } from 'next/server'
++import { clienteSesion } from '@/lib/supabase/sesion'
++import { quien } from '@/lib/supabase/quien'
++import { miHogar, SIN_CASA } from '@/lib/hogar'
++import { avisarA } from '@/lib/push'
++import { leerPerfil } from '@/lib/perfil'
++
++export const dynamic = 'force-dynamic'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LAS NOTAS
++  ═══════════════════════════════════════════════════════════════
++
++  Poner una, cambiarla, decir que la has visto, quitarla y volver a
++  sacarla. Cinco cosas, dos verbos: POST pone, PATCH toca.
++
++  Todo con la SESIÓN, nunca con la clave de servidor. La clave de
++  servidor se salta las políticas — y las políticas son justo lo que
++  impide que una nota acabe en la casa de al lado o firmada por otro.
++*/
++
++const LARGO = 1200
++
++// ── Poner una nota ─────────────────────────────────────────
++export async function POST(peticion: NextRequest) {
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) {
++    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
++  }
++
++  let cuerpo: { texto?: string; para?: string | null }
++  try {
++    cuerpo = (await peticion.json()) as { texto?: string; para?: string | null }
++  } catch {
++    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
++  }
++
++  const texto = String(cuerpo.texto ?? '').trim()
++  if (texto.length === 0) {
++    return NextResponse.json({ error: 'La nota está vacía.' }, { status: 400 })
++  }
++  if (texto.length > LARGO) {
++    return NextResponse.json(
++      { error: `La nota es muy larga. Máximo ${LARGO} letras.` },
++      { status: 400 }
++    )
++  }
++
++  const hogarId = await miHogar(supabase, user.id)
++  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 409 })
++
++  /*
++    ¿PARA QUIÉN?
++
++    Vacío = para toda la casa. Con alguien, se comprueba que ese
++    alguien está EN ESTA CASA: sin esta comprobación, un identificador
++    escrito a mano dejaría una nota dirigida a un desconocido, que ni
++    la vería ni se podría quitar de encima.
++  */
++  let para: string | null = null
++  const pedido = String(cuerpo.para ?? '').trim()
++
++  if (pedido && pedido !== user.id) {
++    const { data: esDeCasa } = await supabase
++      .from('miembros')
++      .select('perfil_id')
++      .eq('hogar_id', hogarId)
++      .eq('perfil_id', pedido)
++      .maybeSingle()
++
++    if (!esDeCasa) {
++      return NextResponse.json({ error: 'Esa persona no está en esta casa.' }, { status: 400 })
++    }
++    para = pedido
++  }
++
++  /* El `.select()` no es adorno: un INSERT que las políticas no
++     permitan afecta a cero filas y contesta que todo ha ido bien. */
++  const { data, error } = await supabase
++    .from('notas')
++    .insert({ hogar_id: hogarId, texto, para, escrita_por: user.id })
++    .select('id')
++    .single()
++
++  if (error || !data) {
++    console.error('[HUBI] No se ha podido poner la nota:', error)
++    return NextResponse.json(
++      {
++        error: 'No se ha podido guardar la nota.',
++        detalle: error?.message ?? 'Puede que falte ejecutar el SQL 35.',
++      },
++      { status: 500 }
++    )
++  }
++
++  /*
++    EL AVISO, SOLO SI ES PARA ALGUIEN.
++
++    Una nota para toda la casa no hace sonar ningún teléfono: es el
++    corcho de la cocina, se mira cuando se pasa por delante. Hacer
++    vibrar dos móviles cada vez que alguien apunta «queda poca leña»
++    es la manera más rápida de que los dos apaguen los avisos.
++  */
++  if (para) {
++    try {
++      const yo = await leerPerfil(supabase, user.id, user.email)
++      const quienEs = yo.nombre.split(' ')[0]
++      await avisarA(para, {
++        titulo: 'HUBI',
++        cuerpo: `${quienEs} te ha dejado una nota: ${recorta(texto)}`,
++        url: '/notas',
++        tag: `nota-${data.id}`,
++      })
++    } catch (e) {
++      /* La nota ya está puesta. Que el aviso no salga no puede hacer
++         que la pantalla diga que ha fallado. */
++      console.error('[HUBI] Nota guardada pero sin avisar:', e)
++    }
++  }
++
++  return NextResponse.json({ bien: true, id: data.id })
++}
++
++// ── Tocar una nota ─────────────────────────────────────────
++/*
++  Cuatro cosas, y cada una la puede hacer alguien distinto:
++
++    visto      · quien la recibe. Decir «me he enterado».
++    texto      · quien la escribió. Corregirla.
++    guardar    · cualquiera de los dos. La aparta de la vista.
++    recuperar  · cualquiera de los dos. La devuelve al corcho.
++
++  Quién puede qué se comprueba AQUÍ además de en las políticas. Las
++  políticas dejan tocar la fila a los dos —hace falta para que «Visto»
++  funcione—; el reparto fino de qué columna toca cada uno es este.
++*/
++export async function PATCH(peticion: NextRequest) {
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) {
++    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
++  }
++
++  let cuerpo: { id?: string; que?: string; texto?: string }
++  try {
++    cuerpo = (await peticion.json()) as { id?: string; que?: string; texto?: string }
++  } catch {
++    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
++  }
++
++  const id = String(cuerpo.id ?? '')
++  if (!id) return NextResponse.json({ error: 'Falta la nota.' }, { status: 400 })
++
++  const { data: nota } = await supabase
++    .from('notas')
++    .select('id, escrita_por, para, guardada_en')
++    .eq('id', id)
++    .maybeSingle()
++
++  if (!nota) {
++    return NextResponse.json({ error: 'Esa nota ya no está.' }, { status: 404 })
++  }
++
++  const mia = nota.escrita_por === user.id
++  const paraMi = nota.para === user.id
++
++  const cambio: Record<string, string | null> = {}
++
++  switch (cuerpo.que) {
++    case 'visto':
++      if (!paraMi) {
++        return NextResponse.json({ error: 'Esa nota no es para ti.' }, { status: 403 })
++      }
++      cambio.vista_en = new Date().toISOString()
++      break
++
++    case 'texto': {
++      if (!mia) {
++        return NextResponse.json(
++          { error: 'Solo puede cambiarla quien la escribió.' },
++          { status: 403 }
++        )
++      }
++      const texto = String(cuerpo.texto ?? '').trim()
++      if (texto.length === 0) {
++        return NextResponse.json({ error: 'La nota está vacía.' }, { status: 400 })
++      }
++      if (texto.length > LARGO) {
++        return NextResponse.json(
++          { error: `La nota es muy larga. Máximo ${LARGO} letras.` },
++          { status: 400 }
++        )
++      }
++      cambio.texto = texto
++      cambio.cambiada_en = new Date().toISOString()
++      break
++    }
++
++    case 'guardar':
++      if (!mia && !paraMi) {
++        return NextResponse.json({ error: 'Esa nota no es tuya.' }, { status: 403 })
++      }
++      cambio.guardada_en = new Date().toISOString()
++      break
++
++    case 'recuperar':
++      if (!mia && !paraMi) {
++        return NextResponse.json({ error: 'Esa nota no es tuya.' }, { status: 403 })
++      }
++      cambio.guardada_en = null
++      break
++
++    default:
++      return NextResponse.json({ error: 'No sé qué hacer con esa nota.' }, { status: 400 })
++  }
++
++  const { data, error } = await supabase
++    .from('notas')
++    .update(cambio)
++    .eq('id', id)
++    .select('id')
++
++  if (error || !data || data.length === 0) {
++    console.error('[HUBI] No se ha podido cambiar la nota:', error)
++    return NextResponse.json(
++      {
++        error: 'No se ha podido cambiar la nota.',
++        detalle: error?.message ?? 'Puede que no tengas permiso para escribir en esta casa.',
++      },
++      { status: 500 }
++    )
++  }
++
++  return NextResponse.json({ bien: true })
++}
++
++/* El aviso del móvil enseña un trozo, no la nota entera: en la
++   pantalla bloqueada no cabe, y cortada a lo bruto se lee peor que
++   con puntos suspensivos. */
++function recorta(texto: string): string {
++  const limpio = texto.replace(/\s+/g, ' ').trim()
++  return limpio.length <= 80 ? limpio : `${limpio.slice(0, 79)}…`
++}
+diff --git a/app/api/push/probar/route.ts b/app/api/push/probar/route.ts
+index 09a34f8..7e9f1e3 100644
+--- a/app/api/push/probar/route.ts
++++ b/app/api/push/probar/route.ts
+@@ -16,7 +16,7 @@ export async function POST() {
+ 
+   try {
+     const entregados = await avisarA(user.id, {
+-      titulo: 'Family Hub',
++      titulo: 'HUBI',
+       cuerpo: 'Los avisos funcionan. Así te llegarán los recordatorios.',
+       url: '/',
+       tag: 'prueba',
+@@ -37,7 +37,7 @@ export async function POST() {
+         { status: 503 }
+       )
+     }
+-    console.error('[Family Hub] Fallo enviando aviso de prueba:', e)
++    console.error('[HUBI] Fallo enviando aviso de prueba:', e)
+     return NextResponse.json({ error: 'No se ha podido enviar.' }, { status: 500 })
+   }
+ }
+diff --git a/app/api/push/suscribir/route.ts b/app/api/push/suscribir/route.ts
+index 20030ad..d1856dd 100644
+--- a/app/api/push/suscribir/route.ts
++++ b/app/api/push/suscribir/route.ts
+@@ -39,7 +39,7 @@ export async function POST(peticion: NextRequest) {
+   )
+ 
+   if (error) {
+-    console.error('[Family Hub] Fallo guardando suscripción:', error)
++    console.error('[HUBI] Fallo guardando suscripción:', error)
+     return NextResponse.json({ error: 'No se ha podido activar.' }, { status: 500 })
+   }
+ 
+diff --git a/app/api/voz/route.ts b/app/api/voz/route.ts
+index d184cf5..2f97e27 100644
+--- a/app/api/voz/route.ts
++++ b/app/api/voz/route.ts
+@@ -583,7 +583,7 @@ export async function POST(peticion: NextRequest) {
+     })
+   } catch (e) {
+     const motivo = e instanceof Error ? e.message : ''
+-    console.error('[Family Hub] Fallo escuchando:', e)
++    console.error('[HUBI] Fallo escuchando:', e)
+ 
+     if (motivo === 'SIN_CLAVE_OCR') {
+       return NextResponse.json({ error: 'La voz no está configurada todavía.' }, { status: 503 })
+diff --git a/app/comprobacion/page.tsx b/app/comprobacion/page.tsx
+index a21f93f..eb81f02 100644
+--- a/app/comprobacion/page.tsx
++++ b/app/comprobacion/page.tsx
+@@ -62,13 +62,13 @@ export default function Comprobacion() {
+     <main className="min-h-screen bg-[#F1F5F9] px-6 py-12 text-[#0F172A]">
+       <div className="mx-auto max-w-xl">
+         <p className="text-sm uppercase tracking-[0.2em] text-[#8A7F73]">
+-          J+C · Family Hub
++          HUBI
+         </p>
+         <h1 className="mt-3 text-4xl font-semibold leading-tight">
+           Comprobación del sistema
+         </h1>
+         <p className="mt-3 text-lg text-[#6B6157]">
+-          Esta pantalla no forma parte de Family Hub. Solo sirve para verificar
++          Esta pantalla no forma parte de HUBI. Solo sirve para verificar
+           que las piezas están realmente conectadas.
+         </p>
+ 
+diff --git a/app/error.tsx b/app/error.tsx
+index 52e4d30..c1fd18f 100644
+--- a/app/error.tsx
++++ b/app/error.tsx
+@@ -18,7 +18,7 @@ export default function Error({
+   reset: () => void
+ }) {
+   useEffect(() => {
+-    console.error('[Family Hub] Fallo en pantalla:', error)
++    console.error('[HUBI] Fallo en pantalla:', error)
+   }, [error])
+ 
+   return (
+diff --git a/app/guardar/page.tsx b/app/guardar/page.tsx
+index 3955837..f091d5f 100644
+--- a/app/guardar/page.tsx
++++ b/app/guardar/page.tsx
+@@ -2,7 +2,7 @@ import Link from 'next/link'
+ import { redirect } from 'next/navigation'
+ import { clienteSesion } from '@/lib/supabase/sesion'
+ import { quien } from '@/lib/supabase/quien'
+-import { miHogar } from '@/lib/hogar'
++import { miHogar, quienManda } from '@/lib/hogar'
+ import { clienteServidor } from '@/lib/supabase/servidor'
+ import Formulario from './formulario'
+ import type { Categoria } from '@/lib/rutas'
+@@ -43,6 +43,8 @@ export default async function Guardar({
+     : { data: null }
+ 
+   if (conexion?.estado !== 'activa') {
++    const elJefe = hogarId ? await quienManda(supabase, hogarId) : null
++
+     return (
+       <main className="techo-holgado min-h-screen px-6 pb-12">
+         <div className="mx-auto w-full max-w-md">
+@@ -52,9 +54,11 @@ export default async function Guardar({
+           <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
+             Todavía no se pueden guardar documentos
+           </h1>
++          {/* El nombre sale de la casa, no está escrito aquí: en la casa
++              de al lado «Juan Miguel» es un desconocido. */}
+           <p className="mt-5 text-lg leading-relaxed text-tinta-suave">
+-            Juan Miguel tiene que conectar el Google Drive de la familia antes de
+-            que los documentos tengan dónde guardarse.
++            {elJefe ?? 'Quien creó esta casa'} tiene que conectar su Google Drive
++            antes de que los documentos tengan dónde guardarse.
+           </p>
+         </div>
+       </main>
+diff --git a/app/hablar/grabar.tsx b/app/hablar/grabar.tsx
+index 7da5464..ce14fa1 100644
+--- a/app/hablar/grabar.tsx
++++ b/app/hablar/grabar.tsx
+@@ -64,7 +64,15 @@ type Oido = {
+    medidor de sonido. Solo es forma. */
+ const BARRAS = [0.35, 0.6, 0.85, 1, 0.85, 0.6, 0.35]
+ 
+-export default function Grabar() {
++export default function Grabar({
++  otro = null,
++  actividad = null,
++}: {
++  /** Alguien de esta casa que no sea quien está mirando. */
++  otro?: string | null
++  /** Una actividad de esta casa: la Finca, las Obras, Los Helechos… */
++  actividad?: string | null
++} = {}) {
+   const [estado, setEstado] = useState<Estado>('listo')
+   const [segundos, setSegundos] = useState(0)
+   const [oido, setOido] = useState<Oido | null>(null)
+@@ -692,10 +700,24 @@ export default function Grabar() {
+                 */}
+                 {estado === 'listo' && (
+                   <ul className="mt-11 w-full space-y-2.5 text-left">
+-                    <Ejemplo que="Apuntar" frase="Recuérdale a Conchita que mañana llame al médico" />
+-                    <Ejemplo que="Gastar" frase="Un gasto de 85 euros de productos" />
+-                    <Ejemplo que="Preguntar" frase="¿Cuánto hemos gastado este trimestre en agua?" />
+-                    <Ejemplo que="Buscar" frase="Enséñame las facturas de la finca" />
++                    <Ejemplo
++                      que="Apuntar"
++                      frase={
++                        otro
++                          ? `Recuérdale a ${otro} que mañana llame al médico`
++                          : 'Recuérdame mañana que llame al médico'
++                      }
++                    />
++                    <Ejemplo que="Gastar" frase="Un gasto de 85 euros en la ferretería" />
++                    <Ejemplo que="Preguntar" frase="¿Cuánto hemos gastado este trimestre en luz?" />
++                    <Ejemplo
++                      que="Buscar"
++                      frase={
++                        actividad
++                          ? `Enséñame las facturas de ${conArticulo(actividad)}`
++                          : 'Enséñame las facturas de la luz'
++                      }
++                    />
+                   </ul>
+                 )}
+               </>
+@@ -1297,6 +1319,27 @@ function cadaCuanto(r: string | null): string | null {
+   return null
+ }
+ 
++/*
++  El nombre de una actividad metido dentro de una frase.
++
++  Las actividades se llaman como cada uno quiera: «La Finca», «Los
++  Helechos», «Obras». Pegar «de » delante a secas da «de La Finca»,
++  que se lee raro, o «de El Molino», que directamente está mal escrito.
++
++  Se arregla lo justo: se baja el artículo a minúscula y «de el» se
++  convierte en «del». Lo que no lleva artículo se deja en paz.
++*/
++function conArticulo(nombre: string): string {
++  const [primera, ...resto] = nombre.split(' ')
++  const art = primera.toLowerCase()
++
++  if (art === 'el') return ['del', ...resto].join(' ')
++  if (art === 'la' || art === 'los' || art === 'las') {
++    return `de ${[art, ...resto].join(' ')}`
++  }
++  return `de ${nombre}`
++}
++
+ /* Un ejemplo de lo que se puede pedir. Lo primero es QUÉ hace; la
+    frase va debajo, de muestra. Así se lee la lista de un vistazo sin
+    tener que leerse las cuatro frases enteras. */
+diff --git a/app/hablar/page.tsx b/app/hablar/page.tsx
+index 6ec1d70..783924a 100644
+--- a/app/hablar/page.tsx
++++ b/app/hablar/page.tsx
+@@ -1,14 +1,73 @@
+ import { redirect } from 'next/navigation'
+ import { clienteSesion } from '@/lib/supabase/sesion'
+ import { quien } from '@/lib/supabase/quien'
++import { miHogar } from '@/lib/hogar'
++import { actividadesDe } from '@/lib/actividades'
+ import Grabar from './grabar'
+ 
+ export const dynamic = 'force-dynamic'
+ 
++/*
++  ─────────────────────────────────────────────────────────────
++  LOS EJEMPLOS SALEN DE ESTA CASA
++
++  Decían «Recuérdale a Conchita que mañana llame al médico» y
++  «Enséñame las facturas de la finca». En casa de Juan Miguel eso es
++  útil de verdad: son su mujer y su finca. En cualquier otra casa son
++  el nombre de una desconocida y una actividad que no tienen.
++
++  Y en una pantalla de voz el ejemplo no es decoración: es lo ÚNICO
++  que le dice a alguien qué puede pedir. Un ejemplo que nombra a gente
++  que no conoces enseña a no fiarte de la pantalla.
++
++  Así que se cogen de aquí: alguien de tu casa que no seas tú, y una
++  de tus actividades. Si no hay ninguna de las dos cosas —una persona
++  sola, recién llegada— las frases se escriben sin nombres y siguen
++  siendo verdad.
++*/
+ export default async function Hablar() {
+   const supabase = await clienteSesion()
+   const user = await quien(supabase)
+   if (!user) redirect('/entrar')
+ 
+-  return <Grabar />
++  let otro: string | null = null
++  let actividad: string | null = null
++
++  try {
++    const hogarId = await miHogar(supabase, user.id)
++
++    if (hogarId) {
++      /* Alguien de la casa que no sea yo. «Recuérdate a ti mismo» no
++         enseña nada de lo que esta pantalla sabe hacer. */
++      const { data: dentro } = await supabase
++        .from('miembros')
++        .select('perfil_id')
++        .eq('hogar_id', hogarId)
++        .neq('perfil_id', user.id)
++        .limit(4)
++
++      const ids = (dentro ?? []).map((m: { perfil_id: string }) => m.perfil_id)
++
++      if (ids.length > 0) {
++        const { data: quienes } = await supabase
++          .from('perfiles')
++          .select('nombre')
++          .in('id', ids)
++          .limit(1)
++
++        const nombre = (quienes?.[0]?.nombre as string | undefined) ?? null
++        /* Solo el nombre de pila: «Recuérdale a María Jesús Pérez
++           Gómez» no es una frase que nadie vaya a decir en voz alta. */
++        otro = nombre ? nombre.split(' ')[0] : null
++      }
++
++      const suyas = await actividadesDe(supabase)
++      actividad = suyas[0]?.nombre ?? null
++    }
++  } catch {
++    /* Sin nombres, los ejemplos van en genérico. Nunca falla por esto:
++       es una pantalla de ayuda, no puede tumbar la voz. */
++  }
++
++  return <Grabar otro={otro} actividad={actividad} />
+ }
+diff --git a/app/notas/notas.tsx b/app/notas/notas.tsx
+new file mode 100644
+index 0000000..39d52b3
+--- /dev/null
++++ b/app/notas/notas.tsx
+@@ -0,0 +1,415 @@
++'use client'
++
++import { useState } from 'react'
++import Link from 'next/link'
++import { useRouter } from 'next/navigation'
++import { Ico } from '../iconos'
++import type { NotaVista } from '@/lib/notas'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  EL CORCHO
++  ═══════════════════════════════════════════════════════════════
++
++  ─────────────────────────────────────────────────────────────
++  ESCRIBIR ES LO PRIMERO, NO UN BOTÓN «+»
++
++  Una nota se pone en cinco segundos y se pone a menudo. Esconder eso
++  detrás de un «+» que abre otra pantalla convierte cinco segundos en
++  tres toques. La caja de escribir está arriba, abierta, esperando.
++
++  ─────────────────────────────────────────────────────────────
++  «PARA QUIÉN» SOLO APARECE SI HAY ALGUIEN
++
++  Viviendo solo en HUBI, un desplegable de «¿para quién?» con una
++  única opción —tú— es una decisión inventada. Sale cuando hay otra
++  persona en la casa.
++
++  ─────────────────────────────────────────────────────────────
++  Y LAS NOTAS NO SON PRIVADAS
++
++  Una nota dirigida a alguien la sigue viendo toda la casa: es un
++  corcho, no un chat. Se dice donde se escribe, no en unos ajustes —
++  quien deja una nota tiene que saberlo ANTES de escribirla.
++*/
++
++type Quien = { id: string; nombre: string }
++
++export default function Notas({
++  notas,
++  gente,
++  yo,
++  escribo,
++  viendoGuardadas,
++}: {
++  notas: NotaVista[]
++  gente: Quien[]
++  yo: string
++  /** Falso para quien solo puede mirar. */
++  escribo: boolean
++  viendoGuardadas: boolean
++}) {
++  const router = useRouter()
++
++  const [texto, setTexto] = useState('')
++  const [para, setPara] = useState<string | null>(null)
++  const [ocupado, setOcupado] = useState(false)
++  const [fallo, setFallo] = useState<string | null>(null)
++  const [editando, setEditando] = useState<string | null>(null)
++  const [borrador, setBorrador] = useState('')
++
++  const otros = gente.filter((g) => g.id !== yo)
++  const nombreDe = new Map(gente.map((g) => [g.id, g.nombre]))
++
++  async function pedir(cuerpo: object, metodo: 'POST' | 'PATCH') {
++    setFallo(null)
++    setOcupado(true)
++
++    const r = await fetch('/api/notas', {
++      method: metodo,
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify(cuerpo),
++    })
++
++    const d = (await r.json().catch(() => null)) as {
++      bien?: boolean
++      error?: string
++      detalle?: string
++    } | null
++
++    setOcupado(false)
++
++    /* `bien === true`, no `r.ok` a secas. Una petición que acaba
++       redirigida a la pantalla de entrar contesta 200 con el HTML del
++       login, y `r.ok` diría que todo ha ido bien. Ya pasó una vez y
++       costó una tarde. */
++    if (!r.ok || d?.bien !== true) {
++      setFallo(
++        d
++          ? [d.error ?? 'No se ha podido.', d.detalle].filter(Boolean).join(' · ')
++          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
++      )
++      return false
++    }
++
++    router.refresh()
++    return true
++  }
++
++  async function poner() {
++    if (await pedir({ texto: texto.trim(), para }, 'POST')) {
++      setTexto('')
++      setPara(null)
++    }
++  }
++
++  async function guardarCambio(id: string) {
++    if (await pedir({ id, que: 'texto', texto: borrador.trim() }, 'PATCH')) {
++      setEditando(null)
++    }
++  }
++
++  return (
++    <>
++      {/* ── Puestas · Guardadas ── */}
++      <div className="mt-1 flex gap-2">
++        <Pestana texto="En el corcho" href="/notas" puesta={!viendoGuardadas} />
++        <Pestana texto="Guardadas" href="/notas?ver=guardadas" puesta={viendoGuardadas} />
++      </div>
++
++      {/* ── Escribir una ── */}
++      {escribo && !viendoGuardadas && (
++        <div className="mt-4 rounded-[20px] border border-borde bg-superficie px-4 py-4">
++          <label htmlFor="nota" className="block text-[17px] font-extrabold leading-snug">
++            Deja una nota
++          </label>
++          <textarea
++            id="nota"
++            value={texto}
++            onChange={(e) => setTexto(e.target.value)}
++            rows={3}
++            maxLength={1200}
++            placeholder="La llave del garaje está en el cajón de la entrada"
++            className="mt-2.5 w-full resize-y rounded-[16px] border border-borde bg-fondo px-4 py-3.5 text-[18px] font-semibold leading-snug text-tinta outline-none placeholder:font-semibold placeholder:text-tenue focus:border-verde"
++          />
++
++          {otros.length > 0 && (
++            <>
++              <p className="mt-4 text-[17px] font-extrabold leading-snug">¿Para quién?</p>
++              <div className="mt-2.5 flex flex-wrap gap-2">
++                <Pastilla
++                  texto="Para la casa"
++                  puesta={para === null}
++                  alPulsar={() => setPara(null)}
++                />
++                {otros.map((g) => (
++                  <Pastilla
++                    key={g.id}
++                    texto={`Para ${g.nombre.split(' ')[0]}`}
++                    puesta={para === g.id}
++                    alPulsar={() => setPara(g.id)}
++                  />
++                ))}
++              </div>
++              <p className="mt-2.5 text-[14.5px] font-semibold leading-snug text-tenue">
++                {para === null
++                  ? 'La verá todo el mundo en casa. No suena ningún teléfono.'
++                  : 'Le llega un aviso al móvil. La nota la sigue viendo toda la casa.'}
++              </p>
++            </>
++          )}
++
++          <button
++            onClick={poner}
++            disabled={ocupado || texto.trim().length === 0}
++            className="mt-3 flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
++          >
++            <Ico nombre="chincheta" tam={19} grosor={2.3} />
++            {ocupado ? 'Poniendo…' : 'Poner la nota'}
++          </button>
++        </div>
++      )}
++
++      {/* Quien solo mira no ve la caja de escribir. Se le dice por qué,
++          una vez y sin dramatismo: no ha hecho nada mal. */}
++      {!escribo && (
++        <p className="mt-4 rounded-[16px] border border-borde px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tenue">
++          Puedes leer las notas de la casa, pero no dejar ninguna.
++        </p>
++      )}
++
++      {/* ── El corcho ── */}
++      {notas.length === 0 ? (
++        <p className="mt-4 rounded-[20px] bg-superficie px-6 py-10 text-center text-[17px] font-medium text-tinta-suave">
++          {viendoGuardadas
++            ? 'No has guardado ninguna nota todavía.'
++            : 'No hay ninguna nota puesta.'}
++        </p>
++      ) : (
++        <ul className="mt-4 space-y-2.5">
++          {notas.map((n) => {
++            const mia = n.escrita_por === yo
++            const paraMi = n.para === yo
++            const autor = nombreDe.get(n.escrita_por)?.split(' ')[0] ?? 'Alguien'
++            const destino = n.para ? (nombreDe.get(n.para)?.split(' ')[0] ?? 'alguien') : null
++
++            return (
++              <li
++                key={n.id}
++                className="rounded-[20px] border border-borde bg-superficie px-4 py-3.5"
++                style={
++                  /* Una nota que es PARA TI se ve distinta desde el otro
++                     lado de la habitación. Es lo único de esta pantalla
++                     que exige algo de quien la lee. */
++                  paraMi && !n.vista_en
++                    ? { borderColor: '#14B8A6', background: 'color-mix(in srgb, #14B8A6 8%, var(--t-superficie))' }
++                    : undefined
++                }
++              >
++                {editando === n.id ? (
++                  <>
++                    <textarea
++                      value={borrador}
++                      onChange={(e) => setBorrador(e.target.value)}
++                      rows={3}
++                      maxLength={1200}
++                      className="w-full resize-y rounded-[16px] border border-borde bg-fondo px-4 py-3.5 text-[18px] font-semibold leading-snug text-tinta outline-none focus:border-verde"
++                      autoFocus
++                    />
++                    <div className="mt-2.5 flex gap-2">
++                      <button
++                        onClick={() => guardarCambio(n.id)}
++                        disabled={ocupado || borrador.trim().length === 0}
++                        className="h-[52px] flex-1 rounded-[14px] bg-boton text-[16.5px] font-extrabold text-boton-texto disabled:opacity-50"
++                      >
++                        Guardar
++                      </button>
++                      <button
++                        onClick={() => setEditando(null)}
++                        disabled={ocupado}
++                        className="h-[52px] flex-1 rounded-[14px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
++                      >
++                        Dejarlo
++                      </button>
++                    </div>
++                  </>
++                ) : (
++                  <>
++                    {/* `whitespace-pre-wrap`: si alguien escribe la nota
++                        en tres renglones, se lee en tres renglones. */}
++                    <p className="whitespace-pre-wrap text-[17.5px] font-semibold leading-snug">
++                      {n.texto}
++                    </p>
++
++                    <p className="mt-2 text-[14.5px] font-bold text-tenue">
++                      {[
++                        mia ? 'Tú' : autor,
++                        destino ? (paraMi ? '→ para ti' : `→ para ${destino}`) : null,
++                        n.cuando,
++                        n.cambiada_en ? 'cambiada' : null,
++                      ]
++                        .filter(Boolean)
++                        .join(' · ')}
++                    </p>
++
++                    {/* «Visto», y quién lo ha visto. Es el punto 16: quien
++                        deja el recado quiere saber que ha llegado. */}
++                    {n.para && n.vista_en && (
++                      <p className="mt-1.5 flex items-center gap-1.5 text-[14.5px] font-extrabold text-verde">
++                        <Ico nombre="check" tam={16} grosor={2.4} />
++                        Visto
++                      </p>
++                    )}
++
++                    <div className="mt-3 flex flex-wrap gap-2">
++                      {paraMi && !n.vista_en && escribo && (
++                        <Boton
++                          texto="Visto"
++                          icono="check"
++                          ocupado={ocupado}
++                          alPulsar={() => pedir({ id: n.id, que: 'visto' }, 'PATCH')}
++                          fuerte
++                        />
++                      )}
++
++                      {mia && !viendoGuardadas && escribo && (
++                        <Boton
++                          texto="Cambiar"
++                          icono="lapiz"
++                          ocupado={ocupado}
++                          alPulsar={() => {
++                            setEditando(n.id)
++                            setBorrador(n.texto)
++                          }}
++                        />
++                      )}
++
++                      {(mia || paraMi) &&
++                        escribo &&
++                        (viendoGuardadas ? (
++                          <Boton
++                            texto="Volver a ponerla"
++                            icono="chincheta"
++                            ocupado={ocupado}
++                            alPulsar={() => pedir({ id: n.id, que: 'recuperar' }, 'PATCH')}
++                          />
++                        ) : (
++                          <Boton
++                            texto="Quitar"
++                            icono="carpeta"
++                            ocupado={ocupado}
++                            alPulsar={() => pedir({ id: n.id, que: 'guardar' }, 'PATCH')}
++                          />
++                        ))}
++                    </div>
++                  </>
++                )}
++              </li>
++            )
++          })}
++        </ul>
++      )}
++
++      {/* Se dice dónde va lo que se quita. «Quitar» a secas suena a
++          borrar, y nadie pulsa un botón que suena a borrar. */}
++      {!viendoGuardadas && notas.length > 0 && escribo && (
++        <p className="mt-3 text-center text-[14.5px] font-semibold text-tenue">
++          Lo que quites no se borra: queda en Guardadas.
++        </p>
++      )}
++
++      {fallo && (
++        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
++          {fallo}
++        </p>
++      )}
++    </>
++  )
++}
++
++function Pestana({ texto, href, puesta }: { texto: string; href: string; puesta: boolean }) {
++  return (
++    <Link
++      href={href}
++      aria-current={puesta ? 'page' : undefined}
++      className="flex h-11 flex-1 items-center justify-center rounded-full text-[15px] font-extrabold"
++      style={
++        puesta
++          ? { background: '#F59E0B', color: '#0F172A' }
++          : {
++              background: 'var(--t-superficie)',
++              color: 'var(--t-tinta-suave)',
++              border: '1px solid var(--t-borde)',
++            }
++      }
++    >
++      {texto}
++    </Link>
++  )
++}
++
++function Pastilla({
++  texto,
++  puesta,
++  alPulsar,
++}: {
++  texto: string
++  puesta: boolean
++  alPulsar: () => void
++}) {
++  return (
++    <button
++      onClick={alPulsar}
++      aria-pressed={puesta}
++      className="flex h-12 items-center rounded-full px-4 text-[15.5px] font-extrabold"
++      style={
++        puesta
++          ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
++          : {
++              background: 'var(--t-fondo)',
++              color: 'var(--t-tinta-suave)',
++              border: '1px solid var(--t-borde)',
++            }
++      }
++    >
++      {puesta ? `✓ ${texto}` : texto}
++    </button>
++  )
++}
++
++/* Los botones de una nota. Con texto SIEMPRE, nunca un dibujo suelto:
++   el punto 5 lo dice y aquí se nota — «quitar» y «cambiar» dibujados
++   se parecen demasiado. */
++function Boton({
++  texto,
++  icono,
++  ocupado,
++  alPulsar,
++  fuerte = false,
++}: {
++  texto: string
++  icono: 'check' | 'lapiz' | 'chincheta' | 'carpeta'
++  ocupado: boolean
++  alPulsar: () => void
++  fuerte?: boolean
++}) {
++  return (
++    <button
++      onClick={alPulsar}
++      disabled={ocupado}
++      className="flex h-12 items-center gap-1.5 rounded-[14px] px-4 text-[15.5px] font-extrabold disabled:opacity-50"
++      style={
++        fuerte
++          ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
++          : {
++              background: 'var(--t-fondo)',
++              color: 'var(--t-tinta-suave)',
++              border: '1px solid var(--t-borde)',
++            }
++      }
++    >
++      <Ico nombre={icono} tam={17} grosor={2.3} />
++      {texto}
++    </button>
++  )
++}
+diff --git a/app/notas/page.tsx b/app/notas/page.tsx
+new file mode 100644
+index 0000000..2eb099e
+--- /dev/null
++++ b/app/notas/page.tsx
+@@ -0,0 +1,103 @@
++import { redirect } from 'next/navigation'
++import { clienteSesion } from '@/lib/supabase/sesion'
++import { quien } from '@/lib/supabase/quien'
++import { miHogar, puedeEscribir } from '@/lib/hogar'
++import { notasDe, conFecha } from '@/lib/notas'
++import Cabecera from '../cabecera'
++import Barra from '../barra'
++import { Volver } from '../iconos'
++import Notas from './notas'
++
++export const dynamic = 'force-dynamic'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LAS NOTAS
++  ═══════════════════════════════════════════════════════════════
++
++  El corcho de la cocina. Cosas que no se «hacen» y no caducan: dónde
++  está la llave del garaje, qué día viene el del agua, que los papeles
++  del seguro están encima de la mesa.
++
++  Es lo que el planteamiento llama TABLÓN, y por eso no se ha metido
++  en la Agenda: la Agenda es «lo que tengo que recordar», con fecha y
++  con un «hecho» al final. Esto es «lo que nos decimos», que no tiene
++  ni lo uno ni lo otro.
++*/
++export default async function PaginaNotas({
++  searchParams,
++}: {
++  searchParams: Promise<{ ver?: string }>
++}) {
++  const p = await searchParams
++  const viendoGuardadas = p.ver === 'guardadas'
++
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) redirect('/entrar')
++
++  const hogarId = await miHogar(supabase, user.id)
++
++  const [notas, escribo] = await Promise.all([
++    notasDe(supabase, viendoGuardadas),
++    puedeEscribir(supabase, user.id, hogarId),
++  ])
++
++  /*
++    Los nombres de la casa. Hacen falta dos veces: para firmar cada
++    nota y para el desplegable de «¿para quién?».
++
++    Se piden los de ESTA casa y no todos los perfiles que las
++    políticas dejen ver: quien tenga dos casas se vería a sí mismo en
++    la lista de la otra.
++  */
++  let gente: { id: string; nombre: string }[] = []
++
++  try {
++    if (hogarId) {
++      const { data: dentro } = await supabase
++        .from('miembros')
++        .select('perfil_id')
++        .eq('hogar_id', hogarId)
++
++      const ids = (dentro ?? []).map((m: { perfil_id: string }) => m.perfil_id)
++
++      if (ids.length > 0) {
++        const { data: perfiles } = await supabase
++          .from('perfiles')
++          .select('id, nombre')
++          .in('id', ids)
++          .order('nombre')
++
++        gente = (perfiles ?? []) as { id: string; nombre: string }[]
++      }
++    }
++  } catch {
++    /* Sin nombres, las notas salen igual y se firman con «Alguien».
++       Una nota sin firmar sigue sirviendo; una pantalla que no carga,
++       no. */
++  }
++
++  return (
++    <main className="min-h-screen pb-40">
++      <Cabecera>
++        <Volver href="/" />
++        <div className="flex h-12 items-center">
++          <h1 className="text-[27px] font-extrabold tracking-tight">Notas</h1>
++        </div>
++      </Cabecera>
++
++      <div className="mx-auto w-full max-w-md px-5 pt-2">
++        <Notas
++          notas={conFecha(notas)}
++          gente={gente}
++          yo={user.id}
++          escribo={escribo}
++          viendoGuardadas={viendoGuardadas}
++        />
++      </div>
++
++      <Barra activa={null} />
++    </main>
++  )
++}
+diff --git a/app/page.tsx b/app/page.tsx
+index bfb8f9b..ecc7b58 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -13,6 +13,7 @@ import { cuando, type Recordatorio } from '@/lib/tablon'
+ import { leerPerfil } from '@/lib/perfil'
+ import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
+ import { casasDe } from '@/lib/casas'
++import { cuantasNotas } from '@/lib/notas'
+ import Casas from './casas'
+ 
+ export const dynamic = 'force-dynamic'
+@@ -110,6 +111,7 @@ export default async function Inicio({
+     { data: siguientes },
+     { data: conexion },
+     { count: porComprar },
++    notasPuestas,
+   ] =
+     await Promise.all([
+       leerPerfil(supabase, user.id, user.email),
+@@ -143,6 +145,9 @@ export default async function Inicio({
+         .select('id', { count: 'exact', head: true })
+         .eq('comprado', false)
+         .is('archivado_en', null),
++
++      /* Las notas del corcho, y cuántas te están esperando a ti. */
++      cuantasNotas(supabase, user.id),
+     ])
+ 
+   /* ¿Esta casa usa la lista de la compra? Envuelto: la columna es
+@@ -316,6 +321,57 @@ export default async function Inicio({
+         </Link>
+         )}
+ 
++        {/*
++          ── Las notas ──
++
++          El corcho de la cocina. Va aquí, con Guardar documento y La
++          compra, y no en la barra de abajo: cinco pestañas es el tope
++          —con seis, cada botón baja de los 48 px que protegen a un
++          dedo de 75 años—.
++
++          Y sale SIEMPRE, también con el corcho vacío. Las otras dos
++          tarjetas son cosas que ya sabes que existen; ésta es nueva, y
++          una función que solo aparece cuando ya la has usado no la
++          descubre nadie. Con cero notas dice que no hay ninguna, que
++          es una respuesta, no un hueco.
++        */}
++        <Link
++          href="/notas"
++          className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
++          style={{
++            background: 'color-mix(in srgb, #F59E0B 12%, transparent)',
++            border: '1px solid color-mix(in srgb, #F59E0B 30%, transparent)',
++          }}
++        >
++          <span
++            className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] bg-superficie"
++            style={{ color: '#F59E0B' }}
++          >
++            <Ico nombre="chincheta" tam={24} grosor={2.1} />
++          </span>
++          <span className="min-w-0 flex-1">
++            <span className="block whitespace-nowrap text-[18.5px] font-extrabold tracking-tight">
++              Notas
++            </span>
++            <span className="block text-[14.5px] font-bold" style={{ color: '#F59E0B' }}>
++              {/* Lo que es PARA TI manda sobre el recuento. «Hay 6 notas
++                  puestas» no dice que una de ellas te está esperando. */}
++              {notasPuestas.paraMi === 1
++                ? 'Te han dejado una nota'
++                : notasPuestas.paraMi > 1
++                  ? `Te han dejado ${notasPuestas.paraMi} notas`
++                  : notasPuestas.puestas === 0
++                    ? 'Deja un recado a los de casa'
++                    : notasPuestas.puestas === 1
++                      ? 'Hay 1 nota puesta'
++                      : `Hay ${notasPuestas.puestas} notas puestas`}
++            </span>
++          </span>
++          <span className="shrink-0" style={{ color: '#F59E0B' }}>
++            <Ico nombre="flecha" tam={22} grosor={2.2} />
++          </span>
++        </Link>
++
+         {/* ── Conectar Drive ── */}
+         {!conectado && manda && (
+           <div className="mt-6">
+diff --git a/lib/hogar.ts b/lib/hogar.ts
+index 94f28a4..d38a1f9 100644
+--- a/lib/hogar.ts
++++ b/lib/hogar.ts
+@@ -236,6 +236,44 @@ export async function hogarDe(
+   return (data?.hogar_id as string | null) ?? null
+ }
+ 
++/*
++  ─────────────────────────────────────────────────────────────
++  ¿PUEDE ESCRIBIR, O SOLO MIRAR?
++
++  La base de datos ya lo impide —`puedo_escribir()` está en las
++  políticas del 31— pero eso no basta: la pantalla le seguía
++  ofreciendo el botón. Y un botón que falla al pulsarlo es peor que
++  no tener botón. Quien solo mira no ha hecho nada mal; se le enseña
++  lo que hay, sin botones que no van a funcionar.
++
++  Devuelve `true` cuando algo va mal a propósito. Ésta es la mitad
++  bonita del permiso: si fallara hacia el otro lado, alguien con todo
++  el derecho a apuntar se quedaría mirando una pantalla sin botones y
++  pensaría que HUBI está roto. Quien de verdad no puede se topa con
++  la base de datos, que no falla nunca.
++*/
++export async function puedeEscribir(
++  supabase: SupabaseClient,
++  perfilId: string,
++  hogarId?: string | null
++): Promise<boolean> {
++  try {
++    const casa = hogarId ?? (await miHogar(supabase, perfilId))
++    if (!casa) return false
++
++    const { data } = await supabase
++      .from('miembros')
++      .select('papel')
++      .eq('perfil_id', perfilId)
++      .eq('hogar_id', casa)
++      .maybeSingle()
++
++    return data?.papel !== 'lector'
++  } catch {
++    return true
++  }
++}
++
+ /*
+   ─────────────────────────────────────────────────────────────
+   ¿MANDA EN SU CASA?
+diff --git a/lib/notas.ts b/lib/notas.ts
+new file mode 100644
+index 0000000..11cf64d
+--- /dev/null
++++ b/lib/notas.ts
+@@ -0,0 +1,162 @@
++import type { SupabaseClient } from '@supabase/supabase-js'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LAS NOTAS DE LA CASA
++  ═══════════════════════════════════════════════════════════════
++
++  El papel de la nevera. Sin fecha, sin «hecho», sin caducidad:
++
++      "La llave del garaje está en el cajón de la entrada"
++      "El del agua viene los martes por la mañana"
++      "He dejado los papeles del seguro encima de la mesa"
++
++  Nada de esto es una tarea. Si estuviera en la Agenda saldría en
++  «Por hacer · 14» hasta el fin de los tiempos, y una lista de tareas
++  que nunca baja de catorce deja de mirarse a la semana.
++
++  ─────────────────────────────────────────────────────────────
++  TODO ESTO VA ENVUELTO
++
++  La tabla es del SQL 35. Si no se ha ejecutado, Postgres no dice
++  «esa tabla no existe» de una manera que se pueda ignorar: revienta
++  la consulta. Y esto lo lee el Inicio, que es la primera pantalla de
++  la mañana. Sin tabla, se comporta como si no hubiera notas.
++*/
++
++export type Nota = {
++  id: string
++  texto: string
++  /** Nulo = para toda la casa. Con alguien = se la han dejado a él. */
++  para: string | null
++  escrita_por: string
++  creada_en: string
++  cambiada_en: string | null
++  vista_en: string | null
++  guardada_en: string | null
++}
++
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
++type Cliente = SupabaseClient<any, any, any>
++
++/**
++ * Las notas de la casa. `guardadas` decide cuáles: las puestas en el
++ * corcho, o las que alguien apartó.
++ */
++export async function notasDe(
++  supabase: Cliente,
++  guardadas = false
++): Promise<Nota[]> {
++  try {
++    const q = supabase
++      .from('notas')
++      .select('id, texto, para, escrita_por, creada_en, cambiada_en, vista_en, guardada_en')
++      .order('creada_en', { ascending: false })
++      .limit(guardadas ? 60 : 100)
++
++    const { data, error } = guardadas
++      ? await q.not('guardada_en', 'is', null)
++      : await q.is('guardada_en', null)
++
++    if (error || !data) return []
++    return data as Nota[]
++  } catch {
++    return []
++  }
++}
++
++/**
++ * Lo que necesita el rótulo del Inicio: cuántas hay puestas y cuántas
++ * son para ti y todavía no has dicho que las has visto.
++ *
++ * Las dos en UNA consulta, y sin traerse el texto: el Inicio ya hace
++ * seis, y el texto de cincuenta notas para escribir un número sería
++ * traerse la pantalla entera para no enseñarla.
++ */
++export async function cuantasNotas(
++  supabase: Cliente,
++  perfilId: string
++): Promise<{ puestas: number; paraMi: number }> {
++  const nada = { puestas: 0, paraMi: 0 }
++
++  try {
++    const { data, error } = await supabase
++      .from('notas')
++      .select('id, para, vista_en')
++      .is('guardada_en', null)
++      .limit(200)
++
++    if (error || !data) return nada
++
++    return {
++      puestas: data.length,
++      paraMi: data.filter(
++        (n: { para: string | null; vista_en: string | null }) =>
++          n.para === perfilId && !n.vista_en
++      ).length,
++    }
++  } catch {
++    return nada
++  }
++}
++
++/**
++ * Una nota con su fecha ya escrita en palabras.
++ *
++ * El texto se calcula EN EL SERVIDOR y viaja hecho. Calcularlo en el
++ * navegador significaría llamar a `Date.now()` mientras se pinta, y
++ * entonces el servidor escribe «Hace 4 minutos», el móvil escribe
++ * «Hace 5» y React se queja de que no coinciden.
++ */
++export type NotaVista = Nota & { cuando: string }
++
++export function conFecha(notas: Nota[]): NotaVista[] {
++  return notas.map((n) => ({ ...n, cuando: cuandoSePuso(n.creada_en) }))
++}
++
++/*
++  ─────────────────────────────────────────────────────────────
++  «Hace un rato» · «Ayer» · «El 3 de agosto»
++
++  Una nota no tiene hora a la que pase nada, así que la fecha exacta
++  no importa casi nunca: lo que se quiere saber es si es de hoy o
++  lleva ahí un mes. Se dice en palabras, y solo se pone la fecha
++  entera cuando ya es vieja de verdad.
++*/
++const MESES = [
++  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
++  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
++]
++
++export function cuandoSePuso(iso: string): string {
++  const entonces = new Date(iso)
++  if (Number.isNaN(entonces.getTime())) return ''
++
++  const minutos = Math.round((Date.now() - entonces.getTime()) / 60_000)
++
++  if (minutos < 2) return 'Ahora mismo'
++  if (minutos < 60) return `Hace ${minutos} minutos`
++
++  const horas = Math.round(minutos / 60)
++  if (horas < 5) return horas === 1 ? 'Hace una hora' : `Hace ${horas} horas`
++
++  const hoy = new Date()
++  const mismoDia =
++    entonces.getFullYear() === hoy.getFullYear() &&
++    entonces.getMonth() === hoy.getMonth() &&
++    entonces.getDate() === hoy.getDate()
++  if (mismoDia) return 'Hoy'
++
++  const ayer = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 1)
++  const fueAyer =
++    entonces.getFullYear() === ayer.getFullYear() &&
++    entonces.getMonth() === ayer.getMonth() &&
++    entonces.getDate() === ayer.getDate()
++  if (fueAyer) return 'Ayer'
++
++  const dias = Math.round((hoy.getTime() - entonces.getTime()) / 86_400_000)
++  if (dias < 7) return `Hace ${dias} días`
++
++  const dia = `${entonces.getDate()} de ${MESES[entonces.getMonth()]}`
++  return entonces.getFullYear() === hoy.getFullYear() ? `El ${dia}` : `El ${dia} de ${entonces.getFullYear()}`
++}
+diff --git a/sql/35-notas.sql b/sql/35-notas.sql
+new file mode 100644
+index 0000000..e1a01ba
+--- /dev/null
++++ b/sql/35-notas.sql
+@@ -0,0 +1,165 @@
++-- ═══════════════════════════════════════════════════════════════
++-- 35 · NOTAS COMPARTIDAS
++-- ═══════════════════════════════════════════════════════════════
++--
++-- Una nota NO es un recordatorio, y por eso no va en `recordatorios`.
++--
++-- Un recordatorio tiene fecha y se acaba: se hace y desaparece. Una
++-- nota no tiene fecha y no se «hace» — está puesta, como el papel en
++-- la nevera:
++--
++--     "La llave del garaje está en el cajón de la entrada"
++--     "El del agua viene los martes por la mañana"
++--     "He dejado los documentos del seguro encima de la mesa"
++--
++-- Meterlas en `recordatorios` habría sido más barato de escribir y
++-- peor de usar: saldrían para siempre en «Por hacer · 14», que es
++-- exactamente lo que hace que una lista de tareas deje de mirarse.
++--
++-- ─────────────────────────────────────────────────────────────
++-- PARA LA CASA, O PARA UNA PERSONA
++--
++-- `para` a nulo = para toda la casa, como el corcho de la cocina.
++-- `para` con alguien = se la estás dejando A ÉL, y él ve «Visto» para
++-- decir que se ha enterado. Es el punto 16 del planteamiento.
++--
++-- Quien la recibe no puede editarla ni quitarla — solo decir que la
++-- ha visto. Y quien la escribió sí. Una nota que el otro te puede
++-- cambiar deja de ser tuya.
++--
++-- ─────────────────────────────────────────────────────────────
++-- QUITAR NO ES BORRAR
++--
++-- `guardada_en` la aparta de la vista y la deja en «Guardadas». El
++-- punto 5 pide que lo importante sea fácil de deshacer, y en una
++-- pantalla pensada para un dedo de 75 años un botón que borra de
++-- verdad al primer toque es una trampa.
++--
++-- Se puede ejecutar más de una vez sin estropear nada.
++-- ═══════════════════════════════════════════════════════════════
++
++
++-- ── 1 · La tabla ───────────────────────────────────────────
++create table if not exists notas (
++  id          uuid primary key default gen_random_uuid(),
++
++  hogar_id    uuid not null references hogares(id) on delete cascade,
++
++  -- Lo que pone la nota. Sin título aparte: obligar a poner título a
++  -- «la llave está en el cajón» es pedir trabajo para nada.
++  texto       text not null check (length(trim(texto)) > 0),
++
++  -- Nulo = para toda la casa. Con alguien = se la dejas a él.
++  para        uuid references perfiles(id) on delete set null,
++
++  escrita_por uuid not null references perfiles(id),
++  creada_en   timestamptz not null default now(),
++  cambiada_en timestamptz,
++
++  -- Cuándo dijo el destinatario que se había enterado.
++  vista_en    timestamptz,
++
++  -- Quitada de la vista, pero no borrada.
++  guardada_en timestamptz
++);
++
++/* Las que están puestas, que es lo que se pide en todas las
++   pantallas. Las guardadas se miran una vez al año. */
++create index if not exists idx_notas_puestas
++  on notas (hogar_id, creada_en desc) where guardada_en is null;
++
++
++-- ── 2 · Quién ve qué ───────────────────────────────────────
++alter table notas enable row level security;
++
++/*
++  LAS CUATRO. Y la de borrar también.
++
++  En este proyecto ya pasó: una tabla creada con leer, crear y editar
++  y sin la de borrar. Un DELETE sin política NO da error — borra cero
++  filas y contesta que todo ha ido bien. Costó una tarde entera.
++*/
++drop policy if exists notas_leer on notas;
++create policy notas_leer on notas
++  for select to authenticated using (hogar_id = mi_hogar());
++
++/*
++  Escribir una nota es escribir, así que quien solo mira no puede —
++  `puedo_escribir()` es la función del 31.
++
++  Y `escrita_por = auth.uid()`: nadie firma una nota con el nombre de
++  otro. Sin esa línea, el navegador podría mandar cualquier autor.
++*/
++drop policy if exists notas_crear on notas;
++create policy notas_crear on notas
++  for insert to authenticated with check (
++    hogar_id = mi_hogar()
++    and escrita_por = auth.uid()
++    and puedo_escribir()
++  );
++
++/*
++  CAMBIARLA: solo quien la escribió.
++
++  Con una excepción, y es la que hace que «Visto» funcione: el
++  destinatario también puede tocar SU nota — para eso se la han
++  dejado. Lo que pueda cambiar de ella se decide en el código
++  (`app/api/notas`), que solo le deja poner la fecha de visto.
++
++  Se podría afinar más aquí con un trigger que comprobara columna a
++  columna. No se hace: sería una pieza más que mantener para proteger
++  a una familia de sí misma. Quien recibe la nota ya podía leerla
++  entera.
++*/
++drop policy if exists notas_editar on notas;
++create policy notas_editar on notas
++  for update to authenticated
++  using (
++    hogar_id = mi_hogar()
++    and (escrita_por = auth.uid() or para = auth.uid())
++    and puedo_escribir()
++  )
++  with check (
++    hogar_id = mi_hogar()
++    and (escrita_por = auth.uid() or para = auth.uid())
++  );
++
++/*
++  BORRAR DEL TODO: solo quien la escribió.
++
++  La aplicación no ofrece este botón —«Quitar» guarda, no borra— pero
++  la política existe igualmente: el día que haga falta vaciar las
++  guardadas, tiene que poder hacerse sin tocar la base de datos a
++  mano. Y una política que no existe se descubre tarde y en silencio.
++*/
++drop policy if exists notas_borrar on notas;
++create policy notas_borrar on notas
++  for delete to authenticated using (
++    hogar_id = mi_hogar()
++    and escrita_por = auth.uid()
++    and puedo_escribir()
++  );
++
++
++-- ── 3 · Comprobación ───────────────────────────────────────
++/*
++  DOS resultados:
++
++  1 · Las cuatro políticas, con `puedo_escribir` en las tres que
++      escriben. Si salen tres filas en vez de cuatro, falta una — y la
++      que suele faltar es la de borrar.
++  2 · La tabla vacía y con RLS puesto. `rls = true` no es un detalle:
++      sin él, cualquiera con una sesión leería las notas de todas las
++      casas de HUBI.
++*/
++select
++  policyname                                    as politica,
++  cmd                                           as para_que,
++  coalesce(qual, with_check) ilike '%puedo_escribir%' as mira_si_puede_escribir
++from pg_policies
++where tablename = 'notas'
++order by policyname;
++
++select
++  (select count(*) from notas)                                    as notas_ahora,
++  (select relrowsecurity from pg_class where relname = 'notas')   as rls;
+-- 
+2.43.0
+

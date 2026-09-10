@@ -1,0 +1,217 @@
+From f59d1f648ec488a62be563995856019870f546b2 Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 20:32:42 +0000
+Subject: [PATCH] La rueda, con los colores de la H. Y la foto donde dice tu
+ nombre
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+── LA RUEDA ──
+
+Suelta, sin píldora. La caja la convertía en «otro botón» al lado del
+logo, y ahí arriba no compite con nada: es lo único que hay.
+
+El color sale de la propia H — turquesa, naranja y rojo son los
+píxeles del logo, medidos, no tres colores bonitos elegidos aparte. Por
+eso se lee como parte de HUBI y no como un icono pegado encima.
+
+30 px de dibujo dentro de 48 de hueco tocable. Sin borde no hay nada
+que diga dónde acaba, así que el hueco tiene que perdonar la puntería.
+
+Y se pierde la palabra «Ajustes», que no es gratis y conviene que
+quede escrito: para quien no usa el móvil a diario, la palabra sobraba
+de explicaciones y el dibujo hay que sabérselo. La apuesta es que la
+rueda es de los dos o tres iconos que ha aprendido todo el mundo, y
+que grande, con color y en la esquina de siempre, se entiende sola.
+
+Se descartó el menú de tres líneas: promete algo que se despliega con
+varias cosas dentro, y tocarlo para aterrizar en Ajustes es una
+promesa rota. HUBI va justo de no esconder nada detrás de un menú.
+
+── LA FOTO ──
+
+Estaba arriba, pegada al logo, y ahí no decía nada: un adorno al lado
+de una marca. Ahora va con el saludo, que es donde tiene sentido —
+«Buenas tardes, Haris» y su cara son la misma frase—, y de un vistazo
+se sabe con qué cuenta se ha entrado. En una casa donde dos personas
+comparten el mismo iPad eso no es un detalle.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/iconos.tsx | 69 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ app/page.tsx   | 63 ++++++++++++++++++++++++++++++++-------------
+ 2 files changed, 114 insertions(+), 18 deletions(-)
+
+diff --git a/app/iconos.tsx b/app/iconos.tsx
+index a670833..8f58fad 100644
+--- a/app/iconos.tsx
++++ b/app/iconos.tsx
+@@ -141,6 +141,75 @@ export function Pastilla({
+   )
+ }
+ 
++/*
++  ═══════════════════════════════════════════════════════════════
++  LA RUEDA DE AJUSTES, CON LOS COLORES DE HUBI
++  ═══════════════════════════════════════════════════════════════
++
++  Suelta, sin caja. Una píldora con borde y fondo la convertía en «un
++  botón más» al lado del logo, y en esa esquina no compite con nada:
++  es lo único que hay.
++
++  ─────────────────────────────────────────────────────────────
++  EL COLOR SALE DE LA PROPIA H
++
++  Turquesa, naranja y rojo son los píxeles del logo, medidos — no tres
++  colores bonitos elegidos aparte. Por eso la rueda se lee como parte
++  de HUBI y no como un icono pegado encima.
++
++  ─────────────────────────────────────────────────────────────
++  SE VE PEQUEÑA Y SE TOCA GRANDE
++
++  El dibujo mide 30 px; lo que responde al dedo, 48. Es la regla de
++  siempre —nada por debajo de 48 para lo que hay que pulsar— y aquí
++  hace más falta que nunca: sin caja no hay borde que diga dónde
++  acaba, así que el hueco tiene que perdonar la puntería.
++
++  ─────────────────────────────────────────────────────────────
++  Y EL DEGRADADO LLEVA UN IDENTIFICADOR FIJO, A PROPÓSITO
++
++  Normalmente eso sería un fallo esperando a pasar: dos SVG con el
++  mismo identificador y el segundo se pinta con el degradado del
++  primero. Aquí da igual —los dos degradados son idénticos— y evita
++  tener que convertir este archivo en componente de navegador solo
++  para generar un número. Este archivo lo usan pantallas de servidor;
++  un `useId` aquí las rompería todas.
++*/
++export function Rueda({ tam = 30 }: { tam?: number }) {
++  return (
++    <svg
++      width={tam}
++      height={tam}
++      viewBox="0 0 24 24"
++      fill="none"
++      aria-hidden
++      style={{ display: 'block' }}
++    >
++      <defs>
++        <linearGradient
++          id="hubi-rueda"
++          x1="2.5"
++          y1="2.5"
++          x2="21.5"
++          y2="21.5"
++          gradientUnits="userSpaceOnUse"
++        >
++          <stop offset="0%" stopColor="#02C1C0" />
++          <stop offset="48%" stopColor="#FF7D20" />
++          <stop offset="100%" stopColor="#FD4F4F" />
++        </linearGradient>
++      </defs>
++      <path
++        d={TRAZOS.rueda}
++        stroke="url(#hubi-rueda)"
++        strokeWidth={1.9}
++        strokeLinecap="round"
++        strokeLinejoin="round"
++      />
++    </svg>
++  )
++}
++
+ /* ── El logotipo ─────────────────────────────────────────
+    Es el archivo de verdad, con su degradado y su onda. Sobre fondo
+    oscuro hay que usar la variante clara: en la otra, el trazo derecho
+diff --git a/app/page.tsx b/app/page.tsx
+index 35aa97a..45fc1fc 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -7,7 +7,7 @@ import Barra from './barra'
+ import Arranque from './arranque'
+ import Invitacion from './invitacion'
+ import Cabecera from './cabecera'
+-import { Ico, Logo, Pastilla, pintaDe } from './iconos'
++import { Ico, Logo, Pastilla, Rueda, pintaDe } from './iconos'
+ import Avatar from './avatar'
+ import { cuando, type Recordatorio } from '@/lib/tablon'
+ import { leerPerfil } from '@/lib/perfil'
+@@ -277,16 +277,29 @@ export default async function Inicio({
+             <span className="text-[22px] font-extrabold tracking-[0.09em]">HUBI</span>
+           </span>
+ 
+-          <span className="flex shrink-0 items-center gap-2">
+-            <Avatar nombre={nombre} foto={perfil.foto} tam={40} />
+-            <Link
+-              href="/ajustes"
+-              className="flex h-11 items-center gap-1.5 rounded-full border border-borde bg-superficie pl-3 pr-3.5 text-[15.5px] font-extrabold text-tinta"
+-            >
+-              <Ico nombre="rueda" tam={18} grosor={2} />
+-              Ajustes
+-            </Link>
+-          </span>
++          {/*
++            La rueda, suelta y con los colores de la H. Sin píldora:
++            ahí arriba no compite con nada y una caja la convertía en
++            «otro botón» al lado del logo.
++
++            El hueco que responde al dedo son 48 px aunque el dibujo
++            mida 30 — sin borde no hay nada que diga dónde acaba, así
++            que tiene que perdonar la puntería.
++
++            Y se pierde la palabra «Ajustes», que no es gratis: para
++            quien no usa el móvil a diario, la palabra sobraba de
++            explicaciones y el dibujo hay que sabérselo. La apuesta es
++            que la rueda es de los dos o tres iconos que ha aprendido
++            todo el mundo, y que grande, con color y en la esquina de
++            siempre, se entiende sola.
++          */}
++          <Link
++            href="/ajustes"
++            aria-label="Ajustes"
++            className="-mr-2 flex h-12 w-12 shrink-0 items-center justify-center"
++          >
++            <Rueda tam={30} />
++          </Link>
+         </div>
+       </Cabecera>
+ 
+@@ -298,13 +311,27 @@ export default async function Inicio({
+         <Casas casas={casas} />
+ 
+         {/* ── Saludo ── */}
+-        <p className="mt-2.5 text-[14.5px] font-bold text-tenue">{hoyEnPalabras()}</p>
+-        {/* Nunca "Buenas tardes," a secas: si no hubiera nombre, se
+-            saluda sin coma y punto. Una frase colgando hace dudar de
+-            todo lo que viene debajo. */}
+-        <h1 className="mt-0.5 text-[26px] font-extrabold leading-tight tracking-tight">
+-          {nombre ? `${saludo()}, ${nombre}` : saludo()}
+-        </h1>
++        {/*
++          ── EL SALUDO, CON LA FOTO ──
++
++          La foto estaba arriba, pegada al logo, y ahí no decía nada:
++          era un adorno al lado de una marca. Aquí sí — «Buenas tardes,
++          Haris» y su cara son la misma frase, y de un vistazo se sabe
++          con qué cuenta se ha entrado, que en una casa donde dos
++          personas comparten el mismo iPad no es un detalle.
++        */}
++        <div className="mt-2.5 flex items-center gap-3">
++          <Avatar nombre={nombre} foto={perfil.foto} tam={52} />
++          <div className="min-w-0 flex-1">
++            <p className="text-[14.5px] font-bold text-tenue">{hoyEnPalabras()}</p>
++            {/* Nunca "Buenas tardes," a secas: si no hubiera nombre, se
++                saluda sin coma y punto. Una frase colgando hace dudar de
++                todo lo que viene debajo. */}
++            <h1 className="mt-0.5 text-[24px] font-extrabold leading-tight tracking-tight">
++              {nombre ? `${saludo()}, ${nombre}` : saludo()}
++            </h1>
++          </div>
++        </div>
+ 
+         {/*
+           ── PARA QUÉ ESTÁS AQUÍ ──
+-- 
+2.43.0
+

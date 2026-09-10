@@ -1,0 +1,543 @@
+From 92b896a52dd3be5af275d07a75d86b38f52c6825 Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Mon, 7 Sep 2026 20:09:41 +0000
+Subject: [PATCH] =?UTF-8?q?Las=20notas,=20en=20una=20l=C3=ADnea.=20Y=20se?=
+ =?UTF-8?q?=20puede=20cambiar=20de=20destinatario?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Cuatro cosas que se vieron en el móvil y no en el editor.
+
+─────────────────────────────────────────────────────────────
+LAS PESTAÑAS, EN UNA LÍNEA
+
+Eran «Todas · 4», «De la casa · 3», «Para mí · 1», «Para Julia · 0»:
+se iban a dos filas y ocupaban más que las propias notas. El «Para» se
+repetía en tres de las cuatro sin distinguir nada, y el título de la
+pantalla ya dice Notas.
+
+    Todas   Casa   Yo   Julia
+      4      3     1      0
+
+83 pt cada una a 390 de ancho, medido. `flex-1` con `min-w-0`: se
+reparten el ancho y nunca saltan de fila, tenga la casa dos personas o
+cinco. El número va debajo y más pequeño — al lado alargaba la
+pastilla justo lo que hacía falta para no caber.
+
+Y «Yo» junto a «Julia» se entiende de un vistazo: son la misma clase
+de cosa —una persona— dicha con la misma clase de palabra.
+
+─────────────────────────────────────────────────────────────
+LOS BOTONES DE CADA NOTA, TAMBIÉN
+
+«Visto», «Cambiar» y «Quitar» llevaban cada uno su dibujo delante y se
+medían por su palabra, así que tres se iban a dos filas y una nota de
+seis palabras ocupaba media pantalla de botones.
+
+Fuera los dibujos —escritos no se confunden, que era la razón de
+tenerlos— y el ancho lo reparte la fila. Siguen a 48 de alto: el suelo
+para tocar sin apuntar no se baja.
+
+─────────────────────────────────────────────────────────────
+Y SE PUEDE CAMBIAR DE DESTINATARIO
+
+Se podía corregir la letra pero no la persona, y equivocarse de
+persona al ponerla es lo más fácil del mundo: las pastillas están una
+al lado de otra. Había que quitar la nota y escribirla otra vez.
+
+El destino viaja en `destino` y no en `para` para distinguir «no lo
+toques» de «ponla para la casa»: con un solo campo, no mandarlo y
+mandarlo vacío serían lo mismo, y una corrección de texto acabaría
+desasignando la nota sin querer.
+
+Al cambiar de dueño se borra el «visto»: el de antes ya no dice nada,
+y dejarlo puesto le llegaría al nuevo marcada como leída por otro.
+
+─────────────────────────────────────────────────────────────
+Y «PARA TI» BAJA UN PUESTO EN EL INICIO
+
+Estaba la primera de todas, por delante de «Guardar documento», y ahí
+empujaba hacia abajo lo que el punto 6 pone como protagonista de la
+pantalla. Va justo detrás de la foto — pero no más abajo: sigue siendo
+lo único que alguien te ha dejado a TI, y lo que se pone debajo de
+seis tarjetas se lee mañana.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/api/notas/route.ts |  57 +++++++++++++++++-
+ app/notas/notas.tsx    | 123 +++++++++++++++++++++++++++++++++-----
+ app/page.tsx           | 132 +++++++++++++++++++++--------------------
+ 3 files changed, 230 insertions(+), 82 deletions(-)
+
+diff --git a/app/api/notas/route.ts b/app/api/notas/route.ts
+index fad441e..543520c 100644
+--- a/app/api/notas/route.ts
++++ b/app/api/notas/route.ts
+@@ -163,9 +163,11 @@ export async function PATCH(peticion: NextRequest) {
+     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
+   }
+ 
+-  let cuerpo: { id?: string; que?: string; texto?: string }
++  type Cambio = { id?: string; que?: string; texto?: string; destino?: string | null }
++
++  let cuerpo: Cambio
+   try {
+-    cuerpo = (await peticion.json()) as { id?: string; que?: string; texto?: string }
++    cuerpo = (await peticion.json()) as Cambio
+   } catch {
+     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
+   }
+@@ -173,6 +175,13 @@ export async function PATCH(peticion: NextRequest) {
+   const id = String(cuerpo.id ?? '')
+   if (!id) return NextResponse.json({ error: 'Falta la nota.' }, { status: 400 })
+ 
++  /* Su casa. Hace falta para comprobar que el nuevo destinatario está
++     dentro de ella: sin eso, un identificador escrito a mano dejaría
++     la nota dirigida a un desconocido, que ni la vería ni podría
++     quitársela de encima. */
++  const hogarId = await miHogar(supabase, user.id)
++  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 409 })
++
+   const { data: nota } = await supabase
+     .from('notas')
+     .select('id, escrita_por, para, guardada_en')
+@@ -215,6 +224,50 @@ export async function PATCH(peticion: NextRequest) {
+       }
+       cambio.texto = texto
+       cambio.cambiada_en = new Date().toISOString()
++
++      /*
++        Y DE PASO, PARA QUIÉN.
++
++        Faltaba: se podía corregir la letra pero no el destinatario, y
++        equivocarse de persona al ponerla es lo más fácil del mundo —
++        las pastillas están una al lado de otra—. Sin esto había que
++        quitar la nota y escribirla otra vez.
++
++        `destino` viaja aparte de `para` en el cuerpo para poder
++        distinguir «no lo toques» de «ponla para la casa»: con un solo
++        campo, no mandarlo y mandarlo vacío serían lo mismo, y una
++        corrección de texto acabaría desasignando la nota sin querer.
++      */
++      if (cuerpo.destino !== undefined) {
++        const aQuien = String(cuerpo.destino ?? '').trim()
++
++        if (!aQuien) {
++          cambio.para = null
++        } else if (aQuien === user.id) {
++          cambio.para = aQuien
++        } else {
++          const { data: esDeCasa } = await supabase
++            .from('miembros')
++            .select('perfil_id')
++            .eq('hogar_id', hogarId)
++            .eq('perfil_id', aQuien)
++            .maybeSingle()
++
++          if (!esDeCasa) {
++            return NextResponse.json(
++              { error: 'Esa persona no está en esta casa.' },
++              { status: 400 }
++            )
++          }
++          cambio.para = aQuien
++        }
++
++        /* Cambia de dueño, así que el «visto» del anterior ya no dice
++           nada: la nota vuelve a estar sin ver para quien la reciba
++           ahora. Dejarlo puesto haría que le llegara marcada como
++           leída por otro. */
++        if (cambio.para !== nota.para) cambio.vista_en = null
++      }
+       break
+     }
+ 
+diff --git a/app/notas/notas.tsx b/app/notas/notas.tsx
+index ea4b481..03d532e 100644
+--- a/app/notas/notas.tsx
++++ b/app/notas/notas.tsx
+@@ -62,6 +62,8 @@ export default function Notas({
+   const [fallo, setFallo] = useState<string | null>(null)
+   const [editando, setEditando] = useState<string | null>(null)
+   const [borrador, setBorrador] = useState('')
++  /* Para quién queda la nota al corregirla. Empieza en el que tenía. */
++  const [otroDestino, setOtroDestino] = useState<string | null>(null)
+   /* Qué montón se está mirando, y si la caja de escribir está abierta. */
+   const [mirando, setMirando] = useState<string>('todas')
+   const [escribiendo, setEscribiendo] = useState(false)
+@@ -114,13 +116,25 @@ export default function Notas({
+   const cuantasCon = (quien: string | null) =>
+     notas.filter((n) => n.para === quien).length
+ 
++  /*
++    ── Y CABEN EN UNA LÍNEA PORQUE LAS PALABRAS SON CORTAS ──
++
++    Eran «Todas · 4», «De la casa · 3», «Para mí · 1», «Para Julia ·
++    0»: cuatro pastillas gordas que se iban a dos filas y ocupaban más
++    que las propias notas. El «Para» se repetía en tres de las cuatro
++    sin distinguir nada, y el título de la pantalla ya dice Notas.
++
++    Con `Todas · Casa · Yo · Julia` cabe la fila entera. Y «Yo» junto a
++    «Julia» se entiende de un vistazo: son la misma clase de cosa —una
++    persona— dicha con la misma clase de palabra.
++  */
+   const montones = [
+     { clave: 'todas', etiqueta: 'Todas', cuantas: notas.length },
+-    { clave: 'casa', etiqueta: 'De la casa', cuantas: cuantasCon(null) },
+-    { clave: yo, etiqueta: 'Para mí', cuantas: cuantasCon(yo) },
++    { clave: 'casa', etiqueta: 'Casa', cuantas: cuantasCon(null) },
++    { clave: yo, etiqueta: 'Yo', cuantas: cuantasCon(yo) },
+     ...otros.map((g) => ({
+       clave: g.id,
+-      etiqueta: `Para ${g.nombre.split(' ')[0]}`,
++      etiqueta: g.nombre.split(' ')[0],
+       cuantas: cuantasCon(g.id),
+     })),
+   ]
+@@ -179,8 +193,16 @@ export default function Notas({
+   }
+ 
+   async function guardarCambio(id: string) {
+-    if (await pedir({ id, que: 'texto', texto: borrador.trim() }, 'PATCH')) {
++    /* `destino: ''` es «para la casa» y `undefined` sería «no lo
++       toques». Se manda siempre porque la pantalla siempre lo
++       enseña: lo que se ve es lo que se guarda. */
++    const bien = await pedir(
++      { id, que: 'texto', texto: borrador.trim(), destino: otroDestino ?? '' },
++      'PATCH'
++    )
++    if (bien) {
+       setEditando(null)
++      setMirando(otroDestino ?? 'casa')
+     }
+   }
+ 
+@@ -203,11 +225,12 @@ export default function Notas({
+         casa» y «Para mí» son la misma cosa.
+       */}
+       {otros.length > 0 && (
+-        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Qué notas ver">
++        <div className="mt-3 flex gap-1.5" role="group" aria-label="Qué notas ver">
+           {montones.map((m) => (
+-            <Pastilla
++            <Monton
+               key={m.clave}
+-              texto={`${m.etiqueta} · ${m.cuantas}`}
++              etiqueta={m.etiqueta}
++              cuantas={m.cuantas}
+               puesta={mirando === m.clave}
+               alPulsar={() => setMirando(m.clave)}
+             />
+@@ -279,6 +302,26 @@ export default function Notas({
+                       className="w-full resize-y rounded-[16px] border border-borde bg-fondo px-4 py-3.5 text-[18px] font-semibold leading-snug text-tinta outline-none focus:border-verde"
+                       autoFocus
+                     />
++                    {/* PARA QUIÉN, TAMBIÉN AL CORREGIR.
++
++                        Se podía arreglar la letra pero no la persona,
++                        y equivocarse de persona al ponerla es lo más
++                        fácil del mundo: las pastillas están una al
++                        lado de otra. Sin esto había que quitar la nota
++                        y escribirla otra vez. */}
++                    {otros.length > 0 && (
++                      <div className="mt-2.5 flex flex-wrap gap-2">
++                        {destinos.map((d) => (
++                          <Pastilla
++                            key={d.id ?? 'casa'}
++                            texto={d.etiqueta}
++                            puesta={otroDestino === d.id}
++                            alPulsar={() => setOtroDestino(d.id)}
++                          />
++                        ))}
++                      </div>
++                    )}
++
+                     <div className="mt-2.5 flex gap-2">
+                       <button
+                         onClick={() => guardarCambio(n.id)}
+@@ -324,11 +367,17 @@ export default function Notas({
+                       </p>
+                     )}
+ 
+-                    <div className="mt-3 flex flex-wrap gap-2">
++                    {/* En UNA línea, repartidos. Antes cada botón
++                        llevaba su dibujo delante y se medía por su
++                        palabra, así que tres se iban a dos filas y una
++                        nota de seis palabras ocupaba media pantalla de
++                        botones. Los dibujos se van —«Visto», «Cambiar»
++                        y «Quitar» no se confunden escritos— y el ancho
++                        lo reparte la fila. */}
++                    <div className="mt-3 flex gap-2">
+                       {paraMi && !n.vista_en && escribo && (
+                         <Boton
+                           texto="Visto"
+-                          icono="check"
+                           ocupado={ocupado}
+                           alPulsar={() => pedir({ id: n.id, que: 'visto' }, 'PATCH')}
+                           fuerte
+@@ -338,11 +387,11 @@ export default function Notas({
+                       {mia && !viendoGuardadas && escribo && (
+                         <Boton
+                           texto="Cambiar"
+-                          icono="lapiz"
+                           ocupado={ocupado}
+                           alPulsar={() => {
+                             setEditando(n.id)
+                             setBorrador(n.texto)
++                            setOtroDestino(n.para)
+                           }}
+                         />
+                       )}
+@@ -352,14 +401,12 @@ export default function Notas({
+                         (viendoGuardadas ? (
+                           <Boton
+                             texto="Volver a ponerla"
+-                            icono="chincheta"
+                             ocupado={ocupado}
+                             alPulsar={() => pedir({ id: n.id, que: 'recuperar' }, 'PATCH')}
+                           />
+                         ) : (
+                           <Boton
+                             texto="Quitar"
+-                            icono="carpeta"
+                             ocupado={ocupado}
+                             alPulsar={() => pedir({ id: n.id, que: 'guardar' }, 'PATCH')}
+                           />
+@@ -539,18 +586,63 @@ function Pastilla({
+   )
+ }
+ 
++/*
++  Una pestaña de montón: la palabra y cuántas hay.
++
++  `flex-1` con `min-w-0`: se reparten el ancho a partes iguales y
++  nunca se van a una segunda fila, tenga la casa dos personas o cinco.
++  El número va debajo y más pequeño — al lado alargaba la pastilla
++  justo lo que hacía falta para no caber.
++*/
++function Monton({
++  etiqueta,
++  cuantas,
++  puesta,
++  alPulsar,
++}: {
++  etiqueta: string
++  cuantas: number
++  puesta: boolean
++  alPulsar: () => void
++}) {
++  return (
++    <button
++      onClick={alPulsar}
++      aria-pressed={puesta}
++      className="flex h-[52px] min-w-0 flex-1 flex-col items-center justify-center rounded-[14px] px-1"
++      style={
++        puesta
++          ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
++          : {
++              background: 'var(--t-superficie)',
++              color: 'var(--t-tinta-suave)',
++              border: '1px solid var(--t-borde)',
++            }
++      }
++    >
++      <span className="w-full truncate text-center text-[15px] font-extrabold leading-none">
++        {etiqueta}
++      </span>
++      <span
++        className="mt-1 text-[13px] font-bold leading-none tabular-nums"
++        style={{ opacity: cuantas === 0 ? 0.45 : 0.8 }}
++      >
++        {cuantas}
++      </span>
++    </button>
++  )
++}
++
+ /* Los botones de una nota. Con texto SIEMPRE, nunca un dibujo suelto:
+    el punto 5 lo dice y aquí se nota — «quitar» y «cambiar» dibujados
+    se parecen demasiado. */
+ function Boton({
+   texto,
+-  icono,
+   ocupado,
+   alPulsar,
+   fuerte = false,
+ }: {
+   texto: string
+-  icono: 'check' | 'lapiz' | 'chincheta' | 'carpeta'
+   ocupado: boolean
+   alPulsar: () => void
+   fuerte?: boolean
+@@ -559,7 +651,7 @@ function Boton({
+     <button
+       onClick={alPulsar}
+       disabled={ocupado}
+-      className="flex h-12 items-center gap-1.5 rounded-[14px] px-4 text-[15.5px] font-extrabold disabled:opacity-50"
++      className="flex h-12 min-w-0 flex-1 items-center justify-center rounded-[14px] px-2 text-[15.5px] font-extrabold disabled:opacity-50"
+       style={
+         fuerte
+           ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
+@@ -570,7 +662,6 @@ function Boton({
+             }
+       }
+     >
+-      <Ico nombre={icono} tam={17} grosor={2.3} />
+       {texto}
+     </button>
+   )
+diff --git a/app/page.tsx b/app/page.tsx
+index 07a7242..25c8032 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -552,70 +552,6 @@ export default async function Inicio({
+           </p>
+         )}
+ 
+-        {/*
+-          ═══════════════════════════════════════════════════════
+-          PARA TI
+-          ═══════════════════════════════════════════════════════
+-
+-          Va ARRIBA, antes que las tarjetas y antes que la agenda. Es
+-          lo único de esta pantalla que alguien de tu casa te ha
+-          dejado a ti en concreto — y lo que se pone debajo de seis
+-          tarjetas se lee mañana.
+-
+-          Se enseña el texto, SIEMPRE. Hubo una versión que ponía «2 ·
+-          una es para ti» y nada más: obligaba a entrar para saber qué
+-          era, y una nota que hay que ir a buscar es una nota que a
+-          veces no se lee.
+-
+-          El número de delante no vuelve atrás en eso — se suma. De
+-          lejos y sin gafas contesta lo primero que se pregunta al
+-          abrir («¿tengo algo?») y el texto sigue debajo contestando
+-          lo segundo («¿el qué?»). Es la idea del widget del teléfono,
+-          pero a 17 px y sin quitar nada: allí el número SUSTITUYE al
+-          texto, y por eso allí hay que entrar.
+-
+-          Desaparece sola en cuanto dices que la has visto, desde
+-          Notas. Si se quedara, el Inicio acabaría con una lista fija
+-          que se deja de mirar en una semana.
+-        */}
+-        {tuyas.length > 0 && (
+-          <section className="mt-4">
+-            {/* El número y su rótulo, en una fila. `tabular-nums` para
+-                que al pasar de 9 a 10 no baile lo de al lado. */}
+-            <div className="flex items-center gap-3">
+-              <span className="text-[44px] font-extrabold leading-none tracking-tight tabular-nums">
+-                {tuyas.length}
+-              </span>
+-              <h2 className="rotulo leading-[1.3]">
+-                {tuyas.length === 1 ? 'Nota que' : 'Notas que'}
+-                <br />
+-                te han dejado
+-              </h2>
+-            </div>
+-            <ul className="mt-3 space-y-2">
+-              {tuyas.map((n) => (
+-                <li key={n.id}>
+-                  <Link
+-                    href="/notas"
+-                    className="block rounded-[20px] border bg-superficie px-4 py-3.5"
+-                    style={{
+-                      borderColor: `color-mix(in srgb, ${n.color} 42%, transparent)`,
+-                      borderLeft: `4px solid ${n.color}`,
+-                    }}
+-                  >
+-                    <span className="block text-[16.5px] font-semibold leading-snug">
+-                      {n.texto.length > 140 ? `${n.texto.slice(0, 140)}…` : n.texto}
+-                    </span>
+-                    <span className="mt-1 block text-[13.5px] font-bold text-tenue">
+-                      {n.de} · {n.cuando.toLowerCase()}
+-                    </span>
+-                  </Link>
+-                </li>
+-              ))}
+-            </ul>
+-          </section>
+-        )}
+-
+         {conectado && <Invitacion />}
+ 
+         {aviso && (
+@@ -694,6 +630,74 @@ export default async function Inicio({
+           </Link>
+         )}
+ 
++        {/*
++          ═══════════════════════════════════════════════════════
++          PARA TI
++          ═══════════════════════════════════════════════════════
++
++          Va justo DEBAJO de «Guardar documento», y encima de todo lo
++          demás. Estaba la primera de todas —por delante incluso de la
++          foto— y ahí empujaba hacia abajo lo que el punto 6 pone como
++          protagonista de la pantalla.
++
++          Detrás de la foto, pero no más abajo: sigue siendo lo único
++          que alguien de tu casa te ha dejado a TI en concreto, y lo
++          que se pone debajo de seis tarjetas se lee mañana.
++
++          Se enseña el texto, SIEMPRE. Hubo una versión que ponía «2 ·
++          una es para ti» y nada más: obligaba a entrar para saber qué
++          era, y una nota que hay que ir a buscar es una nota que a
++          veces no se lee.
++
++          El número de delante no vuelve atrás en eso — se suma. De
++          lejos y sin gafas contesta lo primero que se pregunta al
++          abrir («¿tengo algo?») y el texto sigue debajo contestando
++          lo segundo («¿el qué?»). Es la idea del widget del teléfono,
++          pero a 17 px y sin quitar nada: allí el número SUSTITUYE al
++          texto, y por eso allí hay que entrar.
++
++          Desaparece sola en cuanto dices que la has visto, desde
++          Notas. Si se quedara, el Inicio acabaría con una lista fija
++          que se deja de mirar en una semana.
++        */}
++        {tuyas.length > 0 && (
++          <section className="mt-4">
++            {/* El número y su rótulo, en una fila. `tabular-nums` para
++                que al pasar de 9 a 10 no baile lo de al lado. */}
++            <div className="flex items-center gap-3">
++              <span className="text-[44px] font-extrabold leading-none tracking-tight tabular-nums">
++                {tuyas.length}
++              </span>
++              <h2 className="rotulo leading-[1.3]">
++                {tuyas.length === 1 ? 'Nota que' : 'Notas que'}
++                <br />
++                te han dejado
++              </h2>
++            </div>
++            <ul className="mt-3 space-y-2">
++              {tuyas.map((n) => (
++                <li key={n.id}>
++                  <Link
++                    href="/notas"
++                    className="block rounded-[20px] border bg-superficie px-4 py-3.5"
++                    style={{
++                      borderColor: `color-mix(in srgb, ${n.color} 42%, transparent)`,
++                      borderLeft: `4px solid ${n.color}`,
++                    }}
++                  >
++                    <span className="block text-[16.5px] font-semibold leading-snug">
++                      {n.texto.length > 140 ? `${n.texto.slice(0, 140)}…` : n.texto}
++                    </span>
++                    <span className="mt-1 block text-[13.5px] font-bold text-tenue">
++                      {n.de} · {n.cuando.toLowerCase()}
++                    </span>
++                  </Link>
++                </li>
++              ))}
++            </ul>
++          </section>
++        )}
++
+         {/* ── Los dos cuadrados ── */}
+         {(usaCompra && ve.compra) || ve.notas ? (
+           <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+-- 
+2.43.0
+

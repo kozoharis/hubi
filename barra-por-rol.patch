@@ -1,0 +1,585 @@
+From 525b702490b80db44b7b8fc9231738da0e7cc678 Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 19:18:14 +0000
+Subject: [PATCH] La barra tampoco es la misma para todos
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+A quien ayuda en casa le salían Papeles y las actividades. La base de
+datos le vaciaba el contenido —eso funcionaba— pero se pasaba el día
+viendo dos pestañas que no llevan a nada. Y una pestaña vacía no se lee
+como «esto no es para ti»: se lee como «esto está roto».
+
+  Ayuda en casa   Inicio · Agenda · La compra
+  Asesor          Inicio · Papeles · sus actividades
+  Familia         todo, como siempre
+
+Con tres botones cada uno mide el doble, que en un móvil se agradece.
+
+Y el botón de voz solo para quien puede escribir algo: al asesor le
+daba un botón enorme que falla en cuanto lo usa.
+
+ESTO NO PROTEGE NADA, y conviene que quede escrito. Quitar la pestaña
+de Papeles no impide abrir `/documentos` escribiéndolo — eso lo impiden
+las políticas. Aquí solo se decide qué se OFRECE: no esconder, sino que
+cada uno encuentre lo suyo.
+
+Dos cosas más que faltaban:
+
+  · SE PUEDE CAMBIAR EL ROL después de invitar. Antes se elegía una vez
+    y no había manera de rectificar, que es justo lo que pasa en la
+    vida real: quien entró para la compra acaba llevando los papeles.
+    Lo hace `poner_rol`, la misma función que al invitar — si el
+    reparto viviera en dos sitios, un día uno se quedaría sin
+    actualizar y alguien tendría un rol puesto y los permisos de otro.
+
+  · La plantilla pregunta por `mi_hogar()` en vez de coger la primera
+    fila de miembros. Quien está en dos casas tiene dos roles —familia
+    en la suya, ayuda en la de al lado— y al azar le tocaba la barra
+    equivocada la mitad de las veces.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/actividades-contexto.tsx |  60 +++++++++++++-------
+ app/ajustes/gente.tsx        |  80 ++++++++++++++++++++++++++
+ app/api/miembros/route.ts    | 106 +++++++++++++++++++++++++++++++++++
+ app/barra.tsx                |  89 ++++++++++++++++++++++-------
+ app/layout.tsx               |  64 ++++++++++++++++++++-
+ 5 files changed, 357 insertions(+), 42 deletions(-)
+
+diff --git a/app/actividades-contexto.tsx b/app/actividades-contexto.tsx
+index 4af536d..82df58f 100644
+--- a/app/actividades-contexto.tsx
++++ b/app/actividades-contexto.tsx
+@@ -5,14 +5,14 @@ import type { Actividad } from '@/lib/actividades'
+ 
+ /*
+   ═══════════════════════════════════════════════════════════════
+-  LAS ACTIVIDADES, DISPONIBLES EN CUALQUIER PANTALLA
++  LO QUE LA BARRA NECESITA SABER, EN CUALQUIER PANTALLA
+   ═══════════════════════════════════════════════════════════════
+ 
+   POR QUÉ ESTO EXISTE, QUE NO ES OBVIO.
+ 
+-  La barra de abajo sale en TODAS las pantallas, y a partir de ahora
+-  sus pestañas dependen de qué actividades tenga cada casa. O sea:
+-  hay que leer la base de datos para pintarla.
++  La barra de abajo sale en TODAS las pantallas, y sus pestañas
++  dependen de qué actividades tenga cada casa y de quién esté
++  entrando. O sea: hay que leer la base de datos para pintarla.
+ 
+   Pero la barra es un componente de navegador —tiene enlaces y estado
+   visual— y cuatro pantallas que la usan también lo son: Entrar, los
+@@ -22,31 +22,53 @@ import type { Actividad } from '@/lib/actividades'
+ 
+   Las dos salidas malas:
+ 
+-  · Que cada pantalla le pase las actividades a la barra. Son quince
+-    archivos, y el día que alguien añada uno nuevo se le olvidará —y
+-    esa pantalla tendrá la barra de otra familia—.
++  · Que cada pantalla se lo pase a la barra. Son quince archivos, y el
++    día que alguien añada uno nuevo se le olvidará — y esa pantalla
++    tendrá la barra de otra familia.
+ 
+-  · Que la barra las pida al servidor al montarse. Entonces PARPADEA
+-    en cada pantalla: aparece con las pestañas de siempre y cambia
+-    medio segundo después. En una aplicación para personas mayores,
+-    una barra que se mueve sola bajo el dedo es inaceptable.
++  · Que la barra lo pida al servidor al montarse. Entonces PARPADEA en
++    cada pantalla: aparece con las pestañas de siempre y cambia medio
++    segundo después. En una aplicación para personas mayores, una
++    barra que se mueve sola bajo el dedo es inaceptable.
+ 
+   La salida buena es ésta: la plantilla de la aplicación —que sí es de
+-  servidor— las lee UNA vez y las deja disponibles aquí. La barra las
+-  coge ya hechas, sin pedir nada y sin parpadear, y ninguna pantalla
+-  tiene que acordarse de pasárselas.
++  servidor— lo lee UNA vez y lo deja disponible aquí.
++
++  ─────────────────────────────────────────────────────────────
++  Y ESTO NO PROTEGE NADA
++
++  Que a alguien no le salga la pestaña de Papeles no le impide abrir
++  `/documentos` escribiéndolo. Eso lo impiden las políticas de la base
++  de datos, y así tiene que seguir siendo. Aquí solo se decide qué se
++  le OFRECE — que es distinto, y es de lo que va tener una barra
++  propia: no de esconder, sino de que encuentre lo suyo.
+ */
+ 
+-const Contexto = createContext<Actividad[] | null>(null)
++export type Casa = {
++  actividades: Actividad[]
++  /** Quién es quien está mirando: familia, ayuda, asesor, mirar. */
++  rol: string | null
++  /** Si esta casa usa la lista de la compra. */
++  usaCompra: boolean
++}
++
++const VACIA: Casa = { actividades: [], rol: null, usaCompra: true }
++
++const Contexto = createContext<Casa | null>(null)
+ 
+ export function ProveedorActividades({
+-  actividades,
++  casa,
+   children,
+ }: {
+-  actividades: Actividad[]
++  casa: Casa
+   children: React.ReactNode
+ }) {
+-  return <Contexto.Provider value={actividades}>{children}</Contexto.Provider>
++  return <Contexto.Provider value={casa}>{children}</Contexto.Provider>
++}
++
++/** Todo lo que la barra necesita. Nunca falla: si falta, va lo de siempre. */
++export function useCasa(): Casa {
++  return useContext(Contexto) ?? VACIA
+ }
+ 
+ /**
+@@ -57,5 +79,5 @@ export function ProveedorActividades({
+  * puede dejar a nadie sin poder navegar.
+  */
+ export function useActividades(): Actividad[] {
+-  return useContext(Contexto) ?? []
++  return useCasa().actividades
+ }
+diff --git a/app/ajustes/gente.tsx b/app/ajustes/gente.tsx
+index cdafb14..7900a0f 100644
+--- a/app/ajustes/gente.tsx
++++ b/app/ajustes/gente.tsx
+@@ -53,6 +53,7 @@ export default function Gente({
+   const router = useRouter()
+ 
+   const [repartiendo, setRepartiendo] = useState<string | null>(null)
++  const [cambiando, setCambiando] = useState<string | null>(null)
+   const [invitando, setInvitando] = useState(false)
+   const [nombre, setNombre] = useState('')
+   const [correo, setCorreo] = useState('')
+@@ -111,6 +112,37 @@ export default function Gente({
+     router.refresh()
+   }
+ 
++  async function cambiarRol(id: string, nuevo: Rol) {
++    setFallo(null)
++    setOcupado(true)
++
++    const r = await fetch('/api/miembros', {
++      method: 'PATCH',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ id, rol: nuevo }),
++    })
++
++    const d = (await r.json().catch(() => null)) as {
++      bien?: boolean
++      error?: string
++      detalle?: string
++    } | null
++
++    setOcupado(false)
++
++    if (!r.ok || d?.bien !== true) {
++      setFallo(
++        d
++          ? [d.error ?? 'No se ha podido.', d.detalle].filter(Boolean).join(' · ')
++          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
++      )
++      return
++    }
++
++    setCambiando(null)
++    router.refresh()
++  }
++
+   async function sacar(v: Vecino) {
+     if (
+       !window.confirm(
+@@ -166,6 +198,19 @@ export default function Gente({
+                       .join(' · ')}
+               </span>
+             </span>
++            {/* Cambiar quién es. Hacía falta y no estaba: se elegía al
++                invitar y ya no había manera de rectificar — que es
++                justo lo que pasa en la vida real. */}
++            {puedoInvitar && !v.manda && (
++              <button
++                onClick={() => setCambiando(cambiando === v.id ? null : v.id)}
++                aria-label={`Cambiar quién es ${v.nombre}`}
++                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-tinta-suave"
++              >
++                <Ico nombre="lapiz" tam={19} grosor={2.2} />
++              </button>
++            )}
++
+             {puedoInvitar && !v.manda && (
+               <button
+                 onClick={() => setRepartiendo(repartiendo === v.id ? null : v.id)}
+@@ -190,6 +235,41 @@ export default function Gente({
+         ))}
+       </ul>
+ 
++      {cambiando &&
++        (() => {
++          const v = gente.find((g) => g.id === cambiando)
++          if (!v) return null
++          return (
++            <div className="rounded-[20px] border border-borde bg-superficie px-4 py-4">
++              <p className="text-[17px] font-extrabold leading-snug">
++                ¿Quién es {v.nombre.split(' ')[0]}?
++              </p>
++              <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
++                Cambiarlo vuelve a repartirle los permisos desde cero. Lo que le hayas abierto
++                a mano se pierde.
++              </p>
++              <div className="mt-3 space-y-2.5">
++                {ROLES.map((r) => (
++                  <Papel
++                    key={r.valor}
++                    puesto={(v.rol ?? 'familia') === r.valor}
++                    alPulsar={() => cambiarRol(v.id, r.valor)}
++                    titulo={r.nombre}
++                    pie={r.pie}
++                  />
++                ))}
++              </div>
++              <button
++                onClick={() => setCambiando(null)}
++                disabled={ocupado}
++                className="mt-3 h-[52px] w-full rounded-[14px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
++              >
++                Dejarlo como está
++              </button>
++            </div>
++          )
++        })()}
++
+       {repartiendo &&
+         (() => {
+           const v = gente.find((g) => g.id === repartiendo)
+diff --git a/app/api/miembros/route.ts b/app/api/miembros/route.ts
+index 795374c..d92f003 100644
+--- a/app/api/miembros/route.ts
++++ b/app/api/miembros/route.ts
+@@ -367,3 +367,109 @@ export async function DELETE(peticion: NextRequest) {
+ 
+   return NextResponse.json({ bien: true })
+ }
++
++/*
++  ─────────────────────────────────────────────────────────────
++  CAMBIAR EL ROL DE ALGUIEN, O SU FECHA DE FIN
++
++  Hacía falta y no estaba: se elegía al invitar y ya no había manera
++  de rectificar. Y rectificar es justo lo que pasa en la vida real —
++  quien entró para ayudar con la compra acaba llevando también los
++  papeles, o al revés.
++
++  El rol lo pone `poner_rol`, que es quien reparte los permisos por
++  carpeta. Aquí no se toca `miembros` a mano para eso: si el reparto
++  viviera en dos sitios, un día uno de los dos se quedaría sin
++  actualizar y alguien tendría un rol puesto y los permisos de otro.
++*/
++export async function PATCH(peticion: NextRequest) {
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) {
++    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
++  }
++
++  const hogarId = await miHogar(supabase, user.id)
++  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
++
++  if (!(await mandaEnSuCasa(supabase, user.id))) {
++    return NextResponse.json(
++      { error: 'Solo quien creó esta casa reparte los accesos.' },
++      { status: 403 }
++    )
++  }
++
++  let cuerpo: { id?: string; rol?: string; hasta?: string | null }
++  try {
++    cuerpo = (await peticion.json()) as { id?: string; rol?: string; hasta?: string | null }
++  } catch {
++    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
++  }
++
++  const id = String(cuerpo.id ?? '')
++  if (!id) return NextResponse.json({ error: 'Falta la persona.' }, { status: 400 })
++
++  if (id === user.id) {
++    return NextResponse.json(
++      { error: 'No puedes cambiarte el rol a ti mismo: el Drive de la casa es tuyo.' },
++      { status: 400 }
++    )
++  }
++
++  // ── El rol, con todo lo que arrastra ──────────────────────
++  if (cuerpo.rol !== undefined) {
++    if (!esRol(cuerpo.rol)) {
++      return NextResponse.json({ error: 'Ese rol no existe.' }, { status: 400 })
++    }
++
++    const { error } = await supabase.rpc('poner_rol', { a_quien: id, el_rol: cuerpo.rol })
++
++    if (error) {
++      console.error('[HUBI] No se ha podido cambiar el rol:', error)
++      return NextResponse.json(
++        {
++          error: 'No se ha podido cambiar el rol.',
++          detalle: error.message ?? 'Puede que falte ejecutar el SQL 37.',
++        },
++        { status: 500 }
++      )
++    }
++  }
++
++  // ── Y hasta cuándo entra ──────────────────────────────────
++  /*
++    `undefined` es «no lo toques»; `null` es «quítale la fecha». Son
++    dos cosas distintas y confundirlas aquí borraría fechas de fin sin
++    que nadie lo pidiera.
++  */
++  if (cuerpo.hasta !== undefined) {
++    const hoy = new Date().toISOString().slice(0, 10)
++    const hasta =
++      typeof cuerpo.hasta === 'string' &&
++      /^\d{4}-\d{2}-\d{2}$/.test(cuerpo.hasta) &&
++      cuerpo.hasta > hoy
++        ? cuerpo.hasta
++        : null
++
++    const admin = clienteServidor()
++    const { data, error } = await admin
++      .from('miembros')
++      .update({ acceso_hasta: hasta })
++      .eq('hogar_id', hogarId)
++      .eq('perfil_id', id)
++      .select('perfil_id')
++
++    if (error || !data || data.length === 0) {
++      console.error('[HUBI] No se ha podido cambiar la fecha de fin:', error)
++      return NextResponse.json(
++        {
++          error: 'No se ha podido cambiar la fecha.',
++          detalle: error?.message ?? 'Puede que falte ejecutar el SQL 37.',
++        },
++        { status: 500 }
++      )
++    }
++  }
++
++  return NextResponse.json({ bien: true })
++}
+diff --git a/app/barra.tsx b/app/barra.tsx
+index c2dc3f3..3dc3dc5 100644
+--- a/app/barra.tsx
++++ b/app/barra.tsx
+@@ -2,7 +2,7 @@
+ 
+ import Link from 'next/link'
+ import { Ico, iconoDeEmoji, type Icono } from './iconos'
+-import { useActividades } from './actividades-contexto'
++import { useCasa } from './actividades-contexto'
+ import { nombreCorto } from '@/lib/actividades'
+ 
+ /*
+@@ -80,6 +80,29 @@ const FIJAS: Pestana[] = [
+ ]
+ 
+ 
++/*
++  ═══════════════════════════════════════════════════════════════
++  Y LA BARRA NO ES LA MISMA PARA TODOS
++  ═══════════════════════════════════════════════════════════════
++
++  Hasta ahora sí lo era, y quedaba mal en cuanto entraba alguien que
++  no es de la familia. A quien ayuda en casa le salían Papeles y las
++  actividades: la base de datos le vaciaba el contenido —eso funciona—
++  pero se pasaba el día viendo dos pestañas que no llevan a nada. Y
++  una pestaña vacía no se lee como «esto no es para ti»: se lee como
++  «esto está roto».
++
++  Cada uno ve las suyas, y de paso le caben más anchas:
++
++    Ayuda en casa   Inicio · Agenda · La compra
++    Asesor          Inicio · Papeles · sus actividades
++    Familia         todo, como siempre
++
++  ESTO NO PROTEGE NADA, y conviene repetirlo. Quitar la pestaña de
++  Papeles no impide abrir `/documentos` escribiéndolo — eso lo impiden
++  las políticas de la base de datos. Aquí solo se decide qué se
++  ofrece: no esconder, sino que cada uno encuentre lo suyo.
++*/
+ export default function Barra({
+   activa = null,
+   voz = true,
+@@ -87,36 +110,60 @@ export default function Barra({
+   activa?: Seccion
+   voz?: boolean
+ }) {
+-  const actividades = useActividades()
++  const { actividades, rol, usaCompra } = useCasa()
+ 
+   /* Tres o más no caben: se juntan detrás de una sola pestaña. Dos o
+      menos van directas, que es lo que ahorra un toque diario a quien
+      las usa. */
+   const sueltas = actividades.length <= 2
+ 
+-  const PESTANAS: Pestana[] = [
+-    ...FIJAS,
+-    ...(sueltas
+-      ? actividades.map((a) => ({
+-          clave: a.id,
+-          texto: nombreCorto(a.nombre),
+-          icono: iconoDeEmoji(a.icono),
+-          href: a.ruta,
+-        }))
+-      : [
+-          {
+-            clave: 'actividades',
+-            texto: 'Actividades',
+-            icono: 'euro' as Icono,
+-            href: '/actividades',
+-          },
+-        ]),
+-  ]
++  const DE_ACTIVIDADES: Pestana[] = sueltas
++    ? actividades.map((a) => ({
++        clave: a.id,
++        texto: nombreCorto(a.nombre),
++        icono: iconoDeEmoji(a.icono),
++        href: a.ruta,
++      }))
++    : [
++        {
++          clave: 'actividades',
++          texto: 'Actividades',
++          icono: 'euro' as Icono,
++          href: '/actividades',
++        },
++      ]
++
++  /* La voz sirve para APUNTAR y para preguntar. A quien no puede
++     escribir nada —el asesor, quien solo mira— le daría un botón
++     grande que falla en cuanto lo use. */
++  const puedeHablar = rol !== 'asesor' && rol !== 'mirar'
++
++  const INICIO = FIJAS[0]
++  const PAPELES = FIJAS[1]
++  const AGENDA = FIJAS[2]
++
++  const PESTANAS: Pestana[] =
++    rol === 'ayuda'
++      ? /* Lo suyo y nada más. La compra sube a pestaña porque para ella
++           es lo del día a día, y aquí hay sitio de sobra: con tres
++           botones cada uno mide el doble. */
++        [
++          INICIO,
++          AGENDA,
++          ...(usaCompra
++            ? [{ clave: 'compra', texto: 'La compra', icono: 'bolsa' as Icono, href: '/compra' }]
++            : []),
++        ]
++      : rol === 'asesor'
++        ? /* Viene a las cuentas y a los papeles de las actividades. La
++             agenda de una familia que no es la suya no pinta nada. */
++          [INICIO, PAPELES, ...DE_ACTIVIDADES]
++        : [INICIO, PAPELES, AGENDA, ...DE_ACTIVIDADES]
+ 
+   return (
+     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40">
+       <div className="pointer-events-none relative mx-auto max-w-md">
+-        {voz && (
++        {voz && puedeHablar && (
+           <Link
+             href="/hablar"
+             aria-label="Hablar con HUBI"
+diff --git a/app/layout.tsx b/app/layout.tsx
+index 2e7b969..2f396a5 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -114,8 +114,68 @@ export default async function RootLayout({
+   children,
+ }: Readonly<{ children: React.ReactNode }>) {
+   let actividades: Actividad[] = []
++  let rol: string | null = null
++  let usaCompra = true
++
+   try {
+-    actividades = await actividadesDe(await clienteSesion())
++    const supabase = await clienteSesion()
++    actividades = await actividadesDe(supabase)
++
++    /*
++      QUIÉN ESTÁ ENTRANDO, Y SI ESTA CASA HACE LA COMPRA.
++
++      Las dos cosas las necesita la barra de abajo para saber qué
++      pestañas poner. Se leen aquí, una vez, y no en cada pantalla:
++      quince sitios donde acordarse es quince sitios donde olvidarse.
++
++      Todo dentro del mismo `try`. Si algo de esto fallara —la
++      columna `rol` sin crear, la base caída— se navega con la barra
++      de siempre. Que falte no puede dejar a nadie sin poder moverse.
++    */
++    const { data: user } = await supabase.auth.getUser()
++    const yo = user?.user?.id ?? null
++
++    if (yo) {
++      /*
++        LA CASA QUE ESTÁ MIRANDO, preguntándoselo a la base de datos.
++
++        Se le pide a `mi_hogar()` y no se coge «la primera fila de
++        miembros»: quien está en dos casas tiene dos filas con dos
++        roles distintos —familia en la suya, ayuda en la de al lado— y
++        coger una al azar le pondría la barra equivocada la mitad de
++        las veces.
++
++        Y así dice exactamente lo mismo que las políticas, que es la
++        única manera de que la pantalla y los permisos no se
++        contradigan.
++      */
++      const { data: casaActiva } = await supabase.rpc('mi_hogar')
++
++      const { data: mio } = casaActiva
++        ? await supabase
++            .from('miembros')
++            .select('rol, hogar_id')
++            .eq('perfil_id', yo)
++            .eq('hogar_id', casaActiva as string)
++            .maybeSingle()
++        : await supabase
++            .from('miembros')
++            .select('rol, hogar_id')
++            .eq('perfil_id', yo)
++            .limit(1)
++            .maybeSingle()
++
++      rol = (mio?.rol as string | null) ?? null
++
++      if (mio?.hogar_id) {
++        const { data: casa } = await supabase
++          .from('hogares')
++          .select('usa_compra')
++          .eq('id', mio.hogar_id)
++          .maybeSingle()
++        if (casa && casa.usa_compra === false) usaCompra = false
++      }
++    }
+   } catch {
+     /* Sin sesión —la pantalla de entrar— o con la base caída. La barra
+        tira de su lista de respaldo y se navega igual. */
+@@ -138,7 +198,7 @@ export default async function RootLayout({
+         />
+       </head>
+       <body>
+-        <ProveedorActividades actividades={actividades}>
++        <ProveedorActividades casa={{ actividades, rol, usaCompra }}>
+           {children}
+         </ProveedorActividades>
+       </body>
+-- 
+2.43.0
+

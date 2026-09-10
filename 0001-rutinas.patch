@@ -1,0 +1,1469 @@
+From 1d0cbed7401b6c5b2c9a030985e516b0b6011aae Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 21:31:59 +0000
+Subject: [PATCH] Lo de cada semana: el plan de trabajo de la casa
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Cuando invitas a alguien como «Ayuda en casa», HUBI te ofrece montarle
+la semana ahí mismo: qué días viene y qué hace cada día. Ella entra y
+lo primero que ve es lo de hoy, con una casilla grande por cosa.
+
+Por qué una tabla aparte y no recordatorios que se repiten:
+una rutina sin marcar no es una deuda, es un lunes que pasó. Con seis
+trabajos por tres días son dieciocho al mes, y basta olvidarse de
+marcar un par para que la agenda se llene de rojo — y una lista que
+siempre tiene rojo deja de mirarse, con lo que se pierde también el
+rojo que sí importaba: la ITV, el seguro.
+
+El plan lo monta quien creó la casa; marcar lo hecho lo hace quien
+trabaja. No es jerarquía por gusto: decidir qué se hace y qué días es
+la relación laboral, no una preferencia de la aplicación.
+
+- sql/38-rutinas.sql — `rutinas` y `rutinas_hechas`, siete políticas.
+  Marcar no cambia el plan: apunta una fila con la fecha.
+- lib/rutinas.ts — el plan, lo de hoy y la lista que viene puesta.
+- app/api/rutinas — POST monta el plan entero de una vez (POST parcial
+  serían quince peticiones y quince maneras de quedarse a medias);
+  PATCH marca y DESMARCA.
+- app/ajustes/semana.tsx — primero los días que viene, y a partir de
+  ahí los demás ni se enseñan.
+- app/rutinas-hoy.tsx — se marca antes de que conteste el servidor, y
+  si falla se deshace y se dice.
+
+Y «lo de hoy» no va en el mismo sitio para todos: quien ayuda lo ve
+arriba, que es a lo que viene; la familia lo ve debajo de lo suyo,
+porque que hoy toque planchar no puede quedar por encima del médico
+de las diez.
+
+Falta ejecutar sql/38-rutinas.sql.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/ajustes/gente.tsx     |  65 +++++++++
+ app/ajustes/page.tsx      |  15 +-
+ app/ajustes/semana.tsx    | 282 ++++++++++++++++++++++++++++++++++++++
+ app/api/miembros/route.ts |  17 ++-
+ app/api/rutinas/route.ts  | 216 +++++++++++++++++++++++++++++
+ app/page.tsx              | 101 +++++++++++++-
+ app/rutinas-hoy.tsx       | 166 ++++++++++++++++++++++
+ lib/rutinas.ts            | 166 ++++++++++++++++++++++
+ sql/38-rutinas.sql        | 215 +++++++++++++++++++++++++++++
+ 9 files changed, 1236 insertions(+), 7 deletions(-)
+ create mode 100644 app/ajustes/semana.tsx
+ create mode 100644 app/api/rutinas/route.ts
+ create mode 100644 app/rutinas-hoy.tsx
+ create mode 100644 lib/rutinas.ts
+ create mode 100644 sql/38-rutinas.sql
+
+diff --git a/app/ajustes/gente.tsx b/app/ajustes/gente.tsx
+index 7900a0f..c1fc49d 100644
+--- a/app/ajustes/gente.tsx
++++ b/app/ajustes/gente.tsx
+@@ -4,7 +4,9 @@ import { useState } from 'react'
+ import { useRouter } from 'next/navigation'
+ import { Ico } from '../iconos'
+ import QuienVe, { type CarpetaPermiso } from './quien-ve'
++import Semana from './semana'
+ import { ROLES, nombreDelRol, type Rol } from '@/lib/roles'
++import type { Rutina } from '@/lib/rutinas'
+ 
+ /*
+   ═══════════════════════════════════════════════════════════════
+@@ -46,14 +48,18 @@ export type Vecino = {
+ export default function Gente({
+   gente,
+   puedoInvitar,
++  plan = [],
+ }: {
+   gente: Vecino[]
+   puedoInvitar: boolean
++  /** Todo el plan semanal de la casa. Cada persona ve el suyo. */
++  plan?: Rutina[]
+ }) {
+   const router = useRouter()
+ 
+   const [repartiendo, setRepartiendo] = useState<string | null>(null)
+   const [cambiando, setCambiando] = useState<string | null>(null)
++  const [programando, setProgramando] = useState<{ id: string; nombre: string } | null>(null)
+   const [invitando, setInvitando] = useState(false)
+   const [nombre, setNombre] = useState('')
+   const [correo, setCorreo] = useState('')
+@@ -90,6 +96,7 @@ export default function Gente({
+ 
+     const d = (await r.json().catch(() => null)) as {
+       bien?: boolean
++      id?: string
+       correo?: string
+       nombre?: string
+       error?: string
+@@ -107,8 +114,24 @@ export default function Gente({
+       return
+     }
+ 
++    const comoSeLlama = (d.nombre ?? nombre.trim()).split(' ')[0]
+     setHecho({ nombre: d.nombre ?? nombre.trim(), correo: d.correo ?? correo.trim() })
++
++    /*
++      Y si es quien ayuda en casa, se le monta la semana AQUÍ MISMO.
++
++      No es una comodidad: es el único momento en que quien invita está
++      pensando en eso. Dejarlo para «entra luego en su ficha y
++      prográmaselo» es dejarlo sin montar — y entonces ella entra el
++      primer día y su HUBI está vacío, que es justo lo que no puede
++      pasar.
++
++      Se puede cerrar sin tocar nada, y volver cuando quiera desde el
++      botón del calendario de su fila.
++    */
++    const eraAyuda = rol === 'ayuda'
+     cerrarInvitacion()
++    if (eraAyuda && d.id) setProgramando({ id: d.id, nombre: comoSeLlama })
+     router.refresh()
+   }
+ 
+@@ -198,6 +221,33 @@ export default function Gente({
+                       .join(' · ')}
+               </span>
+             </span>
++            {/*
++              ── SU SEMANA ──
++
++              Solo a quien ayuda en casa. Para la familia no tiene
++              sentido —nadie le programa la semana a su mujer— y ponerlo
++              en todas las filas obligaría a descartarlo cada vez.
++
++              Se llega también desde aquí, y no solo al invitar: la
++              semana cambia. Empieza viniendo tres días y acaba
++              viniendo dos, o se le añade planchar en invierno.
++            */}
++            {puedoInvitar && !v.manda && v.rol === 'ayuda' && (
++              <button
++                onClick={() =>
++                  setProgramando(
++                    programando?.id === v.id
++                      ? null
++                      : { id: v.id, nombre: v.nombre.split(' ')[0] }
++                  )
++                }
++                aria-label={`La semana de ${v.nombre}`}
++                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-tinta-suave"
++              >
++                <Ico nombre="calendario" tam={19} grosor={2.2} />
++              </button>
++            )}
++
+             {/* Cambiar quién es. Hacía falta y no estaba: se elegía al
+                 invitar y ya no había manera de rectificar — que es
+                 justo lo que pasa en la vida real. */}
+@@ -270,6 +320,21 @@ export default function Gente({
+           )
+         })()}
+ 
++      {programando && (
++        /* La `key` con el identificador: sin ella, abrir la semana de
++           Marta después de la de Carmen reutilizaría el mismo trozo de
++           pantalla y saldrían las casillas de Carmen con el nombre de
++           Marta encima. Y como solo cambia al cambiar de persona, un
++           refresco de fondo no borra lo que se esté tocando. */
++        <Semana
++          key={programando.id}
++          quienEs={programando.nombre}
++          para={programando.id}
++          plan={plan.filter((r) => r.para === programando.id)}
++          alCerrar={() => setProgramando(null)}
++        />
++      )}
++
+       {repartiendo &&
+         (() => {
+           const v = gente.find((g) => g.id === repartiendo)
+diff --git a/app/ajustes/page.tsx b/app/ajustes/page.tsx
+index a69f090..58988b9 100644
+--- a/app/ajustes/page.tsx
++++ b/app/ajustes/page.tsx
+@@ -10,6 +10,7 @@ import { Ico, Pastilla, Volver, type Icono } from '../iconos'
+ import SelectorTema from '../tema'
+ import { leerPerfil } from '@/lib/perfil'
+ import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
++import { planDeLaCasa, type Rutina } from '@/lib/rutinas'
+ import TuPerfil from './foto'
+ import NuevaActividad from './nueva-actividad'
+ import Gente, { type Vecino } from './gente'
+@@ -367,6 +368,18 @@ export default async function Ajustes() {
+      Google desde su propia pantalla. */
+   const manda = await mandaEnSuCasa(supabase, user.id)
+ 
++  /*
++    ── El plan de la semana de la casa ──
++
++    Se lee entero y una vez, y cada persona verá el suyo dentro de su
++    ficha. Pedirlo al abrir cada semana sería un viaje a la base de
++    datos por cada toque en el calendario de una fila.
++
++    `planDeLaCasa` ya viene envuelto: sin las tablas del SQL 38
++    devuelve una lista vacía y nadie se queda sin Ajustes por eso.
++  */
++  const plan: Rutina[] = manda ? await planDeLaCasa(supabase) : []
++
+ 
+   return (
+     <main className="min-h-screen pb-40">
+@@ -394,7 +407,7 @@ export default async function Ajustes() {
+           <>
+             <h2 className="rotulo mt-5">Quién vive aquí</h2>
+             <div className="mt-2.5">
+-              <Gente gente={gente} puedoInvitar={manda} />
++              <Gente gente={gente} puedoInvitar={manda} plan={plan} />
+             </div>
+           </>
+         )}
+diff --git a/app/ajustes/semana.tsx b/app/ajustes/semana.tsx
+new file mode 100644
+index 0000000..d53ac8a
+--- /dev/null
++++ b/app/ajustes/semana.tsx
+@@ -0,0 +1,282 @@
++'use client'
++
++import { useState } from 'react'
++import { useRouter } from 'next/navigation'
++import { Ico } from '../iconos'
++import { DIAS, DE_SIEMPRE, type Rutina } from '@/lib/rutinas'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  EL PLAN DE LA SEMANA DE UNA PERSONA
++  ═══════════════════════════════════════════════════════════════
++
++  ─────────────────────────────────────────────────────────────
++  PRIMERO LOS DÍAS QUE VIENE. TODO LO DEMÁS CUELGA DE AHÍ
++
++  Si viene lunes, miércoles y viernes, ofrecerle trabajos en martes es
++  ofrecerle trabajos que no va a hacer nadie. Se pregunta una vez, y a
++  partir de ahí los días que no vienen ni se enseñan.
++
++  ─────────────────────────────────────────────────────────────
++  Y LA LISTA VIENE PUESTA, NO EN BLANCO
++
++  Una pantalla que dice «añade tu primera rutina» no la rellena casi
++  nadie: obliga a pensarlas todas de golpe y a escribirlas una a una,
++  y eso se deja para luego y luego no llega.
++
++  Con la lista delante se toca lo que valga y se quita lo que no —
++  mucho más fácil que inventar de cero. No son las de nadie en
++  concreto: son las que aparecen en cualquier casa, y valen como punto
++  de partida, no como plantilla que haya que respetar. Cualquiera se
++  quita, y se añade lo que falte.
++
++  ─────────────────────────────────────────────────────────────
++  SE GUARDA EL PLAN ENTERO DE UNA VEZ
++
++  Aquí se marcan y se desmarcan diez casillas antes de dar a guardar.
++  Mandar cada cambio por separado serían quince peticiones y quince
++  maneras de quedarse a medias, con medio plan puesto y medio no, sin
++  que nadie lo note.
++*/
++
++type Trabajo = { que: string; dias: number[] }
++
++export default function Semana({
++  quienEs,
++  para,
++  plan,
++  alCerrar,
++}: {
++  /** Su nombre de pila, para que la pantalla hable de ella. */
++  quienEs: string
++  /** De quién es el plan. Nulo = de la casa. */
++  para: string | null
++  /** Lo que ya hay guardado. */
++  plan: Rutina[]
++  alCerrar: () => void
++}) {
++  const router = useRouter()
++
++  /* Lo guardado se convierte en la forma que usa esta pantalla: una
++     línea por trabajo con los días que le tocan, en vez de una fila
++     por día como está en la base de datos. Es lo mismo, contado como
++     lo cuenta una persona. */
++  const dePartida: Trabajo[] = (() => {
++    if (plan.length === 0) return DE_SIEMPRE.map((t) => ({ ...t, dias: [] }))
++
++    const juntos = new Map<string, number[]>()
++    for (const r of plan) juntos.set(r.que, [...(juntos.get(r.que) ?? []), r.dia])
++
++    const suyos = [...juntos.entries()].map(([que, dias]) => ({ que, dias }))
++    /* Y detrás, las de siempre que todavía no tenga, por si quiere
++       añadir alguna sin escribirla. */
++    const yaEstan = new Set(suyos.map((t) => t.que))
++    return [...suyos, ...DE_SIEMPRE.filter((t) => !yaEstan.has(t.que)).map((t) => ({ ...t, dias: [] }))]
++  })()
++
++  const [trabajos, setTrabajos] = useState<Trabajo[]>(dePartida)
++  const [viene, setViene] = useState<number[]>(() => {
++    const puestos = [...new Set(plan.map((r) => r.dia))].sort()
++    return puestos.length > 0 ? puestos : [1, 2, 3, 4, 5]
++  })
++  const [nuevo, setNuevo] = useState('')
++  const [ocupado, setOcupado] = useState(false)
++  const [fallo, setFallo] = useState<string | null>(null)
++
++  function tocarDia(d: number) {
++    setViene((v) => (v.includes(d) ? v.filter((x) => x !== d) : [...v, d].sort()))
++    /* Y se limpia de los trabajos: dejar marcado el martes en cinco
++       trabajos de alguien que ya no viene los martes es guardar un
++       plan que no existe. */
++    setTrabajos((ts) => ts.map((t) => ({ ...t, dias: t.dias.filter((x) => x !== d || !viene.includes(d)) })))
++  }
++
++  function tocar(i: number, d: number) {
++    setTrabajos((ts) =>
++      ts.map((t, j) =>
++        j === i
++          ? { ...t, dias: t.dias.includes(d) ? t.dias.filter((x) => x !== d) : [...t.dias, d].sort() }
++          : t
++      )
++    )
++  }
++
++  function anadir() {
++    const que = nuevo.trim().slice(0, 80)
++    if (que.length < 2) return
++    setTrabajos((ts) => [...ts, { que, dias: [] }])
++    setNuevo('')
++  }
++
++  async function guardar() {
++    setFallo(null)
++    setOcupado(true)
++
++    /* Se despliega: una fila por trabajo y día, que es como vive en la
++       base de datos. Aquí se junta por trabajo porque es como lo
++       piensa una persona; allí se separa porque es como se consulta
++       «qué toca hoy». */
++    const rutinas = trabajos.flatMap((t) =>
++      t.dias.filter((d) => viene.includes(d)).map((d) => ({ que: t.que, dia: d }))
++    )
++
++    const r = await fetch('/api/rutinas', {
++      method: 'POST',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ para, rutinas }),
++    })
++
++    const d = (await r.json().catch(() => null)) as {
++      bien?: boolean
++      error?: string
++      detalle?: string
++    } | null
++
++    setOcupado(false)
++
++    if (!r.ok || d?.bien !== true) {
++      setFallo(
++        d
++          ? [d.error ?? 'No se ha podido guardar.', d.detalle].filter(Boolean).join(' · ')
++          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
++      )
++      return
++    }
++
++    alCerrar()
++    router.refresh()
++  }
++
++  const cuantas = trabajos.reduce(
++    (n, t) => n + t.dias.filter((d) => viene.includes(d)).length,
++    0
++  )
++
++  return (
++    <div className="rounded-[20px] border border-borde bg-superficie px-4 py-4">
++      <p className="text-[17px] font-extrabold leading-snug">La semana de {quienEs}</p>
++
++      {/* ── Qué días viene ── */}
++      <p className="mt-4 text-[16px] font-extrabold leading-snug">¿Qué días viene?</p>
++      <div className="mt-2.5 flex gap-1.5">
++        {DIAS.map((d) => {
++          const puesto = viene.includes(d.n)
++          return (
++            <button
++              key={d.n}
++              onClick={() => tocarDia(d.n)}
++              aria-pressed={puesto}
++              aria-label={d.largo}
++              className="h-12 flex-1 rounded-[13px] text-[16px] font-extrabold"
++              style={
++                puesto
++                  ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
++                  : {
++                      background: 'var(--t-fondo)',
++                      color: 'var(--t-tenue)',
++                      border: '1px solid var(--t-borde)',
++                    }
++              }
++            >
++              {d.corto}
++            </button>
++          )
++        })}
++      </div>
++
++      {/* ── Y qué hace cada día ── */}
++      <p className="mt-5 text-[16px] font-extrabold leading-snug">¿Y qué hace cada día?</p>
++      <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
++        Toca los días de cada cosa. Lo que dejes sin marcar no se guarda.
++      </p>
++
++      <ul className="mt-3 space-y-2">
++        {trabajos.map((t, i) => (
++          <li key={`${t.que}-${i}`} className="rounded-[14px] border border-borde px-3 py-2.5">
++            <div className="flex items-center gap-2">
++              <span className="min-w-0 flex-1 truncate text-[16px] font-bold">{t.que}</span>
++              <button
++                onClick={() => setTrabajos((ts) => ts.filter((_, j) => j !== i))}
++                aria-label={`Quitar ${t.que}`}
++                className="flex h-9 w-9 shrink-0 items-center justify-center text-[22px] font-light leading-none text-tenue"
++              >
++                ×
++              </button>
++            </div>
++            <div className="mt-2 flex gap-1.5">
++              {DIAS.filter((d) => viene.includes(d.n)).map((d) => {
++                const puesto = t.dias.includes(d.n)
++                return (
++                  <button
++                    key={d.n}
++                    onClick={() => tocar(i, d.n)}
++                    aria-pressed={puesto}
++                    aria-label={`${t.que}, ${d.largo}`}
++                    className="h-10 flex-1 rounded-[11px] text-[14.5px] font-extrabold"
++                    style={
++                      puesto
++                        ? { background: '#0EA5E9', color: '#FFFFFF' }
++                        : {
++                            background: 'var(--t-fondo)',
++                            color: 'var(--t-tenue)',
++                            border: '1px solid var(--t-borde)',
++                          }
++                    }
++                  >
++                    {d.corto}
++                  </button>
++                )
++              })}
++            </div>
++          </li>
++        ))}
++      </ul>
++
++      {/* ── Añadir una que no esté ── */}
++      <div className="mt-3 flex gap-2">
++        <input
++          value={nuevo}
++          onChange={(e) => setNuevo(e.target.value)}
++          onKeyDown={(e) => {
++            if (e.key === 'Enter') anadir()
++          }}
++          placeholder="Otra cosa que haga"
++          maxLength={80}
++          className="entrada flex-1"
++        />
++        <button
++          onClick={anadir}
++          disabled={nuevo.trim().length < 2}
++          aria-label="Añadir"
++          className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[16px] border border-borde text-tinta-suave disabled:opacity-40"
++        >
++          <Ico nombre="mas" tam={22} grosor={2.4} />
++        </button>
++      </div>
++
++      <div className="mt-4 flex gap-2">
++        <button
++          onClick={guardar}
++          disabled={ocupado}
++          className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
++        >
++          <Ico nombre="check" tam={19} grosor={2.3} />
++          {ocupado ? 'Guardando…' : `Guardar · ${cuantas}`}
++        </button>
++        <button
++          onClick={alCerrar}
++          disabled={ocupado}
++          className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
++        >
++          Dejarlo
++        </button>
++      </div>
++
++      {fallo && (
++        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
++          {fallo}
++        </p>
++      )}
++    </div>
++  )
++}
+diff --git a/app/api/miembros/route.ts b/app/api/miembros/route.ts
+index d92f003..8ce8257 100644
+--- a/app/api/miembros/route.ts
++++ b/app/api/miembros/route.ts
+@@ -306,7 +306,22 @@ export async function POST(peticion: NextRequest) {
+     repartido = false
+   }
+ 
+-  return NextResponse.json({ bien: true, correo, nombre, papel, rol, hasta, repartido, pendiente: true })
++  /* Se devuelve también QUIÉN es. Lo pide la pantalla de invitar: al
++     terminar con una «Ayuda en casa» ofrece montarle la semana ahí
++     mismo, y para eso necesita su identificador. Mandar a quien invita
++     a buscarla otra vez en la lista es la manera segura de que el plan
++     se quede sin montar. */
++  return NextResponse.json({
++    bien: true,
++    id,
++    correo,
++    nombre,
++    papel,
++    rol,
++    hasta,
++    repartido,
++    pendiente: true,
++  })
+ }
+ 
+ /*
+diff --git a/app/api/rutinas/route.ts b/app/api/rutinas/route.ts
+new file mode 100644
+index 0000000..662d5ef
+--- /dev/null
++++ b/app/api/rutinas/route.ts
+@@ -0,0 +1,216 @@
++import { NextResponse, type NextRequest } from 'next/server'
++import { clienteSesion } from '@/lib/supabase/sesion'
++import { quien } from '@/lib/supabase/quien'
++import { miHogar, mandaEnSuCasa, SIN_CASA } from '@/lib/hogar'
++import { hoyAqui } from '@/lib/tablon'
++
++export const dynamic = 'force-dynamic'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LO DE CADA SEMANA
++  ═══════════════════════════════════════════════════════════════
++
++  Dos cosas muy distintas, y por eso van separadas hasta en el verbo:
++
++    POST    monta o cambia el plan  — solo quien creó la casa
++    PATCH   marca o desmarca un día — quien trabaja
++
++  Quien ayuda en casa marca lo suyo como hecho, pero no se añade ni se
++  quita trabajos. No es jerarquía por gusto: decidir qué se hace y qué
++  días es la relación laboral, no una preferencia de la aplicación.
++
++  Todo con la SESIÓN. Las políticas del SQL 38 dicen exactamente lo
++  mismo — esto no las sustituye, las acompaña con un mensaje que se
++  entienda.
++*/
++
++// ── Montar o cambiar el plan ───────────────────────────────
++export async function POST(peticion: NextRequest) {
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) {
++    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
++  }
++
++  const hogarId = await miHogar(supabase, user.id)
++  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
++
++  if (!(await mandaEnSuCasa(supabase, user.id))) {
++    return NextResponse.json(
++      { error: 'El plan de la semana lo monta quien creó la casa.' },
++      { status: 403 }
++    )
++  }
++
++  let cuerpo: {
++    /** Las rutinas que debe haber, tal cual. Reemplazan a las de esa persona. */
++    rutinas?: { que?: string; dia?: number; hora?: string | null }[]
++    /** De quién son. Nulo = de la casa. */
++    para?: string | null
++  }
++  try {
++    cuerpo = (await peticion.json()) as typeof cuerpo
++  } catch {
++    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
++  }
++
++  const para = String(cuerpo.para ?? '').trim() || null
++
++  /*
++    SE MANDA EL PLAN ENTERO, no una rutina suelta.
++
++    La pantalla es una lista de casillas: se marcan y se desmarcan
++    varias antes de guardar. Mandar cada cambio por separado sería
++    quince peticiones y quince maneras de quedarse a medias —con la
++    mitad del plan puesto y la otra mitad no, sin que nadie lo note.
++
++    Aquí se borra lo de esa persona y se pone lo que venga. Es una
++    operación entera: o queda el plan nuevo, o queda el viejo.
++  */
++  const filas = (cuerpo.rutinas ?? [])
++    .map((r) => ({
++      que: String(r.que ?? '').trim().slice(0, 80),
++      dia: Number(r.dia),
++      hora: typeof r.hora === 'string' && /^\d{2}:\d{2}/.test(r.hora) ? r.hora.slice(0, 5) : null,
++    }))
++    .filter((r) => r.que.length > 0 && r.dia >= 1 && r.dia <= 7)
++
++  if (filas.length > 120) {
++    return NextResponse.json(
++      { error: 'Son demasiadas. El plan de una semana no llega a cien cosas.' },
++      { status: 400 }
++    )
++  }
++
++  /* Se borra lo de ESA persona, no todo el plan de la casa: si el
++     plan de Marta se guardara borrando también el de la casa, montar
++     el suyo se llevaría por delante el de los demás. */
++  let borrar = supabase.from('rutinas').delete().eq('hogar_id', hogarId)
++  borrar = para ? borrar.eq('para', para) : borrar.is('para', null)
++
++  const { error: alBorrar } = await borrar
++
++  if (alBorrar) {
++    console.error('[HUBI] No se ha podido rehacer el plan:', alBorrar)
++    return NextResponse.json(
++      {
++        error: 'No se ha podido guardar el plan.',
++        detalle: alBorrar.message ?? 'Puede que falte ejecutar el SQL 38.',
++      },
++      { status: 500 }
++    )
++  }
++
++  if (filas.length === 0) return NextResponse.json({ bien: true, cuantas: 0 })
++
++  const { data, error } = await supabase
++    .from('rutinas')
++    .insert(
++      filas.map((r, i) => ({
++        hogar_id: hogarId,
++        que: r.que,
++        dia: r.dia,
++        hora: r.hora,
++        para,
++        orden: i,
++        creada_por: user.id,
++      }))
++    )
++    .select('id')
++
++  /* El `.select()`: sin él, un insert que las políticas no permitan
++     mete cero filas y contesta que todo ha ido bien. */
++  if (error || !data || data.length === 0) {
++    console.error('[HUBI] El plan no ha entrado:', error)
++    return NextResponse.json(
++      {
++        error: 'No se ha podido guardar el plan.',
++        detalle: error?.message ?? 'Puede que falte ejecutar el SQL 38.',
++      },
++      { status: 500 }
++    )
++  }
++
++  return NextResponse.json({ bien: true, cuantas: data.length })
++}
++
++// ── Marcar o desmarcar lo de un día ────────────────────────
++/*
++  Esto SÍ lo hace quien trabaja. Y se puede desmarcar: marcar por
++  error algo que no se ha hecho y no poder deshacerlo obliga a mentir
++  en la pantalla o a llamar a alguien. El punto 5 pide que lo
++  importante sea reversible, y aquí lo importante es que lo que ponga
++  sea verdad.
++*/
++export async function PATCH(peticion: NextRequest) {
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) {
++    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
++  }
++
++  const hogarId = await miHogar(supabase, user.id)
++  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
++
++  let cuerpo: { id?: string; hecha?: boolean; fecha?: string }
++  try {
++    cuerpo = (await peticion.json()) as typeof cuerpo
++  } catch {
++    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
++  }
++
++  const id = String(cuerpo.id ?? '')
++  if (!id) return NextResponse.json({ error: 'Falta la rutina.' }, { status: 400 })
++
++  /* La fecha la pone el servidor salvo que se pida otra concreta, y
++     nunca `new Date()` a secas: la hora del servidor puede ir un día
++     por delante de la de aquí y una rutina de las once de la noche se
++     marcaría en el día siguiente. */
++  const fecha =
++    typeof cuerpo.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(cuerpo.fecha)
++      ? cuerpo.fecha
++      : hoyAqui()
++
++  if (cuerpo.hecha === false) {
++    const { error } = await supabase
++      .from('rutinas_hechas')
++      .delete()
++      .eq('rutina_id', id)
++      .eq('fecha', fecha)
++
++    if (error) {
++      console.error('[HUBI] No se ha podido desmarcar:', error)
++      return NextResponse.json(
++        { error: 'No se ha podido desmarcar.', detalle: error.message },
++        { status: 500 }
++      )
++    }
++    return NextResponse.json({ bien: true, hecha: false })
++  }
++
++  /* `upsert` y no `insert`: dos toques seguidos —o el mismo móvil
++     reintentando con mala cobertura— darían un error de clave
++     repetida, y la pantalla diría que ha fallado algo que en realidad
++     estaba hecho. */
++  const { data, error } = await supabase
++    .from('rutinas_hechas')
++    .upsert(
++      { rutina_id: id, fecha, hogar_id: hogarId, quien: user.id },
++      { onConflict: 'rutina_id,fecha' }
++    )
++    .select('rutina_id')
++
++  if (error || !data || data.length === 0) {
++    console.error('[HUBI] No se ha podido marcar:', error)
++    return NextResponse.json(
++      {
++        error: 'No se ha podido marcar.',
++        detalle: error?.message ?? 'Puede que falte ejecutar el SQL 38.',
++      },
++      { status: 500 }
++    )
++  }
++
++  return NextResponse.json({ bien: true, hecha: true })
++}
+diff --git a/app/page.tsx b/app/page.tsx
+index 7ab9bed..12d5d83 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -17,7 +17,9 @@ import { cuantasNotas } from '@/lib/notas'
+ import { gastadoEnCasa } from '@/lib/gastos-casa'
+ import { queVeEnInicio } from '@/lib/roles'
+ import { eurosRedondo } from '@/lib/periodos'
++import { loDeHoy } from '@/lib/rutinas'
+ import Casas from './casas'
++import RutinasHoy, { type Deber } from './rutinas-hoy'
+ 
+ export const dynamic = 'force-dynamic'
+ 
+@@ -226,6 +228,60 @@ export default async function Inicio({
+   }
+   const ve = queVeEnInicio(rol)
+ 
++  /*
++    ── LO DE HOY: EL PLAN DE LA SEMANA ──
++
++    Lo que toca hoy según lo que se programó una vez. A quien ayuda en
++    casa se le enseña SOLO lo suyo —y lo de la casa que no tiene dueño,
++    porque «sacar la basura» sin nombre es de quien esté—; a la familia
++    se le enseña todo lo de hoy, con el nombre de quien lo tiene.
++
++    Envuelto por dentro: sin las tablas del SQL 38, `loDeHoy` devuelve
++    una lista vacía y aquí no sale la sección. Ninguna pantalla se
++    rompe por eso.
++  */
++  const deberes: Deber[] = []
++  let puedoMarcar = false
++
++  try {
++    const mias = rol === 'ayuda'
++    const filas = await loDeHoy(supabase, mias ? user.id : null)
++
++    if (filas.length > 0) {
++      /* Los nombres, de una vez. Un viaje por cada rutina para poner
++         «Marta» debajo de cada línea son seis viajes para pintar seis
++         renglones. */
++      const deQuienes = [...new Set(filas.map((r) => r.para).filter(Boolean))] as string[]
++
++      const nombreDe = new Map<string, string>()
++      if (!mias && deQuienes.length > 0) {
++        const { data: quienes } = await supabase
++          .from('perfiles')
++          .select('id, nombre')
++          .in('id', deQuienes)
++        for (const p of quienes ?? []) {
++          nombreDe.set(p.id as string, ((p.nombre as string) ?? '').split(' ')[0])
++        }
++      }
++
++      for (const r of filas) {
++        deberes.push({
++          id: r.id,
++          que: r.que,
++          hora: r.hora,
++          hecha: r.hecha,
++          deQuien: r.para ? (nombreDe.get(r.para) ?? null) : null,
++        })
++      }
++    }
++
++    /* Quien solo mira no marca. Y el asesor tampoco ve esto siquiera:
++       el plan de trabajo de una casa no es asunto suyo. */
++    puedoMarcar = rol !== 'mirar' && rol !== 'asesor'
++  } catch {
++    /* Sin las tablas todavía. El Inicio sigue entero. */
++  }
++
+   /*
+     QUIÉN MANDA AQUÍ, Y CÓMO SE LLAMA.
+ 
+@@ -239,6 +295,33 @@ export default async function Inicio({
+   const conectado = conexion?.estado === 'activa'
+   const caducado = conexion?.estado === 'caducada'
+ 
++  /*
++    ── DÓNDE VA «LO DE HOY» ──
++
++    Se pinta una sola vez, pero no en el mismo sitio para todos, y ésa
++    es toda la idea de los roles:
++
++      · Quien ayuda en casa lo ve ARRIBA. Es a lo que viene. Debajo de
++        la agenda de la familia sería pedirle que se desplace por
++        cosas que no son suyas para llegar a las que sí.
++
++      · La familia lo ve ABAJO, después de lo suyo. Que hoy toque
++        planchar no puede quedar por encima del médico de las diez.
++
++    Ordenar por rol y no por importancia general: para cada uno lo
++    importante es otra cosa, y eso es exactamente lo que HUBI tiene
++    que saber.
++  */
++  const bloqueDeHoy =
++    ve.agenda && deberes.length > 0 ? (
++      <RutinasHoy
++        rutinas={deberes}
++        puedeMarcar={puedoMarcar}
++        soloMias={rol === 'ayuda'}
++        titulo={rol === 'ayuda' ? 'Lo de hoy' : 'La casa hoy'}
++      />
++    ) : null
++
+   return (
+     <main className="relative min-h-screen pb-40">
+       <Arranque />
+@@ -577,6 +660,8 @@ export default async function Inicio({
+           </p>
+         )}
+ 
++        {rol === 'ayuda' && bloqueDeHoy}
++
+         {/* ── Hoy ── */}
+         {ve.agenda && hoy.length > 0 && (
+           <section className="mt-6">
+@@ -643,11 +728,17 @@ export default async function Inicio({
+           </section>
+         )}
+ 
+-        {ve.agenda && hoy.length === 0 && proximos.length === 0 && conectado && (
+-          <p className="mt-6 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
+-            Hoy no hay nada apuntado.
+-          </p>
+-        )}
++        {rol !== 'ayuda' && bloqueDeHoy}
++
++        {ve.agenda &&
++          hoy.length === 0 &&
++          proximos.length === 0 &&
++          deberes.length === 0 &&
++          conectado && (
++            <p className="mt-6 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
++              Hoy no hay nada apuntado.
++            </p>
++          )}
+       </div>
+ 
+       <Barra activa="inicio" voz={false} />
+diff --git a/app/rutinas-hoy.tsx b/app/rutinas-hoy.tsx
+new file mode 100644
+index 0000000..5beca47
+--- /dev/null
++++ b/app/rutinas-hoy.tsx
+@@ -0,0 +1,166 @@
++'use client'
++
++import { useState } from 'react'
++import { useRouter } from 'next/navigation'
++import { Ico } from './iconos'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LO DE HOY
++  ═══════════════════════════════════════════════════════════════
++
++  Lo que toca hoy según el plan de la semana. Se marca aquí mismo, de
++  un toque, sin entrar en ningún sitio.
++
++  ─────────────────────────────────────────────────────────────
++  SE MARCA ANTES DE QUE EL SERVIDOR CONTESTE
++
++  Quien está limpiando lleva el móvil en la otra mano y a veces sin
++  buena cobertura. Si el tic tardara un segundo en aparecer, lo normal
++  es volver a tocar — y entonces se desmarca lo que sí estaba hecho.
++
++  Así que se pinta al instante y, si algo falla, se deshace y se dice.
++  Nunca al revés: una pantalla que dice «hecho» sin haberlo guardado es
++  peor que una que tarda.
++
++  ─────────────────────────────────────────────────────────────
++  Y NO SE ORDENA PONIENDO LO HECHO AL FINAL
++
++  Se quedan donde están. Que una cosa salte de sitio justo cuando la
++  acabas de tocar hace dudar de si has marcado la que querías — y con
++  la lista quieta se sigue con el dedo donde estaba.
++*/
++
++export type Deber = {
++  id: string
++  que: string
++  hora: string | null
++  hecha: boolean
++  /** De quién es, si es de alguien. Nulo = de la casa. */
++  deQuien: string | null
++}
++
++export default function RutinasHoy({
++  rutinas,
++  puedeMarcar,
++  titulo = 'Lo de hoy',
++  /** Cuando es mi propia lista, no hace falta poner mi nombre en cada línea. */
++  soloMias = false,
++}: {
++  rutinas: Deber[]
++  puedeMarcar: boolean
++  /** «Lo de hoy» cuando es tuyo; «La casa hoy» cuando lo hace otro. */
++  titulo?: string
++  soloMias?: boolean
++}) {
++  const router = useRouter()
++  const [estado, setEstado] = useState<Record<string, boolean>>({})
++  const [fallo, setFallo] = useState<string | null>(null)
++
++  const hecha = (r: Deber) => estado[r.id] ?? r.hecha
++  const cuantas = rutinas.filter((r) => hecha(r)).length
++
++  async function marcar(r: Deber) {
++    if (!puedeMarcar) return
++
++    const nueva = !hecha(r)
++    setEstado((e) => ({ ...e, [r.id]: nueva }))
++    setFallo(null)
++
++    const p = await fetch('/api/rutinas', {
++      method: 'PATCH',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ id: r.id, hecha: nueva }),
++    }).catch(() => null)
++
++    const d = p ? ((await p.json().catch(() => null)) as { bien?: boolean } | null) : null
++
++    if (!p?.ok || d?.bien !== true) {
++      /* Se deshace. Dejarlo marcado sería mentir en la única pantalla
++         donde alguien mira si ya hizo algo. */
++      setEstado((e) => ({ ...e, [r.id]: !nueva }))
++      setFallo('No se ha podido guardar. Mira la cobertura y vuelve a tocarlo.')
++      return
++    }
++
++    router.refresh()
++  }
++
++  if (rutinas.length === 0) return null
++
++  return (
++    <section className="mt-6">
++      <div className="flex items-baseline justify-between gap-3">
++        <h2 className="rotulo">{titulo}</h2>
++        {/* Cuántas van. Es lo único que se quiere saber de un vistazo
++            a media mañana, y evita contar los tics a ojo. */}
++        <span className="text-[14.5px] font-bold text-tenue">
++          {cuantas} de {rutinas.length}
++        </span>
++      </div>
++
++      <ul className="mt-2.5 space-y-2">
++        {rutinas.map((r) => {
++          const ya = hecha(r)
++          return (
++            <li key={r.id}>
++              <button
++                onClick={() => marcar(r)}
++                disabled={!puedeMarcar}
++                aria-pressed={ya}
++                className="flex w-full items-center gap-3.5 rounded-[20px] border px-3.5 py-3 text-left disabled:opacity-100"
++                style={{
++                  background: ya
++                    ? 'color-mix(in srgb, #14B8A6 10%, var(--t-superficie))'
++                    : 'var(--t-superficie)',
++                  borderColor: ya
++                    ? 'color-mix(in srgb, #14B8A6 35%, transparent)'
++                    : 'var(--t-borde)',
++                }}
++              >
++                {/* La casilla, grande. 44 px: el punto 5 pide botones
++                    grandes, y aquí es lo único que hay que acertar. */}
++                <span
++                  className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px]"
++                  style={
++                    ya
++                      ? { background: '#14B8A6', color: '#FFFFFF' }
++                      : {
++                          background: 'var(--t-fondo)',
++                          color: 'var(--t-tenue)',
++                          border: '1px solid var(--t-borde)',
++                        }
++                  }
++                >
++                  {ya && <Ico nombre="check" tam={22} grosor={2.6} />}
++                </span>
++
++                <span className="min-w-0 flex-1">
++                  <span
++                    className="block text-[17.5px] font-bold leading-snug"
++                    style={ya ? { textDecorationLine: 'line-through', opacity: 0.55 } : undefined}
++                  >
++                    {r.que}
++                  </span>
++                  {(r.hora || (!soloMias && r.deQuien)) && (
++                    <span className="mt-0.5 block text-[15px] font-semibold text-tenue">
++                      {[r.hora?.slice(0, 5), soloMias ? null : r.deQuien]
++                        .filter(Boolean)
++                        .join(' · ')}
++                    </span>
++                  )}
++                </span>
++              </button>
++            </li>
++          )
++        })}
++      </ul>
++
++      {fallo && (
++        <p className="mt-2.5 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
++          {fallo}
++        </p>
++      )}
++    </section>
++  )
++}
+diff --git a/lib/rutinas.ts b/lib/rutinas.ts
+new file mode 100644
+index 0000000..d943487
+--- /dev/null
++++ b/lib/rutinas.ts
+@@ -0,0 +1,166 @@
++import type { SupabaseClient } from '@supabase/supabase-js'
++import { hoyAqui } from './tablon'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LO DE CADA SEMANA
++  ═══════════════════════════════════════════════════════════════
++
++  El plan de la casa: qué se hace cada día y quién lo hace. Cambiar
++  las sábanas los lunes, regar los miércoles, la basura a diario.
++
++  ─────────────────────────────────────────────────────────────
++  UNA RUTINA SIN MARCAR NO ES UNA DEUDA
++
++  Es la diferencia con una tarea, y es toda la razón de que esto sea
++  una tabla aparte. Una tarea sin hacer se arrastra en rojo hasta que
++  se hace — y debe hacerlo, porque la ITV no se olvida sola. Un lunes
++  en que no se cambiaron las sábanas, en cambio, es un lunes que pasó:
++  el lunes que viene vuelve.
++
++  Si esto fueran tareas repetidas, seis trabajos por tres días serían
++  dieciocho al mes, y bastaría olvidarse de marcar un par para que la
++  agenda se llenara de rojo. Y una lista que siempre tiene rojo deja
++  de mirarse — con lo que se pierde también el rojo que sí importaba.
++
++  ─────────────────────────────────────────────────────────────
++  TODO VA ENVUELTO
++
++  Las tablas son del SQL 38. Sin ellas, esto contesta «no hay nada» y
++  ninguna pantalla se rompe.
++*/
++
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
++type Cliente = SupabaseClient<any, any, any>
++
++export type Rutina = {
++  id: string
++  que: string
++  /** 1 = lunes … 7 = domingo. */
++  dia: number
++  hora: string | null
++  para: string | null
++  activa: boolean
++  orden: number
++}
++
++export type RutinaHoy = Rutina & {
++  hecha: boolean
++  /** Quién la marcó, si alguien lo hizo. */
++  quien: string | null
++}
++
++/* En lunes y no en domingo: en España la semana empieza en lunes, y
++   estos números los lee gente en una pantalla, no un informe. */
++export const DIAS = [
++  { n: 1, corto: 'L', largo: 'lunes' },
++  { n: 2, corto: 'M', largo: 'martes' },
++  { n: 3, corto: 'X', largo: 'miércoles' },
++  { n: 4, corto: 'J', largo: 'jueves' },
++  { n: 5, corto: 'V', largo: 'viernes' },
++  { n: 6, corto: 'S', largo: 'sábado' },
++  { n: 7, corto: 'D', largo: 'domingo' },
++]
++
++/** Qué día de la semana es una fecha, en nuestra numeración. */
++export function diaDe(iso: string): number {
++  const [a, m, d] = iso.split('-').map(Number)
++  const js = new Date(a, m - 1, d).getDay() // 0 = domingo
++  return js === 0 ? 7 : js
++}
++
++/** Todo el plan de la casa. Para la pantalla que lo monta. */
++export async function planDeLaCasa(supabase: Cliente): Promise<Rutina[]> {
++  try {
++    const { data, error } = await supabase
++      .from('rutinas')
++      .select('id, que, dia, hora, para, activa, orden')
++      .order('dia')
++      .order('orden')
++      .order('hora', { ascending: true, nullsFirst: true })
++
++    if (error || !data) return []
++    return data as Rutina[]
++  } catch {
++    return []
++  }
++}
++
++/**
++ * Lo que toca hoy, ya con quién la ha marcado.
++ *
++ * `deQuien` recorta a las de una persona. Se usa en el Inicio de quien
++ * ayuda en casa: ahí lo suyo es lo único que importa, y ver también
++ * las de los demás convertiría su pantalla en la de otro.
++ */
++export async function loDeHoy(
++  supabase: Cliente,
++  deQuien?: string | null,
++  fecha?: string
++): Promise<RutinaHoy[]> {
++  try {
++    const dia = fecha ?? hoyAqui()
++
++    let q = supabase
++      .from('rutinas')
++      .select('id, que, dia, hora, para, activa, orden')
++      .eq('dia', diaDe(dia))
++      .eq('activa', true)
++      .order('orden')
++      .order('hora', { ascending: true, nullsFirst: true })
++
++    /* Las suyas Y las de la casa sin dueño: si «sacar la basura» no
++       tiene nombre puesto, es de quien esté. Esconderla a todos sería
++       la manera más segura de que no la haga nadie. */
++    if (deQuien) q = q.or(`para.eq.${deQuien},para.is.null`)
++
++    const { data, error } = await q
++    if (error || !data) return []
++
++    const ids = (data as Rutina[]).map((r) => r.id)
++    if (ids.length === 0) return []
++
++    const { data: hechas } = await supabase
++      .from('rutinas_hechas')
++      .select('rutina_id, quien')
++      .eq('fecha', dia)
++      .in('rutina_id', ids)
++
++    const marcada = new Map(
++      (hechas ?? []).map((h: { rutina_id: string; quien: string | null }) => [h.rutina_id, h.quien])
++    )
++
++    return (data as Rutina[]).map((r) => ({
++      ...r,
++      hecha: marcada.has(r.id),
++      quien: marcada.get(r.id) ?? null,
++    }))
++  } catch {
++    return []
++  }
++}
++
++/*
++  ─────────────────────────────────────────────────────────────
++  LO QUE SE OFRECE AL EMPEZAR
++
++  Una pantalla en blanco que dice «añade tu primera rutina» no la
++  rellena casi nadie: hay que pensarlas todas de golpe y escribirlas
++  una a una, y eso se deja para luego y luego no llega.
++
++  Con la lista puesta se toca lo que valga y se quita lo que no, que
++  es MUCHO más fácil que inventar de cero. No son las de nadie en
++  concreto: son las que aparecen en cualquier casa, y por eso valen
++  como punto de partida y no como plantilla que haya que respetar.
++*/
++export const DE_SIEMPRE: { que: string; dias: number[] }[] = [
++  { que: 'Cambiar las sábanas', dias: [1] },
++  { que: 'Poner la lavadora', dias: [1, 4] },
++  { que: 'Planchar', dias: [3] },
++  { que: 'Limpieza general', dias: [2, 5] },
++  { que: 'Baños', dias: [2, 5] },
++  { que: 'Cocina a fondo', dias: [5] },
++  { que: 'Sacar la basura', dias: [1, 2, 3, 4, 5] },
++  { que: 'Regar las plantas', dias: [1, 4] },
++  { que: 'Hacer la compra', dias: [3] },
++]
+diff --git a/sql/38-rutinas.sql b/sql/38-rutinas.sql
+new file mode 100644
+index 0000000..f54ca87
+--- /dev/null
++++ b/sql/38-rutinas.sql
+@@ -0,0 +1,215 @@
++-- ═══════════════════════════════════════════════════════════════
++-- 38 · LO DE CADA SEMANA
++-- ═══════════════════════════════════════════════════════════════
++--
++-- «Los lunes se cambian las sábanas» no es una tarea.
++--
++-- Una tarea es «recoge la medicación el martes»: pasa una vez y se
++-- acaba. Una rutina pasa todas las semanas para siempre — y esa
++-- diferencia, que parece de matiz, decide cómo se comporta la pantalla
++-- el segundo mes.
++--
++-- ─────────────────────────────────────────────────────────────
++-- POR QUÉ NO SON RECORDATORIOS QUE SE REPITEN
++--
++-- HUBI ya sabe repetir: `recordatorios.repite` existe desde el SQL 11.
++-- Habría salido más barato hoy. Pero una tarea repetida que no se
++-- marca se queda de «sin hacer» y se arrastra en rojo para siempre.
++--
++-- Con seis trabajos por tres días son dieciocho al mes. Basta con que
++-- alguien se olvide de marcar un par para que la agenda se llene de
++-- rojo — y una lista que siempre tiene rojo deja de mirarse, con lo
++-- que también se pierde el rojo que SÍ importaba: la ITV, el seguro.
++--
++-- Una rutina sin marcar no es una deuda. Es un lunes que pasó.
++-- El lunes que viene vuelve sola.
++--
++-- Es el mismo razonamiento que separó las notas de los recordatorios,
++-- y allí acertamos.
++--
++-- ─────────────────────────────────────────────────────────────
++-- DOS TABLAS, Y LA SEGUNDA ES LA QUE HACE QUE ESTO FUNCIONE
++--
++-- `rutinas`        el plan: qué se hace, qué día, quién.
++-- `rutinas_hechas` una fila por día que se hizo.
++--
++-- Marcar hecho NO cambia el plan: apunta una fila con la fecha. Así
++-- el plan es una cosa estable que casi nunca se toca, y el historial
++-- crece aparte. Si en vez de eso se guardara «hecha: sí/no» dentro de
++-- la rutina, habría que borrarlo cada noche — y con quién trabaja de
++-- noche, o con un móvil en otra zona horaria, eso se rompe.
++--
++-- Se puede ejecutar más de una vez sin estropear nada.
++-- ═══════════════════════════════════════════════════════════════
++
++
++-- ── 1 · El plan ────────────────────────────────────────────
++create table if not exists rutinas (
++  id        uuid primary key default gen_random_uuid(),
++  hogar_id  uuid not null references hogares(id) on delete cascade,
++
++  -- Lo que hay que hacer, en sus palabras: «cambiar las sábanas»,
++  -- «regar las plantas», «sacar la basura».
++  que       text not null check (length(trim(que)) > 0),
++
++  /*
++    Qué día. 1 = lunes … 7 = domingo.
++
++    En lunes y no en domingo como hace Postgres, porque en España la
++    semana empieza en lunes y esta tabla la lee gente, no un informe.
++  */
++  dia       smallint not null check (dia between 1 and 7),
++
++  -- A qué hora, si la tiene. La mayoría no.
++  hora      time,
++
++  -- De quién es. Nulo = de la casa, sin dueño.
++  para      uuid references perfiles(id) on delete set null,
++
++  -- Apagada sin borrarla: una semana que no viene, un trabajo que se
++  -- deja de hacer una temporada.
++  activa    boolean not null default true,
++
++  orden     smallint not null default 0,
++  creada_en timestamptz not null default now(),
++  creada_por uuid references perfiles(id)
++);
++
++create index if not exists idx_rutinas_dia
++  on rutinas (hogar_id, dia) where activa;
++
++
++-- ── 2 · Y lo que se ha ido haciendo ────────────────────────
++/*
++  Una fila por rutina y día. La clave primaria impide marcarla dos
++  veces el mismo día: sin ella, dos toques seguidos —o el mismo móvil
++  reintentando con mala cobertura— dejarían dos filas y cualquier
++  cuenta que hagamos luego saldría inflada.
++*/
++create table if not exists rutinas_hechas (
++  rutina_id uuid not null references rutinas(id) on delete cascade,
++  fecha     date not null,
++  hogar_id  uuid not null references hogares(id) on delete cascade,
++  quien     uuid references perfiles(id) on delete set null,
++  cuando    timestamptz not null default now(),
++  primary key (rutina_id, fecha)
++);
++
++create index if not exists idx_rutinas_hechas_fecha
++  on rutinas_hechas (hogar_id, fecha);
++
++
++-- ── 3 · Quién ve y quién toca ──────────────────────────────
++alter table rutinas enable row level security;
++alter table rutinas_hechas enable row level security;
++
++/*
++  LAS CUATRO EN CADA TABLA. Y la de borrar también.
++
++  En este proyecto ya pasó: una tabla creada con leer, crear y editar
++  y sin la de borrar. Un DELETE sin política NO da error — borra cero
++  filas y contesta que todo ha ido bien. Costó una tarde entera.
++*/
++drop policy if exists rutinas_leer on rutinas;
++create policy rutinas_leer on rutinas
++  for select to authenticated using (hogar_id = mi_hogar());
++
++/*
++  EL PLAN LO MONTA QUIEN CREÓ LA CASA.
++
++  No es jerarquía por gusto: decidir qué trabajos hace la persona que
++  viene a casa, y qué días, es la relación laboral. Quien ayuda en
++  casa puede MARCAR lo suyo como hecho —eso es la otra tabla— pero no
++  añadirse ni quitarse trabajos.
++
++  Y al revés también importa: sin esto, quien tiene el rol de ayuda
++  podría borrarse el plan entero y no quedaría ni rastro de qué había.
++*/
++drop policy if exists rutinas_crear on rutinas;
++create policy rutinas_crear on rutinas
++  for insert to authenticated with check (
++    hogar_id = mi_hogar()
++    and exists (
++      select 1 from miembros m
++      where m.hogar_id = mi_hogar() and m.perfil_id = auth.uid()
++        and m.papel = 'propietario'
++    )
++  );
++
++drop policy if exists rutinas_editar on rutinas;
++create policy rutinas_editar on rutinas
++  for update to authenticated using (
++    hogar_id = mi_hogar()
++    and exists (
++      select 1 from miembros m
++      where m.hogar_id = mi_hogar() and m.perfil_id = auth.uid()
++        and m.papel = 'propietario'
++    )
++  );
++
++drop policy if exists rutinas_borrar on rutinas;
++create policy rutinas_borrar on rutinas
++  for delete to authenticated using (
++    hogar_id = mi_hogar()
++    and exists (
++      select 1 from miembros m
++      where m.hogar_id = mi_hogar() and m.perfil_id = auth.uid()
++        and m.papel = 'propietario'
++    )
++  );
++
++-- ── Y lo hecho: eso sí lo marca quien trabaja ──────────────
++drop policy if exists hechas_leer on rutinas_hechas;
++create policy hechas_leer on rutinas_hechas
++  for select to authenticated using (hogar_id = mi_hogar());
++
++/*
++  Cualquiera de la casa que pueda escribir. Si un día lo hace Conchita
++  en vez de la persona que viene, lo marca ella — igual que con las
++  tareas, donde eso ya se decidió y funciona.
++
++  `quien = auth.uid()` para que quede constancia de QUIÉN lo marcó.
++  Sin eso, «hecho» no dice nada el día que haya una duda.
++*/
++drop policy if exists hechas_marcar on rutinas_hechas;
++create policy hechas_marcar on rutinas_hechas
++  for insert to authenticated with check (
++    hogar_id = mi_hogar() and quien = auth.uid() and puedo_escribir()
++  );
++
++/*
++  Y desmarcar. Hace falta y es de las cosas que se olvidan: marcar por
++  error algo que no se ha hecho, y no poder deshacerlo, obliga a
++  mentir en la pantalla o a llamar a alguien. El punto 5 pide que lo
++  importante sea reversible.
++*/
++drop policy if exists hechas_desmarcar on rutinas_hechas;
++create policy hechas_desmarcar on rutinas_hechas
++  for delete to authenticated using (
++    hogar_id = mi_hogar() and puedo_escribir()
++  );
++
++
++-- ── 4 · Comprobación ───────────────────────────────────────
++/*
++  DOS resultados.
++
++  1 · Siete políticas: cuatro en `rutinas` y tres en `rutinas_hechas`
++      —leer, marcar y desmarcar; ahí no hay «editar» a propósito,
++      porque una fila hecha no se cambia: se quita y se vuelve a
++      poner.
++
++  2 · Las dos tablas vacías y con RLS puesto. `rls = true` no es un
++      detalle: sin él, cualquiera con una sesión vería el plan de
++      trabajo de todas las casas de HUBI.
++*/
++select tablename as tabla, policyname as politica, cmd as para_que
++from pg_policies
++where tablename in ('rutinas', 'rutinas_hechas')
++order by tablename, policyname;
++
++select
++  (select count(*) from rutinas)        as rutinas,
++  (select count(*) from rutinas_hechas) as marcadas,
++  (select relrowsecurity from pg_class where relname = 'rutinas')        as rls_rutinas,
++  (select relrowsecurity from pg_class where relname = 'rutinas_hechas') as rls_hechas;
+-- 
+2.43.0
+

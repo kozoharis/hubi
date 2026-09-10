@@ -1,0 +1,513 @@
+From 5bcf35869bd78867db3708fb515b4755107021fa Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Mon, 7 Sep 2026 15:31:01 +0000
+Subject: [PATCH] =?UTF-8?q?Un=20solo=20bot=C3=B3n=20de=20Volver,=20y=20en?=
+ =?UTF-8?q?=20todas=20las=20pantallas=20igual?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Había cinco pantallas con el suyo escrito a mano: «← Volver al tablón»,
+«← Volver al inicio», «← Volver», «← Volver a la semana». Texto gris
+pelado, sin fondo, de once puntos de alto. Y al lado, el resto de HUBI
+con una pastilla con borde de cuarenta y ocho.
+
+Dos problemas, y el segundo es el gordo.
+
+El primero: contra el fondo oscuro un texto gris casi no se ve, y sobre
+todo no parece tocable. Un botón que hay que adivinar que es un botón
+no cumple el punto 5 —*botón volver siempre evidente*—, y once puntos
+de alto no se aciertan con el pulgar.
+
+El segundo: cada uno decía a dónde volvía, que suena más informativo y
+es peor. Cambia de largo en cada pantalla, así que el ojo tiene que
+buscarlo en vez de encontrarlo donde estaba. Y se queda mentiroso solo:
+a «Guardar documento» se llega desde el Inicio, desde una carpeta y
+desde la compra, así que «Volver al inicio» era falso dos de cada tres
+veces.
+
+Ahora hay uno y dice siempre **Volver**.
+
+· `Volver` admite `href` o `alPulsar`. Sin `href` pinta un `<button>` —
+  el paso atrás dentro del formulario de guardar no cambia de página—
+  y se ve idéntico: quien lo pulsa no tiene por qué saber la
+  diferencia. Medido: 120 × 48 en los tres casos, mismo margen.
+
+· Fuera la prop `texto`. Llevaba tiempo aceptándose y no pintándose,
+  así que había once llamadas pasando un texto que no salía por ningún
+  lado. Una prop que se acepta y se ignora es una trampa esperando.
+
+· Y el margen exterior de las siete pantallas sin cabecera baja de 24 a
+  20, que es el de todas las demás. Si el botón es el mismo pero está
+  cuatro puntos más a la derecha, sigue sin estar en el mismo sitio.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/actividades/page.tsx             |  2 +-
+ app/agenda/lista.tsx                 | 12 ++--
+ app/ajustes/page.tsx                 |  2 +-
+ app/asesor/page.tsx                  |  2 +-
+ app/avisos/activar.tsx               |  8 +--
+ app/documentos/[id]/editar/page.tsx  |  4 +-
+ app/documentos/[id]/page.tsx         |  7 +--
+ app/documentos/carpeta/[id]/page.tsx |  2 +-
+ app/documentos/seccion/[id]/page.tsx |  2 +-
+ app/empezar/empezar.tsx              |  2 +-
+ app/finca/apuntar/formulario.tsx     |  2 +-
+ app/guardar/formulario.tsx           |  8 +--
+ app/guardar/page.tsx                 |  8 +--
+ app/iconos.tsx                       | 88 +++++++++++++++++++++++-----
+ app/lacasa/page.tsx                  |  2 +-
+ app/seccion/[id]/ajustes/page.tsx    |  2 +-
+ app/tablon/[id]/page.tsx             |  7 +--
+ app/tablon/nuevo/formulario.tsx      |  7 +--
+ 18 files changed, 104 insertions(+), 63 deletions(-)
+
+diff --git a/app/actividades/page.tsx b/app/actividades/page.tsx
+index 6158653..0692771 100644
+--- a/app/actividades/page.tsx
++++ b/app/actividades/page.tsx
+@@ -81,7 +81,7 @@ export default async function Actividades() {
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+-        <Volver href="/" texto="Inicio" />
++        <Volver href="/" />
+         <h1 className="text-[27px] font-extrabold tracking-tight">Actividades</h1>
+       </Cabecera>
+ 
+diff --git a/app/agenda/lista.tsx b/app/agenda/lista.tsx
+index c365981..a690c14 100644
+--- a/app/agenda/lista.tsx
++++ b/app/agenda/lista.tsx
+@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
+ import { clienteSesion } from '@/lib/supabase/sesion'
+ import { quien } from '@/lib/supabase/quien'
+ import Tarjeta from '../tablon/tarjeta'
+-import { Ico, pintaDe } from '../iconos'
++import { Ico, Volver, pintaDe } from '../iconos'
+ import { atrasado, hoyAqui, type Recordatorio } from '@/lib/tablon'
+ import { citasDeLaFamilia, calendariosVisibles, type CitaDeAlguien } from '@/lib/agenda-google'
+ import Refrescar from './refrescar'
+@@ -644,13 +644,9 @@ function MasAdelante({
+ 
+   return (
+     <>
+-      <Link
+-        href="/agenda"
+-        className="mt-4 flex h-12 items-center gap-1.5 text-[16px] font-extrabold text-tinta"
+-      >
+-        <Ico nombre="atras" tam={20} grosor={2.4} />
+-        Volver a la semana
+-      </Link>
++      <div className="mt-4">
++        <Volver href="/agenda" />
++      </div>
+ 
+       {meses.size === 0 && sinFecha.length === 0 && (
+         <Vacio texto="No hay nada más apuntado." />
+diff --git a/app/ajustes/page.tsx b/app/ajustes/page.tsx
+index cbfb2e0..79da461 100644
+--- a/app/ajustes/page.tsx
++++ b/app/ajustes/page.tsx
+@@ -390,7 +390,7 @@ export default async function Ajustes() {
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+-        <Volver href="/" texto="Volver" />
++        <Volver href="/" />
+ 
+         <h1 className="text-[27px] font-extrabold tracking-tight">Ajustes</h1>
+       </Cabecera>
+diff --git a/app/asesor/page.tsx b/app/asesor/page.tsx
+index 512a981..f928efd 100644
+--- a/app/asesor/page.tsx
++++ b/app/asesor/page.tsx
+@@ -197,7 +197,7 @@ export default async function DelAsesor() {
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+-        <Volver href="/" texto="Inicio" />
++        <Volver href="/" />
+         <div className="flex h-14 items-center gap-3">
+           <span
+             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
+diff --git a/app/avisos/activar.tsx b/app/avisos/activar.tsx
+index a563ad7..63d0efd 100644
+--- a/app/avisos/activar.tsx
++++ b/app/avisos/activar.tsx
+@@ -1,8 +1,8 @@
+ 'use client'
+ 
+-import Link from 'next/link'
+ import { useEffect, useState } from 'react'
+ import Barra from '../barra'
++import { Volver } from '../iconos'
+ 
+ type Estado = 'mirando' | 'instalar' | 'apagados' | 'encendidos' | 'bloqueados' | 'imposible'
+ 
+@@ -125,11 +125,9 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
+   }
+ 
+   return (
+-    <main className="techo-holgado min-h-screen px-6 pb-40">
++    <main className="techo-holgado min-h-screen px-5 pb-40">
+       <div className="mx-auto w-full max-w-md">
+-        <Link href="/" className="flex h-11 items-center gap-2 text-[16px] font-bold text-tinta-suave">
+-          ← Volver
+-        </Link>
++        <Volver href="/" />
+ 
+         <h1 className="mt-8 text-[27px] font-extrabold leading-tight tracking-tight text-tinta">
+           🔔 Avisos
+diff --git a/app/documentos/[id]/editar/page.tsx b/app/documentos/[id]/editar/page.tsx
+index 2582636..48a0669 100644
+--- a/app/documentos/[id]/editar/page.tsx
++++ b/app/documentos/[id]/editar/page.tsx
+@@ -43,7 +43,7 @@ export default async function EditarDocumento({
+     return (
+       <main className="min-h-screen pb-40">
+         <Cabecera>
+-          <Volver href={`/documentos/${id}`} texto="Volver" />
++          <Volver href={`/documentos/${id}`} />
+         </Cabecera>
+         <div className="mx-auto w-full max-w-md px-5">
+           <div className="rounded-[22px] border border-coral bg-coral-suave px-5 py-6">
+@@ -70,7 +70,7 @@ export default async function EditarDocumento({
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+-        <Volver href={`/documentos/${id}`} texto="Volver al papel" />
++        <Volver href={`/documentos/${id}`} />
+         <h1 className="text-[27px] font-extrabold tracking-tight">Corregir</h1>
+       </Cabecera>
+ 
+diff --git a/app/documentos/[id]/page.tsx b/app/documentos/[id]/page.tsx
+index 96c39c2..f50760f 100644
+--- a/app/documentos/[id]/page.tsx
++++ b/app/documentos/[id]/page.tsx
+@@ -108,10 +108,7 @@ export default async function Documento({
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+-        <Volver
+-          href={volver}
+-          texto={camino.length > 1 ? camino[camino.length - 1].nombre : 'Documentos'}
+-        />
++        <Volver href={volver} />
+       </Cabecera>
+ 
+       <div className="mx-auto w-full max-w-md px-5">
+@@ -288,7 +285,7 @@ function NoSeHaPodido({ motivo }: { motivo: string }) {
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+-        <Volver href="/documentos" texto="Documentos" />
++        <Volver href="/documentos" />
+       </Cabecera>
+       <div className="mx-auto w-full max-w-md px-5">
+         <div className="rounded-[22px] border border-coral bg-coral-suave px-5 py-6">
+diff --git a/app/documentos/carpeta/[id]/page.tsx b/app/documentos/carpeta/[id]/page.tsx
+index d594ecf..8bdc061 100644
+--- a/app/documentos/carpeta/[id]/page.tsx
++++ b/app/documentos/carpeta/[id]/page.tsx
+@@ -93,7 +93,7 @@ export default async function Carpeta({
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+-        <Volver href={volver} texto={seccion?.nombre ?? 'Documentos'} />
++        <Volver href={volver} />
+       </Cabecera>
+ 
+       <div className="mx-auto w-full max-w-md px-5">
+diff --git a/app/documentos/seccion/[id]/page.tsx b/app/documentos/seccion/[id]/page.tsx
+index bc17364..57decfb 100644
+--- a/app/documentos/seccion/[id]/page.tsx
++++ b/app/documentos/seccion/[id]/page.tsx
+@@ -108,7 +108,7 @@ export default async function Seccion({
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+-        <Volver href="/documentos" texto="Documentos" />
++        <Volver href="/documentos" />
+       </Cabecera>
+ 
+       <div className="mx-auto w-full max-w-md px-5">
+diff --git a/app/empezar/empezar.tsx b/app/empezar/empezar.tsx
+index 5106fca..e4d7a7f 100644
+--- a/app/empezar/empezar.tsx
++++ b/app/empezar/empezar.tsx
+@@ -97,7 +97,7 @@ export default function Empezar({ nombre }: { nombre: string }) {
+   }
+ 
+   return (
+-    <main className="techo-holgado min-h-screen px-6 pb-16">
++    <main className="techo-holgado min-h-screen px-5 pb-16">
+       <div className="mx-auto w-full max-w-md">
+         <div className="flex justify-center pt-4">
+           <Logo tam={54} />
+diff --git a/app/finca/apuntar/formulario.tsx b/app/finca/apuntar/formulario.tsx
+index d245ff8..db73621 100644
+--- a/app/finca/apuntar/formulario.tsx
++++ b/app/finca/apuntar/formulario.tsx
+@@ -115,7 +115,7 @@ export default function Apuntar({
+   }
+ 
+   return (
+-    <main className="techo-holgado min-h-screen px-6 pb-10">
++    <main className="techo-holgado min-h-screen px-5 pb-10">
+       <div className="mx-auto w-full max-w-md">
+         <button
+           onClick={() => (paso === 'datos' ? setPaso('tipo') : (window.location.href = volver))}
+diff --git a/app/guardar/formulario.tsx b/app/guardar/formulario.tsx
+index c39398e..01fd5e4 100644
+--- a/app/guardar/formulario.tsx
++++ b/app/guardar/formulario.tsx
+@@ -3,7 +3,7 @@
+ import Link from 'next/link'
+ import { useEffect, useMemo, useRef, useState } from 'react'
+ import { cadena, type Categoria } from '@/lib/rutas'
+-import { Ico } from '../iconos'
++import { Ico, Volver } from '../iconos'
+ import BuscarEnDrive, { hayBuscadorDrive } from './buscar-en-drive'
+ import { leerAqui } from './leer-aqui'
+ import { leerPdf, primeraPagina } from './leer-pdf'
+@@ -712,7 +712,7 @@ export default function Formulario({
+   }
+ 
+   return (
+-    <main className="techo-holgado min-h-screen px-6 pb-10">
++    <main className="techo-holgado min-h-screen px-5 pb-10">
+       {/*
+         Los dos campos de archivo viven aquí, fuera de las pantallas.
+         Si se declararan dentro de cada paso, al cambiar de pantalla la
+@@ -738,9 +738,7 @@ export default function Formulario({
+ 
+       <div className="mx-auto w-full max-w-md">
+         {paso !== 'leyendo' && (
+-          <button onClick={atras} className="flex h-11 items-center gap-2 text-[16px] font-bold text-tinta-suave">
+-            ← Volver
+-          </button>
++          <Volver alPulsar={atras} />
+         )}
+ 
+         {/* ══ 1 · EL ARCHIVO ══ */}
+diff --git a/app/guardar/page.tsx b/app/guardar/page.tsx
+index 6c1428d..ddaf1e7 100644
+--- a/app/guardar/page.tsx
++++ b/app/guardar/page.tsx
+@@ -1,9 +1,9 @@
+-import Link from 'next/link'
+ import { redirect } from 'next/navigation'
+ import { clienteSesion } from '@/lib/supabase/sesion'
+ import { quien } from '@/lib/supabase/quien'
+ import { miHogar, quienManda } from '@/lib/hogar'
+ import { clienteServidor } from '@/lib/supabase/servidor'
++import { Volver } from '../iconos'
+ import Formulario from './formulario'
+ import type { Categoria } from '@/lib/rutas'
+ 
+@@ -46,11 +46,9 @@ export default async function Guardar({
+     const elJefe = hogarId ? await quienManda(supabase, hogarId) : null
+ 
+     return (
+-      <main className="techo-holgado min-h-screen px-6 pb-12">
++      <main className="techo-holgado min-h-screen px-5 pb-12">
+         <div className="mx-auto w-full max-w-md">
+-          <Link href="/" className="flex h-11 items-center gap-2 text-[16px] font-bold text-tinta-suave">
+-            ← Volver al inicio
+-          </Link>
++          <Volver href="/" />
+           <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
+             Todavía no se pueden guardar documentos
+           </h1>
+diff --git a/app/iconos.tsx b/app/iconos.tsx
+index c34252c..03a20da 100644
+--- a/app/iconos.tsx
++++ b/app/iconos.tsx
+@@ -408,31 +408,87 @@ export const MORADO_CLARO = '#A78BFA'
+   pasan, pero no se usa. Es a propósito: si mañana alguien vuelve a
+   ponerle un rótulo distinto, no pasa nada.
+ */
++/*
++  ═══════════════════════════════════════════════════════════════
++  VOLVER
++  ═══════════════════════════════════════════════════════════════
++
++  Uno solo, y en todas las pantallas igual: una pastilla con borde, el
++  icono de la flecha, y la palabra **Volver**. Siempre la misma.
++
++  ─────────────────────────────────────────────────────────────
++  SIEMPRE «VOLVER», Y NUNCA «VOLVER A DONDE SEA»
++
++  Había de todo: «← Volver al tablón», «← Volver al inicio», «← Volver
++  al papel», «← Volver a la semana». Suena más informativo y es peor
++  por dos razones.
++
++  La primera: cambia de sitio y de largo en cada pantalla, así que el
++  ojo tiene que buscarlo cada vez en vez de encontrarlo donde estaba.
++  Para una persona mayor eso no es un detalle de estilo: es tener que
++  releer la esquina de arriba en cada pantalla.
++
++  La segunda: se queda mentiroso solo. Basta con que a esa pantalla se
++  llegue desde dos sitios —y a «Guardar documento» se llega desde el
++  Inicio, desde una carpeta y desde la compra— para que «Volver al
++  inicio» sea falso la mitad de las veces.
++
++  El punto 5 lo pide entero: *botón volver siempre evidente*. Evidente
++  quiere decir el mismo, en el mismo sitio, con la misma palabra.
++
++  ─────────────────────────────────────────────────────────────
++  Y POR QUÉ ES UNA PASTILLA Y NO UN «←» SUELTO
++
++  Las que quedaban por ahí eran texto pelado en gris. Contra el fondo
++  oscuro casi no se ven, y sobre todo no parecen tocables: un texto
++  gris de dieciséis puntos no dice «púlsame». La pastilla ocupa 48
++  puntos de alto —lo que hay que poder tocar con el pulgar sin
++  apuntar— y se lee como un botón porque lo es.
++*/
+ export function Volver({
+   href,
++  alPulsar,
+   oscuro = false,
+ }: {
+-  href: string
+-  /** Ya no se usa: el botón dice siempre «Volver». */
+-  texto?: string
++  /** A dónde vuelve. Uno de los dos: `href` o `alPulsar`. */
++  href?: string
++  /** Para volver un paso DENTRO de una pantalla, sin cambiar de página. */
++  alPulsar?: () => void
++  /** Sobre fondo oscuro propio —la pantalla de hablar—, no el tema. */
+   oscuro?: boolean
+ }) {
+-  return (
+-    <Link
+-      href={href}
+-      className="mb-3 inline-flex h-12 max-w-full items-center gap-1.5 rounded-full py-0 pl-3 pr-5 text-[16.5px] font-extrabold"
+-      style={
+-        oscuro
+-          ? { background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.18)', color: '#fff' }
+-          : {
+-              background: 'var(--t-superficie)',
+-              border: '1px solid var(--t-borde)',
+-              color: 'var(--t-tinta)',
+-            }
++  const pinta = 'mb-3 inline-flex h-12 max-w-full items-center gap-1.5 rounded-full py-0 pl-3 pr-5 text-[16.5px] font-extrabold'
++
++  const traje = oscuro
++    ? { background: 'rgba(255,255,255,.10)', border: '1px solid rgba(255,255,255,.18)', color: '#fff' }
++    : {
++        background: 'var(--t-superficie)',
++        border: '1px solid var(--t-borde)',
++        color: 'var(--t-tinta)',
+       }
+-    >
++
++  const dentro = (
++    <>
+       <Ico nombre="atras" tam={21} grosor={2.6} />
+       <span className="truncate">Volver</span>
++    </>
++  )
++
++  /* Sin `href` es un paso atrás dentro de la misma pantalla —el
++     formulario de guardar—, y eso es un botón, no un enlace. Se ve
++     idéntico a propósito: quien lo pulsa no tiene por qué saber si
++     cambia de página o no. */
++  if (!href) {
++    return (
++      <button type="button" onClick={alPulsar} className={pinta} style={traje}>
++        {dentro}
++      </button>
++    )
++  }
++
++  return (
++    <Link href={href} className={pinta} style={traje}>
++      {dentro}
+     </Link>
+   )
+ }
+diff --git a/app/lacasa/page.tsx b/app/lacasa/page.tsx
+index 698b78a..45c59a2 100644
+--- a/app/lacasa/page.tsx
++++ b/app/lacasa/page.tsx
+@@ -105,7 +105,7 @@ export default async function LaCasaHoy({
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+-        <Volver href="/" texto="Inicio" />
++        <Volver href="/" />
+         <div className="flex h-14 items-center gap-3">
+           {laAyuda && (
+             <span
+diff --git a/app/seccion/[id]/ajustes/page.tsx b/app/seccion/[id]/ajustes/page.tsx
+index f3fb31a..90212f8 100644
+--- a/app/seccion/[id]/ajustes/page.tsx
++++ b/app/seccion/[id]/ajustes/page.tsx
+@@ -164,7 +164,7 @@ export default async function AjustesDeLaSeccion({
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+-        <Volver href={`/seccion/${id}`} texto={nombre} />
++        <Volver href={`/seccion/${id}`} />
+         <div className="flex h-14 items-center gap-3">
+           <Pastilla
+             nombre={iconoDeEmoji(fila.icono as string | null)}
+diff --git a/app/tablon/[id]/page.tsx b/app/tablon/[id]/page.tsx
+index 2778c0f..c076a2a 100644
+--- a/app/tablon/[id]/page.tsx
++++ b/app/tablon/[id]/page.tsx
+@@ -6,6 +6,7 @@ import { cuando, iconoDe, atrasado, type Recordatorio } from '@/lib/tablon'
+ import AccionHecho from './accion'
+ import Editar from './editar'
+ import Barra from '../../barra'
++import { Volver } from '../../iconos'
+ 
+ export const dynamic = 'force-dynamic'
+ 
+@@ -62,11 +63,9 @@ export default async function Detalle({
+   const tarde = atrasado(r)
+ 
+   return (
+-    <main className="techo-holgado min-h-screen px-6 pb-40">
++    <main className="techo-holgado min-h-screen px-5 pb-40">
+       <div className="mx-auto w-full max-w-md">
+-        <Link href="/tablon" className="flex h-11 items-center gap-2 text-[16px] font-bold text-tinta-suave">
+-          ← Volver al tablón
+-        </Link>
++        <Volver href="/tablon" />
+ 
+         <p className="mt-8 flex items-start gap-3">
+           <span className="text-4xl leading-none">{iconoDe(r.tipo)}</span>
+diff --git a/app/tablon/nuevo/formulario.tsx b/app/tablon/nuevo/formulario.tsx
+index 18cd110..cec29ae 100644
+--- a/app/tablon/nuevo/formulario.tsx
++++ b/app/tablon/nuevo/formulario.tsx
+@@ -3,6 +3,7 @@
+ import Link from 'next/link'
+ import { useState } from 'react'
+ import Repetir, { type Repeticion } from '../../repetir'
++import { Volver } from '../../iconos'
+ 
+ type Perfil = { id: string; nombre: string }
+ 
+@@ -83,11 +84,9 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
+   }
+ 
+   return (
+-    <main className="techo-holgado min-h-screen px-6 pb-10">
++    <main className="techo-holgado min-h-screen px-5 pb-10">
+       <div className="mx-auto w-full max-w-md">
+-        <Link href="/tablon" className="text-lg font-medium text-tinta-suave underline underline-offset-4">
+-          ← Volver
+-        </Link>
++        <Volver href="/tablon" />
+ 
+         <h1 className="mt-8 font-titulo text-[2.5rem] leading-tight text-tinta">
+           Apuntar algo
+-- 
+2.43.0
+

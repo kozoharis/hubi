@@ -1,0 +1,818 @@
+From 85470190387154d22aab4970765d0715f9aa6dcd Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Mon, 7 Sep 2026 15:13:48 +0000
+Subject: [PATCH] Cada actividad tiene sus papeles, y no son dinero
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Una actividad tenía dos cosas dentro: Gastos e Ingresos. Las dos son
+dinero, así que el contrato del piso, la póliza de la finca o la
+licencia de obra no tenían dónde ir — y quien los metía en Gastos para
+tener un sitio le sumaba al balance un dinero que nunca salió.
+
+Ahora son tres:
+
+    💸 Gastos      lo que sale
+    💰 Ingresos    lo que entra
+    📄 Documentos  lo que ni sale ni entra, pero hay que tener
+
+La pieza ya estaba puesta hace meses y no se usaba: `naturaleza` a
+'neutro' hace que al guardar un papel con importe NO se apunte ningún
+movimiento, y que su carpeta de Drive vaya sin trimestre —
+ALQUILERES / DOCUMENTOS / CONTRATOS / 2026. Faltaba la carpeta.
+
+· sql/42: un disparador que se la pone a toda actividad nueva, venga
+  del alta de la casa o de POST /api/actividades, más el relleno de
+  las que ya existen. Un disparador y no copiar `crear_mi_casa`
+  entera: dos copias de cien líneas son dos sitios donde arreglar el
+  mismo fallo, y una actividad sin carpeta de papeles no da error —
+  sencillamente no está.
+
+· En la pantalla de la actividad, debajo del balance: una fila con su
+  icono y su flecha, para que se lea como una puerta y no como un dato.
+  Sin filtrar por trimestre, a propósito: el contrato de 2019 sigue
+  siendo EL contrato en 2026.
+
+· En «Cómo la llevas», una tercera lista para añadir las suyas. Las
+  carpetas de papel se cuentan por documentos y no por apuntes: decir
+  «no tiene nada apuntado» de Contratos, con el contrato dentro, es
+  falso — y quien lee eso la retira creyendo que está vacía.
+
+· Y al apuntar un movimiento ya no se ofrecen: eran un sitio donde el
+  gasto se guarda y luego no sale en ningún balance.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/api/actividades/route.ts          |  65 +++++++++++
+ app/api/categorias/route.ts           |  74 +++++++++---
+ app/cuentas.tsx                       |  84 +++++++++++++-
+ app/finca/apuntar/page.tsx            |  10 +-
+ app/seccion/[id]/ajustes/page.tsx     |  36 ++++--
+ app/seccion/[id]/ajustes/partidas.tsx |  67 +++++++++--
+ sql/42-papeles-de-la-actividad.sql    | 157 ++++++++++++++++++++++++++
+ 7 files changed, 456 insertions(+), 37 deletions(-)
+ create mode 100644 sql/42-papeles-de-la-actividad.sql
+
+diff --git a/app/api/actividades/route.ts b/app/api/actividades/route.ts
+index 31614cf..1044dd7 100644
+--- a/app/api/actividades/route.ts
++++ b/app/api/actividades/route.ts
+@@ -111,6 +111,20 @@ function conArticulo(bruto: string): string | null {
+   falta ejecutar ningún SQL nuevo para que esto funcione.**
+ */
+ 
++/*
++  Los papeles NO llevan plantilla, y es a propósito.
++
++  Las partidas de gasto cambian mucho de una actividad a otra —una
++  finca gasta en productos y una obra en albañilería—. Los papeles no:
++  el contrato y el seguro los tiene una finca, un piso y una obra
++  igual. Inventar tres listas distintas de lo mismo solo daría tres
++  sitios donde arreglar la misma errata.
++
++  Las suyas las añade cada familia desde «Cómo la llevas», que es el
++  punto 11 del planteamiento. Esto es de dónde se parte, no la ley.
++*/
++const PAPELES = ['Contratos', 'Seguros', 'Otros papeles']
++
+ const PLANTILLAS: Record<
+   string,
+   {
+@@ -327,6 +341,48 @@ export async function POST(peticion: NextRequest) {
+     const deGasto = (grupos ?? []).find((g) => g.segmento_drive === 'GASTOS')?.id
+     const deIngreso = (grupos ?? []).find((g) => g.segmento_drive === 'INGRESOS')?.id
+ 
++    /*
++      ── Y LA TERCERA: LOS PAPELES ──
++
++      Contrato, póliza, licencia, escritura. No son dinero: no salen
++      ni entran, y por eso van en una carpeta 'neutro' —donde un
++      importe leído por la cámara se guarda con el papel pero NO se
++      apunta en el balance—.
++
++      Normalmente esto ya lo ha hecho el disparador del SQL 42 al
++      insertar la raíz, dos líneas más arriba. Se mira antes de crear
++      nada: si el SQL todavía no se ha ejecutado, la actividad nueva
++      tiene sus papeles igual; y si se ejecutó, aquí no pasa nada.
++    */
++    const { data: yaEstan } = await supabase
++      .from('categorias')
++      .select('id')
++      .eq('padre_id', raiz)
++      .eq('segmento_drive', 'DOCUMENTOS')
++      .maybeSingle()
++
++    let dePapeles = yaEstan?.id as string | undefined
++
++    if (!dePapeles) {
++      const { data: creado } = await supabase
++        .from('categorias')
++        .insert({
++          padre_id: raiz,
++          nombre: 'Documentos',
++          segmento_drive: 'DOCUMENTOS',
++          icono: '📄',
++          orden: 3,
++          naturaleza: 'neutro',
++        })
++        .select('id')
++        .maybeSingle()
++
++      dePapeles = creado?.id as string | undefined
++    } else {
++      /* Ya las puso el disparador con sus tres carpetas dentro. */
++      dePapeles = undefined
++    }
++
+     const partidas = [
+       ...(deGasto
+         ? plantilla.gastos.map((n, i) => ({
+@@ -346,6 +402,15 @@ export async function POST(peticion: NextRequest) {
+             naturaleza: 'ingreso',
+           }))
+         : []),
++      ...(dePapeles
++        ? PAPELES.map((n, i) => ({
++            padre_id: dePapeles,
++            nombre: n,
++            segmento_drive: limpiar(n),
++            orden: i + 1,
++            naturaleza: 'neutro',
++          }))
++        : []),
+     ]
+ 
+     if (partidas.length > 0) await supabase.from('categorias').insert(partidas)
+diff --git a/app/api/categorias/route.ts b/app/api/categorias/route.ts
+index fddd21f..c5ce78a 100644
+--- a/app/api/categorias/route.ts
++++ b/app/api/categorias/route.ts
+@@ -40,10 +40,19 @@ type Entrada = {
+   /** La actividad de la que cuelga: Finca, Obras… */
+   seccion_id?: string
+   nombre?: string
+-  /** 'gasto' o 'ingreso'. Decide bajo qué grupo entra. */
++  /** 'gasto', 'ingreso' o 'neutro'. Decide bajo qué grupo entra. */
+   naturaleza?: string
+ }
+ 
++/** Los tres grupos de una actividad, y cómo se llaman por dentro. */
++const GRUPOS = {
++  gasto: { nombre: 'Gastos', segmento: 'GASTOS', orden: 1 },
++  ingreso: { nombre: 'Ingresos', segmento: 'INGRESOS', orden: 2 },
++  neutro: { nombre: 'Documentos', segmento: 'DOCUMENTOS', orden: 3 },
++} as const
++
++type Natura = keyof typeof GRUPOS
++
+ function elNombre(v: unknown): string {
+   return String(v ?? '')
+     .replace(/\s+/g, ' ')
+@@ -52,23 +61,28 @@ function elNombre(v: unknown): string {
+ }
+ 
+ /*
+-  El grupo GASTOS o INGRESOS de una actividad, creándolo si falta.
++  El grupo GASTOS, INGRESOS o DOCUMENTOS de una actividad, creándolo
++  si falta.
+ 
+   El árbol de HUBI es siempre el mismo —actividad → GASTOS → partida—
+   y esa forma es la que hace que las cuentas cuadren y que las
+   carpetas de Drive salgan ordenadas. Una actividad recién creada
+-  todavía no tiene esos dos grupos, así que se hacen aquí la primera
++  todavía no tiene esos grupos, así que se hacen aquí la primera
+   vez que alguien añade una partida. Nadie tiene que saber que
+   existen.
++
++  El tercero —DOCUMENTOS— es de naturaleza 'neutro', y eso es lo que
++  hace que el contrato de un piso no le sume 9.000 € al balance: al
++  guardar un papel con importe solo se apunta un movimiento si la
++  carpeta es de gasto o de ingreso.
+ */
+ async function grupoDe(
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   supabase: any,
+   seccionId: string,
+-  naturaleza: 'gasto' | 'ingreso'
++  naturaleza: Natura
+ ): Promise<{ id: string } | { error: string }> {
+-  const nombre = naturaleza === 'gasto' ? 'Gastos' : 'Ingresos'
+-  const segmento = naturaleza === 'gasto' ? 'GASTOS' : 'INGRESOS'
++  const { nombre, segmento, orden } = GRUPOS[naturaleza]
+ 
+   const { data: existe } = await supabase
+     .from('categorias')
+@@ -86,7 +100,7 @@ async function grupoDe(
+       nombre,
+       segmento_drive: segmento,
+       naturaleza,
+-      orden: naturaleza === 'gasto' ? 1 : 2,
++      orden,
+     })
+     .select('id')
+     .maybeSingle()
+@@ -117,7 +131,12 @@ export async function POST(peticion: NextRequest) {
+ 
+   const nombre = elNombre(cuerpo.nombre)
+   const seccionId = String(cuerpo.seccion_id ?? '')
+-  const naturaleza = cuerpo.naturaleza === 'ingreso' ? 'ingreso' : 'gasto'
++  const naturaleza: Natura =
++    cuerpo.naturaleza === 'ingreso'
++      ? 'ingreso'
++      : cuerpo.naturaleza === 'neutro'
++        ? 'neutro'
++        : 'gasto'
+ 
+   if (nombre.length < 2) {
+     return NextResponse.json({ error: 'Ponle un nombre.' }, { status: 400 })
+@@ -161,9 +180,18 @@ export async function POST(peticion: NextRequest) {
+     .ilike('nombre', nombre)
+     .maybeSingle()
+ 
++  /* «Partida» para el dinero, «carpeta» para los papeles: en la
++     pantalla de papeles nadie ha leído nunca la palabra partida, y un
++     error que usa un vocabulario que no está en la pantalla parece un
++     error de otra cosa. */
++  const comoSeLlama = naturaleza === 'neutro' ? 'carpeta' : 'partida'
++
+   if (repetida) {
+     if (repetida.activa) {
+-      return NextResponse.json({ error: `Ya tienes una partida «${nombre}».` }, { status: 409 })
++      return NextResponse.json(
++        { error: `Ya tienes una ${comoSeLlama} «${nombre}».` },
++        { status: 409 }
++      )
+     }
+ 
+     const { data: revivida } = await supabase
+@@ -206,7 +234,7 @@ export async function POST(peticion: NextRequest) {
+ 
+   if (error || !data) {
+     return NextResponse.json(
+-      { error: 'No se ha podido crear la partida.', detalle: error?.message },
++      { error: `No se ha podido crear la ${comoSeLlama}.`, detalle: error?.message },
+       { status: 500 }
+     )
+   }
+@@ -297,14 +325,26 @@ export async function DELETE(peticion: NextRequest) {
+   const id = new URL(peticion.url).searchParams.get('id') ?? ''
+   if (!id) return NextResponse.json({ error: 'Falta la partida.' }, { status: 400 })
+ 
+-  /* Cuántos apuntes se quedan colgando. No impide retirarla —es
++  /* Cuántas cosas se quedan colgando. No impide retirarla —es
+      legítimo dejar de usar una partida— pero se cuenta para poder
+      decirlo, que no es lo mismo retirar algo vacío que algo con
+-     cuarenta facturas dentro. */
+-  const { count } = await supabase
+-    .from('movimientos')
+-    .select('id', { count: 'exact', head: true })
+-    .eq('categoria_id', id)
++     cuarenta facturas dentro.
++
++     Se cuentan las DOS. Una partida de gasto tiene apuntes; una
++     carpeta de papeles —Contratos, Seguros— no tiene ninguno y sí
++     tiene documentos, y contar solo los apuntes le diría a quien va
++     a retirarla que está vacía teniendo el contrato dentro. */
++  const [{ count }, { count: papeles }] = await Promise.all([
++    supabase
++      .from('movimientos')
++      .select('id', { count: 'exact', head: true })
++      .eq('categoria_id', id),
++    supabase
++      .from('documentos')
++      .select('id', { count: 'exact', head: true })
++      .eq('categoria_id', id)
++      .is('eliminado_en', null),
++  ])
+ 
+   const { data, error } = await supabase
+     .from('categorias')
+@@ -319,5 +359,5 @@ export async function DELETE(peticion: NextRequest) {
+     )
+   }
+ 
+-  return NextResponse.json({ bien: true, apuntes: count ?? 0 })
++  return NextResponse.json({ bien: true, apuntes: count ?? 0, papeles: papeles ?? 0 })
+ }
+diff --git a/app/cuentas.tsx b/app/cuentas.tsx
+index 5254d7d..ffe4387 100644
+--- a/app/cuentas.tsx
++++ b/app/cuentas.tsx
+@@ -102,12 +102,14 @@ export default async function Cuentas({
+     pantalla enseñaría cero euros con las cuentas del trimestre
+     intactas debajo. Se pide con ella, y si no puede ser, sin ella.
+   */
+-  const campos = 'id, padre_id, nombre, segmento_drive'
++  const campos = 'id, padre_id, nombre, segmento_drive, activa, naturaleza'
+   type Cat = {
+     id: string
+     padre_id: string | null
+     nombre: string
+     segmento_drive: string
++    activa?: boolean | null
++    naturaleza?: string | null
+     lleva_cuentas?: boolean
+   }
+ 
+@@ -244,6 +246,56 @@ export default async function Cuentas({
+ 
+   const nombreDeUnidad = new Map(unidades.map((u) => [u.id, u.nombre]))
+ 
++  /*
++    ═══════════════════════════════════════════════════════════
++    LOS PAPELES DE LA ACTIVIDAD
++    ═══════════════════════════════════════════════════════════
++
++    El contrato de alquiler. La póliza del seguro de la finca. La
++    licencia de obra. La escritura.
++
++    Hasta ahora una actividad solo tenía dos cosas dentro —Gastos e
++    Ingresos— y las dos son dinero, así que estos papeles no tenían
++    dónde ir. El que los metía en Gastos para tener un sitio le sumaba
++    al balance un dinero que nunca salió.
++
++    Van en su propia carpeta, de naturaleza 'neutro', y por eso NO
++    tocan ninguno de los números de arriba: al guardar un papel con
++    importe solo se apunta un movimiento si la carpeta es de gasto o
++    de ingreso. Un contrato de 9.000 € se guarda entero y el balance
++    ni se entera.
++
++    ─────────────────────────────────────────────────────────
++    Y NO SE FILTRAN POR TRIMESTRE
++
++    Todo lo de arriba es del periodo elegido, porque el dinero es de
++    un mes. Un contrato no. El contrato firmado en 2019 sigue siendo
++    EL contrato en 2026, y esconderlo por estar mirando este trimestre
++    sería esconder justo lo que se venía a buscar.
++  */
++  const carpetaPapeles = raiz
++    ? (todas.find(
++        (c) =>
++          c.padre_id === raiz.id && c.segmento_drive === 'DOCUMENTOS' && c.activa !== false
++      ) ?? null)
++    : null
++
++  let cuantosPapeles = 0
++  if (carpetaPapeles) {
++    const dentro = [carpetaPapeles.id]
++    for (const c of todas) {
++      if (c.padre_id === carpetaPapeles.id && c.activa !== false) dentro.push(c.id)
++    }
++
++    const { count } = await supabase
++      .from('documentos')
++      .select('id', { count: 'exact', head: true })
++      .in('categoria_id', dentro)
++      .is('eliminado_en', null)
++
++    cuantosPapeles = count ?? 0
++  }
++
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+@@ -339,6 +391,36 @@ export default async function Cuentas({
+           </p>
+         </div>
+ 
++        {/*
++          ── LOS PAPELES ──
++
++          Va aquí, justo debajo del balance y por encima de todo lo
++          demás, porque es el TERCER pilar de la actividad y no una
++          nota al pie: Gastos, Ingresos y los papeles que la actividad
++          tiene por ser lo que es.
++
++          Y no es una cifra más. Es una fila entera, con su icono y su
++          flecha, para que se lea como una puerta y no como un dato:
++          aquí no hay nada que sumar, hay algo que abrir.
++        */}
++        {carpetaPapeles && (
++          <Link
++            href={`/documentos/carpeta/${carpetaPapeles.id}`}
++            className="mt-2.5 flex items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-3.5"
++          >
++            <Pastilla nombre="papel" color={seccion.color} fondo={seccion.fondo} tam={44} icono={22} />
++            <span className="min-w-0 flex-1">
++              <span className="block text-[18px] font-extrabold tracking-tight">Documentos</span>
++              <span className="block text-[14.5px] font-semibold text-tenue">
++                {cuantosPapeles === 0
++                  ? 'Contratos, seguros, licencias…'
++                  : `${cuantosPapeles} ${cuantosPapeles === 1 ? 'papel guardado' : 'papeles guardados'} · todos los años`}
++              </span>
++            </span>
++            <Ico nombre="flecha" tam={20} grosor={2.4} />
++          </Link>
++        )}
++
+         {/* ── Cada unidad ── */}
+         {casas && casas.casas.length > 0 && (
+           <section className="mt-5">
+diff --git a/app/finca/apuntar/page.tsx b/app/finca/apuntar/page.tsx
+index 3c8e823..eee571f 100644
+--- a/app/finca/apuntar/page.tsx
++++ b/app/finca/apuntar/page.tsx
+@@ -86,10 +86,14 @@ export default async function PaginaApuntar({
+   */
+   const opciones = todas.filter((c) => {
+     if (conHijas.has(c.id)) return false
++    /* Y lo de «solo las que mueven dinero» vale también DENTRO de una
++       actividad. Desde que cada una tiene su carpeta de Documentos
++       —Contratos, Seguros, Licencias—, ofrecerlas aquí sería ofrecer
++       un sitio donde el gasto se guarda y luego no aparece en ningún
++       balance, porque las 'neutro' no generan apunte a propósito. */
++    if (c.naturaleza === 'neutro') return false
+     const suRaiz = raizDe(c)
+-    if (deCasa) {
+-      return suRaiz.lleva_cuentas !== true && c.naturaleza !== 'neutro'
+-    }
++    if (deCasa) return suRaiz.lleva_cuentas !== true
+     return suRaiz.id === raiz?.id
+   })
+ 
+diff --git a/app/seccion/[id]/ajustes/page.tsx b/app/seccion/[id]/ajustes/page.tsx
+index cd6eef5..f3fb31a 100644
+--- a/app/seccion/[id]/ajustes/page.tsx
++++ b/app/seccion/[id]/ajustes/page.tsx
+@@ -112,10 +112,15 @@ export default async function AjustesDeLaSeccion({
+ 
+   const deGasto = grupos.find((c) => c.segmento_drive === 'GASTOS')
+   const deIngreso = grupos.find((c) => c.segmento_drive === 'INGRESOS')
++  const dePapeles = grupos.find((c) => c.segmento_drive === 'DOCUMENTOS')
+ 
+-  const [gastos, ingresos] = await Promise.all([
++  const [gastos, ingresos, carpetasDePapel] = await Promise.all([
+     partidasDe(supabase, deGasto?.id as string | undefined),
+     partidasDe(supabase, deIngreso?.id as string | undefined),
++    /* Las carpetas de papeles se cuentan por DOCUMENTOS y no por
++       apuntes: en Contratos no hay ni un movimiento y sí está el
++       contrato. Decir «no tiene nada» sería mentira. */
++    partidasDe(supabase, dePapeles?.id as string | undefined, 'papeles'),
+   ])
+ 
+   /*
+@@ -140,6 +145,7 @@ export default async function AjustesDeLaSeccion({
+       ...(hijas ?? []).map((c) => c.id as string),
+       ...gastos.map((p) => p.id),
+       ...ingresos.map((p) => p.id),
++      ...carpetasDePapel.map((p) => p.id),
+     ]
+ 
+     const { count } = await supabase
+@@ -196,7 +202,12 @@ export default async function AjustesDeLaSeccion({
+           />
+         )}
+ 
+-        <Partidas seccionId={id} gastos={gastos} ingresos={ingresos} />
++        <Partidas
++          seccionId={id}
++          gastos={gastos}
++          ingresos={ingresos}
++          papeles={carpetasDePapel}
++        />
+ 
+         {/* Al final del todo: es lo que se hace una vez, y en medio
+             del camino sería un botón peligroso donde no toca. */}
+@@ -219,7 +230,10 @@ export default async function AjustesDeLaSeccion({
+ async function partidasDe(
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   supabase: any,
+-  grupoId: string | undefined
++  grupoId: string | undefined,
++  /* Qué se cuenta en cada una. Las de dinero, apuntes. Las de papel
++     —Contratos, Seguros—, documentos: ahí no hay ni un movimiento. */
++  contar: 'apuntes' | 'papeles' = 'apuntes'
+ ): Promise<Partida[]> {
+   if (!grupoId) return []
+ 
+@@ -233,13 +247,19 @@ async function partidasDe(
+   const partidas = (data ?? []) as { id: string; nombre: string }[]
+   if (partidas.length === 0) return []
+ 
+-  const { data: movimientos } = await supabase
+-    .from('movimientos')
+-    .select('categoria_id')
+-    .in('categoria_id', partidas.map((p) => p.id))
++  const ids = partidas.map((p) => p.id)
++
++  const { data: filas } =
++    contar === 'papeles'
++      ? await supabase
++          .from('documentos')
++          .select('categoria_id')
++          .in('categoria_id', ids)
++          .is('eliminado_en', null)
++      : await supabase.from('movimientos').select('categoria_id').in('categoria_id', ids)
+ 
+   const cuenta = new Map<string, number>()
+-  for (const m of movimientos ?? []) {
++  for (const m of filas ?? []) {
+     const k = m.categoria_id as string
+     cuenta.set(k, (cuenta.get(k) ?? 0) + 1)
+   }
+diff --git a/app/seccion/[id]/ajustes/partidas.tsx b/app/seccion/[id]/ajustes/partidas.tsx
+index 81e9c57..21596c6 100644
+--- a/app/seccion/[id]/ajustes/partidas.tsx
++++ b/app/seccion/[id]/ajustes/partidas.tsx
+@@ -39,7 +39,13 @@ import { Ico } from '../../../iconos'
+ export type Partida = {
+   id: string
+   nombre: string
+-  /** Cuántos movimientos cuelgan de ella. Para avisar al retirarla. */
++  /**
++   * Cuántas cosas cuelgan de ella, para avisar antes de retirarla.
++   *
++   * En las de dinero son movimientos; en las de papel —Contratos,
++   * Seguros— son documentos, porque ahí no hay ni un movimiento. La
++   * pantalla lo llama de una u otra manera según cuál sea.
++   */
+   apuntes: number
+ }
+ 
+@@ -47,10 +53,12 @@ export default function Partidas({
+   seccionId,
+   gastos,
+   ingresos,
++  papeles,
+ }: {
+   seccionId: string
+   gastos: Partida[]
+   ingresos: Partida[]
++  papeles: Partida[]
+ }) {
+   return (
+     <>
+@@ -68,6 +76,24 @@ export default function Partidas({
+         pie="Lo que cobras: certificaciones, ventas, alquileres…"
+         partidas={ingresos}
+       />
++      {/*
++        ── Y LA TERCERA, QUE NO ES DINERO ──
++
++        El contrato del piso, la póliza, la licencia de obra. Tienen
++        fecha y muchas veces tienen un importe escrito dentro, y aun
++        así no se gasta ni se cobra nada el día que los firmas.
++
++        Por eso son carpetas aparte y de naturaleza 'neutro': si el
++        contrato de alquiler viviera en Ingresos, un piso de 750 € al
++        mes tendría 9.000 € de más el día del alta.
++      */}
++      <Lista
++        seccionId={seccionId}
++        naturaleza="neutro"
++        titulo="Qué papeles guardas"
++        pie="Contratos, pólizas, licencias… lo que hay que tener aunque no sea dinero."
++        partidas={papeles}
++      />
+     </>
+   )
+ }
+@@ -80,13 +106,30 @@ function Lista({
+   partidas,
+ }: {
+   seccionId: string
+-  naturaleza: 'gasto' | 'ingreso'
++  naturaleza: 'gasto' | 'ingreso' | 'neutro'
+   titulo: string
+   pie: string
+   partidas: Partida[]
+ }) {
+   const router = useRouter()
+ 
++  /*
++    LAS PALABRAS CAMBIAN, LA PANTALLA NO.
++
++    En una carpeta de papeles no hay apuntes: hay papeles. Decir «no
++    tiene nada apuntado» sobre Contratos —con el contrato dentro— es
++    falso, y quien lee eso retira la carpeta creyendo que está vacía.
++  */
++  const esPapel = naturaleza === 'neutro'
++  const cosa = esPapel
++    ? { uno: 'papel', varios: 'papeles', nueva: 'Nueva carpeta', ejemplo: 'Licencias' }
++    : {
++        uno: 'apunte',
++        varios: 'apuntes',
++        nueva: 'Nueva partida',
++        ejemplo: naturaleza === 'gasto' ? 'Carpintería' : 'Certificaciones',
++      }
++
+   const [creando, setCreando] = useState(false)
+   const [nombre, setNombre] = useState('')
+   const [editando, setEditando] = useState<string | null>(null)
+@@ -150,10 +193,18 @@ function Lista({
+     */
+     const cuantas =
+       p.apuntes === 0
+-        ? 'No tiene nada apuntado.'
+-        : `Tiene ${p.apuntes} ${p.apuntes === 1 ? 'apunte' : 'apuntes'}, y NO se pierden: siguen contando en las cuentas de siempre.`
++        ? esPapel
++          ? 'No tiene ningún papel dentro.'
++          : 'No tiene nada apuntado.'
++        : esPapel
++          ? `Tiene ${p.apuntes} ${p.apuntes === 1 ? 'papel' : 'papeles'}, y NO se pierden: siguen guardados y se siguen viendo.`
++          : `Tiene ${p.apuntes} ${p.apuntes === 1 ? 'apunte' : 'apuntes'}, y NO se pierden: siguen contando en las cuentas de siempre.`
++
++    const luego = esPapel
++      ? 'Deja de salir al guardar papeles nuevos.'
++      : 'Deja de salir al apuntar cosas nuevas.'
+ 
+-    if (!window.confirm(`¿Retirar «${p.nombre}»?\n\n${cuantas}\n\nDeja de salir al apuntar cosas nuevas.`)) {
++    if (!window.confirm(`¿Retirar «${p.nombre}»?\n\n${cuantas}\n\n${luego}`)) {
+       return
+     }
+ 
+@@ -209,7 +260,7 @@ function Lista({
+                     <p className="truncate text-[17px] font-bold">{p.nombre}</p>
+                     {p.apuntes > 0 && (
+                       <p className="text-[14.5px] font-semibold text-tenue">
+-                        {p.apuntes} {p.apuntes === 1 ? 'apunte' : 'apuntes'}
++                        {p.apuntes} {p.apuntes === 1 ? cosa.uno : cosa.varios}
+                       </p>
+                     )}
+                   </div>
+@@ -245,7 +296,7 @@ function Lista({
+           <input
+             value={nombre}
+             onChange={(e) => setNombre(e.target.value)}
+-            placeholder={naturaleza === 'gasto' ? 'Carpintería' : 'Certificaciones'}
++            placeholder={cosa.ejemplo}
+             className="entrada mt-2"
+             autoFocus
+             maxLength={40}
+@@ -280,7 +331,7 @@ function Lista({
+           className="mt-3 flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
+         >
+           <Ico nombre="mas" tam={20} grosor={2.4} />
+-          Nueva partida
++          {cosa.nueva}
+         </button>
+       )}
+ 
+diff --git a/sql/42-papeles-de-la-actividad.sql b/sql/42-papeles-de-la-actividad.sql
+new file mode 100644
+index 0000000..b732028
+--- /dev/null
++++ b/sql/42-papeles-de-la-actividad.sql
+@@ -0,0 +1,157 @@
++-- ═══════════════════════════════════════════════════════════════
++-- SQL 42 · LOS PAPELES DE LA ACTIVIDAD
++-- ═══════════════════════════════════════════════════════════════
++--
++-- Hasta hoy una actividad tenía dos cosas dentro: GASTOS e INGRESOS.
++-- Las dos son dinero. Y por eso no había ningún sitio para lo que una
++-- actividad tiene y no es dinero:
++--
++--     el contrato de alquiler del piso
++--     la póliza del seguro de la finca
++--     la licencia de obra
++--     el certificado energético
++--     la escritura
++--
++-- Un contrato no es un gasto. Tiene fecha, tiene importe escrito
++-- dentro, y aun así no se gasta nada el día que lo firmas. Meterlo en
++-- GASTOS para tener dónde ponerlo le sumaba 9.000 € al año a un piso
++-- que no los había pagado.
++--
++-- Así que la actividad pasa a tener TRES cosas dentro:
++--
++--     💸 GASTOS      lo que sale
++--     💰 INGRESOS    lo que entra
++--     📄 DOCUMENTOS  lo que ni sale ni entra, pero hay que tener
++--
++-- ─────────────────────────────────────────────────────────────
++-- POR QUÉ 'neutro' NO ES UN DETALLE
++--
++-- `categorias.naturaleza` ya tenía tres valores desde el SQL 01, y
++-- 'neutro' era el que casi no se usaba. Es justo el que hace que esto
++-- funcione solo, sin tocar nada más:
++--
++--   · Al guardar un papel con importe, `app/api/documentos` solo
++--     apunta un movimiento si la carpeta es 'gasto' o 'ingreso'. En
++--     una 'neutro' el importe se guarda con el documento y NO entra
++--     en el balance. Que es exactamente lo que queremos.
++--
++--   · `rutaDeCarpetas` ya trata las 'neutro' distinto: sin trimestre.
++--     ALQUILERES / DOCUMENTOS / CONTRATOS / 2026, y no
++--     .../2026/T3/CONTRATOS. Un contrato no es de un trimestre.
++--
++-- O sea: la pieza ya estaba puesta hace meses. Lo único que faltaba
++-- era la carpeta.
++--
++-- ─────────────────────────────────────────────────────────────
++-- Y POR QUÉ UN DISPARADOR Y NO COPIAR `crear_mi_casa`
++--
++-- Las actividades nacen por dos caminos: la función `crear_mi_casa`
++-- del SQL 36, y `POST /api/actividades` cuando alguien añade una
++-- después. Añadir la carpeta a mano en los dos sitios significa que
++-- dentro de un año habrá un tercer camino y se olvidará — y una
++-- actividad sin su carpeta de papeles no da ningún error: sale la
++-- pantalla, y sencillamente no está.
++--
++-- El disparador la pone SIEMPRE, venga de donde venga el alta. Y no
++-- se dispara a sí mismo porque solo mira las raíces con cuentas, y lo
++-- que él crea cuelga de una.
++
++begin;
++
++-- ── 1 · La carpeta y lo que lleva dentro ───────────────────
++/*
++  Tres carpetas y no diez. Contratos y Seguros son las que tiene
++  cualquier actividad —una finca, un piso, una obra— y «Otros papeles»
++  evita el peor momento de todos: tener un papel en la mano y no
++  encontrar dónde meterlo.
++
++  Las suyas las añade cada familia desde «Cómo la llevas». Ese es el
++  punto 11 del planteamiento y ya funciona: la lista de abajo es un
++  punto de partida, no la ley.
++*/
++create or replace function papeles_de_la_actividad()
++returns trigger
++language plpgsql
++security definer
++set search_path = public
++as $$
++declare
++  grupo uuid;
++begin
++  -- ¿Ya los tiene? Entonces no se toca nada.
++  if exists (
++    select 1 from categorias
++    where padre_id = new.id and segmento_drive = 'DOCUMENTOS'
++  ) then
++    return new;
++  end if;
++
++  insert into categorias (hogar_id, padre_id, nombre, segmento_drive, icono, orden, naturaleza)
++  values (new.hogar_id, new.id, 'Documentos', 'DOCUMENTOS', '📄', 3, 'neutro')
++  returning id into grupo;
++
++  insert into categorias (hogar_id, padre_id, nombre, segmento_drive, orden, naturaleza)
++  values
++    (new.hogar_id, grupo, 'Contratos',     'CONTRATOS', 1, 'neutro'),
++    (new.hogar_id, grupo, 'Seguros',       'SEGUROS',   2, 'neutro'),
++    (new.hogar_id, grupo, 'Otros papeles', 'OTROS_PAPELES', 3, 'neutro');
++
++  return new;
++end;
++$$;
++
++drop trigger if exists papeles_al_crear_actividad on categorias;
++
++/*
++  El `when` es lo que impide la recursión: solo las RAÍCES con
++  cuentas. Las tres carpetas que crea la función cuelgan de una, así
++  que tienen `padre_id`, así que no vuelven a disparar nada.
++*/
++create trigger papeles_al_crear_actividad
++  after insert on categorias
++  for each row
++  when (new.padre_id is null and new.lleva_cuentas = true)
++  execute function papeles_de_la_actividad();
++
++
++-- ── 2 · Y las actividades que ya existen ───────────────────
++/*
++  Las que están creadas no pasan por el disparador nunca más, así que
++  se les pone aquí. Con `not exists` delante: esto se puede ejecutar
++  dos veces sin duplicar nada, que es la única manera de que un SQL
++  sea seguro de correr cuando no te acuerdas de si ya lo corriste.
++*/
++with nuevas as (
++  insert into categorias (hogar_id, padre_id, nombre, segmento_drive, icono, orden, naturaleza)
++  select a.hogar_id, a.id, 'Documentos', 'DOCUMENTOS', '📄', 3, 'neutro'
++  from categorias a
++  where a.padre_id is null
++    and a.lleva_cuentas = true
++    and not exists (
++      select 1 from categorias h
++      where h.padre_id = a.id and h.segmento_drive = 'DOCUMENTOS'
++    )
++  returning id, hogar_id
++)
++insert into categorias (hogar_id, padre_id, nombre, segmento_drive, orden, naturaleza)
++select n.hogar_id, n.id, v.nombre, v.segmento, v.orden, 'neutro'
++from nuevas n
++cross join (values
++  ('Contratos',     'CONTRATOS', 1),
++  ('Seguros',       'SEGUROS',   2),
++  ('Otros papeles', 'OTROS_PAPELES', 3)
++) as v(nombre, segmento, orden);
++
++commit;
++
++
++-- ── Para comprobar que ha ido bien ─────────────────────────
++--
++--   select a.nombre as actividad, g.nombre as dentro, g.naturaleza
++--   from categorias a
++--   join categorias g on g.padre_id = a.id
++--   where a.padre_id is null and a.lleva_cuentas = true
++--   order by a.nombre, g.orden;
++--
++-- Cada actividad tiene que salir con sus tres: Gastos, Ingresos y
++-- Documentos.
+-- 
+2.43.0
+

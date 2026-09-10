@@ -1,0 +1,200 @@
+<!doctype html><meta charset=utf-8><title>HUBI · las tres razones para moverse</title>
+<style>
+:root{--t-fondo:#F7F5F1;--t-superficie:#FFF;--t-borde:#EAE7E3;--t-tinta:#1A1714;--t-tinta-suave:#453F39;--t-tenue:#7D7166;--t-apagado:#AAA096;--t-velo:rgba(26,23,20,.04);--t-bien:#0B7C6F;--t-bien-velo:#E1F8E7;--t-accion:#14B8A6}
+:root[data-t="o"]{--t-fondo:#0B1220;--t-superficie:#182133;--t-borde:#253148;--t-tinta:#F1F5F9;--t-tinta-suave:#CBD5E1;--t-tenue:#94A3B8;--t-apagado:#64748B;--t-velo:rgba(255,255,255,.06);--t-bien:#2DD4BF;--t-bien-velo:#10322F}
+*{box-sizing:border-box}
+body{margin:0;background:var(--t-fondo);color:var(--t-tinta);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;padding:20px;transition:background .2s}
+h1{font-size:21px;font-weight:800;margin:0 0 2px;letter-spacing:-.02em}
+.sub{font-size:13.5px;color:var(--t-tenue);margin:0 0 18px;line-height:1.5}
+h2{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--t-tenue);margin:26px 0 4px}
+.exp{font-size:13px;color:var(--t-tinta-suave);margin:0 0 12px;line-height:1.55;max-width:460px}
+.zona{max-width:440px}
+.tarjeta{display:flex;height:76px;align-items:center;gap:14px;border-radius:20px;border:1px solid var(--t-borde);background:var(--t-superficie);padding:0 14px;position:relative;text-decoration:none;color:inherit;margin-bottom:10px;cursor:pointer}
+.past{display:flex;height:48px;width:48px;flex:none;align-items:center;justify-content:center;border-radius:16px}
+.tit{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.pie{font-size:13.5px;color:var(--t-tenue);font-weight:600;margin-top:2px}
+.flecha{margin-left:auto;color:var(--t-apagado)}
+.barra{display:flex;height:68px;max-width:440px;border-top:1px solid var(--t-borde);background:var(--t-superficie);border-radius:0 0 16px 16px;overflow:hidden}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--t-apagado);cursor:pointer;border:0;background:none;font-family:inherit}
+.tab.on{color:var(--t-tinta)}
+.li{display:flex;align-items:center;gap:14px;min-height:64px;border-radius:20px;border:1px solid var(--t-borde);background:var(--t-superficie);padding:12px 16px;margin-bottom:10px;cursor:pointer;width:100%;text-align:left;font-family:inherit;border-width:1px}
+.circ{display:flex;height:30px;width:30px;flex:none;align-items:center;justify-content:center;border-radius:999px;border:2px solid var(--t-borde);color:var(--t-superficie)}
+.circ.on{background:var(--t-bien);border-color:var(--t-bien)}
+.que{font-size:19px;font-weight:800;color:var(--t-tinta)}
+.que.on{color:var(--t-tinta-suave)}
+.li.on{opacity:.6}
+.li{transition:opacity .3s}
+.mini{font-size:12px;color:var(--t-tenue);margin-top:6px}
+.cambia{position:fixed;top:14px;right:14px;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--t-borde);background:var(--t-superficie);color:var(--t-tinta);font-weight:700;font-size:13px;font-family:inherit;cursor:pointer}
+.tocable {
+  transition: transform 180ms ease-out, opacity 180ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+.tocable:active {
+  transition-duration: 120ms;
+  transform: scale(0.985);
+  opacity: 0.92;
+}
+
+/* Quien haya pedido menos movimiento sigue necesitando SABER que le
+   han oído — más aún, porque suele ser quien peor lleva el
+   movimiento. Así que no se le quita la respuesta: se le quita el
+   viaje. La opacidad cambia de golpe y la escala no se toca. */
+@media (prefers-reduced-motion: reduce) {
+  .tocable {
+    transition: none;
+  }
+  .tocable:active {
+    transform: none;
+    opacity: 0.88;
+  }
+}
+
+/* El velo de «voy en camino». Aparece con un pequeño retardo por el
+   mismo motivo que el armazón: en una navegación de 150 ms saldría y
+   se iría dentro de un suspiro, y un destello que nadie llega a leer
+   solo se percibe como torpeza. Pasados 140 ms ya no es un destello:
+   es una espera, y entonces sí hay algo que contar. */
+.en-camino {
+  background: var(--t-velo);
+  animation: asomar 160ms ease-out 140ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .en-camino {
+    animation-duration: 1ms;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   «ESTO HA CAMBIADO» · lo hecho, lo que llega
+   ═══════════════════════════════════════════════════════════
+
+   El tercer motivo por el que HUBI se mueve. Los otros dos confirman
+   que te ha oído; éste cuenta QUÉ ha pasado.
+
+   ── EL CÍRCULO, Y NO EL TEXTO ──
+
+   Al tachar algo de la compra cambian tres cosas a la vez: el círculo
+   se llena, el tic aparece y la palabra se tacha. Si las tres saltan
+   de golpe, el ojo no sabe dónde mirar y lo que queda es un
+   parpadeo.
+
+   Así que se ordena en torno a dónde está el dedo. El dedo está en el
+   círculo, o sea que la confirmación se pinta ahí: se rellena de
+   verde y el tic entra creciendo. Lo demás —el tachado, la fila
+   entera atenuándose— se limita a acompañar, más lento y más suave.
+
+   ── EL TACHADO SE PINTA, NO APARECE ──
+
+   `text-decoration-line` no se puede animar, pero
+   `text-decoration-color` sí. Así que la raya está SIEMPRE puesta y
+   lo que cambia es que se vuelve visible. Suena a truco y es lo
+   contrario: es lo único que funciona bien cuando el nombre de algo
+   ocupa dos renglones, porque la raya la coloca el navegador en cada
+   uno. Pintar una línea a mano —un degradado de fondo, que es lo
+   habitual— habría cruzado la primera línea y dejado la segunda sin
+   tachar. */
+.tachable {
+  text-decoration-line: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 240ms ease-out, color 240ms ease-out;
+}
+.tachable-puesto {
+  text-decoration-color: currentColor;
+}
+
+/* El círculo que se llena. */
+.casilla {
+  transition: background-color 180ms ease-out, border-color 180ms ease-out;
+}
+
+/* El tic entra creciendo, con un punto de rebote muy corto: es lo que
+   hace que se lea como «hecho» y no como «ha aparecido un símbolo».
+   Nada más — un rebote más largo empieza a ser un juguete. */
+.tic {
+  animation: tic 240ms cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+@keyframes tic {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Lo que acaba de llegar a una lista. Corto y sin desplazamiento
+   lateral: en una lista de la compra con quince cosas, quince
+   entradas deslizándose serían un mareo. Solo aparece. */
+.llega {
+  animation: llega 200ms ease-out both;
+}
+@keyframes llega {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tachable, .casilla {
+    transition: none;
+  }
+  .tic, .llega {
+    animation: none;
+  }
+}
+
+
+</style>
+<button class=cambia onclick="document.documentElement.dataset.t=document.documentElement.dataset.t==='o'?'':'o'">Claro / Oscuro</button>
+<h1>Las tres razones por las que HUBI se mueve</h1>
+<p class=sub>Tócalo con el dedo, no con el ratón — está calibrado para el pulgar.</p>
+
+<div class=zona>
+<h2>1 · Te he oído</h2>
+<p class=exp>Toda pieza que se puede tocar responde igual: se hunde un 1,5% y deja pasar un poco el fondo. Antes solo lo hacía el botón principal.</p>
+<div class="tarjeta tocable" onclick="return false"><span class=past style="background:rgba(192,154,98,.16);color:#C09A62">🛒</span><span><span class=tit>La compra</span><span class=pie>Faltan 3 cosas por coger</span></span><span class=flecha>›</span></div>
+<div class="tarjeta tocable" onclick="return false"><span class=past style="background:rgba(111,168,138,.16);color:#6FA88A">✓</span><span><span class=tit>La casa hoy</span><span class=pie>2 de 4 hechos</span></span><span class=flecha>›</span></div>
+
+<h2>2 · Voy en camino</h2>
+<p class=exp>Pulsa una pestaña: se enciende <b>al instante</b>, no cuando contesta el servidor. Y la anterior se apaga, para que nunca haya dos encendidas. La tarjeta se queda con un velo mientras tanto.</p>
+<div class="tarjeta tocable" id=t3 onclick="viaje(this)"><span class=past style="background:rgba(107,147,214,.16);color:#6B93D6">📄</span><span><span class=tit>Papeles</span><span class=pie>Pulsa: simula 900 ms de servidor</span></span><span class=flecha>›</span></div>
+<div class=barra>
+  <button class="tab tocable on" onclick="ir(this)"><span>⌂</span>Inicio</button>
+  <button class="tab tocable" onclick="ir(this)"><span>🗂</span>Papeles</button>
+  <button class="tab tocable" onclick="ir(this)"><span>🗓</span>Agenda</button>
+  <button class="tab tocable" onclick="ir(this)"><span>€</span>Cuentas</button>
+  <button class="tab tocable" onclick="ir(this)"><span>☕</span>Día a día</button>
+</div>
+<p class=mini>Cada toque simula 900 ms de espera del servidor.</p>
+
+<h2>3 · Esto ha cambiado</h2>
+<p class=exp>La confirmación se pinta donde está el dedo: el círculo. El tic entra creciendo, y el tachado y la fila lo acompañan más despacio. Pulsa una línea.</p>
+<div id=lista></div>
+</div>
+
+<script>
+function viaje(el){
+  if(el.querySelector('.en-camino'))return
+  const v=document.createElement('span');v.className='en-camino';v.style.position='absolute';v.style.inset=0;v.style.borderRadius='20px';v.style.pointerEvents='none'
+  el.appendChild(v);setTimeout(()=>v.remove(),900)
+}
+function ir(b){
+  const tabs=[...b.parentNode.children]
+  const antes=tabs.find(t=>t.classList.contains('on'))
+  tabs.forEach(t=>t.classList.remove('on'));b.classList.add('on')
+  clearTimeout(b._t)
+  b._t=setTimeout(()=>{},900)
+}
+const cosas=['Pan','Leche','Huevos','Detergente','Tomates']
+const L=document.getElementById('lista')
+cosas.forEach(c=>{
+  const b=document.createElement('button');b.className='li llega tocable'
+  b.innerHTML='<span class="circ"></span><span class="que tachable">'+c+'</span>'
+  b.onclick=()=>{
+    const on=b.classList.toggle('on')
+    const circ=b.querySelector('.circ'),que=b.querySelector('.que')
+    circ.classList.toggle('casilla',true);circ.classList.toggle('on',on)
+    que.classList.toggle('tachable-puesto',on);que.classList.toggle('on',on)
+    circ.innerHTML = on ? '<span class="tic" style="display:flex">✓</span>' : ''
+  }
+  L.appendChild(b)
+})
+</script>

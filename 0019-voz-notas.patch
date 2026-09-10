@@ -1,0 +1,332 @@
+From 1e643b90af7c31c0c2f6b4d1a9919883a4fb120e Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Tue, 8 Sep 2026 10:46:00 +0000
+Subject: [PATCH] La voz sabe dejar notas. Y dice lo que sabe hacer
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Faltaba entera: «deja una nota», «ponle una nota a Julia» y cualquier
+frase parecida caía en el saco de los recordatorios y acababa como una
+tarea sin fecha en la Agenda. La novena acción, `nota`.
+
+─────────────────────────────────────────────────────────────
+LA DIFERENCIA CON UN RECORDATORIO ES LA FECHA
+
+Y es la regla que más importa de todo esto, así que está escrita para
+el modelo con esas palabras:
+
+  Una NOTA se sabe y no caduca — dónde está una llave, el número del
+  fontanero, que los papeles están en la mesa. No se «hace».
+
+  Un RECORDATORIO hay que HACERLO y tiene cuándo.
+
+Si la frase lleva día u hora es recordatorio AUNQUE digan «nota»; si
+no lleva ninguno es nota AUNQUE digan «recuérdame». Y el error se
+inclina a propósito hacia el recordatorio: confundirse hacia ahí no
+rompe nada, mientras que guardar como nota sin fecha algo que había
+que hacer el martes no avisa a nadie y se descubre el miércoles.
+
+─────────────────────────────────────────────────────────────
+SIN PERSONA, LA NOTA ES DE LA CASA
+
+Al revés que las tareas, y a propósito: una tarea sin dueño no la hace
+nadie, pero una nota es el corcho de la cocina. Lo normal es dejarla
+para todos; ponérsela a uno mismo es la excepción, y se dice.
+
+─────────────────────────────────────────────────────────────
+EN EL RESPALDO, ENTRE EL DINERO Y LA COMPRA
+
+Después del dinero: «apunta un gasto de 40 y déjame nota» tiene que
+seguir siendo un gasto — el importe es lo que no se puede perder.
+Antes de la compra: «déjame nota de que hay que comprar pilas» es una
+nota, no un artículo.
+
+Y las palabras son largas —«una nota», «en el corcho»— nunca «nota»
+suelta: esa aparece dentro de cualquier tarea («con una nota que
+diga…») y se llevaría por delante media docena de recordatorios.
+
+─────────────────────────────────────────────────────────────
+Y LA PANTALLA DICE QUE SE PUEDE
+
+Dos ejemplos nuevos donde se pulsa para hablar: dejar una nota y
+apuntar la compra. Son las dos que nadie adivina que existen — y una
+función que no se descubre es una función que no está.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/api/voz/route.ts  | 25 +++++++++++++++
+ app/hablar/grabar.tsx | 75 +++++++++++++++++++++++++++++++++++++------
+ lib/entender-voz.ts   | 25 +++++++++++++++
+ lib/voz.ts            | 38 ++++++++++++++++++++--
+ 4 files changed, 151 insertions(+), 12 deletions(-)
+
+diff --git a/app/api/voz/route.ts b/app/api/voz/route.ts
+index 2f97e27..b5841b7 100644
+--- a/app/api/voz/route.ts
++++ b/app/api/voz/route.ts
+@@ -274,6 +274,31 @@ export async function POST(peticion: NextRequest) {
+ 
+     /* La compra no necesita resolver nada aquí: no hay persona a la
+        que asignarla ni categoría que buscar. Va tal cual a confirmar. */
++    /*
++      ── Una nota para el corcho ──────────────────────────────
++
++      Aquí solo se resuelve A QUIÉN. La nota se guarda desde la
++      pantalla, después de que la persona la vea escrita — igual que
++      las tareas y por la misma razón: una voz mal oída no escribe en
++      la casa sin que nadie lo lea antes.
++
++      Sin persona dicha, la nota es PARA LA CASA y no para quien
++      habla. Es al revés que en las tareas, y a propósito: una tarea
++      sin dueño no la hace nadie, pero una nota es el corcho de la
++      cocina — lo normal es dejarla puesta para todos, y ponérsela a
++      uno mismo es la excepción que se dice en voz alta.
++    */
++    if (oido.accion === 'nota') {
++      return NextResponse.json({
++        ...oido,
++        para_id: paraId ?? null,
++        para_nombre:
++          paraId == null
++            ? 'La casa'
++            : ((perfiles ?? []).find((p) => p.id === paraId)?.nombre ?? 'La casa'),
++      })
++    }
++
+     if (oido.accion === 'compra') {
+       /* La sección que se haya dicho, comprobada contra las que esta
+          familia tiene de verdad: el modelo puede devolver cualquier
+diff --git a/app/hablar/grabar.tsx b/app/hablar/grabar.tsx
+index ce14fa1..b45177a 100644
+--- a/app/hablar/grabar.tsx
++++ b/app/hablar/grabar.tsx
+@@ -26,7 +26,7 @@ type Oido = {
+   tareas: TareaOida[]
+   accion:
+     | 'recordatorio' | 'gasto' | 'ingreso' | 'buscar'
+-    | 'consulta' | 'cambiar' | 'borrar' | 'compra' | 'nada'
++    | 'consulta' | 'cambiar' | 'borrar' | 'compra' | 'nota' | 'nada'
+   papel_id?: string | null
+   ir_a?: string | null
+   compra?: { que: string; cantidad: string | null }[]
+@@ -460,6 +460,28 @@ export default function Grabar({
+         return
+       }
+ 
++      /*
++        LA NOTA. Se guarda con el texto que se ve en pantalla, no con
++        el que se oyó: si la persona lo ha corregido antes de dar a
++        guardar, manda lo corregido.
++      */
++      if (oido.accion === 'nota') {
++        const r = await fetch('/api/notas', {
++          method: 'POST',
++          headers: { 'Content-Type': 'application/json' },
++          body: JSON.stringify({
++            texto: (oido.titulo ?? '').trim(),
++            para: oido.para_id ?? null,
++          }),
++        })
++        const d = await r.json().catch(() => ({}))
++        if (!r.ok || d?.bien !== true) throw new Error(d?.error ?? 'No se ha podido poner la nota.')
++
++        decir('Nota puesta.')
++        setEstado('hecho')
++        return
++      }
++
+       if (oido.accion === 'recordatorio') {
+         /* Todas de una vez. El servidor las mete juntas: o entran
+            todas o no entra ninguna. Guardar dos de tres y no decirlo
+@@ -528,6 +550,8 @@ export default function Grabar({
+       ? (oido.compra?.length ?? 0) > 0
+       : oido?.accion === 'borrar' || oido?.accion === 'cambiar'
+       ? Boolean(elegida)
++      : oido?.accion === 'nota'
++        ? Boolean(oido.titulo?.trim())
+       : oido?.accion === 'recordatorio'
+         ? (oido.tareas?.length ?? 0) > 0
+         : (oido?.accion === 'gasto' || oido?.accion === 'ingreso') &&
+@@ -708,6 +732,19 @@ export default function Grabar({
+                           : 'Recuérdame mañana que llame al médico'
+                       }
+                     />
++                    {/* La nota y la compra son las dos que nadie
++                        adivina que existen. Y una función que no se
++                        descubre es una función que no está: quien no
++                        la ve aquí no la va a probar por su cuenta. */}
++                    <Ejemplo
++                      que="Dejar nota"
++                      frase={
++                        otro
++                          ? `Ponle una nota a ${otro}: los papeles están en la mesa`
++                          : 'Deja una nota: la llave del garaje está en el cajón'
++                      }
++                    />
++                    <Ejemplo que="La compra" frase="Apunta leche, pan y huevos en la compra" />
+                     <Ejemplo que="Gastar" frase="Un gasto de 85 euros en la ferretería" />
+                     <Ejemplo que="Preguntar" frase="¿Cuánto hemos gastado este trimestre en luz?" />
+                     <Ejemplo
+@@ -985,16 +1022,21 @@ export default function Grabar({
+               </>
+             )}
+ 
+-            {(oido.accion === 'recordatorio' || oido.accion === 'gasto' || oido.accion === 'ingreso') && (
++            {(oido.accion === 'recordatorio' ||
++              oido.accion === 'gasto' ||
++              oido.accion === 'ingreso' ||
++              oido.accion === 'nota') && (
+               <>
+                 <h1 className="mt-10 text-[26px] font-extrabold leading-tight tracking-tight text-white">
+-                  {oido.accion === 'recordatorio' && (oido.tareas?.length ?? 0) > 1
+-                    ? `${oido.tareas.length} cosas para apuntar`
+-                    : oido.accion === 'recordatorio'
+-                      ? 'Esto voy a apuntar'
+-                      : oido.accion === 'gasto'
+-                        ? 'Este gasto voy a apuntar'
+-                        : 'Este ingreso voy a apuntar'}
++                  {oido.accion === 'nota'
++                    ? 'Esta nota voy a poner'
++                    : oido.accion === 'recordatorio' && (oido.tareas?.length ?? 0) > 1
++                      ? `${oido.tareas.length} cosas para apuntar`
++                      : oido.accion === 'recordatorio'
++                        ? 'Esto voy a apuntar'
++                        : oido.accion === 'gasto'
++                          ? 'Este gasto voy a apuntar'
++                          : 'Este ingreso voy a apuntar'}
+                 </h1>
+ 
+                 {oido.confianza === 'baja' && (
+@@ -1006,6 +1048,21 @@ export default function Grabar({
+                 {/* Una tarjeta por tarea. Cuando son varias, cada una
+                     con su número: así se ve de un vistazo que no se ha
+                     perdido ninguna de las que se dijeron. */}
++                {/* LA NOTA, CON SU TEXTO ENTERO Y PARA QUIÉN.
++
++                    Sin recortar: una nota es justamente el texto, y
++                    enseñar la mitad obliga a guardarla a ciegas para
++                    poder leerla después. */}
++                {oido.accion === 'nota' && (
++                  <div className="mt-6 divide-y divide-white/10 rounded-[22px] bg-white/[.07] px-5">
++                    <Dato etiqueta="Nota" valor={oido.titulo} />
++                    <Dato
++                      etiqueta="Para quién"
++                      valor={oido.para_nombre ?? 'La casa'}
++                    />
++                  </div>
++                )}
++
+                 {oido.accion === 'recordatorio' &&
+                   (oido.tareas ?? []).map((t, i) => (
+                     <div
+diff --git a/lib/entender-voz.ts b/lib/entender-voz.ts
+index 4c91c61..78be09a 100644
+--- a/lib/entender-voz.ts
++++ b/lib/entender-voz.ts
+@@ -108,6 +108,31 @@ const SEÑALES: { accion: Entendido['accion']; palabras: string[] }[] = [
+     accion: 'gasto',
+     palabras: ['un gasto', 'gasto de', 'hemos pagado', 'he pagado', 'he gastado', 'hemos gastado', 'me ha costado', 'nos ha costado'],
+   },
++  /*
++    LA NOTA, ANTES QUE LA COMPRA Y DESPUÉS DEL DINERO.
++
++    Después del dinero porque "apunta un gasto de 40 y déjame nota"
++    tiene que seguir siendo un gasto: lo que no se puede perder es el
++    importe.
++
++    Antes que la compra porque "déjame una nota de que hay que comprar
++    pilas" es una nota, no un artículo: no se está haciendo la lista,
++    se está apuntando algo que recordar.
++
++    Las palabras son largas a propósito —"una nota", "en el corcho"—
++    y nunca la palabra "nota" suelta: eso aparece dentro de cualquier
++    tarea ("con una nota que diga...") y se llevaría por delante media
++    docena de recordatorios.
++  */
++  {
++    accion: 'nota',
++    palabras: [
++      'una nota', 'la nota', 'nota para', 'notale', 'apunta en el corcho',
++      'en el corcho', 'en el tablon', 'al tablon', 'deja dicho',
++      'dejale dicho', 'deja escrito', 'dejale escrito', 'que quede escrito',
++      'para que no se me olvide donde', 'apunta donde',
++    ],
++  },
+   /*
+     LA COMPRA VA LA ÚLTIMA, Y ESO SE APRENDIÓ PROBÁNDOLO.
+ 
+diff --git a/lib/voz.ts b/lib/voz.ts
+index 2bf681a..48df1c0 100644
+--- a/lib/voz.ts
++++ b/lib/voz.ts
+@@ -24,7 +24,7 @@ export type Entendido = {
+   tareas: Tarea[]
+   accion:
+     | 'recordatorio' | 'gasto' | 'ingreso' | 'buscar'
+-    | 'consulta' | 'cambiar' | 'borrar' | 'compra' | 'nada'
++    | 'consulta' | 'cambiar' | 'borrar' | 'compra' | 'nota' | 'nada'
+   /* Lo que hay que comprar. Una entrada por cosa: "apunta leche, pan
+      y huevos" son TRES, no una con comas. */
+   compra: { que: string; cantidad: string | null }[]
+@@ -78,7 +78,7 @@ const ESQUEMA = {
+       type: 'string',
+       enum: [
+         'recordatorio', 'gasto', 'ingreso', 'buscar',
+-        'consulta', 'cambiar', 'borrar', 'compra', 'nada',
++        'consulta', 'cambiar', 'borrar', 'compra', 'nota', 'nada',
+       ],
+     },
+     compra_seccion: {
+@@ -193,7 +193,7 @@ function instrucciones(opciones: {
+ 
+ HOY ES ${opciones.diaSemana} ${opciones.hoy}. Úsalo para resolver "mañana", "el martes", "este trimestre".
+ 
+-LAS OCHO COSAS QUE PUEDEN PEDIR:
++LAS NUEVE COSAS QUE PUEDEN PEDIR:
+ 
+ 1. "recordatorio" — apuntar algo que hay que hacer o recordar.
+ 
+@@ -399,6 +399,38 @@ LAS OCHO COSAS QUE PUEDEN PEDIR:
+ 
+    UNA ENTRADA POR CADA COSA. "Leche, pan y huevos" son tres, no una.
+ 
++9. "nota" — dejar algo escrito en el corcho.
++
++   El texto va en "titulo" y la persona, si la dicen, en "para".
++
++   "Deja una nota: la llave del garaje está en el cajón de la entrada"
++   → accion: "nota", titulo: "La llave del garaje está en el cajón de
++     la entrada"
++   "Ponle una nota a Conchita: he dejado los papeles en la mesa"
++   → accion: "nota", titulo: "He dejado los papeles en la mesa",
++     para: "Conchita"
++   "Apúntame una nota para acordarme del wifi nuevo"
++   → accion: "nota", titulo: "El wifi nuevo", para: quien habla
++
++   LA DIFERENCIA CON "recordatorio" ES LA FECHA, Y ES LA QUE MÁS
++   IMPORTA DE TODO ESTO.
++
++   Una NOTA es algo que se sabe y no caduca: dónde está una llave, el
++   número del fontanero, que los papeles están encima de la mesa. No
++   se "hace" y no tiene día.
++
++   Un RECORDATORIO es algo que hay que HACER, y tiene cuándo: recoger
++   la medicación a las seis, llamar al médico el martes.
++
++   Si la frase lleva un día o una hora —hoy, mañana, el jueves, a las
++   seis— es un RECORDATORIO aunque digan la palabra "nota". Y si no
++   lleva ninguna y solo cuentan algo que hay que tener presente, es
++   una NOTA aunque digan "recuérdame".
++
++   Que se equivoque hacia el recordatorio no rompe nada; que apunte
++   como nota sin fecha algo que había que hacer el martes, sí: no
++   avisa a nadie y se descubre el miércoles.
++
+    SE DICTA DE CORRIDO, SIN COMAS. Nadie dice "coma" al hablar, y el
+    teléfono no las pone. Vas a recibir cosas como:
+ 
+-- 
+2.43.0
+

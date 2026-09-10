@@ -1,0 +1,2113 @@
+From 15a467ff59edb79019e6444cafb32afe8c3b633e Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 21:44:25 +0000
+Subject: [PATCH] Un color por persona, el asesor con voz, y actividades que se
+ pueden quitar
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+TRES COSAS.
+
+1 · CADA PERSONA, SU COLOR
+
+En una casa con cuatro dentro, todo lo que hacen se mezcla en las
+mismas listas y saber QUIÉN dejó cada cosa obliga a leerse la firma de
+cada línea. Un color lo contesta de reojo — es lo que hace cualquier
+calendario compartido, y funciona porque el color se reconoce y el
+nombre hay que leerlo.
+
+Sale del papel (la ayuda de un color, el asesor de otro) pero se
+guarda POR PERSONA: dos asesores del mismo color no se distinguen
+entre sí, que es justo lo que veníamos a resolver. Se cambia desde la
+ficha de cada uno, y los que ya tiene otro no se ofrecen.
+
+Se ve en: la lista de gente, el corcho (una barra a la izquierda con
+el color de quien la escribió) y la pantalla del asesor.
+
+2 · EL ASESOR PUEDE DEJARTE COSAS
+
+Era `papel = 'lector'`: entraba, miraba y ya está. Y eso es la mitad
+de la relación — un gestor te dice que falta la factura de septiembre,
+que el día 20 hay un pago. Sin sitio donde dejarlo, eso acaba en un
+WhatsApp que se pierde.
+
+Ahora puede dejar avisos, poner tareas y ver el calendario. NO puede
+subir papeles, apuntar gastos ni tocar las cuentas: por eso no se toca
+`puedo_escribir()` para dejarle pasar —eso le abriría los documentos—
+sino que se añade `puedo_en_agenda()` aparte. Y sus tareas solo las
+edita y borra él: entre familia «cualquiera toca cualquier cosa» está
+bien y se arregla hablando; con alguien de fuera, no.
+
+Su Inicio tenía CERO tarjetas, que no se lee como «lo tuyo está
+abajo» sino como «esto está roto». Ahora tiene la suya, y la familia
+tiene la de él con lo que le está esperando.
+
+- app/asesor — la misma pantalla por los dos lados. Sin tabla nueva:
+  son las notas y los recordatorios de siempre, filtrados por quién
+  los dejó.
+
+3 · LAS ACTIVIDADES SE PUEDEN QUITAR
+
+Faltaba y daba rabia: te equivocas al crearla y se queda ahí para
+siempre ocupando una pestaña. Y hace dos cosas distintas según lo que
+tenga dentro, dicho ANTES de pulsar y con el número delante:
+
+  vacía        se borra de verdad (la equivocación de hace dos minutos)
+  con apuntes  se retira — borrarla agujerearía las cuentas de 2025
+
+DE PASO, UN FALLO DEL SQL 31: `puedo_escribir()` miraba «la primera
+fila de miembros por fecha», sin mirar en qué casa. Desde el sql/34
+eso está mal — quien es asesor en casa de sus padres y dueño de la
+suya recibía el permiso de la que entró primero.
+
+Falta ejecutar sql/39-color-y-asesor.sql.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/ajustes/gente.tsx               |  86 +++++-
+ app/ajustes/page.tsx                |   8 +-
+ app/api/actividades/route.ts        | 146 ++++++++++
+ app/api/miembros/route.ts           |  48 ++-
+ app/asesor/hilo.tsx                 | 243 ++++++++++++++++
+ app/asesor/page.tsx                 | 232 +++++++++++++++
+ app/barra.tsx                       |  17 +-
+ app/notas/notas.tsx                 |  27 +-
+ app/notas/page.tsx                  |  27 +-
+ app/page.tsx                        | 106 +++++++
+ app/seccion/[id]/ajustes/page.tsx   |  42 +++
+ app/seccion/[id]/ajustes/quitar.tsx | 155 ++++++++++
+ lib/gente.ts                        | 147 ++++++++++
+ lib/roles.ts                        |  24 +-
+ sql/39-color-y-asesor.sql           | 434 ++++++++++++++++++++++++++++
+ 15 files changed, 1704 insertions(+), 38 deletions(-)
+ create mode 100644 app/asesor/hilo.tsx
+ create mode 100644 app/asesor/page.tsx
+ create mode 100644 app/seccion/[id]/ajustes/quitar.tsx
+ create mode 100644 lib/gente.ts
+ create mode 100644 sql/39-color-y-asesor.sql
+
+diff --git a/app/ajustes/gente.tsx b/app/ajustes/gente.tsx
+index c1fc49d..bb11aab 100644
+--- a/app/ajustes/gente.tsx
++++ b/app/ajustes/gente.tsx
+@@ -6,6 +6,7 @@ import { Ico } from '../iconos'
+ import QuienVe, { type CarpetaPermiso } from './quien-ve'
+ import Semana from './semana'
+ import { ROLES, nombreDelRol, type Rol } from '@/lib/roles'
++import { COLORES } from '@/lib/gente'
+ import type { Rutina } from '@/lib/rutinas'
+ 
+ /*
+@@ -38,6 +39,8 @@ export type Vecino = {
+   rol: string | null
+   /** Último día con acceso, si se le puso fecha de fin. */
+   hasta: string | null
++  /** El suyo en esta casa. Con él se le reconoce en la agenda y el corcho. */
++  color: string
+   /** ¿Ve toda la casa, o solo lo que se le ha concedido? */
+   veTodo: boolean
+   escribeTodo: boolean
+@@ -166,6 +169,40 @@ export default function Gente({
+     router.refresh()
+   }
+ 
++  /* Aparte de cambiar el papel a propósito: cambiar un color no puede
++     obligar a volver a repartirle todos los permisos. */
++  async function cambiarColor(id: string, color: string) {
++    setFallo(null)
++    setOcupado(true)
++
++    const r = await fetch('/api/miembros', {
++      method: 'PATCH',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ id, color }),
++    })
++
++    const d = (await r.json().catch(() => null)) as {
++      bien?: boolean
++      error?: string
++      detalle?: string
++    } | null
++
++    setOcupado(false)
++
++    if (!r.ok || d?.bien !== true) {
++      setFallo(
++        d
++          ? [d.error ?? 'No se ha podido cambiar el color.', d.detalle]
++              .filter(Boolean)
++              .join(' · ')
++          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
++      )
++      return
++    }
++
++    router.refresh()
++  }
++
+   async function sacar(v: Vecino) {
+     if (
+       !window.confirm(
+@@ -199,8 +236,11 @@ export default function Gente({
+             className="flex items-center gap-3 rounded-[20px] border border-borde bg-superficie px-4 py-3.5"
+           >
+             <span
++              /* Su color, no uno según si manda o no. Es el mismo con
++                 el que sale en la agenda y en el corcho: verlo aquí es
++                 lo que enseña a leerlo allí. */
+               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
+-              style={{ background: v.manda ? '#14B8A6' : '#3B82F6' }}
++              style={{ background: v.color }}
+             >
+               {v.nombre.charAt(0).toUpperCase()}
+             </span>
+@@ -309,10 +349,52 @@ export default function Gente({
+                   />
+                 ))}
+               </div>
++              {/*
++                ── Y DE QUÉ COLOR ──
++
++                Va aquí, debajo del papel, porque el color SALE del
++                papel: se elige «Asesor» y ya viene con el suyo. Esto
++                es para el caso en que haya dos del mismo papel, o
++                simplemente porque el naranja le pega más.
++
++                Los que ya tiene otro no se ofrecen: dos personas del
++                mismo color en la agenda es exactamente lo que el
++                color venía a evitar.
++              */}
++              <p className="mt-5 text-[16px] font-extrabold leading-snug">Su color</p>
++              <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
++                Con el que se le reconoce en la agenda y en el corcho.
++              </p>
++              <div className="mt-2.5 flex flex-wrap gap-2">
++                {COLORES.filter(
++                  (c) => c === v.color || !gente.some((g) => g.id !== v.id && g.color === c)
++                ).map((c) => (
++                  <button
++                    key={c}
++                    onClick={() => cambiarColor(v.id, c)}
++                    disabled={ocupado}
++                    aria-pressed={v.color?.toUpperCase() === c.toUpperCase()}
++                    aria-label={`Ponerle el color ${c}`}
++                    className="flex h-11 w-11 items-center justify-center rounded-full text-white disabled:opacity-50"
++                    style={{
++                      background: c,
++                      boxShadow:
++                        v.color?.toUpperCase() === c.toUpperCase()
++                          ? `0 0 0 3px var(--t-superficie), 0 0 0 5px ${c}`
++                          : undefined,
++                    }}
++                  >
++                    {v.color?.toUpperCase() === c.toUpperCase() && (
++                      <Ico nombre="check" tam={19} grosor={2.8} />
++                    )}
++                  </button>
++                ))}
++              </div>
++
+               <button
+                 onClick={() => setCambiando(null)}
+                 disabled={ocupado}
+-                className="mt-3 h-[52px] w-full rounded-[14px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
++                className="mt-4 h-[52px] w-full rounded-[14px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
+               >
+                 Dejarlo como está
+               </button>
+diff --git a/app/ajustes/page.tsx b/app/ajustes/page.tsx
+index 58988b9..cbfb2e0 100644
+--- a/app/ajustes/page.tsx
++++ b/app/ajustes/page.tsx
+@@ -11,6 +11,7 @@ import SelectorTema from '../tema'
+ import { leerPerfil } from '@/lib/perfil'
+ import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
+ import { planDeLaCasa, type Rutina } from '@/lib/rutinas'
++import { colorDeRol } from '@/lib/gente'
+ import TuPerfil from './foto'
+ import NuevaActividad from './nueva-actividad'
+ import Gente, { type Vecino } from './gente'
+@@ -133,6 +134,7 @@ export default async function Ajustes() {
+       aceptado_en?: string | null
+       rol?: string | null
+       acceso_hasta?: string | null
++      color?: string | null
+     }[] = []
+ 
+     /*
+@@ -146,7 +148,7 @@ export default async function Ajustes() {
+     const conPermisos = hogarId
+       ? await supabase
+           .from('miembros')
+-          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en, rol, acceso_hasta')
++          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en, rol, acceso_hasta, color')
+           .eq('hogar_id', hogarId)
+           .order('unido_en')
+       : { data: [], error: null }
+@@ -210,6 +212,10 @@ export default async function Ajustes() {
+           pendiente: m.aceptado_en === null,
+           rol: m.rol ?? null,
+           hasta: m.acceso_hasta ?? null,
++          /* Sin la columna del SQL 39, el de su papel. Se pierde poder
++             distinguir a dos personas del mismo papel, pero la lista
++             sale con color igual. */
++          color: m.color ?? colorDeRol(m.rol),
+           veTodo: m.ve_todo !== false,
+           escribeTodo: m.escribe_todo !== false,
+           carpetas: raices.map((r) => {
+diff --git a/app/api/actividades/route.ts b/app/api/actividades/route.ts
+index 4535058..31614cf 100644
+--- a/app/api/actividades/route.ts
++++ b/app/api/actividades/route.ts
+@@ -356,6 +356,152 @@ export async function POST(peticion: NextRequest) {
+   return NextResponse.json({ bien: true, id: raiz })
+ }
+ 
++/*
++  ═══════════════════════════════════════════════════════════════
++  QUITAR UNA ACTIVIDAD
++  ═══════════════════════════════════════════════════════════════
++
++  Faltaba, y era de las cosas que más rabia dan: te equivocas al
++  crearla —el nombre mal, el tipo que no era— y se queda ahí para
++  siempre, ocupando una pestaña abajo.
++
++  ─────────────────────────────────────────────────────────────
++  Y HACE DOS COSAS DISTINTAS SEGÚN LO QUE TENGA DENTRO
++
++  · **Vacía** → se borra de verdad. Es el caso de la equivocación de
++    hace dos minutos, y ahí «retirarla» sería dejar basura escondida
++    que dentro de un año nadie sabe qué es. Con ella se van sus
++    partidas y sus partes, que tampoco tienen nada.
++
++  · **Con apuntes o papeles** → se retira. Borrarla de verdad
++    agujerearía las cuentas de años anteriores: el total de 2025 dejaría
++    de cuadrar y nadie entendería por qué. Se esconde, y volver a
++    crearla con el mismo nombre la devuelve entera.
++
++  La diferencia se le DICE a quien pulsa, antes de pulsar. Un botón
++  que unas veces borra y otras no, sin avisar, es un botón en el que
++  no se puede confiar.
++*/
++export async function DELETE(peticion: NextRequest) {
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) {
++    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
++  }
++
++  const id = new URL(peticion.url).searchParams.get('id') ?? ''
++  if (!id) return NextResponse.json({ error: 'Falta la actividad.' }, { status: 400 })
++
++  /* Que sea una actividad de verdad y no una partida: `padre_id` nulo
++     y con cuentas. Sin esto, un identificador escrito a mano borraría
++     la carpeta Salud desde esta misma ruta. */
++  const { data: suya } = await supabase
++    .from('categorias')
++    .select('id, nombre, padre_id, lleva_cuentas')
++    .eq('id', id)
++    .is('padre_id', null)
++    .maybeSingle()
++
++  if (!suya) {
++    return NextResponse.json({ error: 'Esa actividad no existe.' }, { status: 404 })
++  }
++
++  if (suya.lleva_cuentas !== true) {
++    return NextResponse.json(
++      { error: 'Eso es una carpeta, no una actividad. Se apaga desde Ajustes.' },
++      { status: 400 }
++    )
++  }
++
++  /* Todo lo que cuelga de ella: los dos grupos y sus partidas. Se
++     necesita para contar, porque los apuntes no cuelgan de la raíz
++     sino de las partidas. */
++  const dentro = [id]
++  try {
++    const { data: todas } = await supabase.from('categorias').select('id, padre_id')
++    const hijasDe = new Map<string, string[]>()
++    for (const c of todas ?? []) {
++      const p = (c.padre_id as string | null) ?? ''
++      if (!p) continue
++      hijasDe.set(p, [...(hijasDe.get(p) ?? []), c.id as string])
++    }
++    /* Anchura y con tope: un ciclo en los datos —una categoría que
++       fuera hija de sí misma— colgaría el servidor para siempre. */
++    for (let i = 0; i < dentro.length && dentro.length < 400; i++) {
++      for (const h of hijasDe.get(dentro[i]) ?? []) {
++        if (!dentro.includes(h)) dentro.push(h)
++      }
++    }
++  } catch {
++    /* Si esto falla se sigue con la raíz sola: el recuento saldrá bajo
++       y lo peor que puede pasar es que el borrado lo impida la clave
++       ajena de los documentos. Nunca al revés. */
++  }
++
++  const [{ count: apuntes }, { count: papeles }] = await Promise.all([
++    supabase
++      .from('movimientos')
++      .select('id', { count: 'exact', head: true })
++      .in('categoria_id', dentro),
++    supabase
++      .from('documentos')
++      .select('id', { count: 'exact', head: true })
++      .in('categoria_id', dentro)
++      .is('eliminado_en', null),
++  ])
++
++  const cuantos = (apuntes ?? 0) + (papeles ?? 0)
++
++  // ── Con cosas dentro: se retira ──────────────────────────
++  if (cuantos > 0) {
++    const { data, error } = await supabase
++      .from('categorias')
++      .update({ activa: false })
++      .eq('id', id)
++      .select('id')
++
++    if (error || !data || data.length === 0) {
++      return NextResponse.json(
++        { error: 'No se ha podido retirar.', detalle: error?.message },
++        { status: error ? 500 : 409 }
++      )
++    }
++
++    return NextResponse.json({
++      bien: true,
++      retirada: true,
++      apuntes: apuntes ?? 0,
++      papeles: papeles ?? 0,
++    })
++  }
++
++  // ── Vacía: se va de verdad ───────────────────────────────
++  /* Las hijas se van solas: `padre_id` tiene `on delete cascade`, y
++     `unidades.seccion_id` también. Borrarlas a mano antes sería
++     repetir a medias lo que la base de datos ya hace entero. */
++  const { data, error } = await supabase
++    .from('categorias')
++    .delete()
++    .eq('id', id)
++    .is('padre_id', null)
++    .select('id')
++
++  if (error || !data || data.length === 0) {
++    console.error('[HUBI] No se ha podido borrar la actividad:', error)
++    return NextResponse.json(
++      {
++        error: 'No se ha podido borrar.',
++        detalle:
++          error?.message ??
++          'Puede que tenga algo enganchado. Prueba a retirarla desde Ajustes.',
++      },
++      { status: error ? 500 : 409 }
++    )
++  }
++
++  return NextResponse.json({ bien: true, retirada: false })
++}
++
+ // ── Cambiar cómo se lleva ────────────────────────────────────
+ export async function PATCH(peticion: NextRequest) {
+   const supabase = await clienteSesion()
+diff --git a/app/api/miembros/route.ts b/app/api/miembros/route.ts
+index 8ce8257..210a055 100644
+--- a/app/api/miembros/route.ts
++++ b/app/api/miembros/route.ts
+@@ -414,9 +414,14 @@ export async function PATCH(peticion: NextRequest) {
+     )
+   }
+ 
+-  let cuerpo: { id?: string; rol?: string; hasta?: string | null }
++  let cuerpo: { id?: string; rol?: string; hasta?: string | null; color?: string }
+   try {
+-    cuerpo = (await peticion.json()) as { id?: string; rol?: string; hasta?: string | null }
++    cuerpo = (await peticion.json()) as {
++      id?: string
++      rol?: string
++      hasta?: string | null
++      color?: string
++    }
+   } catch {
+     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
+   }
+@@ -424,7 +429,10 @@ export async function PATCH(peticion: NextRequest) {
+   const id = String(cuerpo.id ?? '')
+   if (!id) return NextResponse.json({ error: 'Falta la persona.' }, { status: 400 })
+ 
+-  if (id === user.id) {
++  /* Solo para el ROL. Antes cortaba la petición entera, y con eso
++     quien creó la casa tampoco podía cambiarse su propio color —que
++     no arrastra ningún permiso y es tan suyo como el de los demás. */
++  if (id === user.id && cuerpo.rol !== undefined) {
+     return NextResponse.json(
+       { error: 'No puedes cambiarte el rol a ti mismo: el Drive de la casa es tuyo.' },
+       { status: 400 }
+@@ -451,6 +459,40 @@ export async function PATCH(peticion: NextRequest) {
+     }
+   }
+ 
++  /*
++    ── Y de qué color es ──
++
++    Va por su propia función y no metiéndolo en `poner_rol`: cambiar
++    un color no puede obligar a volver a repartirle todos los permisos
++    a esa persona. Son dos cosas distintas y ésta no arrastra nada.
++
++    La comprobación de que es un color de verdad se hace también en el
++    SQL. Aquí por educación —para dar un mensaje que se entienda— y
++    allí porque es donde tiene que estar: esto acaba dentro de un
++    `style` en la pantalla.
++  */
++  if (cuerpo.color !== undefined) {
++    if (!/^#[0-9A-Fa-f]{6}$/.test(String(cuerpo.color))) {
++      return NextResponse.json({ error: 'Eso no es un color.' }, { status: 400 })
++    }
++
++    const { error } = await supabase.rpc('poner_color', {
++      a_quien: id,
++      el_color: String(cuerpo.color),
++    })
++
++    if (error) {
++      console.error('[HUBI] No se ha podido cambiar el color:', error)
++      return NextResponse.json(
++        {
++          error: 'No se ha podido cambiar el color.',
++          detalle: error.message ?? 'Puede que falte ejecutar el SQL 39.',
++        },
++        { status: 500 }
++      )
++    }
++  }
++
+   // ── Y hasta cuándo entra ──────────────────────────────────
+   /*
+     `undefined` es «no lo toques»; `null` es «quítale la fecha». Son
+diff --git a/app/asesor/hilo.tsx b/app/asesor/hilo.tsx
+new file mode 100644
+index 0000000..a76f6ae
+--- /dev/null
++++ b/app/asesor/hilo.tsx
+@@ -0,0 +1,243 @@
++'use client'
++
++import { useState } from 'react'
++import Link from 'next/link'
++import { useRouter } from 'next/navigation'
++import { Ico } from '../iconos'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LA CONVERSACIÓN CON EL ASESOR
++  ═══════════════════════════════════════════════════════════════
++
++  ─────────────────────────────────────────────────────────────
++  NO ES UN CHAT, Y SE NOTA A PROPÓSITO
++
++  Un chat pide contestar. Esto no: son avisos que se dejan y se leen
++  cuando toca, como el punto 16 decidió para el tablón. Por eso no hay
++  burbujas apretadas ni «escribiendo…»: son tarjetas grandes, con la
++  fecha en palabras y sitio de sobra.
++
++  Lo suyo lleva SU color y una barra a la izquierda. Lo tuyo va en
++  gris, sin barra. Es todo lo que hace falta para saber de quién es
++  cada cosa sin leer ninguna firma.
++
++  ─────────────────────────────────────────────────────────────
++  LAS TAREAS SE VEN, PERO NO SE TOCAN DESDE AQUÍ
++
++  Una tarea que él te pone sale en esta lista para que te enteres, y
++  se abre en la Agenda, que es donde vive. Marcarla hecha desde dos
++  sitios distintos es la manera de que un día uno de los dos se quede
++  sin enterar.
++*/
++
++export type Cosa = {
++  clase: 'nota' | 'tarea'
++  id: string
++  texto: string
++  /** La ha dejado él. Si no, la has dejado tú. */
++  suya: boolean
++  cuando: string
++  /** Para ordenar. No se enseña. */
++  orden: string
++  vista: boolean
++  fecha: string | null
++  hecha: boolean
++}
++
++export default function Hilo({
++  cosas,
++  paraQuien,
++  comoSeLlama,
++  color,
++  soyElAsesor,
++}: {
++  cosas: Cosa[]
++  paraQuien: string
++  comoSeLlama: string
++  color: string
++  soyElAsesor: boolean
++}) {
++  const router = useRouter()
++
++  const [texto, setTexto] = useState('')
++  const [ocupado, setOcupado] = useState(false)
++  const [fallo, setFallo] = useState<string | null>(null)
++
++  async function mandar() {
++    const limpio = texto.trim()
++    if (limpio.length < 2) return
++
++    setFallo(null)
++    setOcupado(true)
++
++    const r = await fetch('/api/notas', {
++      method: 'POST',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ texto: limpio, para: paraQuien }),
++    })
++
++    const d = (await r.json().catch(() => null)) as {
++      bien?: boolean
++      error?: string
++      detalle?: string
++    } | null
++
++    setOcupado(false)
++
++    if (!r.ok || d?.bien !== true) {
++      setFallo(
++        d
++          ? [d.error ?? 'No se ha podido enviar.', d.detalle].filter(Boolean).join(' · ')
++          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
++      )
++      return
++    }
++
++    setTexto('')
++    router.refresh()
++  }
++
++  return (
++    <>
++      {/* ── Escribirle ── */}
++      {/*
++        Arriba y abierta, no detrás de un «+». Escribir es lo que se
++        viene a hacer aquí la mitad de las veces, y esconderlo detrás
++        de un botón convierte cinco segundos en tres toques.
++      */}
++      <div className="rounded-[20px] border border-borde bg-superficie px-4 py-4">
++        <label htmlFor="paraEl" className="block text-[17px] font-extrabold leading-snug">
++          {soyElAsesor ? `Dejarles un aviso` : `Escribirle a ${comoSeLlama}`}
++        </label>
++        <textarea
++          id="paraEl"
++          value={texto}
++          onChange={(e) => setTexto(e.target.value)}
++          rows={3}
++          maxLength={600}
++          placeholder={
++            soyElAsesor
++              ? 'Falta la factura de septiembre…'
++              : 'Te he subido las facturas del trimestre…'
++          }
++          className="entrada mt-2.5 min-h-[92px] py-3 leading-snug"
++        />
++        <div className="mt-2.5 flex gap-2">
++          <button
++            onClick={mandar}
++            disabled={ocupado || texto.trim().length < 2}
++            className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
++          >
++            <Ico nombre="check" tam={19} grosor={2.3} />
++            {ocupado ? 'Enviando…' : 'Enviar'}
++          </button>
++          {/* Poner una fecha es otra cosa y vive en la Agenda. Aquí
++              solo el enlace: duplicar el formulario de tareas sería
++              duplicar también sus fallos. */}
++          <Link
++            href="/tablon/nuevo"
++            className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] border border-borde text-[16.5px] font-extrabold text-tinta-suave"
++          >
++            <Ico nombre="calendario" tam={18} grosor={2.3} />
++            Con fecha
++          </Link>
++        </div>
++
++        {fallo && (
++          <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
++            {fallo}
++          </p>
++        )}
++
++        <p className="mt-3 text-[14px] font-semibold leading-snug text-tenue">
++          Esto lo ve toda la casa, como el corcho. No es un mensaje privado.
++        </p>
++      </div>
++
++      {/* ── Lo que os habéis dejado ── */}
++      {cosas.length === 0 ? (
++        <p className="mt-4 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium leading-snug text-tinta-suave">
++          Todavía no hay nada. Lo que {soyElAsesor ? 'les dejes' : `te deje ${comoSeLlama}`} saldrá
++          aquí.
++        </p>
++      ) : (
++        <ul className="mt-4 space-y-2.5">
++          {cosas.map((c) => {
++            const cuerpo = (
++              <>
++                <span className="flex items-center gap-2">
++                  {c.clase === 'tarea' && (
++                    <span
++                      className="flex h-[22px] shrink-0 items-center rounded-full px-2 text-[12.5px] font-extrabold uppercase tracking-wide"
++                      style={{
++                        background: `color-mix(in srgb, ${c.suya ? color : '#64748B'} 18%, transparent)`,
++                        color: c.suya ? color : '#64748B',
++                      }}
++                    >
++                      {c.hecha ? 'Hecho' : 'Tarea'}
++                    </span>
++                  )}
++                  <span className="truncate text-[14px] font-bold text-tenue">{c.cuando}</span>
++                </span>
++                <span className="mt-1 block whitespace-pre-wrap text-[17px] font-semibold leading-snug">
++                  {c.texto}
++                </span>
++                {c.fecha && (
++                  <span className="mt-1 block text-[14.5px] font-bold text-tenue">
++                    Para el {enPalabras(c.fecha)}
++                  </span>
++                )}
++              </>
++            )
++
++            /*
++              Lo suyo con su color y una barra a la izquierda; lo tuyo
++              en gris y sin barra. Es lo único que hace falta para
++              saber de quién es cada cosa sin leer ninguna firma.
++            */
++            const pinta = c.suya
++              ? {
++                  background: `color-mix(in srgb, ${color} 9%, var(--t-superficie))`,
++                  borderColor: `color-mix(in srgb, ${color} 32%, transparent)`,
++                  borderLeft: `4px solid ${color}`,
++                }
++              : {
++                  background: 'var(--t-superficie)',
++                  borderColor: 'var(--t-borde)',
++                }
++
++            return (
++              <li key={`${c.clase}-${c.id}`}>
++                {c.clase === 'tarea' ? (
++                  <Link
++                    href={`/tablon/${c.id}`}
++                    className="block rounded-[20px] border px-4 py-3.5"
++                    style={pinta}
++                  >
++                    {cuerpo}
++                  </Link>
++                ) : (
++                  <div className="rounded-[20px] border px-4 py-3.5" style={pinta}>
++                    {cuerpo}
++                  </div>
++                )}
++              </li>
++            )
++          })}
++        </ul>
++      )}
++    </>
++  )
++}
++
++/** «2026-11-12» → «12 de noviembre». */
++function enPalabras(iso: string): string {
++  const meses = [
++    'enero','febrero','marzo','abril','mayo','junio',
++    'julio','agosto','septiembre','octubre','noviembre','diciembre',
++  ]
++  const [a, m, d] = iso.split('-').map(Number)
++  if (!a || !m || !d) return iso
++  return `${d} de ${meses[m - 1]}`
++}
+diff --git a/app/asesor/page.tsx b/app/asesor/page.tsx
+new file mode 100644
+index 0000000..512a981
+--- /dev/null
++++ b/app/asesor/page.tsx
+@@ -0,0 +1,232 @@
++import { redirect } from 'next/navigation'
++import { clienteSesion } from '@/lib/supabase/sesion'
++import { quien } from '@/lib/supabase/quien'
++import Barra from '../barra'
++import Cabecera from '../cabecera'
++import { Volver } from '../iconos'
++import { miHogar } from '@/lib/hogar'
++import { genteDeLaCasa, elAsesor, type Quien } from '@/lib/gente'
++import { cuandoSePuso } from '@/lib/notas'
++import Hilo, { type Cosa } from './hilo'
++
++export const dynamic = 'force-dynamic'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LO DE TU ASESOR
++  ═══════════════════════════════════════════════════════════════
++
++  Todo lo que os habéis dejado el uno al otro, en un sitio.
++
++  ─────────────────────────────────────────────────────────────
++  POR QUÉ UNA PANTALLA Y NO UN FILTRO DE LAS NOTAS
++
++  Porque no es lo mismo. El corcho es la nevera de casa: «he dejado
++  los papeles en la mesa», «el del agua viene los martes». Lo del
++  asesor es otra conversación entera —«falta la factura de
++  septiembre», «el día 20 hay un pago»— y mezclarlas hace las dos
++  peores: los recados de casa se pierden entre requerimientos, y lo
++  del gestor se pierde entre recados.
++
++  Y sobre todo: esto hay que poder CONTESTARLO. Un filtro del corcho
++  te enseña lo suyo; una pantalla suya te deja responderle sin pensar
++  a quién se lo estás mandando.
++
++  ─────────────────────────────────────────────────────────────
++  LA MISMA PANTALLA POR LOS DOS LADOS
++
++  La familia entra y ve «Silvia». Silvia entra y ve el nombre de la
++  casa. Es la misma lista y el mismo sitio para escribir: dos
++  pantallas distintas serían dos sitios donde buscar la misma
++  conversación.
++
++  Y no hay nada nuevo debajo: son las notas y los recordatorios de
++  siempre, filtrados por quién los dejó. Una tabla más para esto
++  habría sido una tabla más que proteger, que mantener y que
++  sincronizar con la agenda.
++*/
++
++export default async function DelAsesor() {
++  const supabase = await clienteSesion()
++  const user = await quien(supabase)
++  if (!user) redirect('/entrar')
++
++  const hogarId = await miHogar(supabase, user.id)
++  if (!hogarId) redirect('/empezar')
++
++  const gente = await genteDeLaCasa(supabase, hogarId)
++  const yo = gente.find((g) => g.id === user.id)
++  const soyElAsesor = yo?.rol === 'asesor'
++
++  /*
++    CON QUIÉN ES ESTA CONVERSACIÓN.
++
++    Si soy de la familia, con el asesor. Si soy el asesor, con quien
++    creó la casa —que es quien le contrató y con quien se entiende.
++  */
++  let elOtro: Quien | null = null
++
++  if (soyElAsesor) {
++    /* Por identificador y no por nombre: `quienManda` devuelve el
++       nombre de pila y comparar «Juan» con «Juan Miguel Nazco» no
++       encuentra a nadie. */
++    const { data: jefe } = await supabase
++      .from('miembros')
++      .select('perfil_id')
++      .eq('hogar_id', hogarId)
++      .eq('papel', 'propietario')
++      .limit(1)
++      .maybeSingle()
++
++    elOtro =
++      gente.find((g) => g.id === jefe?.perfil_id) ??
++      gente.find((g) => g.id !== user.id && g.rol !== 'asesor') ??
++      null
++  } else {
++    elOtro = elAsesor(gente)
++  }
++
++  /* Sin la otra parte no hay conversación. Se vuelve al Inicio en vez
++     de enseñar una pantalla vacía que no explica nada. */
++  if (!elOtro) redirect('/')
++
++  const suyo = elOtro
++
++  /*
++    ── Lo que os habéis dejado ──
++
++    Las notas entre los dos y las tareas que ha puesto él. Las dos
++    consultas a la vez: son independientes y ponerlas en fila serían
++    dos esperas donde basta una.
++
++    Envueltas: si falta el SQL 35 la tabla `notas` no existe, y esta
++    pantalla tiene que seguir enseñando al menos las tareas.
++  */
++  const cosas: Cosa[] = []
++
++  const [notas, tareas] = await Promise.all([
++    supabase
++      .from('notas')
++      .select('id, texto, para, escrita_por, creada_en, vista_en')
++      .is('guardada_en', null)
++      .or(`escrita_por.eq.${suyo.id},para.eq.${suyo.id}`)
++      .order('creada_en', { ascending: false })
++      .limit(60)
++      .then(
++        (r) => r,
++        () => ({ data: null })
++      ),
++
++    supabase
++      .from('recordatorios')
++      .select('id, titulo, fecha, hora, estado, creado_por, creado_en, nota')
++      .eq('creado_por', suyo.id)
++      .order('fecha', { ascending: false })
++      .limit(40)
++      .then(
++        (r) => r,
++        () => ({ data: null })
++      ),
++  ])
++
++  for (const n of (notas?.data ?? []) as {
++    id: string
++    texto: string
++    para: string | null
++    escrita_por: string
++    creada_en: string
++    vista_en: string | null
++  }[]) {
++    cosas.push({
++      clase: 'nota',
++      id: n.id,
++      texto: n.texto,
++      /* De él o mía: decide de qué lado de la pantalla se pinta y de
++         qué color va. */
++      suya: n.escrita_por === suyo.id,
++      cuando: cuandoSePuso(n.creada_en),
++      orden: n.creada_en,
++      vista: Boolean(n.vista_en),
++      fecha: null,
++      hecha: false,
++    })
++  }
++
++  for (const t of (tareas?.data ?? []) as {
++    id: string
++    titulo: string
++    fecha: string | null
++    hora: string | null
++    estado: string
++    creado_en: string
++    nota: string | null
++  }[]) {
++    cosas.push({
++      clase: 'tarea',
++      id: t.id,
++      texto: t.titulo,
++      suya: true,
++      cuando: cuandoSePuso(t.creado_en),
++      orden: t.creado_en,
++      vista: true,
++      fecha: t.fecha,
++      hecha: t.estado === 'hecho',
++    })
++  }
++
++  /* Lo último arriba. Se ordena aquí y no en la base de datos porque
++     son dos tablas: pedirle a Postgres que las mezcle sería una vista
++     nueva para ahorrar una línea. */
++  cosas.sort((a, b) => (a.orden < b.orden ? 1 : -1))
++
++  /* Cómo se llama esto para quien lo mira. */
++  let laCasa = 'la familia'
++  try {
++    const { data } = await supabase
++      .from('hogares')
++      .select('nombre')
++      .eq('id', hogarId)
++      .maybeSingle()
++    if (data?.nombre) laCasa = data.nombre as string
++  } catch {
++    /* Sin nombre de casa, «la familia» sirve igual. */
++  }
++
++  const titulo = soyElAsesor ? laCasa : suyo.nombre.split(' ')[0]
++
++  return (
++    <main className="min-h-screen pb-40">
++      <Cabecera>
++        <Volver href="/" texto="Inicio" />
++        <div className="flex h-14 items-center gap-3">
++          <span
++            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
++            style={{ background: suyo.color }}
++          >
++            {titulo.charAt(0).toUpperCase()}
++          </span>
++          <span className="min-w-0">
++            <h1 className="truncate text-[25px] font-extrabold leading-tight tracking-tight">
++              {titulo}
++            </h1>
++            <p className="text-[14.5px] font-bold text-tenue">
++              {soyElAsesor ? 'Lo que les dejas y lo que te piden' : 'Tu asesor'}
++            </p>
++          </span>
++        </div>
++      </Cabecera>
++
++      <div className="mx-auto w-full max-w-md px-5 pt-2">
++        <Hilo
++          cosas={cosas}
++          paraQuien={suyo.id}
++          comoSeLlama={suyo.nombre.split(' ')[0]}
++          color={suyo.color}
++          soyElAsesor={soyElAsesor}
++        />
++      </div>
++
++      <Barra activa={null} voz={false} />
++    </main>
++  )
++}
+diff --git a/app/barra.tsx b/app/barra.tsx
+index 3dc3dc5..f8b6685 100644
+--- a/app/barra.tsx
++++ b/app/barra.tsx
+@@ -155,9 +155,20 @@ export default function Barra({
+             : []),
+         ]
+       : rol === 'asesor'
+-        ? /* Viene a las cuentas y a los papeles de las actividades. La
+-             agenda de una familia que no es la suya no pinta nada. */
+-          [INICIO, PAPELES, ...DE_ACTIVIDADES]
++        ? /*
++             Las cuentas, los papeles de las actividades… y la agenda.
++
++             La agenda estaba fuera —«la de una familia que no es la
++             suya no pinta nada»— y era verdad mientras el asesor solo
++             podía mirar. Desde que puede dejar avisos y poner fechas,
++             quitársela es quitarle el sitio donde hace su trabajo:
++             «el día 20 hay un pago» va en un calendario, no en un
++             WhatsApp.
++
++             Con las actividades sueltas serían cinco pestañas, que es
++             el tope. Cuando hay tres o más, ya se juntan solas.
++          */
++          [INICIO, PAPELES, AGENDA, ...DE_ACTIVIDADES]
+         : [INICIO, PAPELES, AGENDA, ...DE_ACTIVIDADES]
+ 
+   return (
+diff --git a/app/notas/notas.tsx b/app/notas/notas.tsx
+index 39d52b3..7364fd5 100644
+--- a/app/notas/notas.tsx
++++ b/app/notas/notas.tsx
+@@ -33,7 +33,7 @@ import type { NotaVista } from '@/lib/notas'
+   quien deja una nota tiene que saberlo ANTES de escribirla.
+ */
+ 
+-type Quien = { id: string; nombre: string }
++type Quien = { id: string; nombre: string; color?: string }
+ 
+ export default function Notas({
+   notas,
+@@ -60,6 +60,10 @@ export default function Notas({
+ 
+   const otros = gente.filter((g) => g.id !== yo)
+   const nombreDe = new Map(gente.map((g) => [g.id, g.nombre]))
++  /* El color de quien la escribió. Con cuatro personas en la casa,
++     saber de quién es cada nota obliga hoy a leerse la firma de cada
++     una; una barra de color a la izquierda lo contesta de reojo. */
++  const colorDe = new Map(gente.map((g) => [g.id, g.color ?? '#64748B']))
+ 
+   async function pedir(cuerpo: object, metodo: 'POST' | 'PATCH') {
+     setFallo(null)
+@@ -192,6 +196,7 @@ export default function Notas({
+             const paraMi = n.para === yo
+             const autor = nombreDe.get(n.escrita_por)?.split(' ')[0] ?? 'Alguien'
+             const destino = n.para ? (nombreDe.get(n.para)?.split(' ')[0] ?? 'alguien') : null
++            const suColor = colorDe.get(n.escrita_por) ?? '#64748B'
+ 
+             return (
+               <li
+@@ -199,11 +204,23 @@ export default function Notas({
+                 className="rounded-[20px] border border-borde bg-superficie px-4 py-3.5"
+                 style={
+                   /* Una nota que es PARA TI se ve distinta desde el otro
+-                     lado de la habitación. Es lo único de esta pantalla
+-                     que exige algo de quien la lee. */
++                     lado de la habitación: es lo único de esta pantalla
++                     que exige algo de quien la lee, y por eso se lleva
++                     el borde entero.
++
++                     El resto solo lleva una barra a la izquierda con el
++                     color de quien la escribió. Es suficiente para
++                     saber de quién es sin leer la firma, y no compite
++                     con lo que sí te está esperando. */
+                   paraMi && !n.vista_en
+-                    ? { borderColor: '#14B8A6', background: 'color-mix(in srgb, #14B8A6 8%, var(--t-superficie))' }
+-                    : undefined
++                    ? {
++                        borderColor: '#14B8A6',
++                        background: 'color-mix(in srgb, #14B8A6 8%, var(--t-superficie))',
++                        borderLeft: `4px solid ${suColor}`,
++                      }
++                    : mia
++                      ? undefined
++                      : { borderLeft: `4px solid ${suColor}` }
+                 }
+               >
+                 {editando === n.id ? (
+diff --git a/app/notas/page.tsx b/app/notas/page.tsx
+index 2eb099e..c1d5104 100644
+--- a/app/notas/page.tsx
++++ b/app/notas/page.tsx
+@@ -1,6 +1,7 @@
+ import { redirect } from 'next/navigation'
+ import { clienteSesion } from '@/lib/supabase/sesion'
+ import { quien } from '@/lib/supabase/quien'
++import { genteDeLaCasa } from '@/lib/gente'
+ import { miHogar, puedeEscribir } from '@/lib/hogar'
+ import { notasDe, conFecha } from '@/lib/notas'
+ import Cabecera from '../cabecera'
+@@ -51,27 +52,15 @@ export default async function PaginaNotas({
+     políticas dejen ver: quien tenga dos casas se vería a sí mismo en
+     la lista de la otra.
+   */
+-  let gente: { id: string; nombre: string }[] = []
++  /* Con su color: es lo que deja saber de quién es cada nota sin leer
++     la firma. `genteDeLaCasa` ya viene envuelto y con respaldo si
++     falta la columna del SQL 39. */
++  let gente: { id: string; nombre: string; color: string }[] = []
+ 
+   try {
+-    if (hogarId) {
+-      const { data: dentro } = await supabase
+-        .from('miembros')
+-        .select('perfil_id')
+-        .eq('hogar_id', hogarId)
+-
+-      const ids = (dentro ?? []).map((m: { perfil_id: string }) => m.perfil_id)
+-
+-      if (ids.length > 0) {
+-        const { data: perfiles } = await supabase
+-          .from('perfiles')
+-          .select('id, nombre')
+-          .in('id', ids)
+-          .order('nombre')
+-
+-        gente = (perfiles ?? []) as { id: string; nombre: string }[]
+-      }
+-    }
++    gente = (await genteDeLaCasa(supabase, hogarId))
++      .map((g) => ({ id: g.id, nombre: g.nombre, color: g.color }))
++      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+   } catch {
+     /* Sin nombres, las notas salen igual y se firman con «Alguien».
+        Una nota sin firmar sigue sirviendo; una pantalla que no carga,
+diff --git a/app/page.tsx b/app/page.tsx
+index 12d5d83..2835c62 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -18,6 +18,7 @@ import { gastadoEnCasa } from '@/lib/gastos-casa'
+ import { queVeEnInicio } from '@/lib/roles'
+ import { eurosRedondo } from '@/lib/periodos'
+ import { loDeHoy } from '@/lib/rutinas'
++import { genteDeLaCasa, elAsesor } from '@/lib/gente'
+ import Casas from './casas'
+ import RutinasHoy, { type Deber } from './rutinas-hoy'
+ 
+@@ -295,6 +296,68 @@ export default async function Inicio({
+   const conectado = conexion?.estado === 'activa'
+   const caducado = conexion?.estado === 'caducada'
+ 
++  /*
++    ── EL ASESOR ──
++
++    Si en esta casa hay un gestor, tiene su propio sitio en el Inicio.
++    No es una tarjeta más: es la única persona de fuera con la que hay
++    una conversación de ida y vuelta —«falta la factura de
++    septiembre», «te la he subido»— y sin un sitio propio eso acaba en
++    un WhatsApp que se pierde.
++
++    Lo que se cuenta en la tarjeta es lo que TE ESTÁ ESPERANDO: sus
++    avisos sin ver y las tareas que te ha puesto sin hacer. Un número
++    que no baja nunca deja de mirarse.
++
++    Y por el otro lado igual: cuando quien entra ES el asesor, la
++    tarjeta le lleva al mismo sitio con el nombre de la casa.
++  */
++  let deLaGestoria: { nombre: string; color: string; esperando: number } | null = null
++
++  try {
++    const gente = await genteDeLaCasa(supabase, hogarId)
++    const yoSoy = gente.find((g) => g.id === user.id)
++
++    const conQuien =
++      yoSoy?.rol === 'asesor'
++        ? (gente.find((g) => g.id !== user.id && g.rol !== 'asesor') ?? null)
++        : elAsesor(gente)
++
++    if (conQuien) {
++      let esperando = 0
++
++      /* Sus avisos que todavía no has abierto. Envuelto aparte: sin la
++         tabla `notas` la tarjeta sale igual, con cero. */
++      try {
++        const { count } = await supabase
++          .from('notas')
++          .select('id', { count: 'exact', head: true })
++          .eq('escrita_por', conQuien.id)
++          .is('guardada_en', null)
++          .is('vista_en', null)
++        esperando += count ?? 0
++      } catch {
++        /* Sin notas: solo cuentan las tareas. */
++      }
++
++      const { count: suyas } = await supabase
++        .from('recordatorios')
++        .select('id', { count: 'exact', head: true })
++        .eq('creado_por', conQuien.id)
++        .eq('estado', 'pendiente')
++
++      esperando += suyas ?? 0
++
++      deLaGestoria = {
++        nombre: conQuien.nombre.split(' ')[0],
++        color: conQuien.color,
++        esperando,
++      }
++    }
++  } catch {
++    /* Sin la columna `rol` todavía, o sin gente. El Inicio sigue entero. */
++  }
++
+   /*
+     ── DÓNDE VA «LO DE HOY» ──
+ 
+@@ -586,6 +649,49 @@ export default async function Inicio({
+           </div>
+         ) : null}
+ 
++        {/* ── El asesor, con su color ── */}
++        {deLaGestoria && (
++          <Link
++            href="/asesor"
++            className="mt-2.5 flex h-[76px] items-center gap-3.5 rounded-[22px] px-4"
++            style={{
++              background: `color-mix(in srgb, ${deLaGestoria.color} ${
++                deLaGestoria.esperando > 0 ? 18 : 11
++              }%, transparent)`,
++              border: `1px solid color-mix(in srgb, ${deLaGestoria.color} ${
++                deLaGestoria.esperando > 0 ? 50 : 28
++              }%, transparent)`,
++            }}
++          >
++            {/* Su inicial y su color, no un icono genérico: es una
++                persona, y aquí es la única tarjeta que lo es. */}
++            <span
++              className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[15px] text-[20px] font-extrabold text-white"
++              style={{ background: deLaGestoria.color }}
++            >
++              {deLaGestoria.nombre.charAt(0).toUpperCase()}
++            </span>
++            <span className="min-w-0 flex-1">
++              <span className="block truncate text-[19px] font-extrabold tracking-tight">
++                {deLaGestoria.nombre}
++              </span>
++              <span
++                className="block truncate text-[14.5px] font-bold"
++                style={{ color: deLaGestoria.color }}
++              >
++                {deLaGestoria.esperando === 0
++                  ? 'Nada nuevo por ahora'
++                  : deLaGestoria.esperando === 1
++                    ? 'Te ha dejado una cosa'
++                    : `Te ha dejado ${deLaGestoria.esperando} cosas`}
++              </span>
++            </span>
++            <span className="shrink-0" style={{ color: deLaGestoria.color }}>
++              <Ico nombre="flecha" tam={22} grosor={2.2} />
++            </span>
++          </Link>
++        )}
++
+         {/* ── Y las cuentas, anchas, con el número de protagonista ── */}
+         {ve.cuentasCasa && (
+           <Link
+diff --git a/app/seccion/[id]/ajustes/page.tsx b/app/seccion/[id]/ajustes/page.tsx
+index 8c56891..cd6eef5 100644
+--- a/app/seccion/[id]/ajustes/page.tsx
++++ b/app/seccion/[id]/ajustes/page.tsx
+@@ -7,6 +7,7 @@ import { Pastilla, Volver, iconoDeEmoji } from '../../../iconos'
+ import Unidades, { type UnidadDeLaLista } from '../../../ajustes/unidades'
+ import Dividir from './dividir'
+ import Partidas, { type Partida } from './partidas'
++import Quitar from './quitar'
+ 
+ export const dynamic = 'force-dynamic'
+ 
+@@ -117,6 +118,43 @@ export default async function AjustesDeLaSeccion({
+     partidasDe(supabase, deIngreso?.id as string | undefined),
+   ])
+ 
++  /*
++    ── LO QUE TIENE DENTRO, PARA PODER DECIRLO ANTES DE QUITARLA ──
++
++    Quitar una actividad vacía la borra; quitar una que ya tiene
++    cuentas la retira. Y eso hay que decírselo a quien va a pulsar,
++    con el número delante: entre «tiene datos» y «tiene 214 apuntes y
++    38 papeles» hay toda la diferencia a la hora de decidir.
++
++    Los apuntes ya están contados partida a partida —se hizo arriba
++    para la lista—, así que aquí solo se suman. Los papeles sí hay que
++    pedirlos, y se piden de una vez para todo el árbol.
++  */
++  const apuntes =
++    gastos.reduce((n, p) => n + p.apuntes, 0) + ingresos.reduce((n, p) => n + p.apuntes, 0)
++
++  let papeles = 0
++  try {
++    const bajoEsta = [
++      id,
++      ...(hijas ?? []).map((c) => c.id as string),
++      ...gastos.map((p) => p.id),
++      ...ingresos.map((p) => p.id),
++    ]
++
++    const { count } = await supabase
++      .from('documentos')
++      .select('id', { count: 'exact', head: true })
++      .in('categoria_id', bajoEsta)
++      .is('eliminado_en', null)
++
++    papeles = count ?? 0
++  } catch {
++    /* Sin recuento se enseña cero y la ruta decide igualmente qué
++       hacer: la cuenta de verdad la vuelve a hacer el servidor antes
++       de tocar nada. */
++  }
++
+   return (
+     <main className="min-h-screen pb-40">
+       <Cabecera>
+@@ -159,6 +197,10 @@ export default async function AjustesDeLaSeccion({
+         )}
+ 
+         <Partidas seccionId={id} gastos={gastos} ingresos={ingresos} />
++
++        {/* Al final del todo: es lo que se hace una vez, y en medio
++            del camino sería un botón peligroso donde no toca. */}
++        <Quitar seccionId={id} nombre={nombre} apuntes={apuntes} papeles={papeles} />
+       </div>
+ 
+       <Barra activa={id} voz={false} />
+diff --git a/app/seccion/[id]/ajustes/quitar.tsx b/app/seccion/[id]/ajustes/quitar.tsx
+new file mode 100644
+index 0000000..31c4648
+--- /dev/null
++++ b/app/seccion/[id]/ajustes/quitar.tsx
+@@ -0,0 +1,155 @@
++'use client'
++
++import { useState } from 'react'
++import { useRouter } from 'next/navigation'
++import { Ico } from '../../../iconos'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  QUITAR ESTA ACTIVIDAD
++  ═══════════════════════════════════════════════════════════════
++
++  Va al final de «Cómo la llevas», que es donde se busca lo que se
++  hace una vez y no se vuelve a tocar. Arriba, entre las partidas y
++  las partes, sería un botón peligroso en medio del camino.
++
++  ─────────────────────────────────────────────────────────────
++  SE DICE QUÉ VA A PASAR ANTES DE PULSAR, NO DESPUÉS
++
++  Y son dos cosas distintas:
++
++    vacía          desaparece
++    con apuntes    se retira, y lo de dentro se queda
++
++  Un botón que unas veces borra del todo y otras no, sin decirlo
++  antes, es un botón en el que no se puede confiar — y entonces no se
++  toca, que es como acabamos con actividades equivocadas para siempre.
++
++  El aviso lleva el NÚMERO, no un «tiene datos»: entre «se queda con
++  lo que hay» y «se queda con 214 apuntes y 38 papeles» hay toda la
++  diferencia del mundo a la hora de decidir.
++*/
++
++export default function Quitar({
++  seccionId,
++  nombre,
++  apuntes,
++  papeles,
++}: {
++  seccionId: string
++  nombre: string
++  apuntes: number
++  papeles: number
++}) {
++  const router = useRouter()
++
++  const [abierto, setAbierto] = useState(false)
++  const [ocupado, setOcupado] = useState(false)
++  const [fallo, setFallo] = useState<string | null>(null)
++
++  const vacia = apuntes + papeles === 0
++
++  async function quitar() {
++    setFallo(null)
++    setOcupado(true)
++
++    const r = await fetch(`/api/actividades?id=${encodeURIComponent(seccionId)}`, {
++      method: 'DELETE',
++    })
++
++    const d = (await r.json().catch(() => null)) as {
++      bien?: boolean
++      retirada?: boolean
++      error?: string
++      detalle?: string
++    } | null
++
++    setOcupado(false)
++
++    if (!r.ok || d?.bien !== true) {
++      setFallo(
++        d
++          ? [d.error ?? 'No se ha podido quitar.', d.detalle].filter(Boolean).join(' · ')
++          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
++      )
++      return
++    }
++
++    /* Al Inicio, y no a la actividad que acaba de desaparecer: volver
++       a una pantalla que ya no existe enseña un «no encontrado» justo
++       después de hacer algo bien. */
++    router.replace('/')
++    router.refresh()
++  }
++
++  if (!abierto) {
++    return (
++      <div className="mt-8">
++        <button
++          onClick={() => setAbierto(true)}
++          className="h-[52px] w-full rounded-[16px] border border-borde text-[16.5px] font-extrabold text-coral"
++        >
++          Quitar «{nombre}»
++        </button>
++      </div>
++    )
++  }
++
++  return (
++    <div className="mt-8 rounded-[20px] border border-borde bg-superficie px-4 py-4">
++      <p className="text-[17.5px] font-extrabold leading-snug">
++        {vacia ? `¿Borrar «${nombre}»?` : `¿Retirar «${nombre}»?`}
++      </p>
++
++      <p className="mt-1.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
++        {vacia ? (
++          <>
++            Está vacía: no tiene ni un apunte ni un papel. Desaparece del todo, con sus
++            partidas. Esto no se deshace.
++          </>
++        ) : (
++          <>
++            Tiene {cuantos(apuntes, 'apunte', 'apuntes')}
++            {papeles > 0 && <> y {cuantos(papeles, 'papel', 'papeles')}</>}, así que{' '}
++            <strong className="text-tinta">no se borra nada</strong>: deja de verse y ya está.
++            Sus cuentas de años anteriores se quedan como están, y los documentos siguen en
++            Drive.
++            <br />
++            <br />
++            Si algún día la quieres de vuelta, créala otra vez con el mismo nombre y vuelve
++            entera.
++          </>
++        )}
++      </p>
++
++      <div className="mt-3.5 flex gap-2">
++        <button
++          onClick={quitar}
++          disabled={ocupado}
++          className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] text-[17px] font-extrabold text-white disabled:opacity-50"
++          style={{ background: '#E11D48' }}
++        >
++          <Ico nombre="check" tam={19} grosor={2.3} />
++          {ocupado ? 'Un momento…' : vacia ? 'Borrar' : 'Retirar'}
++        </button>
++        <button
++          onClick={() => setAbierto(false)}
++          disabled={ocupado}
++          className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
++        >
++          Dejarlo
++        </button>
++      </div>
++
++      {fallo && (
++        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
++          {fallo}
++        </p>
++      )}
++    </div>
++  )
++}
++
++function cuantos(n: number, uno: string, varios: string): string {
++  return n === 1 ? `1 ${uno}` : `${n} ${varios}`
++}
+diff --git a/lib/gente.ts b/lib/gente.ts
+new file mode 100644
+index 0000000..cb1721c
+--- /dev/null
++++ b/lib/gente.ts
+@@ -0,0 +1,147 @@
++import type { SupabaseClient } from '@supabase/supabase-js'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  QUIÉN ES QUIÉN, Y DE QUÉ COLOR
++  ═══════════════════════════════════════════════════════════════
++
++  En una casa con cuatro personas dentro, todo lo que hacen se mezcla
++  en las mismas listas: la agenda, el corcho, lo de hoy. Saber QUIÉN
++  ha dejado cada cosa obliga hoy a leerse la letra pequeña de cada
++  línea, una por una.
++
++  Un color por persona contesta eso sin leer. Es lo que hace cualquier
++  calendario compartido, y funciona porque el color se reconoce de
++  reojo y el nombre no.
++
++  ─────────────────────────────────────────────────────────────
++  EL COLOR ES DE LA PERSONA, NO DEL PAPEL
++
++  Sale del papel —la ayuda de un color, el asesor de otro— pero se
++  guarda por persona. Dos asesores del mismo color no se distinguen
++  entre sí, que es justo lo que veníamos a resolver.
++
++  ─────────────────────────────────────────────────────────────
++  Y SI FALTA LA COLUMNA, HAY COLOR IGUAL
++
++  `miembros.color` es del SQL 39. Sin él, cada uno recibe el de su
++  papel: se pierde el poder distinguir a dos personas del mismo papel,
++  pero ninguna pantalla se queda en blanco por eso.
++*/
++
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
++type Cliente = SupabaseClient<any, any, any>
++
++export type Quien = {
++  id: string
++  nombre: string
++  rol: string | null
++  color: string
++  /** Invitado pero todavía sin aceptar. */
++  pendiente: boolean
++}
++
++/*
++  La paleta. Colores que se leen igual en claro y en oscuro: nada de
++  pastel, que a catorce píxeles es gris.
++
++  Es la misma lista que usa el SQL 39 al repartirlos, y las dos tienen
++  que moverse juntas.
++*/
++export const COLORES = [
++  '#14B8A6', // turquesa
++  '#0EA5E9', // azul cielo
++  '#F59E0B', // ámbar
++  '#8B5CF6', // morado
++  '#EC4899', // rosa
++  '#3B82F6', // azul
++  '#F97316', // naranja
++  '#10B981', // verde
++  '#64748B', // pizarra
++]
++
++/** El color de salida de un papel, cuando no hay otro guardado. */
++export function colorDeRol(rol: string | null | undefined): string {
++  switch (rol) {
++    case 'ayuda':
++      return '#0EA5E9'
++    case 'asesor':
++      return '#F59E0B'
++    case 'mirar':
++      return '#64748B'
++    default:
++      return '#14B8A6'
++  }
++}
++
++/**
++ * Los de esta casa, con su papel y su color.
++ *
++ * Con la SESIÓN: las políticas por hogar son justamente lo que hace
++ * que aquí salgan los tuyos y no los de otra casa. Y con `hogar_id`
++ * explícito además, porque las políticas dejan ver también TUS filas
++ * en otras casas —hacen falta para las invitaciones— y quien tenga
++ * dos se vería a sí mismo dos veces.
++ */
++export async function genteDeLaCasa(
++  supabase: Cliente,
++  hogarId: string | null
++): Promise<Quien[]> {
++  if (!hogarId) return []
++
++  try {
++    /* `color` y `rol` son columnas nuevas. Si el SQL 39 no se ha
++       ejecutado, Postgres no dice «esa columna no existe»: rechaza la
++       consulta ENTERA. Por eso el segundo intento. */
++    let filas: {
++      perfil_id: string
++      rol?: string | null
++      color?: string | null
++      aceptado_en?: string | null
++    }[] = []
++
++    const completa = await supabase
++      .from('miembros')
++      .select('perfil_id, rol, color, aceptado_en')
++      .eq('hogar_id', hogarId)
++      .order('unido_en')
++
++    if (completa.error) {
++      const basica = await supabase
++        .from('miembros')
++        .select('perfil_id')
++        .eq('hogar_id', hogarId)
++        .order('unido_en')
++      filas = (basica.data ?? []) as typeof filas
++    } else {
++      filas = (completa.data ?? []) as typeof filas
++    }
++
++    const ids = filas.map((m) => m.perfil_id)
++    if (ids.length === 0) return []
++
++    const { data: perfiles } = await supabase
++      .from('perfiles')
++      .select('id, nombre')
++      .in('id', ids)
++
++    const nombreDe = new Map(
++      (perfiles ?? []).map((p: { id: string; nombre: string }) => [p.id, p.nombre])
++    )
++
++    return filas.map((m) => ({
++      id: m.perfil_id,
++      nombre: nombreDe.get(m.perfil_id) ?? 'Alguien',
++      rol: m.rol ?? null,
++      color: m.color ?? colorDeRol(m.rol),
++      pendiente: m.aceptado_en === null,
++    }))
++  } catch {
++    return []
++  }
++}
++
++/** El asesor de la casa, si hay alguno dentro. */
++export function elAsesor(gente: Quien[]): Quien | null {
++  return gente.find((g) => g.rol === 'asesor' && !g.pendiente) ?? null
++}
+diff --git a/lib/roles.ts b/lib/roles.ts
+index 40c6808..dde5560 100644
+--- a/lib/roles.ts
++++ b/lib/roles.ts
+@@ -56,7 +56,7 @@ export const ROLES: {
+     nombre: 'Asesor o gestor',
+     pie: 'Las cuentas de tus actividades. No toca nada.',
+     detalle:
+-      'Entra, mira y se descarga lo que necesite de la finca, las obras o los pisos. No puede cambiar ni borrar nada, ni ve lo de casa.',
++      'Entra, mira y se descarga lo que necesite de la finca, las obras o los pisos. No puede subir papeles, ni apuntar gastos, ni tocar las cuentas. Sí puede dejarte avisos y ponerte tareas, y VE VUESTRA AGENDA ENTERA —también las citas del médico—: es lo que hace falta para que os pongáis de acuerdo en las fechas.',
+   },
+   {
+     valor: 'mirar',
+@@ -112,14 +112,28 @@ export function queVeEnInicio(rol: string | null | undefined): Inicio {
+       }
+ 
+     case 'asesor':
+-      /* Viene a las cuentas. Ni la compra ni las notas ni la agenda de
+-         una familia que no es la suya. */
++      /*
++        Viene a las cuentas, pero no solo a mirarlas.
++
++        Antes tenía la agenda y el corcho apagados, y con eso su Inicio
++        se quedaba SIN UNA SOLA TARJETA: una pantalla con el saludo y
++        nada debajo, que no se lee como «lo tuyo está abajo» sino como
++        «esto está roto».
++
++        Y sobre todo, faltaba la mitad de la relación. Un gestor no
++        solo mira: te dice que falta la factura de septiembre, que el
++        día 20 hay un pago, que lo que subiste no vale. Sin sitio donde
++        dejarlo, eso acaba en un WhatsApp que se pierde.
++
++        La compra no: la lista del súper de una familia que no es la
++        suya no pinta nada.
++      */
+       return {
+         guardarDocumento: false,
+         compra: false,
+-        notas: false,
++        notas: true,
+         cuentasCasa: false,
+-        agenda: false,
++        agenda: true,
+       }
+ 
+     case 'mirar':
+diff --git a/sql/39-color-y-asesor.sql b/sql/39-color-y-asesor.sql
+new file mode 100644
+index 0000000..f82a9c9
+--- /dev/null
++++ b/sql/39-color-y-asesor.sql
+@@ -0,0 +1,434 @@
++-- ═══════════════════════════════════════════════════════════════
++-- 39 · DE QUÉ COLOR ES CADA UNO, Y QUÉ PUEDE EL ASESOR
++-- ═══════════════════════════════════════════════════════════════
++--
++-- Dos cosas que van juntas aunque parezcan distintas.
++--
++-- ─────────────────────────────────────────────────────────────
++-- 1 · CADA PERSONA, SU COLOR
++--
++-- En una casa con cuatro personas dentro, todo lo que hacen se mezcla
++-- en las mismas listas: la agenda, el corcho, lo de hoy. Y saber QUIÉN
++-- ha dejado cada cosa obliga hoy a leerse la letra pequeña de cada
++-- línea, una por una.
++--
++-- Con un color por persona eso se contesta sin leer. Es lo que hace
++-- cualquier calendario compartido, y funciona porque el color se
++-- reconoce de reojo y el nombre no.
++--
++-- El color sale del papel —la ayuda de un color, el asesor de otro—
++-- pero se guarda POR PERSONA, no por papel: dos asesores del mismo
++-- color no se distinguen entre sí, que es justo lo que veníamos a
++-- resolver. Y así se puede cambiar el de uno sin tocar el de nadie.
++--
++-- ─────────────────────────────────────────────────────────────
++-- 2 · EL ASESOR PUEDE DEJARTE COSAS
++--
++-- Hasta hoy el asesor era `papel = 'lector'`: entraba, miraba y ya
++-- está. Y eso es la mitad de la relación. Un gestor no solo mira las
++-- cuentas — te dice «te falta la factura de septiembre», «acuérdate
++-- del pago del día 20», «esto que subiste no vale».
++--
++-- Sin sitio donde dejarlo, eso acaba en un WhatsApp que se pierde.
++--
++-- Así que se le abre la AGENDA y el CORCHO, y nada más:
++--
++--   puede   dejar notas, poner tareas, ver el calendario
++--   no puede subir papeles, apuntar gastos, tocar las cuentas
++--
++-- Y por eso no se toca `puedo_escribir()` para dejarle pasar: eso le
++-- abriría también los documentos y los movimientos. Se añade una
++-- función aparte para la agenda, que es donde de verdad tiene algo
++-- que decir.
++--
++-- ─────────────────────────────────────────────────────────────
++-- Y DE PASO, UN FALLO QUE LLEVABA AHÍ DESDE EL 31
++--
++-- `puedo_escribir()` miraba «la primera fila de miembros por fecha»,
++-- sin mirar en qué casa. Desde que una persona puede estar en varias
++-- —sql/34— eso está mal: quien es asesor en la casa de sus padres y
++-- dueño de la suya recibía el permiso de la que entró primero. En una
++-- de las dos casas escribía de más, o de menos.
++--
++-- Se arregla aquí porque es la misma función que estamos tocando, y
++-- porque un permiso que depende del orden de las invitaciones no es un
++-- permiso.
++--
++-- Se puede ejecutar más de una vez sin estropear nada.
++-- ═══════════════════════════════════════════════════════════════
++
++
++-- ── 1 · El color ───────────────────────────────────────────
++alter table miembros
++  add column if not exists color text;
++
++comment on column miembros.color is
++  'El color de esta persona EN ESTA CASA. Sale de su papel y se puede '
++  'cambiar. Se usa para reconocer de un vistazo quién ha dejado qué.';
++
++/*
++  A quien ya está se le pone el que le toca por su papel, y si en una
++  casa hay dos del mismo papel, el segundo coge el siguiente de la
++  lista. Nadie acaba con el color de otro.
++
++  La paleta es la de HUBI y son colores que se leen igual en claro y
++  en oscuro. Nada de pasteles: a 14 píxeles un pastel es gris.
++*/
++with paleta as (
++  select array[
++    '#14B8A6',  -- turquesa   · familia
++    '#0EA5E9',  -- azul cielo · ayuda en casa
++    '#F59E0B',  -- ámbar      · asesor
++    '#8B5CF6',  -- morado
++    '#EC4899',  -- rosa
++    '#3B82F6',  -- azul
++    '#F97316',  -- naranja
++    '#10B981',  -- verde
++    '#64748B'   -- pizarra    · solo mirar
++  ] as c
++),
++puesto as (
++  select
++    m.hogar_id,
++    m.perfil_id,
++    /* El de su papel, y el siguiente si ya lo tiene alguien de esa
++       casa. `unido_en` decide quién llegó antes. */
++    case coalesce(m.rol, 'familia')
++      when 'familia' then 1
++      when 'ayuda'   then 2
++      when 'asesor'  then 3
++      else 9
++    end
++    + (row_number() over (
++         partition by m.hogar_id, coalesce(m.rol, 'familia')
++         order by m.unido_en
++       ) - 1) as sitio
++  from miembros m
++  where m.color is null
++)
++update miembros m
++   set color = (select c[((p.sitio - 1) % 9) + 1] from paleta)
++  from puesto p
++ where m.hogar_id = p.hogar_id
++   and m.perfil_id = p.perfil_id
++   and m.color is null;
++
++
++-- ── 2 · El permiso de escribir, en la casa correcta ────────
++/*
++  Igual que estaba, con `and hogar_id = mi_hogar()` y sin el
++  `order by ... limit 1` que cogía una casa al azar.
++
++  Sin fila de miembro sigue devolviendo TRUE, y por la misma razón que
++  se escribió en el 31: quien no está en `miembros` no es un lector,
++  es alguien de quien no sabemos nada — y a ése ya le corta `mi_hogar()`
++  devolviendo nulo. Poner FALSE aquí dejaría fuera a quien perdiera su
++  fila de miembro un día, que es romper lo que funciona por proteger
++  lo que ya está protegido.
++*/
++create or replace function puedo_escribir() returns boolean
++language sql
++stable
++security definer
++set search_path = public
++as $$
++  select coalesce(
++    (
++      select m.papel <> 'lector'
++      from miembros m
++      where m.perfil_id = auth.uid()
++        and m.hogar_id = mi_hogar()
++    ),
++    true
++  )
++$$;
++
++revoke all on function puedo_escribir() from public;
++grant execute on function puedo_escribir() to authenticated;
++
++
++-- ── 3 · Y el permiso de la agenda, que es otro ─────────────
++/*
++  Quien puede escribir, puede. Y además el asesor, aunque sea lector:
++  a eso viene ahora.
++
++  Quien «solo mira» sigue sin poder, que es literalmente lo que se le
++  ofreció al invitarlo.
++*/
++create or replace function puedo_en_agenda() returns boolean
++language sql
++stable
++security definer
++set search_path = public
++as $$
++  select puedo_escribir() or coalesce(mi_rol(), 'familia') = 'asesor'
++$$;
++
++revoke all on function puedo_en_agenda() from public;
++grant execute on function puedo_en_agenda() to authenticated;
++
++
++-- ── 4 · Las políticas de la agenda y del corcho ────────────
++/*
++  Solo estas dos tablas. Documentos, movimientos, categorías, compra y
++  unidades se quedan con `puedo_escribir()` — el asesor mira las
++  cuentas, no las escribe.
++
++  OJO SI ALGÚN DÍA SE VUELVE A EJECUTAR EL SQL 31: aquel archivo
++  rehace estas políticas en bucle con `puedo_escribir()` y se llevaría
++  esto por delante. Si se ejecuta, ejecutar el 39 detrás.
++*/
++drop policy if exists recordatorios_crear on recordatorios;
++create policy recordatorios_crear on recordatorios
++  for insert to authenticated with check (
++    hogar_id = mi_hogar() and puedo_en_agenda()
++  );
++
++/*
++  EDITAR Y BORRAR: el asesor, solo lo suyo.
++
++  Dejarle la política de siempre —«cualquiera de la casa toca
++  cualquier cosa»— le dejaría borrar el médico del martes. Entre
++  familia eso está bien y es lo que hay desde el principio: se
++  arreglan hablando. Con alguien de fuera, no.
++*/
++drop policy if exists recordatorios_editar on recordatorios;
++create policy recordatorios_editar on recordatorios
++  for update to authenticated using (
++    hogar_id = mi_hogar()
++    and puedo_en_agenda()
++    and (
++      coalesce(mi_rol(), 'familia') <> 'asesor'
++      or creado_por = auth.uid()
++    )
++  );
++
++drop policy if exists recordatorios_borrar on recordatorios;
++create policy recordatorios_borrar on recordatorios
++  for delete to authenticated using (
++    hogar_id = mi_hogar()
++    and puedo_en_agenda()
++    and (
++      coalesce(mi_rol(), 'familia') <> 'asesor'
++      or creado_por = auth.uid()
++    )
++  );
++
++/* El corcho. `notas_editar` y `notas_borrar` ya estaban limitadas a
++   quien la escribió (o a quien va dirigida, para el «Visto»), así que
++   ahí solo cambia la función. */
++do $$
++begin
++  if to_regclass('public.notas') is null then
++    raise notice 'La tabla notas no existe todavía: ejecuta antes el SQL 35.';
++    return;
++  end if;
++
++  drop policy if exists notas_crear on notas;
++  create policy notas_crear on notas
++    for insert to authenticated with check (
++      hogar_id = mi_hogar()
++      and escrita_por = auth.uid()
++      and puedo_en_agenda()
++    );
++
++  drop policy if exists notas_editar on notas;
++  create policy notas_editar on notas
++    for update to authenticated
++    using (
++      hogar_id = mi_hogar()
++      and (escrita_por = auth.uid() or para = auth.uid())
++      and puedo_en_agenda()
++    )
++    with check (
++      hogar_id = mi_hogar()
++      and (escrita_por = auth.uid() or para = auth.uid())
++    );
++
++  drop policy if exists notas_borrar on notas;
++  create policy notas_borrar on notas
++    for delete to authenticated using (
++      hogar_id = mi_hogar()
++      and escrita_por = auth.uid()
++      and puedo_en_agenda()
++    );
++end $$;
++
++
++-- ── 5 · Poner el color, y ponerlo al cambiar de papel ──────
++/*
++  `poner_rol` reparte los permisos; aquí se le añade el color, y solo
++  si no tiene: cambiar a alguien de papel no puede cambiarle el color
++  con el que la casa lleva meses reconociéndolo.
++*/
++create or replace function poner_rol(a_quien uuid, el_rol text)
++returns void
++language plpgsql
++security definer
++set search_path = public
++as $$
++declare
++  yo    uuid := auth.uid();
++  casa  uuid;
++  suyo  text;
++begin
++  if el_rol not in ('familia', 'ayuda', 'asesor', 'mirar') then
++    raise exception 'Ese rol no existe.';
++  end if;
++
++  select m.hogar_id into casa
++  from miembros m
++  where m.perfil_id = a_quien
++    and m.hogar_id = mi_hogar();
++
++  if casa is null then
++    raise exception 'Esa persona no está en tu casa.';
++  end if;
++
++  if not exists (
++    select 1 from miembros m
++    where m.hogar_id = casa and m.perfil_id = yo and m.papel = 'propietario'
++  ) then
++    raise exception 'Solo quien creó la casa reparte los accesos.';
++  end if;
++
++  if exists (
++    select 1 from miembros m
++    where m.hogar_id = casa and m.perfil_id = a_quien and m.papel = 'propietario'
++  ) then
++    raise exception 'Quien creó la casa no puede cambiar de rol.';
++  end if;
++
++  /* El primero de la paleta que no tenga nadie en esta casa,
++     empezando por el que le toca a su papel. */
++  select c into suyo
++  from unnest(array[
++    case el_rol when 'familia' then '#14B8A6'
++                when 'ayuda'   then '#0EA5E9'
++                when 'asesor'  then '#F59E0B'
++                else '#64748B' end,
++    '#8B5CF6', '#EC4899', '#3B82F6', '#F97316', '#10B981',
++    '#14B8A6', '#0EA5E9', '#F59E0B', '#64748B'
++  ]) as c
++  where not exists (
++    select 1 from miembros m
++    where m.hogar_id = casa and m.color = c and m.perfil_id <> a_quien
++  )
++  limit 1;
++
++  update miembros m
++     set rol          = el_rol,
++         papel        = case when el_rol in ('asesor', 'mirar') then 'lector' else 'miembro' end,
++         ve_todo      = (el_rol in ('familia', 'mirar')),
++         escribe_todo = (el_rol = 'familia'),
++         color        = coalesce(m.color, suyo, '#64748B')
++   where m.perfil_id = a_quien and m.hogar_id = casa;
++
++  delete from permisos_carpeta p
++   where p.perfil_id = a_quien and p.hogar_id = casa;
++
++  if el_rol = 'ayuda' then
++    insert into permisos_carpeta (perfil_id, categoria_id, hogar_id, ver, escribir)
++    select a_quien, c.id, casa, true, true
++    from categorias c
++    where c.hogar_id = casa and c.padre_id is null and c.segmento_drive = 'CASA';
++
++  elsif el_rol = 'asesor' then
++    insert into permisos_carpeta (perfil_id, categoria_id, hogar_id, ver, escribir)
++    select a_quien, c.id, casa, true, false
++    from categorias c
++    where c.hogar_id = casa and c.padre_id is null and c.lleva_cuentas is true;
++  end if;
++end;
++$$;
++
++revoke all on function poner_rol(uuid, text) from public;
++grant execute on function poner_rol(uuid, text) to authenticated;
++
++
++-- ── 6 · Cambiarle el color a alguien ───────────────────────
++/*
++  Aparte de `poner_rol` a propósito: cambiar un color no puede obligar
++  a volver a repartir todos los permisos de esa persona. Son dos cosas
++  distintas y la de aquí no tiene ninguna consecuencia.
++
++  `security definer` porque `miembros` solo lo edita quien creó la
++  casa, y eso se comprueba aquí a mano.
++*/
++create or replace function poner_color(a_quien uuid, el_color text)
++returns void
++language plpgsql
++security definer
++set search_path = public
++as $$
++declare
++  casa uuid := mi_hogar();
++begin
++  /* Un color de verdad y nada más: esto acaba dentro de un `style` en
++     la pantalla, y ahí no entra texto que venga del navegador sin
++     mirar. */
++  if el_color !~ '^#[0-9A-Fa-f]{6}$' then
++    raise exception 'Eso no es un color.';
++  end if;
++
++  if not exists (
++    select 1 from miembros m
++    where m.hogar_id = casa and m.perfil_id = auth.uid() and m.papel = 'propietario'
++  ) then
++    raise exception 'Solo quien creó la casa reparte los colores.';
++  end if;
++
++  update miembros m
++     set color = upper(el_color)
++   where m.hogar_id = casa and m.perfil_id = a_quien;
++
++  if not found then
++    raise exception 'Esa persona no está en tu casa.';
++  end if;
++end;
++$$;
++
++revoke all on function poner_color(uuid, text) from public;
++grant execute on function poner_color(uuid, text) to authenticated;
++
++
++-- ── 7 · Comprobación ───────────────────────────────────────
++/*
++  TRES resultados.
++
++  1 · Cada persona con su color. Ni un `color` nulo, y dentro de una
++      misma casa ningún color repetido. Si se repite, dos personas se
++      confunden en la agenda — que es exactamente lo que este archivo
++      venía a evitar.
++
++  2 · Las políticas de la agenda y el corcho apuntando a
++      `puedo_en_agenda`. Tienen que salir SEIS: crear, editar y borrar
++      de `recordatorios` y de `notas`.
++
++  3 · Las funciones, todas `definer`.
++*/
++select
++  h.nombre                as casa,
++  p.nombre                as persona,
++  m.rol,
++  m.color,
++  count(*) over (partition by m.hogar_id, m.color) = 1 as color_suyo
++from miembros m
++join perfiles p on p.id = m.perfil_id
++join hogares  h on h.id = m.hogar_id
++order by h.nombre, p.nombre;
++
++select tablename as tabla, policyname as politica, cmd as para_que
++from pg_policies
++where tablename in ('recordatorios', 'notas')
++  and (qual ilike '%puedo_en_agenda%' or with_check ilike '%puedo_en_agenda%')
++order by tablename, policyname;
++
++select
++  p.proname as funcion,
++  case when p.prosecdef then 'definer' else '⚠ invoker' end as seguridad
++from pg_proc p
++join pg_namespace n on n.oid = p.pronamespace
++where n.nspname = 'public'
++  and p.proname in ('puedo_escribir', 'puedo_en_agenda', 'poner_rol', 'poner_color', 'mi_rol')
++order by p.proname;
+-- 
+2.43.0
+

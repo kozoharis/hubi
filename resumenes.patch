@@ -1,0 +1,395 @@
+From 3f7a53decb7116b91d279d63b35623c74177d16a Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 20:42:19 +0000
+Subject: [PATCH] =?UTF-8?q?La=20rueda,=20del=20trazo=20de=20las=20dem?=
+ =?UTF-8?q?=C3=A1s.=20Y=20las=20tarjetas=20anchas=20dicen=20qu=C3=A9=20hay?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+── LA RUEDA ──
+
+Fuera el degradado: a ese tamaño pesaba demasiado. Una rueda de ocho
+dientes ya es un dibujo denso de por sí, y en color vivo se comía la
+esquina entera. Ahora va con el mismo trazo que las pestañas de abajo
+—línea fina, gris apagado, 25 px— y la palabra debajo igual que ellas.
+
+Lo que se quiere de ese botón es que ESTÉ, no que llame. Se toca una
+vez al mes.
+
+── LAS TARJETAS ANCHAS ──
+
+Tenían sitio de sobra y no decían nada de lo que hay dentro.
+
+  Guardar documento   «34 guardados · hace 2 días»
+  Cuentas de casa     «1.240 € este trimestre / Lo que más, la compra»
+
+Lo primero no es adorno: era la única tarjeta del Inicio que no
+contaba nada de sí misma, y es justo donde más tranquiliza saberlo.
+Quien guarda una factura y no vuelve a verla nunca acaba dudando de si
+se guardó — y esa duda no se quita entrando, se quita antes de entrar.
+
+Lo segundo es la diferencia entre un número y un dato: «1.240 €» dice
+cuánto, «lo que más, la compra» dice si hay algo que mirar. Y va por el
+mismo nivel al que desglosa la pantalla de cuentas, a propósito: si
+aquí pusiera «Alimentación» y dentro «Compras», parecerían dos cifras
+distintas.
+
+El tiempo se dice transcurrido y no en fecha: al mirar el Inicio no se
+quiere saber qué día fue, se quiere saber si esto sigue vivo.
+«14/08/2026» obliga a restar; «hace 3 semanas» ya es la respuesta.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/iconos.tsx     |  69 ----------------------------
+ app/page.tsx       | 112 ++++++++++++++++++++++++++++++++-------------
+ lib/gastos-casa.ts |  58 +++++++++++++++++++----
+ 3 files changed, 130 insertions(+), 109 deletions(-)
+
+diff --git a/app/iconos.tsx b/app/iconos.tsx
+index 8f58fad..a670833 100644
+--- a/app/iconos.tsx
++++ b/app/iconos.tsx
+@@ -141,75 +141,6 @@ export function Pastilla({
+   )
+ }
+ 
+-/*
+-  ═══════════════════════════════════════════════════════════════
+-  LA RUEDA DE AJUSTES, CON LOS COLORES DE HUBI
+-  ═══════════════════════════════════════════════════════════════
+-
+-  Suelta, sin caja. Una píldora con borde y fondo la convertía en «un
+-  botón más» al lado del logo, y en esa esquina no compite con nada:
+-  es lo único que hay.
+-
+-  ─────────────────────────────────────────────────────────────
+-  EL COLOR SALE DE LA PROPIA H
+-
+-  Turquesa, naranja y rojo son los píxeles del logo, medidos — no tres
+-  colores bonitos elegidos aparte. Por eso la rueda se lee como parte
+-  de HUBI y no como un icono pegado encima.
+-
+-  ─────────────────────────────────────────────────────────────
+-  SE VE PEQUEÑA Y SE TOCA GRANDE
+-
+-  El dibujo mide 30 px; lo que responde al dedo, 48. Es la regla de
+-  siempre —nada por debajo de 48 para lo que hay que pulsar— y aquí
+-  hace más falta que nunca: sin caja no hay borde que diga dónde
+-  acaba, así que el hueco tiene que perdonar la puntería.
+-
+-  ─────────────────────────────────────────────────────────────
+-  Y EL DEGRADADO LLEVA UN IDENTIFICADOR FIJO, A PROPÓSITO
+-
+-  Normalmente eso sería un fallo esperando a pasar: dos SVG con el
+-  mismo identificador y el segundo se pinta con el degradado del
+-  primero. Aquí da igual —los dos degradados son idénticos— y evita
+-  tener que convertir este archivo en componente de navegador solo
+-  para generar un número. Este archivo lo usan pantallas de servidor;
+-  un `useId` aquí las rompería todas.
+-*/
+-export function Rueda({ tam = 30 }: { tam?: number }) {
+-  return (
+-    <svg
+-      width={tam}
+-      height={tam}
+-      viewBox="0 0 24 24"
+-      fill="none"
+-      aria-hidden
+-      style={{ display: 'block' }}
+-    >
+-      <defs>
+-        <linearGradient
+-          id="hubi-rueda"
+-          x1="2.5"
+-          y1="2.5"
+-          x2="21.5"
+-          y2="21.5"
+-          gradientUnits="userSpaceOnUse"
+-        >
+-          <stop offset="0%" stopColor="#02C1C0" />
+-          <stop offset="48%" stopColor="#FF7D20" />
+-          <stop offset="100%" stopColor="#FD4F4F" />
+-        </linearGradient>
+-      </defs>
+-      <path
+-        d={TRAZOS.rueda}
+-        stroke="url(#hubi-rueda)"
+-        strokeWidth={1.9}
+-        strokeLinecap="round"
+-        strokeLinejoin="round"
+-      />
+-    </svg>
+-  )
+-}
+-
+ /* ── El logotipo ─────────────────────────────────────────
+    Es el archivo de verdad, con su degradado y su onda. Sobre fondo
+    oscuro hay que usar la variante clara: en la otra, el trazo derecho
+diff --git a/app/page.tsx b/app/page.tsx
+index 5ca3cc1..ded1d71 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -7,7 +7,7 @@ import Barra from './barra'
+ import Arranque from './arranque'
+ import Invitacion from './invitacion'
+ import Cabecera from './cabecera'
+-import { Ico, Logo, Pastilla, Rueda, pintaDe } from './iconos'
++import { Ico, Logo, Pastilla, pintaDe } from './iconos'
+ import Avatar from './avatar'
+ import { cuando, type Recordatorio } from '@/lib/tablon'
+ import { leerPerfil } from '@/lib/perfil'
+@@ -116,6 +116,7 @@ export default async function Inicio({
+     { count: porComprar },
+     notasPuestas,
+     gastoCasa,
++    { data: ultimoPapel, count: cuantosPapeles },
+   ] =
+     await Promise.all([
+       leerPerfil(supabase, user.id, user.email),
+@@ -153,8 +154,25 @@ export default async function Inicio({
+       /* Las notas del corcho, y cuántas te están esperando a ti. */
+       cuantasNotas(supabase, user.id),
+ 
+-      /* Lo que se va este trimestre fuera de las actividades. */
++      /* Lo que se va este trimestre fuera de las actividades, y en qué. */
+       gastadoEnCasa(supabase),
++
++      /*
++        Cuántos papeles hay guardados y cuándo fue el último.
++
++        No es adorno: la tarjeta de «Guardar documento» era la única
++        del Inicio que no decía NADA de lo que hay dentro. Y es
++        justamente donde más tranquiliza saberlo — quien guarda una
++        factura y no vuelve a verla nunca acaba dudando de si se
++        guardó. «34 papeles · el último, hace 2 días» contesta esa
++        duda sin entrar.
++      */
++      supabase
++        .from('documentos')
++        .select('creado_en', { count: 'exact' })
++        .is('eliminado_en', null)
++        .order('creado_en', { ascending: false })
++        .limit(1),
+     ])
+ 
+   /* ¿Esta casa usa la lista de la compra? Envuelto: la columna es
+@@ -286,33 +304,22 @@ export default async function Inicio({
+             idioma, y Ajustes ES lo mismo que ellas: un sitio al que
+             se va. Que se parezca es lo honesto.
+ 
+-            Lo que lo hace distinto no es la forma, es el COLOR. Los
+-            cinco de abajo van en gris o en verde; éste lleva el
+-            degradado de la H, porque no es una sección de la casa: es
+-            tuyo. Y con eso basta para que no se confunda con una
+-            sexta pestaña que se ha subido de sitio.
+-
+-            La palabra en versalitas y con separación entre letras. Es
+-            una firma tipográfica: se lee como una etiqueta puesta a
+-            propósito, no como un botón al que se le ha caído la caja.
+-            Y en mayúsculas aguanta el tamaño pequeño mucho mejor que
+-            en minúsculas, que a 11 px empiezan a cerrarse.
++            Y con el MISMO trazo que ellas: línea fina, gris apagado,
++            25 px. Se probó con el degradado de la H y a ese tamaño
++            pesaba demasiado — una rueda de ocho dientes ya es un
++            dibujo denso, y en color vivo se comía la esquina entera.
++            Aquí lo que se quiere es que esté, no que llame.
+ 
+-            48 px de hueco tocable aunque el conjunto mida menos: sin
+-            borde no hay nada que diga dónde acaba, así que tiene que
++            48 px de hueco tocable aunque el dibujo mida menos: sin
++            caja no hay borde que diga dónde acaba, así que tiene que
+             perdonar la puntería.
+           */}
+           <Link
+             href="/ajustes"
+-            className="-mr-2 flex min-h-[48px] w-[60px] shrink-0 flex-col items-center justify-center gap-[3px]"
++            className="-mr-2 flex min-h-[48px] w-[62px] shrink-0 flex-col items-center justify-center gap-1 text-[12px] font-bold text-apagado"
+           >
+-            <Rueda tam={27} />
+-            <span
+-              className="whitespace-nowrap text-[10.5px] font-extrabold uppercase leading-none text-tenue"
+-              style={{ letterSpacing: '0.11em' }}
+-            >
+-              Ajustes
+-            </span>
++            <Ico nombre="rueda" tam={25} grosor={1.9} />
++            <span>Ajustes</span>
+           </Link>
+         </div>
+       </Cabecera>
+@@ -429,8 +436,18 @@ export default async function Inicio({
+               <span className="block whitespace-nowrap text-[19px] font-extrabold tracking-tight">
+                 Guardar documento
+               </span>
+-              <span className="block text-[14.5px] font-bold text-verde">
+-                Haz una foto y yo lo archivo
++              {/* Lo que hay dentro, en una línea. Era la única tarjeta
++                  del Inicio que no decía nada de sí misma — y es donde
++                  más tranquiliza saberlo: quien guarda una factura y no
++                  vuelve a verla nunca acaba dudando de si se guardó. */}
++              <span className="block truncate text-[14.5px] font-bold text-verde">
++                {cuantosPapeles && cuantosPapeles > 0
++                  ? `${cuantosPapeles} guardados${
++                      desdeElUltimo(ultimoPapel?.[0]?.creado_en as string | undefined)
++                        ? ` · ${desdeElUltimo(ultimoPapel?.[0]?.creado_en as string | undefined)}`
++                        : ''
++                    }`
++                  : 'Haz una foto y yo lo archivo'}
+               </span>
+             </span>
+             <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-verde" />
+@@ -511,13 +528,25 @@ export default async function Inicio({
+               <span className="block whitespace-nowrap text-[15px] font-bold text-tenue">
+                 Cuentas de casa
+               </span>
+-              {gastoCasa > 0 ? (
+-                <span className="block text-[24px] font-extrabold leading-tight tracking-tight">
+-                  {eurosRedondo(gastoCasa)}
+-                  <span className="ml-1.5 text-[14.5px] font-bold text-tenue">
+-                    este trimestre
++              {gastoCasa.total > 0 ? (
++                <>
++                  <span className="block text-[24px] font-extrabold leading-tight tracking-tight">
++                    {eurosRedondo(gastoCasa.total)}
++                    <span className="ml-1.5 text-[14.5px] font-bold text-tenue">
++                      este trimestre
++                    </span>
+                   </span>
+-                </span>
++                  {/* En qué se va más. «1.240 €» dice cuánto; esto dice
++                      si hay algo que mirar, que es lo que hace entrar. */}
++                  {gastoCasa.mayor && (
++                    <span
++                      className="mt-0.5 block truncate text-[13.5px] font-bold"
++                      style={{ color: '#8B5CF6' }}
++                    >
++                      Lo que más, {gastoCasa.mayor.toLowerCase()}
++                    </span>
++                  )}
++                </>
+               ) : (
+                 <span className="block text-[18px] font-extrabold leading-snug tracking-tight">
+                   Todavía no hay nada apuntado
+@@ -706,6 +735,27 @@ function Cuadro({
+   )
+ }
+ 
++/*
++  «el último, hoy» · «hace 2 días» · «hace 3 semanas»
++
++  Se dice en tiempo transcurrido y no con la fecha: lo que se quiere
++  saber al mirar el Inicio no es qué día fue, es si esto sigue vivo.
++  «14/08/2026» obliga a restar mentalmente; «hace 3 semanas» ya es la
++  respuesta.
++*/
++function desdeElUltimo(iso: string | undefined): string | null {
++  if (!iso) return null
++  const cuando = new Date(iso)
++  if (Number.isNaN(cuando.getTime())) return null
++
++  const dias = Math.floor((Date.now() - cuando.getTime()) / 86_400_000)
++  if (dias <= 0) return 'el último, hoy'
++  if (dias === 1) return 'el último, ayer'
++  if (dias < 14) return `hace ${dias} días`
++  if (dias < 60) return `hace ${Math.round(dias / 7)} semanas`
++  return `hace ${Math.round(dias / 30)} meses`
++}
++
+ /** "en 8 días", "mañana", "en 2 meses" */
+ function enCuanto(fecha: string | null): string {
+   if (!fecha) return ''
+diff --git a/lib/gastos-casa.ts b/lib/gastos-casa.ts
+index 1a23c52..2747a82 100644
+--- a/lib/gastos-casa.ts
++++ b/lib/gastos-casa.ts
+@@ -32,17 +32,26 @@ import { hoyAqui } from './tablon'
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ type Cliente = SupabaseClient<any, any, any>
+ 
+-export async function gastadoEnCasa(supabase: Cliente): Promise<number> {
++export type Resumen = {
++  /** Lo gastado este trimestre fuera de las actividades. */
++  total: number
++  /** En qué se va más, si hay algo. «Compras», «Taller»… */
++  mayor: string | null
++}
++
++const NADA: Resumen = { total: 0, mayor: null }
++
++export async function gastadoEnCasa(supabase: Cliente): Promise<Resumen> {
+   try {
+     const periodo = calcular('trimestre', hoyAqui())
+ 
+     const { data: cats, error } = await supabase
+       .from('categorias')
+-      .select('id, padre_id, lleva_cuentas')
++      .select('id, padre_id, nombre, lleva_cuentas')
+ 
+-    if (error || !cats) return 0
++    if (error || !cats) return NADA
+ 
+-    type Cat = { id: string; padre_id: string | null; lleva_cuentas?: boolean }
++    type Cat = { id: string; padre_id: string | null; nombre: string; lleva_cuentas?: boolean }
+     const porId = new Map((cats as Cat[]).map((c) => [c.id, c]))
+ 
+     /* Las que cuelgan de una raíz SIN cuentas propias. Se recorre
+@@ -59,7 +68,7 @@ export async function gastadoEnCasa(supabase: Cliente): Promise<number> {
+       if (actual.lleva_cuentas !== true) deCasa.add(c.id)
+     }
+ 
+-    if (deCasa.size === 0) return 0
++    if (deCasa.size === 0) return NADA
+ 
+     const { data: movs } = await supabase
+       .from('movimientos')
+@@ -68,10 +77,41 @@ export async function gastadoEnCasa(supabase: Cliente): Promise<number> {
+       .gte('fecha', periodo.desde)
+       .lte('fecha', periodo.hasta)
+ 
+-    return (movs ?? [])
+-      .filter((m: { categoria_id: string | null }) => m.categoria_id && deCasa.has(m.categoria_id))
+-      .reduce((suma: number, m: { importe: number }) => suma + Number(m.importe), 0)
++    const mios = (movs ?? []).filter(
++      (m: { categoria_id: string | null }) => m.categoria_id && deCasa.has(m.categoria_id)
++    )
++
++    const total = mios.reduce((suma: number, m: { importe: number }) => suma + Number(m.importe), 0)
++
++    /*
++      ── EN QUÉ SE VA MÁS ──
++
++      Por el segundo nivel: Compras, Reparaciones, Taller, ITV. Es la
++      misma altura a la que desglosa la pantalla de cuentas, y a
++      propósito — si la tarjeta dijera «Alimentación» y al entrar
++      pusiera «Compras», parecerían dos cifras distintas.
++
++      Un dato en una tarjeta vale por lo que ahorra: «1.240 €» te dice
++      cuánto, «lo que más, la compra» te dice si hay algo que mirar.
++    */
++    const grupos = new Map<string, number>()
++
++    for (const m of mios as { importe: number; categoria_id: string }[]) {
++      let actual = porId.get(m.categoria_id)
++      while (actual?.padre_id) {
++        const padre = porId.get(actual.padre_id)
++        if (!padre) break
++        if (!padre.padre_id) break
++        actual = padre
++      }
++      if (!actual) continue
++      grupos.set(actual.nombre, (grupos.get(actual.nombre) ?? 0) + Number(m.importe))
++    }
++
++    const mayor = [...grupos.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
++
++    return { total, mayor }
+   } catch {
+-    return 0
++    return NADA
+   }
+ }
+-- 
+2.43.0
+

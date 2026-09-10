@@ -65,6 +65,16 @@ export async function POST(peticion: NextRequest) {
       ? impuestoLeido
       : null
 
+  /* Y los EUROS de impuesto, si el papel los imprimía. Es lo que salva
+     al ticket del súper, que lleva tres tipos y por tanto ninguno. */
+  const cuotaLeida = formulario.has('impuesto_cuota')
+    ? Number(String(formulario.get('impuesto_cuota')).replace(',', '.'))
+    : null
+  const impuestoCuota =
+    cuotaLeida != null && Number.isFinite(cuotaLeida) && cuotaLeida >= 0
+      ? cuotaLeida
+      : null
+
   const importeBruto = String(formulario.get('importe') ?? '').replace(',', '.')
   const importe =
     importeBruto && !Number.isNaN(Number(importeBruto)) ? Number(importeBruto) : null
@@ -249,6 +259,25 @@ export async function POST(peticion: NextRequest) {
   const hoja = camino[camino.length - 1]
   let repetida: string | null = null
 
+  /*
+    ── ¿HA SUMADO EN LAS CUENTAS, SÍ O NO? ──
+
+    Esto se devuelve a la pantalla, y es nuevo. Hasta hoy el guardado
+    decía «Documento guardado» exactamente igual tanto si el importe
+    había entrado en el balance como si no, y la diferencia entre las
+    dos cosas es justo lo que promete el punto 14: que los documentos
+    alimenten las cuentas solos.
+
+    El caso que lo destapó: una factura de una actividad archivada en
+    su carpeta de «Documentos» —que es 'neutro', porque ahí van los
+    contratos y las pólizas—. El papel queda perfectamente guardado y
+    el importe no cuenta en ningún sitio. Sin decirlo, eso son unas
+    cuentas que se quedan cortas y nadie sabe por qué.
+  */
+  let apuntado = false
+  const conDinero = Boolean(importe && importe > 0)
+  const enPapeles = conDinero && hoja.naturaleza === 'neutro'
+
   if (importe && importe > 0 && (hoja.naturaleza === 'gasto' || hoja.naturaleza === 'ingreso')) {
     /* El IGIC o el IVA de esta factura. Sale del tipo de su partida, o
        del general de la casa si la partida no dice nada. Nadie teclea
@@ -262,6 +291,7 @@ export async function POST(peticion: NextRequest) {
          se acierta casi siempre; leyendo se acierta siempre que el
          papel lo ponga, que es la mayoría de las facturas. */
       tipoDicho: impuestoTipo,
+      cuotaDicha: impuestoCuota,
     })
 
     const elApunte: Record<string, unknown> = {
@@ -294,6 +324,8 @@ export async function POST(peticion: NextRequest) {
     if (fallo) {
       console.error('[HUBI] Documento guardado sin apunte:', fallo)
       if (fallo.code === '23505' && referencia) repetida = referencia
+    } else {
+      apuntado = true
     }
   }
 
@@ -308,6 +340,13 @@ export async function POST(peticion: NextRequest) {
     /* El papel está guardado, pero esa reserva ya estaba apuntada, así
        que el ingreso NO se ha vuelto a sumar. Se dice. */
     repetida,
+    /* Y si traía importe: si ha entrado en las cuentas, y si no ha
+       entrado por estar en una carpeta de papeles. La pantalla lo
+       cuenta en lenguaje normal. */
+    conDinero,
+    apuntado,
+    enPapeles,
+    seccion: camino[0]?.nombre ?? null,
   })
 }
 

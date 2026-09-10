@@ -1,0 +1,289 @@
+From d663f848e3eafd0463373bec5a0ca836465d3c73 Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 23:30:44 +0000
+Subject: [PATCH] =?UTF-8?q?La=20compra=20en=20la=20Agenda=20fallaba=20de?=
+ =?UTF-8?q?=20verdad,=20y=20el=20campo=20de=20la=20hora=20se=20sal=C3=ADa?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+EL FALLO. Ese cartel rojo no era un aviso mal puesto: la compra no
+llegaba a la Agenda.
+
+Para crear la tarea, esta ruta se llamaba a sí misma por HTTP —un
+`fetch` a `/api/recordatorios` reenviando la cookie de la sesión—. Se
+veía elegante (reutilizar la ruta que ya sabe crear tareas) y es de las
+cosas que fallan en producción y no en el ordenador de uno:
+
+  · el servidor tiene que poder llamarse a sí mismo por HTTP, que
+    depende del despliegue y no de nuestro código;
+  · `peticion.url` en Vercel no siempre es la dirección pública;
+  · y si la cookie no viaja tal cual, la llamada vuelve como «no has
+    entrado» sobre una petición que SÍ tiene sesión.
+
+Ahora se escribe en la tabla directamente, con la misma sesión que ya
+hay aquí: mismas políticas, mismo resultado, un viaje menos y una
+manera menos de fallar. Y si aun así falla, el mensaje lleva el motivo
+en vez de un cartel rojo sin nada que investigar.
+
+De paso se recupera el aviso al móvil de quien va a la compra, que con
+el `fetch` interno dependía de que aquella llamada saliera bien.
+
+EL CAMPO DE LA HORA. En iPhone, `input[type="time"]` trae de fábrica
+su propio ancho y con `width: 100%` el navegador se queda con el suyo
+si es mayor: la caja asomaba por la derecha del panel. `min-width: 0`
+es la línea que lo arregla — sin ella el ancho de fábrica funciona
+como un suelo que el 100% no puede bajar.
+
+Va a todos los campos de fecha y hora, tengan clase o no: hay por
+media aplicación y el problema es del navegador, no de esta pantalla.
+
+Y «Ponerlo en la Agenda» pasa a ser «Guardar» / «Dejarlo». El panel ya
+dice arriba qué se está decidiendo; el botón solo tiene que decir si
+se guarda o no.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/api/compra/listas/route.ts | 122 ++++++++++++++++++++++++---------
+ app/compra/programar.tsx       |   9 ++-
+ app/globals.css                |  35 ++++++++++
+ 3 files changed, 131 insertions(+), 35 deletions(-)
+
+diff --git a/app/api/compra/listas/route.ts b/app/api/compra/listas/route.ts
+index 8cd172e..3cee542 100644
+--- a/app/api/compra/listas/route.ts
++++ b/app/api/compra/listas/route.ts
+@@ -1,6 +1,8 @@
+ import { NextResponse, type NextRequest } from 'next/server'
+ import { clienteSesion } from '@/lib/supabase/sesion'
+ import { quien } from '@/lib/supabase/quien'
++import { avisarA } from '@/lib/push'
++import { deducirTipo } from '@/lib/tablon'
+ 
+ export const dynamic = 'force-dynamic'
+ 
+@@ -165,50 +167,93 @@ export async function PATCH(peticion: NextRequest) {
+   const nota = `${cuantas} ${cuantas === 1 ? 'cosa' : 'cosas'} en la lista.`
+ 
+   // ── La tarea de la Agenda ──
++  /*
++    ═══════════════════════════════════════════════════════════
++    LA TAREA DE LA AGENDA SE ESCRIBE AQUÍ, NO LLAMÁNDONOS A NOSOTROS
++    ═══════════════════════════════════════════════════════════
++
++    Aquí había un `fetch` a nuestra propia ruta `/api/recordatorios`,
++    reenviando la cookie de la sesión. Se veía elegante —reutilizar la
++    ruta que ya sabe crear tareas— y es de las cosas que fallan en
++    producción y no en el ordenador de uno:
++
++      · el servidor tiene que poder llamarse a sí mismo por HTTP, que
++        depende del despliegue y no de nuestro código;
++      · `peticion.url` en Vercel no siempre es la dirección pública;
++      · y si la cookie no viaja tal cual, la llamada vuelve como «no
++        has entrado» — sobre una petición que SÍ tiene sesión.
++
++    Y lo que veía la persona era «No se ha podido poner la compra en la
++    Agenda» sobre una compra perfectamente guardada. Pasó de verdad.
++
++    Ahora se escribe en la tabla directamente, con la misma sesión que
++    ya tenemos aquí: mismas políticas, mismo resultado, un viaje menos
++    y una manera menos de fallar.
++  */
+   let recordatorioId = antes.recordatorio_id as string | null
+ 
+   if (fecha) {
++    const laTarea = {
++      titulo,
++      /* El mismo que pondría la ruta de tareas: lo deduce del título
++         para que en la Agenda salga con su icono, como todo lo demás.
++         `'compra'` no es un tipo que HUBI conozca. */
++      tipo: deducirTipo(titulo),
++      asignado_a: asignado,
++      fecha,
++      hora,
++      nota,
++      aviso_previo: hora ? (cuerpo.aviso_previo ?? '1h') : 'sin_aviso',
++    }
++
+     if (recordatorioId) {
+       /* Ya tenía tarea: se CAMBIA. Aquí estaría el fallo de crear una
+-         nueva cada vez que se toca la fecha. */
+-      const r = await fetch(new URL(`/api/recordatorios/${recordatorioId}`, peticion.url), {
+-        method: 'PUT',
+-        headers: {
+-          'Content-Type': 'application/json',
+-          cookie: peticion.headers.get('cookie') ?? '',
+-        },
+-        body: JSON.stringify({ titulo, fecha, hora, asignado_a: asignado, nota }),
+-      })
+-      /* Si la tarea se borró desde la Agenda, ya no está: se hace una
+-         nueva en vez de dejar la lista con una fecha que no avisa. */
+-      if (!r.ok) recordatorioId = null
++         nueva cada vez que se toca el día. */
++      const { data: cambiada } = await supabase
++        .from('recordatorios')
++        .update(laTarea)
++        .eq('id', recordatorioId)
++        .select('id')
++
++      /* Si se borró desde la Agenda ya no está: se hace una nueva en
++         vez de dejar la lista con una fecha que no avisa. */
++      if (!cambiada || cambiada.length === 0) recordatorioId = null
+     }
+ 
+     if (!recordatorioId) {
+-      const r = await fetch(new URL('/api/recordatorios', peticion.url), {
+-        method: 'POST',
+-        headers: {
+-          'Content-Type': 'application/json',
+-          cookie: peticion.headers.get('cookie') ?? '',
+-        },
+-        body: JSON.stringify({
+-          titulo,
+-          fecha,
+-          hora,
+-          asignado_a: asignado,
+-          aviso_previo: hora ? (cuerpo.aviso_previo ?? '1h') : 'ninguno',
+-          nota,
+-        }),
+-      })
+-      if (r.ok) {
+-        const d = (await r.json().catch(() => ({}))) as { ids?: string[]; id?: string }
+-        recordatorioId = d.ids?.[0] ?? d.id ?? null
+-      } else {
++      const { data: creada, error: alCrear } = await supabase
++        .from('recordatorios')
++        .insert({ ...laTarea, creado_por: user.id })
++        .select('id')
++        .maybeSingle()
++
++      if (alCrear || !creada?.id) {
++        console.error('[HUBI] No se ha podido poner la compra en la Agenda:', alCrear)
+         return NextResponse.json(
+-          { error: 'No se ha podido poner la compra en la Agenda.' },
+-          { status: 502 }
++          {
++            error: 'No se ha podido poner la compra en la Agenda.',
++            /* El motivo de verdad. Sin él, esto era un cartel rojo sin
++               nada que investigar. */
++            detalle: alCrear?.message,
++          },
++          { status: 500 }
+         )
+       }
++
++      recordatorioId = creada.id as string
++    }
++
++    /*
++      Y se avisa a quien le toca ir. Sin esperarlo: la compra ya está
++      programada, y un aviso que no sale no puede tumbar lo que sí se
++      ha guardado.
++    */
++    if (asignado && asignado !== user.id) {
++      avisarA(asignado, {
++        titulo: 'La compra',
++        cuerpo: `${titulo} · ${cuandoEnPalabras(fecha, hora)}`,
++        url: '/compra',
++      }).catch((e) => console.error('[HUBI] Programada sin avisar:', e))
+     }
+   }
+ 
+@@ -258,3 +303,14 @@ export async function DELETE(peticion: NextRequest) {
+ 
+   return NextResponse.json({ bien: true })
+ }
++
++/** «mañana a las 10:00» · «el 12 de septiembre». Para el aviso. */
++function cuandoEnPalabras(fecha: string, hora: string | null): string {
++  const meses = [
++    'enero','febrero','marzo','abril','mayo','junio',
++    'julio','agosto','septiembre','octubre','noviembre','diciembre',
++  ]
++  const [a, m, d] = fecha.split('-').map(Number)
++  const cuando = a && m && d ? `${d} de ${meses[m - 1]}` : fecha
++  return hora ? `${cuando} a las ${hora}` : cuando
++}
+diff --git a/app/compra/programar.tsx b/app/compra/programar.tsx
+index 0f94c3e..a140d42 100644
+--- a/app/compra/programar.tsx
++++ b/app/compra/programar.tsx
+@@ -138,6 +138,11 @@ export default function Programar({
+       </div>
+ 
+       {/* ── La hora ── */}
++      {/*
++        «Si quieres» y no «opcional»: la mitad de las compras no tienen
++        hora, y quien las programa no debe sentir que se está saltando
++        un campo.
++      */}
+       <p className="rotulo mt-4">A qué hora (si quieres)</p>
+       <input
+         type="time"
+@@ -198,14 +203,14 @@ export default function Programar({
+           className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+         >
+           <Ico nombre="check" tam={19} grosor={2.3} />
+-          {guardando ? 'Guardando…' : 'Ponerlo en la Agenda'}
++          {guardando ? 'Guardando…' : 'Guardar'}
+         </button>
+         <button
+           onClick={alCerrar}
+           disabled={guardando}
+           className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+         >
+-          Ahora no
++          Dejarlo
+         </button>
+       </div>
+     </div>
+diff --git a/app/globals.css b/app/globals.css
+index 43fcdee..206e3bb 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -458,6 +458,41 @@ input, textarea, select {
+   font-weight: 600;
+ }
+ 
++/*
++  ── LOS CAMPOS DE FECHA Y HORA SE SALÍAN DE SU CAJA ──
++
++  En iPhone, `input[type="time"]` y `type="date"` traen de fábrica su
++  propio ancho —el que necesita el reloj del sistema— y un relleno
++  interno que no es el nuestro. Con `width: 100%` el navegador se
++  quedaba con el suyo si era mayor, y la caja asomaba por la derecha
++  del panel donde vive. Se veía como si la pantalla estuviera rota.
++
++  `min-width: 0` es la línea que lo arregla: sin ella, el ancho de
++  fábrica funciona como un suelo que el 100% no puede bajar. Y
++  `appearance: none` quita el relleno propio para que el texto empiece
++  donde empieza el de los demás campos.
++*/
++/* El arreglo del ancho va a TODOS, tengan la clase o no: hay campos
++   de fecha por media aplicación —el tablón, la finca, los papeles— y
++   el problema es del navegador, no de una pantalla concreta. */
++input[type='time'],
++input[type='date'],
++input[type='datetime-local'] {
++  min-width: 0;
++  max-width: 100%;
++}
++
++/* Y lo demás solo a los nuestros, para no cambiarle la pinta a nada
++   que ya estuviera bien. */
++.entrada[type='time'],
++.entrada[type='date'],
++.entrada[type='datetime-local'] {
++  -webkit-appearance: none;
++  appearance: none;
++  /* Sin altura de línea propia el texto se pega arriba en Safari. */
++  line-height: 3.5rem;
++}
++
+ 
+ /* ── La barra de abajo, clavada de verdad ──────────────────
+ 
+-- 
+2.43.0
+

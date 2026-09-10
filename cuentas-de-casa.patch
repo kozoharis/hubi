@@ -1,0 +1,1069 @@
+From 8c63e5c515c466b5b978730ecf2a9d896f512467 Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 17:44:00 +0000
+Subject: [PATCH] Las cuentas de casa, restaurantes, y el ticket desde la
+ compra
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Tres cosas que salen de la misma pregunta: ¿cuánto se nos va?
+
+  · CUENTAS DE CASA. Todo lo que no es una actividad —la compra, las
+    reparaciones, el restaurante, el taller, la ITV, los seguros—
+    sumado en una pantalla, con su desglose y su navegación por mes,
+    trimestre y año. Tarjeta en Inicio CON EL NÚMERO PUESTO: una que
+    dijera «mira lo que se gasta» no la toca nadie.
+
+    No es una pantalla nueva: es la de siempre con `raiz: null`, que
+    ahí significa «todo lo que no lleva cuentas propias». Copiarla
+    habrían sido dos sitios donde arreglar el mismo fallo.
+
+  · Y AQUÍ ESTABA EL AGUJERO DE VERDAD. Las carpetas base de una casa
+    nueva nacen con `naturaleza` a 'neutro': aunque HUBI lea «127,43 €»
+    en la factura de la luz, NO apunta el gasto. En la casa de Juan
+    Miguel no se veía porque el SQL 15 lo puso a mano. Cualquier otra
+    llevaría meses guardando facturas con el balance a cero, sin un
+    solo error por ninguna parte. El SQL 36 lo arregla en las que ya
+    existen y en `crear_mi_casa` para las que vengan.
+
+  · RESTAURANTES Y CAFETERÍAS, carpeta propia dentro de Casa. Comer
+    fuera no es una compra de casa, y metido dentro de Compras saldría
+    mezclado con el súper justo en el desglose que sirve para saber en
+    qué se va el dinero.
+
+  · EL TICKET, DESDE LA COMPRA. Un botón debajo de «Ya he comprado»,
+    con la carpeta ya elegida. Ése es el momento: acabas de salir del
+    súper con el papel en la mano. Antes eran cuatro pasos.
+
+De paso, dos cosas que estaban escritas a fuego y ya no:
+`/finca/apuntar` conocía dos secciones por su nombre —apuntar un gasto
+de unas obras acababa en las categorías de una finca que no existe— y
+`crear_mi_casa` impedía tener una segunda casa, que es lo contrario de
+lo que abrió el SQL 34. Ahora solo protege del doble toque.
+
+Falta ejecutar `sql/36-cuentas-de-casa.sql`.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/compra/lista.tsx       |  27 +++
+ app/compra/page.tsx        |  29 +++
+ app/cuentas.tsx            | 141 +++++++++++++--
+ app/finca/apuntar/page.tsx |  79 +++++++--
+ app/gastos/page.tsx        |  67 +++++++
+ app/page.tsx               |  52 ++++++
+ lib/gastos-casa.ts         |  77 ++++++++
+ sql/36-cuentas-de-casa.sql | 349 +++++++++++++++++++++++++++++++++++++
+ 8 files changed, 791 insertions(+), 30 deletions(-)
+ create mode 100644 app/gastos/page.tsx
+ create mode 100644 lib/gastos-casa.ts
+ create mode 100644 sql/36-cuentas-de-casa.sql
+
+diff --git a/app/compra/lista.tsx b/app/compra/lista.tsx
+index a57da77..f9731dd 100644
+--- a/app/compra/lista.tsx
++++ b/app/compra/lista.tsx
+@@ -1,6 +1,7 @@
+ 'use client'
+ 
+ import { useState, useTransition } from 'react'
++import Link from 'next/link'
+ import { useRouter } from 'next/navigation'
+ import { pasilloDe, PASILLOS } from '@/lib/comprables'
+ import { Ico } from '../iconos'
+@@ -68,6 +69,7 @@ export default function Pantalla({
+   habituales,
+   secciones,
+   listas,
++  ticketEn,
+ }: {
+   inicial: Cosa[]
+   nombres: Record<string, string>
+@@ -75,6 +77,8 @@ export default function Pantalla({
+   habituales: string[]
+   secciones: Seccion[]
+   listas: ListaCompra[]
++  /** La carpeta donde va el ticket del súper. Null si esta casa no la tiene. */
++  ticketEn: string | null
+ }) {
+   const router = useRouter()
+   const [, empezar] = useTransition()
+@@ -523,6 +527,29 @@ export default function Pantalla({
+           <p className="mt-2.5 text-center text-[15px] font-semibold leading-snug text-tenue">
+             Quita de la lista lo que ya está en el carro.
+           </p>
++
++          {/*
++            ── EL TICKET, AQUÍ Y NO EN OTRO SITIO ──
++
++            Justo debajo de «Ya he comprado», porque ése es el momento
++            exacto: acabas de salir del súper, tienes el papel en una
++            mano y el móvil en la otra. Ponerlo arriba, antes de
++            comprar, sería un botón que no sirve todavía.
++
++            Va con la carpeta ya elegida —Casa → Compras— así que son
++            dos toques: éste y la foto. Y se puede cambiar antes de
++            guardar, que hace falta el día que la compra sea para la
++            finca.
++          */}
++          {ticketEn && (
++            <Link
++              href={`/guardar?en=${ticketEn}`}
++              className="mt-3 flex h-[58px] w-full items-center justify-center gap-2.5 rounded-[18px] border border-borde bg-superficie text-[17px] font-extrabold text-tinta"
++            >
++              <Ico nombre="foto" tam={21} grosor={2.2} />
++              Guardar el ticket
++            </Link>
++          )}
+         </>
+       )}
+ 
+diff --git a/app/compra/page.tsx b/app/compra/page.tsx
+index dc4c4d3..9f36c29 100644
+--- a/app/compra/page.tsx
++++ b/app/compra/page.tsx
+@@ -35,6 +35,34 @@ export default async function Compra() {
+     .is('padre_id', null)
+     .eq('activa', true)
+     .order('orden')
++
++  /*
++    ── DÓNDE VA EL TICKET ──
++
++    Al salir del súper tienes el papel en la mano y el móvil en la
++    otra. Ése es el momento, y hasta ahora había que salir de la
++    compra, entrar en Guardar documento y buscar la carpeta a mano:
++    cuatro pasos para algo que se hace cada semana.
++
++    Se resuelve aquí y no en el navegador porque la carpeta es
++    distinta en cada casa. Se busca Casa → Compras → Alimentación, y
++    si esa casa no tiene el desglose de Compras, la propia Compras.
++    Si no hay ni eso, el botón no sale — mejor que no exista a que
++    lleve a una carpeta inventada.
++  */
++  const { data: arbol } = await supabase
++    .from('categorias')
++    .select('id, padre_id, nombre, segmento_drive')
++    .eq('activa', true)
++
++  const cats = arbol ?? []
++  const casa = cats.find((c) => c.segmento_drive === 'CASA' && !c.padre_id)
++  const compras = casa ? cats.find((c) => c.padre_id === casa.id && c.segmento_drive === 'COMPRAS') : null
++  const alimentacion = compras
++    ? cats.find((c) => c.padre_id === compras.id && c.segmento_drive === 'ALIMENTACION')
++    : null
++
++  const ticketEn = alimentacion?.id ?? compras?.id ?? null
+   const nombres = Object.fromEntries((perfiles ?? []).map((p) => [p.id, p.nombre]))
+ 
+   /* Las listas vivas. Puede haber varias por categoría: la del lunes
+@@ -168,6 +196,7 @@ export default async function Compra() {
+             nombre: r.nombre,
+             segmento: r.segmento_drive,
+           }))}
++          ticketEn={ticketEn}
+         />
+       </div>
+ 
+diff --git a/app/cuentas.tsx b/app/cuentas.tsx
+index a9b331c..1e080ad 100644
+--- a/app/cuentas.tsx
++++ b/app/cuentas.tsx
+@@ -25,8 +25,15 @@ import { hoyAqui } from '@/lib/tablon'
+ */
+ 
+ export type Cuenta = {
+-  /** El `segmento_drive` de la categoría raíz: FINCA, HELECHOS… */
+-  raiz: string
++  /**
++   * El `segmento_drive` de la categoría raíz: FINCA, HELECHOS…
++   *
++   * O `null`, que significa **todo lo que no es una actividad**: la
++   * Casa, los Vehículos, los Seguros, lo Personal. Ésas no tienen una
++   * raíz propia que sumar —son varias— y hasta hoy no tenían cuentas
++   * de ninguna clase, aunque llevaran meses apuntando gastos.
++   */
++  raiz: string | null
+   nombre: string
+   icono: Icono
+   color: string
+@@ -88,25 +95,55 @@ export default async function Cuentas({
+   const user = await quien(supabase)
+   if (!user) redirect('/entrar')
+ 
+-  const { data: categorias } = await supabase
+-    .from('categorias')
+-    .select('id, padre_id, nombre, segmento_drive')
++  /*
++    `lleva_cuentas` es del SQL 27 y hace falta para saber cuáles son
++    las actividades. Como siempre: si la columna no está, Postgres no
++    dice «esa columna no existe», rechaza la consulta ENTERA — y esta
++    pantalla enseñaría cero euros con las cuentas del trimestre
++    intactas debajo. Se pide con ella, y si no puede ser, sin ella.
++  */
++  const campos = 'id, padre_id, nombre, segmento_drive'
++  type Cat = {
++    id: string
++    padre_id: string | null
++    nombre: string
++    segmento_drive: string
++    lleva_cuentas?: boolean
++  }
++
++  let todas: Cat[] = []
++  const conCuentas = await supabase.from('categorias').select(`${campos}, lleva_cuentas`)
++  if (conCuentas.error) {
++    const basico = await supabase.from('categorias').select(campos)
++    todas = (basico.data ?? []) as Cat[]
++  } else {
++    todas = (conCuentas.data ?? []) as Cat[]
++  }
+ 
+-  const todas = categorias ?? []
+   const porId = new Map(todas.map((c) => [c.id, c]))
+ 
++  /** La raíz de la que cuelga una categoría. */
++  function raizDe(c: Cat): Cat {
++    let actual = c
++    while (actual.padre_id) {
++      const padre = porId.get(actual.padre_id)
++      if (!padre) break
++      actual = padre
++    }
++    return actual
++  }
++
+   // Solo cuenta lo que cuelga de esta sección: el seguro del coche es
+   // un gasto de la casa, no de la finca ni de Los Helechos.
+-  const raiz = todas.find((c) => c.segmento_drive === seccion.raiz && !c.padre_id)
++  const raiz = seccion.raiz
++    ? (todas.find((c) => c.segmento_drive === seccion.raiz && !c.padre_id) ?? null)
++    : null
++
+   const deFinca = new Set<string>()
+   for (const c of todas) {
+-    let actual: (typeof todas)[number] | undefined = c
+-    while (actual) {
+-      if (actual.id === raiz?.id) {
+-        deFinca.add(c.id)
+-        break
+-      }
+-      actual = actual.padre_id ? porId.get(actual.padre_id) : undefined
++    const suRaiz = raizDe(c)
++    if (seccion.raiz ? suRaiz.id === raiz?.id : suRaiz.lleva_cuentas !== true) {
++      deFinca.add(c.id)
+     }
+   }
+ 
+@@ -167,7 +204,27 @@ export default async function Cuentas({
+   const gastos = suma(movimientos.filter((m) => m.tipo === 'gasto'))
+   const balance = ingresos - gastos
+ 
+-  const desglose = agrupar(movimientos.filter((m) => m.tipo === 'gasto'), porId)
++  /*
++    ── A QUÉ ALTURA SE DESGLOSA ──
++
++    Dentro de una actividad, por la carpeta final: Agua, Luz,
++    Productos. Son siete y se leen de un vistazo.
++
++    En las cuentas de casa no vale lo mismo. Ahí cuelgan cinco raíces
++    con sus hojas —Alimentación, Menaje, Limpieza, ITV, Impuestos,
++    Personales…— y saldrían treinta renglones de dos euros cada uno.
++    Lo que se quiere saber es en QUÉ se va: la compra, las
++    reparaciones, el restaurante, el coche. Eso es el segundo nivel.
++
++    Cuando dos coinciden de nombre —«Casa» es a la vez una raíz y un
++    seguro— se les pone delante de dónde vienen. Solo a ésos: poner
++    «Casa · Compras» en todas las líneas sería ruido en las diez que
++    no lo necesitan.
++  */
++  const desglose = seccion.raiz
++    ? agrupar(movimientos.filter((m) => m.tipo === 'gasto'), porId)
++    : porGrupo(movimientos.filter((m) => m.tipo === 'gasto'), porId)
++
+   const mayor = desglose[0]?.total ?? 0
+ 
+   /*
+@@ -451,7 +508,7 @@ export default async function Cuentas({
+         </section>
+ 
+         <Link
+-          href={`/finca/apuntar?seccion=${seccion.raiz}`}
++          href={`/finca/apuntar?seccion=${seccion.raiz ?? 'resto'}`}
+           className="mt-5 flex h-[60px] items-center justify-center gap-2.5 rounded-[18px] bg-boton text-[18px] font-extrabold text-boton-texto"
+         >
+           <Ico nombre="mas" tam={22} grosor={2.3} />
+@@ -571,6 +628,58 @@ function repartir(
+   return { casas, comunes, tope, reparte, cuantas: unidades.length }
+ }
+ 
++/*
++  El desglose de las cuentas de casa, por el segundo nivel.
++
++  Se sube desde la carpeta donde está el gasto hasta encontrar la que
++  cuelga directamente de una raíz. Un ticket en «Casa → Compras →
++  Alimentación» cuenta como **Compras**; la ITV cuenta como **ITV**,
++  porque ya está en el segundo nivel.
++
++  Y al final se desempata: dos grupos que se llamen igual llevan
++  delante su raíz. Solo ésos.
++*/
++function porGrupo(
++  lista: Movimiento[],
++  porId: Map<string, { id: string; padre_id: string | null; nombre: string }>
++): { nombre: string; total: number }[] {
++  const totales = new Map<string, { nombre: string; raiz: string; total: number }>()
++
++  for (const m of lista) {
++    let actual = m.categoria_id ? porId.get(m.categoria_id) : undefined
++    let raizNombre = actual?.nombre ?? 'Otros'
++
++    /* Subir hasta que el padre sea una raíz. Si el gasto está en la
++       propia raíz —cosa rara pero posible— se queda en ella. */
++    while (actual?.padre_id) {
++      const padre = porId.get(actual.padre_id)
++      if (!padre) break
++      raizNombre = padre.nombre
++      if (!padre.padre_id) break
++      actual = padre
++    }
++
++    const clave = actual?.id ?? 'otros'
++    const antes = totales.get(clave)
++    totales.set(clave, {
++      nombre: actual?.nombre ?? 'Otros',
++      raiz: raizNombre,
++      total: (antes?.total ?? 0) + Number(m.importe),
++    })
++  }
++
++  const filas = [...totales.values()]
++  const cuantos = new Map<string, number>()
++  for (const f of filas) cuantos.set(f.nombre, (cuantos.get(f.nombre) ?? 0) + 1)
++
++  return filas
++    .map((f) => ({
++      nombre: (cuantos.get(f.nombre) ?? 0) > 1 ? `${f.raiz} · ${f.nombre}` : f.nombre,
++      total: f.total,
++    }))
++    .sort((a, b) => b.total - a.total)
++}
++
+ function agrupar(
+   lista: Movimiento[],
+   porId: Map<string, { nombre: string }>
+diff --git a/app/finca/apuntar/page.tsx b/app/finca/apuntar/page.tsx
+index 215032c..3c8e823 100644
+--- a/app/finca/apuntar/page.tsx
++++ b/app/finca/apuntar/page.tsx
+@@ -13,6 +13,19 @@ export const dynamic = 'force-dynamic'
+   había una— pero desde que existe Los Helechos, enseñar las dos listas
+   mezcladas obligaría a distinguir "Luz" (de la finca) de "Suministros"
+   (de la casa) en una misma pantalla. Cada sección enseña lo suyo.
++
++  ─────────────────────────────────────────────────────────────
++  Y AQUÍ HABÍA DOS NOMBRES ESCRITOS A FUEGO
++
++  Decía: «si pone HELECHOS es Los Helechos, y si no, la Finca». En la
++  casa de Juan Miguel funcionaba; en la de cualquier otro, apuntar un
++  gasto de sus obras acababa en las categorías de una finca que no
++  tiene. Ahora el parámetro es el `segmento_drive` de la raíz, sea la
++  que sea.
++
++  Y admite uno más: `resto`, que son las cuentas de casa — todo lo que
++  NO es una actividad. Ahí no hay una raíz sola: son la Casa, los
++  Vehículos, los Seguros y lo Personal juntos.
+ */
+ export default async function PaginaApuntar({
+   searchParams,
+@@ -20,39 +33,77 @@ export default async function PaginaApuntar({
+   searchParams: Promise<{ seccion?: string }>
+ }) {
+   const { seccion } = await searchParams
+-  const deQuien = seccion === 'HELECHOS' ? 'HELECHOS' : 'FINCA'
+   const supabase = await clienteSesion()
+   const user = await quien(supabase)
+   if (!user) redirect('/entrar')
+ 
+-  const { data } = await supabase
++  const deCasa = seccion === 'resto'
++
++  /* `lleva_cuentas` va en su propio intento: si el SQL 27 no está,
++     pedirla no falla esa columna, hace que Postgres rechace la
++     consulta entera y esta pantalla saldría sin ninguna categoría. */
++  const campos = 'id, padre_id, nombre, segmento_drive, icono, orden, naturaleza'
++  type Cat = Categoria & { lleva_cuentas?: boolean; usa_unidades?: boolean }
++
++  let todas: Cat[] = []
++  const conCuentas = await supabase
+     .from('categorias')
+-    .select('id, padre_id, nombre, segmento_drive, icono, orden, naturaleza')
++    .select(`${campos}, lleva_cuentas, usa_unidades`)
+     .eq('activa', true)
+     .order('orden')
+ 
+-  const todas = (data ?? []) as Categoria[]
++  if (conCuentas.error) {
++    const basico = await supabase.from('categorias').select(campos).eq('activa', true).order('orden')
++    todas = (basico.data ?? []) as Cat[]
++  } else {
++    todas = (conCuentas.data ?? []) as Cat[]
++  }
++
+   const porId = new Map(todas.map((c) => [c.id, c]))
+-  const raiz = todas.find((c) => c.segmento_drive === deQuien && !c.padre_id)
+   const conHijas = new Set(todas.map((c) => c.padre_id).filter(Boolean))
+ 
+-  // Solo las categorías finales que cuelgan de esta sección.
++  function raizDe(c: Cat): Cat {
++    let actual = c
++    while (actual.padre_id) {
++      const padre = porId.get(actual.padre_id)
++      if (!padre) break
++      actual = padre
++    }
++    return actual
++  }
++
++  const raiz = deCasa
++    ? null
++    : (todas.find((c) => c.segmento_drive === (seccion || 'FINCA') && !c.padre_id) ?? null)
++
++  /*
++    Solo las carpetas FINALES, y solo las que mueven dinero.
++
++    Lo segundo es nuevo y hace falta aquí: en las cuentas de casa
++    cuelgan carpetas que son papel puro —Garantías, Informes,
++    Contratos—. Ofrecerlas para apuntar un gasto sería ofrecer un
++    sitio donde el gasto no contaría después.
++  */
+   const opciones = todas.filter((c) => {
+     if (conHijas.has(c.id)) return false
+-    let actual: Categoria | undefined = c
+-    while (actual) {
+-      if (actual.id === raiz?.id) return true
+-      actual = actual.padre_id ? porId.get(actual.padre_id) : undefined
++    const suRaiz = raizDe(c)
++    if (deCasa) {
++      return suRaiz.lleva_cuentas !== true && c.naturaleza !== 'neutro'
+     }
+-    return false
++    return suRaiz.id === raiz?.id
+   })
+ 
+   return (
+     <Apuntar
+       categorias={opciones}
+-      nombre={raiz?.nombre ?? 'Finca'}
+-      volver={deQuien === 'HELECHOS' ? '/helechos' : '/finca'}
+-      conApartamentos={deQuien === 'HELECHOS'}
++      nombre={deCasa ? 'Casa' : (raiz?.nombre ?? 'Finca')}
++      volver={deCasa ? '/gastos' : raiz ? `/seccion/${raiz.id}` : '/'}
++      /* Si la sección se reparte en unidades —los apartamentos de Los
++         Helechos, las obras de un reformista— el formulario pregunta en
++         cuál. Lo decide la base de datos; antes estaba escrito aquí que
++         solo Los Helechos lo hacían. Las cuentas de casa nunca: una
++         casa no se divide en nada. */
++      conApartamentos={!deCasa && raiz?.usa_unidades === true}
+     />
+   )
+ }
+diff --git a/app/gastos/page.tsx b/app/gastos/page.tsx
+new file mode 100644
+index 0000000..bff2793
+--- /dev/null
++++ b/app/gastos/page.tsx
+@@ -0,0 +1,67 @@
++import { redirect } from 'next/navigation'
++import { clienteSesion } from '@/lib/supabase/sesion'
++import { quien } from '@/lib/supabase/quien'
++import Cuentas from '../cuentas'
++
++export const dynamic = 'force-dynamic'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  LAS CUENTAS DE CASA
++  ═══════════════════════════════════════════════════════════════
++
++  Todo lo que NO es una actividad, junto: la compra, las reparaciones,
++  el restaurante, el taller, la ITV, los seguros, la medicación.
++
++  ─────────────────────────────────────────────────────────────
++  POR QUÉ NO ES «UNA SECCIÓN MÁS»
++
++  Las actividades tienen una raíz propia y se suman solas: todo lo que
++  cuelga de FINCA es de la finca. Esto no tiene raíz: son cinco
++  carpetas distintas —Casa, Vehículos, Seguros, Salud, Personal— que
++  no comparten padre y que nadie querría ver por separado. Lo que se
++  pregunta no es «cuánto me he gastado en el coche», es **cuánto se
++  nos va al trimestre**.
++
++  Por eso la pantalla es la misma de siempre con `raiz: null`, que ahí
++  significa «todo lo que no lleva cuentas propias». Copiarla habría
++  sido tener dos sitios donde arreglar el mismo fallo, y donde uno de
++  los dos se queda sin arreglar.
++
++  ─────────────────────────────────────────────────────────────
++  NO LLEVA PESTAÑA ABAJO
++
++  Se entra desde la tarjeta del Inicio. Las cinco de abajo están
++  ocupadas y el suelo de 48 px por botón no se negocia por hacer sitio
++  a una sección más.
++*/
++export default async function Gastos({
++  searchParams,
++}: {
++  searchParams: Promise<{ vista?: string; ancla?: string }>
++}) {
++  const supabase = await clienteSesion()
++  if (!(await quien(supabase))) redirect('/entrar')
++
++  return (
++    <Cuentas
++      seccion={{
++        raiz: null,
++        nombre: 'Cuentas de casa',
++        icono: 'casa',
++        /* Azul, el mismo de La compra: es el color con el que ya
++           asocian «lo del día a día». El verde es de la Finca y el
++           morado de los alquileres — dárselo a esto sería decir que
++           son la misma cosa. */
++        color: '#0EA5E9',
++        fondo: '#DCF0FB',
++        ruta: '/gastos',
++        /* Ninguna pestaña de abajo se enciende: no es ninguna de
++           ellas. Marcar «Inicio» sería mentir sobre dónde estás. */
++        pestana: 'gastos',
++        apartamentos: false,
++      }}
++      searchParams={searchParams}
++    />
++  )
++}
+diff --git a/app/page.tsx b/app/page.tsx
+index 0593f5e..21082e7 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -14,6 +14,8 @@ import { leerPerfil } from '@/lib/perfil'
+ import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
+ import { casasDe } from '@/lib/casas'
+ import { cuantasNotas } from '@/lib/notas'
++import { gastadoEnCasa } from '@/lib/gastos-casa'
++import { eurosRedondo } from '@/lib/periodos'
+ import Casas from './casas'
+ 
+ export const dynamic = 'force-dynamic'
+@@ -112,6 +114,7 @@ export default async function Inicio({
+     { data: conexion },
+     { count: porComprar },
+     notasPuestas,
++    gastoCasa,
+   ] =
+     await Promise.all([
+       leerPerfil(supabase, user.id, user.email),
+@@ -148,6 +151,9 @@ export default async function Inicio({
+ 
+       /* Las notas del corcho, y cuántas te están esperando a ti. */
+       cuantasNotas(supabase, user.id),
++
++      /* Lo que se va este trimestre fuera de las actividades. */
++      gastadoEnCasa(supabase),
+     ])
+ 
+   /* ¿Esta casa usa la lista de la compra? Envuelto: la columna es
+@@ -406,6 +412,52 @@ export default async function Inicio({
+           </span>
+         </Link>
+ 
++        {/*
++          ── Las cuentas de casa ──
++
++          Lo que se va fuera de las actividades: la compra, las
++          reparaciones, el restaurante, el taller, los seguros.
++
++          CON EL NÚMERO PUESTO, y ésa es toda la diferencia. Una
++          tarjeta que dijera «Cuentas de casa ·  Mira lo que se gasta»
++          no la toca nadie: no dice nada que no supieras. La que pone
++          «1.240 € este trimestre» se toca el primer día, porque la
++          cifra o te tranquiliza o te sorprende, y las dos cosas
++          invitan a entrar.
++
++          Y hasta hoy ese número no existía en ninguna parte: los
++          gastos de casa se venían apuntando desde el principio y no
++          había una sola pantalla que los sumara.
++        */}
++        <Link
++          href="/gastos"
++          className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
++          style={{
++            background: 'color-mix(in srgb, #8B5CF6 12%, transparent)',
++            border: '1px solid color-mix(in srgb, #8B5CF6 30%, transparent)',
++          }}
++        >
++          <span
++            className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] bg-superficie"
++            style={{ color: '#8B5CF6' }}
++          >
++            <Ico nombre="euro" tam={24} grosor={2.1} />
++          </span>
++          <span className="min-w-0 flex-1">
++            <span className="block whitespace-nowrap text-[18.5px] font-extrabold tracking-tight">
++              Cuentas de casa
++            </span>
++            <span className="block text-[14.5px] font-bold" style={{ color: '#8B5CF6' }}>
++              {gastoCasa > 0
++                ? `${eurosRedondo(gastoCasa)} este trimestre`
++                : 'Todavía no hay nada apuntado'}
++            </span>
++          </span>
++          <span className="shrink-0" style={{ color: '#8B5CF6' }}>
++            <Ico nombre="flecha" tam={22} grosor={2.2} />
++          </span>
++        </Link>
++
+         {/* ── Conectar Drive ── */}
+         {!conectado && manda && (
+           <div className="mt-6">
+diff --git a/lib/gastos-casa.ts b/lib/gastos-casa.ts
+new file mode 100644
+index 0000000..1a23c52
+--- /dev/null
++++ b/lib/gastos-casa.ts
+@@ -0,0 +1,77 @@
++import type { SupabaseClient } from '@supabase/supabase-js'
++import { calcular } from './periodos'
++import { hoyAqui } from './tablon'
++
++/*
++  ═══════════════════════════════════════════════════════════════
++  CUÁNTO SE VA EN CASA ESTE TRIMESTRE
++  ═══════════════════════════════════════════════════════════════
++
++  Solo el número, para la tarjeta del Inicio. Y va con número y no con
++  un «Mira las cuentas» a secas a propósito: una tarjeta que no dice
++  nada no se toca. La que pone «1.240 € este trimestre» se toca el
++  primer día.
++
++  ─────────────────────────────────────────────────────────────
++  QUÉ ENTRA
++
++  Todo lo que NO cuelga de una actividad. La finca y los alquileres
++  tienen sus propias cuentas y su propia pantalla; mezclarlas aquí
++  daría un número que no significa nada — ni el gasto de la casa ni el
++  del negocio.
++
++  ─────────────────────────────────────────────────────────────
++  Y VA ENVUELTO ENTERO
++
++  Lo lee el Inicio, la primera pantalla de la mañana. `lleva_cuentas`
++  es del SQL 27: si no estuviera, Postgres no dice «esa columna no
++  existe», rechaza la consulta entera. Sin ella, la tarjeta enseña
++  cero y no se rompe nada.
++*/
++
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
++type Cliente = SupabaseClient<any, any, any>
++
++export async function gastadoEnCasa(supabase: Cliente): Promise<number> {
++  try {
++    const periodo = calcular('trimestre', hoyAqui())
++
++    const { data: cats, error } = await supabase
++      .from('categorias')
++      .select('id, padre_id, lleva_cuentas')
++
++    if (error || !cats) return 0
++
++    type Cat = { id: string; padre_id: string | null; lleva_cuentas?: boolean }
++    const porId = new Map((cats as Cat[]).map((c) => [c.id, c]))
++
++    /* Las que cuelgan de una raíz SIN cuentas propias. Se recorre
++       hacia arriba y no hacia abajo: así da igual cuántos niveles
++       tenga cada casa. */
++    const deCasa = new Set<string>()
++    for (const c of cats as Cat[]) {
++      let actual = c
++      while (actual.padre_id) {
++        const padre = porId.get(actual.padre_id)
++        if (!padre) break
++        actual = padre
++      }
++      if (actual.lleva_cuentas !== true) deCasa.add(c.id)
++    }
++
++    if (deCasa.size === 0) return 0
++
++    const { data: movs } = await supabase
++      .from('movimientos')
++      .select('importe, categoria_id')
++      .eq('tipo', 'gasto')
++      .gte('fecha', periodo.desde)
++      .lte('fecha', periodo.hasta)
++
++    return (movs ?? [])
++      .filter((m: { categoria_id: string | null }) => m.categoria_id && deCasa.has(m.categoria_id))
++      .reduce((suma: number, m: { importe: number }) => suma + Number(m.importe), 0)
++  } catch {
++    return 0
++  }
++}
+diff --git a/sql/36-cuentas-de-casa.sql b/sql/36-cuentas-de-casa.sql
+new file mode 100644
+index 0000000..bd1d3d0
+--- /dev/null
++++ b/sql/36-cuentas-de-casa.sql
+@@ -0,0 +1,349 @@
++-- ═══════════════════════════════════════════════════════════════
++-- 36 · LAS CUENTAS DE CASA
++-- ═══════════════════════════════════════════════════════════════
++--
++-- Hoy solo tienen cuentas las ACTIVIDADES: la Finca, Los Helechos, las
++-- obras. Lo que se gasta en la casa —la compra, una reparación, el
++-- taller, el seguro— se guarda como papel y ahí muere. No hay ninguna
++-- pantalla que diga cuánto se va al trimestre en todo eso.
++--
++-- Y hay un motivo de fondo, que es lo que arregla este archivo:
++--
++--   Las carpetas base de una casa nueva nacen con `naturaleza` a
++--   'neutro'. O sea: aunque HUBI lea «127,43 €» en la factura de la
++--   luz, NO apunta ningún gasto. El importe se queda en el papel.
++--
++-- En la casa de Juan Miguel no se nota porque el SQL 15 puso a mano
++-- las subcarpetas de Compras como gasto. Cualquier casa creada con
++-- `crear_mi_casa` no tiene eso: lleva semanas guardando facturas y su
++-- balance de casa saldría a cero.
++--
++-- ─────────────────────────────────────────────────────────────
++-- QUÉ CUENTA COMO DINERO, Y QUÉ NO
++--
++-- Una garantía no es un gasto: es un papel que guardas por si acaso.
++-- Un informe médico tampoco. Se marcan como gasto solo las carpetas
++-- donde de verdad sale dinero:
++--
++--   Casa        Facturas · Reparaciones · Compras · Restaurantes
++--   Vehículos   Seguro · ITV · Taller · Impuestos
++--   Seguros     todas
++--   Salud       Medicación
++--
++-- El resto se queda neutro. Un papel guardado ahí no mueve las
++-- cuentas, que es lo correcto: si las garantías contaran, el balance
++-- del trimestre en que compras una lavadora saldría el doble de malo
++-- de lo que fue.
++--
++-- ─────────────────────────────────────────────────────────────
++-- Y DOS COSAS MÁS QUE VAN AQUÍ PORQUE VAN EN LA MISMA FUNCIÓN
++--
++-- · **Restaurantes y cafeterías**, carpeta propia dentro de Casa.
++--   Comer fuera no es una compra de casa. Metido dentro de Compras
++--   saldría mezclado con el súper en el desglose, y justo lo que se
++--   quiere saber es cuánto se va en cada cosa.
++--
++-- · **Se puede crear una segunda casa.** `crear_mi_casa` tenía dentro
++--   «si ya tienes casa, te devuelvo la tuya y no toco nada». Eso era
++--   verdad cuando cada persona pertenecía a una sola; desde el SQL 34
++--   ya no, y esa línea dejaba a medias la decisión que se tomó: quien
++--   tiene su HUBI puede además llevar el de sus padres, y también al
++--   revés. Ahora solo protege del doble toque: dos casas con el MISMO
++--   nombre, de la misma persona, no se crean.
++--
++-- Se puede ejecutar más de una vez sin duplicar nada.
++-- ═══════════════════════════════════════════════════════════════
++
++
++-- ── 1 · La función, entera ─────────────────────────────────
++create or replace function crear_mi_casa(
++  nombre_casa text,
++  actividad   text default null
++)
++returns uuid
++language plpgsql
++security definer
++set search_path = public
++as $$
++declare
++  yo        uuid := auth.uid();
++  casa      uuid;
++  raiz      uuid;
++  grupo_g   uuid;
++  grupo_i   uuid;
++  nombre_ok text;
++begin
++  if yo is null then
++    raise exception 'Hay que entrar primero.';
++  end if;
++
++  nombre_ok := nullif(btrim(coalesce(nombre_casa, '')), '');
++  if nombre_ok is null then
++    raise exception 'La casa necesita un nombre.';
++  end if;
++  nombre_ok := left(nombre_ok, 60);
++
++  /*
++    ── EL DOBLE TOQUE, Y SOLO EL DOBLE TOQUE ──
++
++    Antes aquí ponía «si ya tienes casa, te devuelvo la tuya». Protegía
++    del botón pulsado dos veces, sí, pero de paso impedía tener una
++    segunda casa — que es justo lo que el SQL 34 abrió.
++
++    Ahora se mira el nombre: si esta persona ya tiene una casa que se
++    llama igual, es el mismo toque repetido y se le devuelve aquélla.
++    Dos casas distintas se llaman distinto.
++  */
++  select h.id into casa
++  from hogares h
++  join miembros m on m.hogar_id = h.id
++  where m.perfil_id = yo
++    and lower(btrim(h.nombre)) = lower(nombre_ok)
++  limit 1;
++
++  if casa is not null then
++    return casa;
++  end if;
++
++  -- ── El hogar ─────────────────────────────────────────────
++  insert into hogares (nombre) values (nombre_ok) returning id into casa;
++
++  -- ── La persona, como propietaria ─────────────────────────
++  /*
++    'propietario' no es un adorno: es lo que decide quién puede
++    conectar el Google Drive de esta casa.
++
++    `aceptado_en` puesto: quien crea la casa está dentro desde el
++    primer segundo. Sin esta línea —columna del SQL 34— se quedaría
++    fuera de su propia casa, invitado a sí mismo.
++  */
++  insert into miembros (hogar_id, perfil_id, papel, aceptado_en)
++  values (casa, yo, 'propietario', now());
++
++  -- ── Las carpetas que tiene todo el mundo ─────────────────
++  insert into categorias (hogar_id, nombre, segmento_drive, icono, orden)
++  values
++    (casa, 'Casa',                  'CASA',       '🏠', 1),
++    (casa, 'Salud',                 'SALUD',      '❤️', 2),
++    (casa, 'Vehículos',             'VEHICULOS',  '🚗', 3),
++    (casa, 'Seguros',               'SEGUROS',    '🛡', 4),
++    (casa, 'Documentos importantes','DOCUMENTOS', '📄', 5);
++
++  /*
++    Lo de dentro, YA CON SU NATURALEZA.
++
++    Ésta es la línea que faltaba. Una casa nueva nacía con todo a
++    'neutro' y por tanto sin cuentas posibles: guardabas la factura de
++    la luz, HUBI leía el importe, y no lo apuntaba en ninguna parte.
++  */
++  insert into categorias (hogar_id, padre_id, nombre, segmento_drive, orden, naturaleza)
++  select casa, c.id, v.nombre, v.segmento, v.orden, v.natura
++  from categorias c
++  join (values
++    ('CASA',       'Facturas',                 'FACTURAS',        1, 'gasto'),
++    ('CASA',       'Reparaciones',             'REPARACIONES',    2, 'gasto'),
++    ('CASA',       'Compras',                  'COMPRAS',         3, 'gasto'),
++    ('CASA',       'Restaurantes y cafeterías','RESTAURANTES',    4, 'gasto'),
++    ('CASA',       'Garantías',                'GARANTIAS',       5, 'neutro'),
++    ('CASA',       'Documentación',            'DOCUMENTACION',   6, 'neutro'),
++    ('SALUD',      'Informes',                 'INFORMES',        1, 'neutro'),
++    ('SALUD',      'Recetas',                  'RECETAS',         2, 'neutro'),
++    ('SALUD',      'Pruebas',                  'PRUEBAS',         3, 'neutro'),
++    ('SALUD',      'Citas',                    'CITAS',           4, 'neutro'),
++    ('SALUD',      'Medicación',               'MEDICACION',      5, 'gasto'),
++    ('VEHICULOS',  'Seguro',                   'SEGURO',          1, 'gasto'),
++    ('VEHICULOS',  'ITV',                      'ITV',             2, 'gasto'),
++    ('VEHICULOS',  'Taller',                   'TALLER',          3, 'gasto'),
++    ('VEHICULOS',  'Impuestos',                'IMPUESTOS',       4, 'gasto'),
++    ('VEHICULOS',  'Documentación',            'DOCUMENTACION',   5, 'neutro'),
++    ('SEGUROS',    'Casa',                     'CASA',            1, 'gasto'),
++    ('SEGUROS',    'Coche',                    'COCHE',           2, 'gasto'),
++    ('SEGUROS',    'Salud',                    'SALUD',           3, 'gasto'),
++    ('SEGUROS',    'Personales',               'PERSONALES',      4, 'gasto'),
++    ('DOCUMENTOS', 'Contratos',                'CONTRATOS',       1, 'neutro'),
++    ('DOCUMENTOS', 'Bancos',                   'BANCOS',          2, 'neutro'),
++    ('DOCUMENTOS', 'Administraciones',         'ADMINISTRACIONES',3, 'neutro'),
++    ('DOCUMENTOS', 'Otros',                    'OTROS',           4, 'neutro')
++  ) as v(raiz, nombre, segmento, orden, natura) on v.raiz = c.segmento_drive
++  where c.hogar_id = casa and c.padre_id is null;
++
++  -- ── Y su actividad, si lleva cuentas de algo ─────────────
++  if actividad = 'finca' then
++    insert into categorias (hogar_id, nombre, segmento_drive, icono, orden, lleva_cuentas, color, fondo)
++    values (casa, 'Finca', 'FINCA', '🌿', 0, true, '#14B8A6', '#DFF7F3')
++    returning id into raiz;
++
++  elsif actividad = 'obra' then
++    insert into categorias (
++      hogar_id, nombre, segmento_drive, icono, orden,
++      lleva_cuentas, color, fondo, usa_unidades, palabra_unidad
++    )
++    values (casa, 'Obras', 'OBRAS', '👷', 0, true, '#F59E0B', '#FEF1DC', true, 'la obra')
++    returning id into raiz;
++
++  elsif actividad = 'alquileres' then
++    insert into categorias (
++      hogar_id, nombre, segmento_drive, icono, orden,
++      lleva_cuentas, color, fondo, usa_unidades, palabra_unidad, reparte_comunes
++    )
++    values (casa, 'Alquileres', 'ALQUILERES', '🔑', 0, true, '#8B5CF6', '#EEE8FE', true, 'el piso', true)
++    returning id into raiz;
++  end if;
++
++  if raiz is not null then
++    insert into categorias (hogar_id, padre_id, nombre, segmento_drive, icono, orden, naturaleza)
++    values (casa, raiz, 'Gastos', 'GASTOS', '💸', 1, 'gasto')
++    returning id into grupo_g;
++
++    insert into categorias (hogar_id, padre_id, nombre, segmento_drive, icono, orden, naturaleza)
++    values (casa, raiz, 'Ingresos', 'INGRESOS', '💰', 2, 'ingreso')
++    returning id into grupo_i;
++
++    if actividad = 'finca' then
++      insert into categorias (hogar_id, padre_id, nombre, segmento_drive, orden, naturaleza)
++      values
++        (casa, grupo_g, 'Agua',            'AGUA',          1, 'gasto'),
++        (casa, grupo_g, 'Luz',             'LUZ',           2, 'gasto'),
++        (casa, grupo_g, 'Productos',       'PRODUCTOS',     3, 'gasto'),
++        (casa, grupo_g, 'Obras y mejoras', 'OBRAS',         4, 'gasto'),
++        (casa, grupo_g, 'Maquinaria',      'MAQUINARIA',    5, 'gasto'),
++        (casa, grupo_g, 'Mantenimiento',   'MANTENIMIENTO', 6, 'gasto'),
++        (casa, grupo_g, 'Otros',           'OTROS',         7, 'gasto'),
++        (casa, grupo_i, 'Ventas',          'VENTAS',        1, 'ingreso'),
++        (casa, grupo_i, 'Otros ingresos',  'OTROS',         2, 'ingreso');
++
++    elsif actividad = 'obra' then
++      insert into categorias (hogar_id, padre_id, nombre, segmento_drive, orden, naturaleza)
++      values
++        (casa, grupo_g, 'Albañilería',     'ALBANILERIA',    1, 'gasto'),
++        (casa, grupo_g, 'Estructura',      'ESTRUCTURA',     2, 'gasto'),
++        (casa, grupo_g, 'Instalaciones',   'INSTALACIONES',  3, 'gasto'),
++        (casa, grupo_g, 'Carpintería',     'CARPINTERIA',    4, 'gasto'),
++        (casa, grupo_g, 'Materiales',      'MATERIALES',     5, 'gasto'),
++        (casa, grupo_g, 'Mano de obra',    'MANODEOBRA',     6, 'gasto'),
++        (casa, grupo_g, 'Otros',           'OTROS',          7, 'gasto'),
++        (casa, grupo_i, 'Certificaciones', 'CERTIFICACIONES',1, 'ingreso'),
++        (casa, grupo_i, 'Otros ingresos',  'OTROS',          2, 'ingreso');
++
++    elsif actividad = 'alquileres' then
++      insert into categorias (hogar_id, padre_id, nombre, segmento_drive, orden, naturaleza)
++      values
++        (casa, grupo_g, 'Luz',            'LUZ',          1, 'gasto'),
++        (casa, grupo_g, 'Agua',           'AGUA',         2, 'gasto'),
++        (casa, grupo_g, 'Comunidad',      'COMUNIDAD',    3, 'gasto'),
++        (casa, grupo_g, 'Limpieza',       'LIMPIEZA',     4, 'gasto'),
++        (casa, grupo_g, 'Reparaciones',   'REPARACIONES', 5, 'gasto'),
++        (casa, grupo_g, 'Otros',          'OTROS',        6, 'gasto'),
++        (casa, grupo_i, 'Alquiler',       'ALQUILER',     1, 'ingreso'),
++        (casa, grupo_i, 'Otros ingresos', 'OTROS',        2, 'ingreso');
++    end if;
++  end if;
++
++  return casa;
++end;
++$$;
++
++revoke all on function crear_mi_casa(text, text) from public;
++grant execute on function crear_mi_casa(text, text) to authenticated;
++
++
++-- ── 2 · Restaurantes, en las casas que ya existen ──────────
++insert into categorias (hogar_id, padre_id, nombre, segmento_drive, icono, orden, naturaleza)
++select c.hogar_id, c.id, 'Restaurantes y cafeterías', 'RESTAURANTES', '🍽', 8, 'gasto'
++from categorias c
++where c.segmento_drive = 'CASA'
++  and c.padre_id is null
++  and not exists (
++    select 1 from categorias h
++    where h.padre_id = c.id and h.segmento_drive = 'RESTAURANTES'
++  );
++
++
++-- ── 3 · Y las carpetas donde de verdad sale dinero ─────────
++/*
++  Solo se toca lo que sigue en 'neutro'. Si alguien ha decidido a mano
++  que su carpeta de Garantías es un gasto, es su casa y se respeta:
++  esto viene a rellenar un hueco, no a corregir a nadie.
++*/
++update categorias h
++   set naturaleza = 'gasto'
++  from categorias r
++ where h.padre_id = r.id
++   and r.padre_id is null
++   and h.naturaleza = 'neutro'
++   and (
++        (r.segmento_drive = 'CASA'
++         and h.segmento_drive in ('FACTURAS','REPARACIONES','COMPRAS','RESTAURANTES'))
++     or (r.segmento_drive = 'VEHICULOS'
++         and h.segmento_drive in ('SEGURO','ITV','TALLER','IMPUESTOS'))
++     or (r.segmento_drive = 'SEGUROS')
++     or (r.segmento_drive = 'SALUD' and h.segmento_drive = 'MEDICACION')
++   );
++
++/*
++  Y las nietas de Casa → Compras (Alimentación, Menaje, Limpieza…),
++  que en la casa de Juan Miguel ya estaban puestas por el SQL 15 pero
++  en cualquier otra no existen o están en neutro.
++*/
++update categorias n
++   set naturaleza = 'gasto'
++  from categorias h
++  join categorias r on r.id = h.padre_id
++ where n.padre_id = h.id
++   and r.padre_id is null
++   and n.naturaleza = 'neutro'
++   and r.segmento_drive = 'CASA'
++   and h.segmento_drive = 'COMPRAS';
++
++
++-- ── 4 · Comprobación ───────────────────────────────────────
++/*
++  DOS resultados.
++
++  1 · Una fila por casa: cuántas de sus carpetas cuentan como dinero
++      FUERA de las actividades, y si tiene ya la de Restaurantes.
++      Ninguna debería salir con `cuentan = 0` — eso sería una casa que
++      guarda facturas y no suma nada.
++
++  2 · Cuánto hay ya apuntado fuera de las actividades. Si sale 0 no es
++      un fallo: es que hasta hoy no se apuntaba. A partir de ahora sí.
++*/
++/*
++  Cada carpeta con su raíz. Se calcula una vez y sirve para las dos
++  comprobaciones — y es exactamente lo que hace la pantalla nueva:
++  «de qué raíz cuelga esto, y esa raíz ¿lleva cuentas propias?».
++*/
++with recursive arbol as (
++  select id, hogar_id, id as raiz_id, naturaleza, segmento_drive
++  from categorias where padre_id is null
++  union all
++  select c.id, c.hogar_id, a.raiz_id, c.naturaleza, c.segmento_drive
++  from categorias c join arbol a on c.padre_id = a.id
++),
++deCasa as (
++  select a.*
++  from arbol a
++  join categorias r on r.id = a.raiz_id
++  where r.lleva_cuentas is not true      -- fuera las actividades
++)
++select
++  h.nombre                                                   as casa,
++  count(*) filter (where d.naturaleza <> 'neutro')           as cuentan,
++  count(*) filter (where d.segmento_drive = 'RESTAURANTES')  as restaurantes
++from hogares h
++join deCasa d on d.hogar_id = h.id
++group by h.nombre
++order by h.nombre;
++
++with recursive arbol as (
++  select id, id as raiz_id from categorias where padre_id is null
++  union all
++  select c.id, a.raiz_id from categorias c join arbol a on c.padre_id = a.id
++)
++select
++  count(*)                                                    as movimientos_de_casa,
++  coalesce(sum(m.importe) filter (where m.tipo = 'gasto'), 0) as gastado
++from movimientos m
++join arbol a on a.id = m.categoria_id
++join categorias r on r.id = a.raiz_id
++where r.lleva_cuentas is not true;
+-- 
+2.43.0
+

@@ -42,6 +42,8 @@ type Datos = {
   /* El tipo de IGIC/IVA que dice el papel. Vacío = no lo pone, y
      entonces manda el general de la casa. */
   impuestoTipo: string
+  /** Los euros de IVA/IGIC impresos en el papel, si los traía. */
+  impuestoCuota: string
   texto: string | null
   confianza: 'alta' | 'media' | 'baja' | null
   tipo: string | null
@@ -134,6 +136,13 @@ export default function Formulario({
        ingreso NO se suma dos veces. Hay que decirlo, o cuadrar las
        cuentas dentro de tres meses será un misterio. */
     repetida: string | null
+    /* Si el papel traía importe, si ese importe ha entrado en las
+       cuentas, y si se ha quedado fuera por estar en una carpeta de
+       papeles. Antes no se sabía, y por eso no se decía. */
+    conDinero?: boolean
+    apuntado?: boolean
+    enPapeles?: boolean
+    seccion?: string | null
   } | null>(null)
   const [avisoResuelto, setAvisoResuelto] = useState(false)
   const [creandoAviso, setCreandoAviso] = useState(false)
@@ -168,6 +177,7 @@ export default function Formulario({
     proveedor: '',
     vencimiento: '',
     impuestoTipo: '',
+    impuestoCuota: '',
     texto: null,
     confianza: null,
     tipo: null,
@@ -218,6 +228,24 @@ export default function Formulario({
     if (!datos.categoriaId) return false
     return porId.get(datos.categoriaId)?.naturaleza === 'ingreso'
   }, [porId, datos.categoriaId])
+
+  /*
+    ── DINERO EN UNA CARPETA QUE NO SUMA ──
+
+    Hay un importe leído y la carpeta elegida es de papeles ('neutro'),
+    o sea que ese importe no va a entrar en el balance de nadie.
+
+    Se calcula aquí, ANTES de guardar, porque aquí todavía se puede
+    cambiar la carpeta con un toque. Decirlo después también hace
+    falta —y se dice— pero entonces ya hay que ir a buscar el papel
+    para moverlo.
+  */
+  const dineroSinSumar = useMemo(() => {
+    if (!datos.categoriaId) return false
+    const importe = Number(datos.importe.replace(',', '.'))
+    if (!Number.isFinite(importe) || importe <= 0) return false
+    return porId.get(datos.categoriaId)?.naturaleza === 'neutro'
+  }, [porId, datos.categoriaId, datos.importe])
 
   const rutaElegida = datos.categoriaId
     ? cadena(categorias, datos.categoriaId).map((c) => c.nombre).join(' → ')
@@ -587,6 +615,8 @@ export default function Formulario({
         vencimiento: leido.vencimiento ?? '',
         impuestoTipo:
           leido.impuesto_tipo != null ? String(leido.impuesto_tipo) : '',
+        impuestoCuota:
+          leido.impuesto_cuota != null ? String(leido.impuesto_cuota) : '',
         texto: leido.texto ?? null,
         confianza: leido.confianza ?? null,
         comoSeLeyo: leido.como_se_leyo ?? null,
@@ -632,6 +662,9 @@ export default function Formulario({
        mandarlo: el servidor tiene que poder distinguir «el papel dice
        0%» de «el papel no dice nada». */
     if (datos.impuestoTipo !== '') cuerpo.append('impuesto_tipo', datos.impuestoTipo)
+    /* Y los euros de impuesto que venían impresos, que es lo único que
+       tiene un ticket con tres tipos a la vez. */
+    if (datos.impuestoCuota !== '') cuerpo.append('impuesto_cuota', datos.impuestoCuota)
     if (datos.texto) cuerpo.append('texto_ocr', datos.texto)
     if (datos.confianza) cuerpo.append('confianza', datos.confianza)
 
@@ -658,6 +691,10 @@ export default function Formulario({
         vencimiento: respuesta.vencimiento ?? null,
         titulo: respuesta.titulo ?? datos.titulo,
         repetida: respuesta.repetida ?? null,
+        conDinero: respuesta.conDinero ?? false,
+        apuntado: respuesta.apuntado ?? false,
+        enPapeles: respuesta.enPapeles ?? false,
+        seccion: respuesta.seccion ?? null,
       })
       setPaso('guardado')
 
@@ -868,6 +905,33 @@ export default function Formulario({
                 titulo={`La reserva ${resultado.repetida} ya estaba apuntada`}
                 explicacion="El ingreso no se ha sumado otra vez. El documento sí se ha guardado."
               />
+            )}
+
+            {/*
+              ── Y SI TRAÍA DINERO, SE DICE QUÉ HA PASADO CON ÉL ──
+
+              Hasta hoy esta pantalla ponía «Documento guardado» tanto
+              si el importe había entrado en el balance como si no. Una
+              factura archivada en la carpeta de papeles de su
+              actividad se guardaba igual de bien y no sumaba en ningún
+              sitio, y desde fuera las dos cosas se veían idénticas.
+
+              Ahora se distinguen. Y cuando no ha sumado no se plantea
+              como un error —el papel está a salvo, que es lo primero—
+              sino como algo que se arregla cambiándolo de carpeta.
+            */}
+            {resultado.conDinero && resultado.enPapeles && (
+              <Aviso
+                tono="atencion"
+                titulo="Esto no se ha sumado a las cuentas"
+                explicacion={`Está guardado en una carpeta de papeles${
+                  resultado.seccion ? ` de ${resultado.seccion}` : ''
+                }, que es donde van los contratos y las pólizas. Si es un gasto o un ingreso, cámbialo de carpeta y entrará en el balance.`}
+              />
+            )}
+
+            {resultado.conDinero && resultado.apuntado && (
+              <Aviso tono="bien" titulo="Sumado a las cuentas" />
             )}
 
             <BotonPrincipal href={`/documentos/${resultado.id}`} icono="ojo">
@@ -1082,6 +1146,18 @@ export default function Formulario({
         {paso === 'encontrado' && (
           <>
             <h1 className="t-titulo mt-8">Hemos encontrado esto</h1>
+
+            {dineroSinSumar && (
+              <div className="mt-5">
+                {/* Antes de guardar, no después: aquí la carpeta se
+                    cambia con un toque. */}
+                <Aviso
+                  tono="atencion"
+                  titulo="Este importe no entrará en las cuentas"
+                  explicacion="La carpeta elegida es de papeles —contratos, pólizas—. Si es un gasto o un ingreso, cambia la carpeta aquí abajo."
+                />
+              </div>
+            )}
 
             {datos.confianza === 'baja' && (
               <div className="mt-5">

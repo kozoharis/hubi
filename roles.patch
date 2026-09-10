@@ -1,0 +1,1058 @@
+From 6da36326720dd722788a429ae1af3fb30dbcb64b Mon Sep 17 00:00:00 2001
+From: Haris <haris@weaversight.com>
+Date: Sun, 6 Sep 2026 19:12:19 +0000
+Subject: [PATCH] =?UTF-8?q?Qui=C3=A9n=20es=20cada=20uno=20en=20la=20casa?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Al invitar había dos opciones: «todo, como tú» o «solo mirar». Con eso
+los dos casos reales se resuelven mal — a quien ayuda en casa le das de
+más, y a un gestor le das de menos y acaba pidiéndotelo por teléfono.
+
+Cuatro roles: Familia, Ayuda en casa, Asesor y Solo mirar.
+
+  · EL ROL ES UN ATAJO, NO UN SISTEMA NUEVO. Ninguna política pregunta
+    por él. Al elegirlo, `poner_rol` rellena de golpe lo que ya había:
+    el papel, el ve_todo y los permisos carpeta a carpeta. Si el rol
+    decidiera permisos por su cuenta habría dos fuentes de verdad, y
+    ahí es exactamente donde se filtran las cosas.
+
+  · Y AQUÍ HABÍA UN AGUJERO. `permisos_carpeta` protege documentos y
+    movimientos, que cuelgan de una carpeta. Las tareas y las notas no
+    cuelgan de ninguna: sus políticas decían `hogar_id = mi_hogar()` y
+    punto. O sea, la empleada con el rol recién puesto, sin ver una
+    sola factura, entraba en la Agenda y veía el médico del martes y
+    el abogado del jueves. Arreglado donde se arregla —en la base de
+    datos, no escondiendo botones—: quien es 'ayuda' ve lo suyo.
+
+  · EL ACCESO PUEDE CADUCAR SOLO. Una empleada que se va, un asesor
+    que deja de llevarte las cuentas. Hoy hay que ACORDARSE de quitar
+    el acceso y nadie se acuerda: así se acumula gente mirando los
+    papeles de una casa donde ya no está. `acceso_hasta` se comprueba
+    en `mi_hogar()`, que es por donde pasa todo — no hay una sola
+    pantalla que se lo pueda saltar.
+
+  · Y EL INICIO SE VE DISTINTO SEGÚN QUIÉN ENTRA. Es lo que más
+    cambia, más que los permisos: a quien ayuda en casa HUBI no le
+    abre en «Cuentas de casa» y «Papeles», le abre en lo de hoy y la
+    compra. El permiso evita que vea algo; la pantalla hace que
+    encuentre lo suyo en un segundo.
+
+Empleada y cuidadora quedan como UN solo rol a propósito: en HUBI
+hacen lo mismo, y dos roles idénticos con nombre distinto es una
+decisión más que cobrarle a quien invita a cambio de nada.
+
+Falta ejecutar `sql/37-quien-es-cada-uno.sql`, y antes el 35.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTKd9B29MsnGZ2myY9aYdJ
+---
+ app/ajustes/gente.tsx        | 112 +++++++++---
+ app/ajustes/page.tsx         |   6 +-
+ app/api/miembros/route.ts    | 104 ++++++++++--
+ app/page.tsx                 |  68 +++++++-
+ lib/roles.ts                 | 143 ++++++++++++++++
+ sql/37-quien-es-cada-uno.sql | 320 +++++++++++++++++++++++++++++++++++
+ 6 files changed, 708 insertions(+), 45 deletions(-)
+ create mode 100644 lib/roles.ts
+ create mode 100644 sql/37-quien-es-cada-uno.sql
+
+diff --git a/app/ajustes/gente.tsx b/app/ajustes/gente.tsx
+index 9a40318..cdafb14 100644
+--- a/app/ajustes/gente.tsx
++++ b/app/ajustes/gente.tsx
+@@ -4,6 +4,7 @@ import { useState } from 'react'
+ import { useRouter } from 'next/navigation'
+ import { Ico } from '../iconos'
+ import QuienVe, { type CarpetaPermiso } from './quien-ve'
++import { ROLES, nombreDelRol, type Rol } from '@/lib/roles'
+ 
+ /*
+   ═══════════════════════════════════════════════════════════════
+@@ -31,6 +32,10 @@ export type Vecino = {
+   soyYo: boolean
+   /** Invitada, pero todavía no ha dicho que sí. */
+   pendiente: boolean
++  /** Quién es en esta casa: familia, ayuda, asesor, solo mirar. */
++  rol: string | null
++  /** Último día con acceso, si se le puso fecha de fin. */
++  hasta: string | null
+   /** ¿Ve toda la casa, o solo lo que se le ha concedido? */
+   veTodo: boolean
+   escribeTodo: boolean
+@@ -51,7 +56,8 @@ export default function Gente({
+   const [invitando, setInvitando] = useState(false)
+   const [nombre, setNombre] = useState('')
+   const [correo, setCorreo] = useState('')
+-  const [papel, setPapel] = useState<'miembro' | 'lector'>('miembro')
++  const [rol, setRol] = useState<Rol>('familia')
++  const [hasta, setHasta] = useState('')
+   const [ocupado, setOcupado] = useState(false)
+   const [fallo, setFallo] = useState<string | null>(null)
+   const [hecho, setHecho] = useState<{ nombre: string; correo: string } | null>(null)
+@@ -60,7 +66,8 @@ export default function Gente({
+     setInvitando(false)
+     setNombre('')
+     setCorreo('')
+-    setPapel('miembro')
++    setRol('familia')
++    setHasta('')
+     setFallo(null)
+   }
+ 
+@@ -72,7 +79,12 @@ export default function Gente({
+     const r = await fetch('/api/miembros', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+-      body: JSON.stringify({ correo: correo.trim(), nombre: nombre.trim(), papel }),
++      body: JSON.stringify({
++        correo: correo.trim(),
++        nombre: nombre.trim(),
++        rol,
++        hasta: hasta || null,
++      }),
+     })
+ 
+     const d = (await r.json().catch(() => null)) as {
+@@ -145,9 +157,13 @@ export default function Gente({
+               <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
+                 {v.manda
+                   ? 'Creó la casa · su Google Drive'
+-                  : v.pendiente
+-                    ? 'Invitación hecha · todavía no ha entrado'
+-                    : loQuePuede(v)}
++                  : [
++                      nombreDelRol(v.rol),
++                      v.pendiente ? 'todavía no ha entrado' : loQuePuede(v),
++                      v.hasta ? `hasta el ${enPalabras(v.hasta)}` : null,
++                    ]
++                      .filter(Boolean)
++                      .join(' · ')}
+               </span>
+             </span>
+             {puedoInvitar && !v.manda && (
+@@ -224,37 +240,69 @@ export default function Gente({
+               className="entrada mt-2.5"
+             />
+ 
+-            {/* ── Qué va a poder hacer ── */}
++            {/*
++              ── QUIÉN ES ──
++
++              Antes eran dos: «todo, como tú» o «solo mirar». Y con eso
++              se resolvían mal los dos casos que la gente tiene de
++              verdad: a quien ayuda en casa le dabas de más, y a un
++              gestor le dabas de menos y acababa pidiéndotelo por
++              teléfono.
++
++              Elegir aquí rellena de golpe los permisos que ya existían
++              —el papel, lo que ve, y las carpetas una a una—. Se puede
++              afinar después desde el ojo de cada persona.
++            */}
+             <p className="mt-5 text-[17px] font-extrabold leading-snug">
+-              ¿Qué quieres que pueda hacer?
++              ¿Quién es?
+             </p>
+             <div className="mt-2.5 space-y-2.5">
+-              <Papel
+-                puesto={papel === 'miembro'}
+-                alPulsar={() => setPapel('miembro')}
+-                titulo="Todo, como tú"
+-                pie="Guardar papeles, apuntar gastos, dejar recados. Para quien vive contigo."
+-              />
+-              <Papel
+-                puesto={papel === 'lector'}
+-                alPulsar={() => setPapel('lector')}
+-                titulo="Solo mirar"
+-                pie="Lo ve todo pero no puede cambiar ni borrar nada. Para un hijo o un gestor."
+-              />
++              {ROLES.map((r) => (
++                <Papel
++                  key={r.valor}
++                  puesto={rol === r.valor}
++                  alPulsar={() => setRol(r.valor)}
++                  titulo={r.nombre}
++                  pie={r.pie}
++                />
++              ))}
+             </div>
+ 
+             {/*
+               Se dice ANTES de escribir nada, no después: quien invita
+-              tiene que saber qué está dando. Hoy en HUBI no hay papeles
+-              privados — todo lo que se guarda es de la casa.
++              tiene que saber exactamente qué está dando.
+             */}
+             <p className="mt-4 rounded-[14px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
+-              En los dos casos <strong className="text-tinta">lo verá todo</strong>: los papeles,
+-              las cuentas y la agenda, también lo de Salud. Todavía no se puede guardar nada
+-              como privado.
++              {ROLES.find((r) => r.valor === rol)?.detalle}
++            </p>
++
++            {/*
++              ── HASTA CUÁNDO ──
++
++              Una empleada que se va, un asesor que deja de llevarte las
++              cuentas. Hoy hay que ACORDARSE de quitarles el acceso, y
++              nadie se acuerda: así es como se acumula gente mirando los
++              papeles de una casa donde ya no está.
++
++              Vacío es lo normal y no pasa nada por dejarlo así.
++            */}
++            <label htmlFor="hasta" className="mt-5 block text-[17px] font-extrabold leading-snug">
++              ¿Hasta cuándo? <span className="font-bold text-tenue">· si quieres</span>
++            </label>
++            <input
++              id="hasta"
++              type="date"
++              value={hasta}
++              onChange={(e) => setHasta(e.target.value)}
++              className="entrada mt-2.5"
++            />
++            <p className="mt-2 text-[14.5px] font-semibold leading-snug text-tenue">
++              {hasta
++                ? 'Ese día deja de entrar, sin que tengas que hacer nada.'
++                : 'Sin fecha, el acceso no caduca. Se le puede quitar cuando quieras.'}
+             </p>
+ 
+-            <p className="mt-2.5 text-[14.5px] font-semibold leading-snug text-tenue">
++            <p className="mt-4 text-[14.5px] font-semibold leading-snug text-tenue">
+               No le llega ningún correo de nuestra parte. Dile tú que entre en HUBI con ese
+               correo y le llegará su número, como a ti.
+             </p>
+@@ -365,6 +413,18 @@ function loQuePuede(v: Vecino): string {
+   return `Ve ${cuantasVe(v)} · guarda en ${v.escribeTodo ? 'todas ellas' : dondeGuarda(v)}`
+ }
+ 
++/** «2026-12-31» → «31 de diciembre». */
++function enPalabras(iso: string): string {
++  const meses = [
++    'enero','febrero','marzo','abril','mayo','junio',
++    'julio','agosto','septiembre','octubre','noviembre','diciembre',
++  ]
++  const [a, m, d] = iso.split('-').map(Number)
++  if (!a || !m || !d) return iso
++  const esteAnio = new Date().getFullYear()
++  return a === esteAnio ? `${d} de ${meses[m - 1]}` : `${d}/${m}/${a}`
++}
++
+ function cuantasVe(v: Vecino): string {
+   const n = v.carpetas.filter((c) => c.ver).length
+   return n === 0 ? 'ninguna carpeta' : n === 1 ? '1 carpeta' : `${n} carpetas`
+diff --git a/app/ajustes/page.tsx b/app/ajustes/page.tsx
+index d16337a..a69f090 100644
+--- a/app/ajustes/page.tsx
++++ b/app/ajustes/page.tsx
+@@ -130,6 +130,8 @@ export default async function Ajustes() {
+       ve_todo?: boolean
+       escribe_todo?: boolean
+       aceptado_en?: string | null
++      rol?: string | null
++      acceso_hasta?: string | null
+     }[] = []
+ 
+     /*
+@@ -143,7 +145,7 @@ export default async function Ajustes() {
+     const conPermisos = hogarId
+       ? await supabase
+           .from('miembros')
+-          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en')
++          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en, rol, acceso_hasta')
+           .eq('hogar_id', hogarId)
+           .order('unido_en')
+       : { data: [], error: null }
+@@ -205,6 +207,8 @@ export default async function Ajustes() {
+              invita ve a Marta en la lista y da por hecho que ya está
+              dentro — y luego se extraña de que no vea nada. */
+           pendiente: m.aceptado_en === null,
++          rol: m.rol ?? null,
++          hasta: m.acceso_hasta ?? null,
+           veTodo: m.ve_todo !== false,
+           escribeTodo: m.escribe_todo !== false,
+           carpetas: raices.map((r) => {
+diff --git a/app/api/miembros/route.ts b/app/api/miembros/route.ts
+index 3f325c6..795374c 100644
+--- a/app/api/miembros/route.ts
++++ b/app/api/miembros/route.ts
+@@ -3,6 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
+ import { clienteServidor } from '@/lib/supabase/servidor'
+ import { quien } from '@/lib/supabase/quien'
+ import { miHogar, mandaEnSuCasa, SIN_CASA } from '@/lib/hogar'
++import { esRol, type Rol } from '@/lib/roles'
+ 
+ export const dynamic = 'force-dynamic'
+ 
+@@ -58,9 +59,15 @@ export async function POST(peticion: NextRequest) {
+     )
+   }
+ 
+-  let cuerpo: { correo?: string; nombre?: string; papel?: string }
++  let cuerpo: { correo?: string; nombre?: string; papel?: string; rol?: string; hasta?: string }
+   try {
+-    cuerpo = (await peticion.json()) as { correo?: string; nombre?: string; papel?: string }
++    cuerpo = (await peticion.json()) as {
++      correo?: string
++      nombre?: string
++      papel?: string
++      rol?: string
++      hasta?: string
++    }
+   } catch {
+     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
+   }
+@@ -88,17 +95,41 @@ export async function POST(peticion: NextRequest) {
+   }
+ 
+   /*
+-    QUÉ VA A PODER HACER.
++    QUIÉN ES, Y HASTA CUÁNDO.
++
++    Antes eran dos opciones —«todo, como tú» o «solo mirar»— y eso
++    deja fuera a casi todo el mundo real: quien ayuda en casa no
++    necesita las facturas del seguro, y un asesor necesita eso y nada
++    más.
+ 
+-    Solo dos, y a propósito. Una tabla de permisos por sección es
+-    justo la complejidad empresarial que el punto 28 descarta, y estas
+-    dos cubren lo que la gente pide de verdad: la pareja entra
+-    completa, un hijo o un gestor solo mira.
++    Ahora es un rol, que es un ATAJO: al ponerlo, `poner_rol` rellena
++    el papel, el ve_todo y los permisos carpeta a carpeta que ya
++    existían. Ninguna política pregunta por el rol — si lo hiciera,
++    habría dos fuentes de verdad y ahí se filtran las cosas.
+ 
+-    Lo que no esté en la lista es 'miembro'. Nunca se pasa a la base
+-    de datos algo que venga del navegador sin comprobarlo.
++    Lo que no esté en la lista es 'familia'. Nunca se pasa a la base
++    de datos algo que venga del navegador sin comprobarlo. Y `papel`
++    se sigue admitiendo por si alguna pantalla vieja lo manda.
+   */
+-  const papel = cuerpo.papel === 'lector' ? 'lector' : 'miembro'
++  const rol: Rol = esRol(cuerpo.rol)
++    ? cuerpo.rol
++    : cuerpo.papel === 'lector'
++      ? 'mirar'
++      : 'familia'
++
++  const papel = rol === 'asesor' || rol === 'mirar' ? 'lector' : 'miembro'
++
++  /* Hasta cuándo. Una fecha suelta o nada: quien no la pone, no
++     caduca. Se comprueba que sea una fecha y que sea futura — una
++     fecha pasada dejaría a esa persona fuera desde el primer día sin
++     que nadie entendiera por qué. */
++  const hoy = new Date().toISOString().slice(0, 10)
++  const hasta =
++    typeof cuerpo.hasta === 'string' &&
++    /^\d{4}-\d{2}-\d{2}$/.test(cuerpo.hasta) &&
++    cuerpo.hasta > hoy
++      ? cuerpo.hasta
++      : null
+ 
+   const admin = clienteServidor()
+ 
+@@ -213,11 +244,33 @@ export async function POST(peticion: NextRequest) {
+     nadie tenía cuenta antes de ser invitado. Con gente que ya usa
+     HUBI, no.
+   */
+-  const { data: metida, error: alMeter } = await admin
++  /*
++    El rol y la fecha de fin se piden APARTE del insert principal, en
++    dos intentos. Son columnas del SQL 37: si no se ha ejecutado,
++    meterlas aquí no falla esas columnas — hace que Postgres rechace
++    la fila ENTERA, y el resultado sería que no se puede invitar a
++    nadie. Una función a medio instalar no puede tumbar la que
++    funcionaba.
++  */
++  const fila: Record<string, unknown> = {
++    hogar_id: hogarId,
++    perfil_id: id,
++    papel,
++    aceptado_en: null,
++  }
++
++  let conRol = await admin
+     .from('miembros')
+-    .insert({ hogar_id: hogarId, perfil_id: id, papel, aceptado_en: null })
++    .insert({ ...fila, rol, acceso_hasta: hasta })
+     .select('perfil_id')
+ 
++  if (conRol.error) {
++    console.error('[HUBI] Sin rol todavía (¿falta el SQL 37?):', conRol.error)
++    conRol = await admin.from('miembros').insert(fila).select('perfil_id')
++  }
++
++  const { data: metida, error: alMeter } = conRol
++
+   /* Con el `.select()`: sin él, una inserción que no entre devuelve
+      «todo bien» habiendo metido cero filas. */
+   if (alMeter || !metida || metida.length === 0) {
+@@ -228,7 +281,32 @@ export async function POST(peticion: NextRequest) {
+     )
+   }
+ 
+-  return NextResponse.json({ bien: true, correo, nombre, papel, pendiente: true })
++  /*
++    Y ahora el rol de verdad: `poner_rol` reparte los permisos por
++    carpeta que le tocan. Va DESPUÉS de meterla —la función exige que
++    ya esté en la casa— y con la SESIÓN, porque comprueba que quien
++    llama sea quien creó la casa.
++
++    Si falla, la persona está invitada igualmente: se le queda el
++    permiso base y quien invita puede repartírselo a mano desde
++    «¿Qué puede ver?». Se dice, no se esconde.
++  */
++  let repartido = true
++  try {
++    const { error: alRepartir } = await supabase.rpc('poner_rol', {
++      a_quien: id,
++      el_rol: rol,
++    })
++    if (alRepartir) {
++      console.error('[HUBI] Invitada pero sin repartir el rol:', alRepartir)
++      repartido = false
++    }
++  } catch (e) {
++    console.error('[HUBI] Invitada pero sin repartir el rol:', e)
++    repartido = false
++  }
++
++  return NextResponse.json({ bien: true, correo, nombre, papel, rol, hasta, repartido, pendiente: true })
+ }
+ 
+ /*
+diff --git a/app/page.tsx b/app/page.tsx
+index 21082e7..b962298 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -15,6 +15,7 @@ import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
+ import { casasDe } from '@/lib/casas'
+ import { cuantasNotas } from '@/lib/notas'
+ import { gastadoEnCasa } from '@/lib/gastos-casa'
++import { queVeEnInicio } from '@/lib/roles'
+ import { eurosRedondo } from '@/lib/periodos'
+ import Casas from './casas'
+ 
+@@ -176,6 +177,37 @@ export default async function Inicio({
+ 
+   const nombre = perfil.nombre
+ 
++  /*
++    ── QUÉ LE ENSEÑA HUBI A ESTA PERSONA ──
++
++    Y esto es lo que de verdad cambia con los roles, más que los
++    permisos. A quien ayuda en casa, HUBI no le abre en «Cuentas de
++    casa» y «Papeles»: le abre en lo de hoy y la compra. El permiso
++    evita que vea algo; la pantalla hace que encuentre lo suyo en un
++    segundo.
++
++    OJO: esto es lo que se OFRECE, no lo que protege. Lo que no puede
++    ver sigue sin poder verlo aunque escriba la dirección a mano — de
++    eso se encargan las políticas de la base de datos, y así tiene que
++    seguir siendo. Esconder un botón nunca es una medida de seguridad.
++
++    Envuelto: `rol` es del SQL 37. Sin él, todo el mundo ve lo de
++    siempre.
++  */
++  let rol: string | null = null
++  try {
++    const { data: mio } = await supabase
++      .from('miembros')
++      .select('rol')
++      .eq('perfil_id', user.id)
++      .eq('hogar_id', hogarId)
++      .maybeSingle()
++    rol = (mio?.rol as string | null) ?? null
++  } catch {
++    /* Sin la columna: se comporta como antes. */
++  }
++  const ve = queVeEnInicio(rol)
++
+   /*
+     QUIÉN MANDA AQUÍ, Y CÓMO SE LLAMA.
+ 
+@@ -274,6 +306,28 @@ export default async function Inicio({
+           {nombre ? `${saludo()}, ${nombre}` : saludo()}
+         </h1>
+ 
++        {/*
++          ── PARA QUÉ ESTÁS AQUÍ ──
++
++          Solo a quien no es de la familia. Una empleada o un gestor
++          entran en la casa de OTRO: sin una línea que lo diga, la
++          pantalla parece a medio cargar —«¿y lo demás?»— cuando en
++          realidad está completa.
++
++          Y al asesor le hace más falta que a nadie: su Inicio no lleva
++          ninguna tarjeta, porque lo suyo son las cuentas y ésas están
++          en las pestañas de abajo.
++        */}
++        {rol && rol !== 'familia' && (
++          <p className="mt-4 rounded-[18px] border border-borde bg-superficie px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
++            {rol === 'ayuda'
++              ? 'Aquí tienes lo que te han encargado y la lista de la compra. El ticket del súper se guarda desde la propia compra.'
++              : rol === 'asesor'
++                ? 'Tienes acceso a las cuentas y a los papeles de las actividades de esta casa. Están abajo. No puedes cambiar nada.'
++                : 'Puedes ver las cosas de esta casa, pero no cambiar nada.'}
++          </p>
++        )}
++
+         {conectado && <Invitacion />}
+ 
+         {aviso && (
+@@ -287,7 +341,7 @@ export default async function Inicio({
+         )}
+ 
+         {/* ── Lo único grande de la pantalla ── */}
+-        {conectado && (
++        {conectado && ve.guardarDocumento && (
+           <Link
+             href="/guardar"
+             className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
+@@ -328,7 +382,7 @@ export default async function Inicio({
+           tocar nunca — y éste es el sitio más caro de la aplicación.
+           Se apaga desde Ajustes y la lista se queda guardada.
+         */}
+-        {usaCompra && (
++        {usaCompra && ve.compra && (
+         <Link
+           href="/compra"
+           className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
+@@ -375,6 +429,7 @@ export default async function Inicio({
+           descubre nadie. Con cero notas dice que no hay ninguna, que
+           es una respuesta, no un hueco.
+         */}
++        {ve.notas && (
+         <Link
+           href="/notas"
+           className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
+@@ -411,6 +466,7 @@ export default async function Inicio({
+             <Ico nombre="flecha" tam={22} grosor={2.2} />
+           </span>
+         </Link>
++        )}
+ 
+         {/*
+           ── Las cuentas de casa ──
+@@ -429,6 +485,7 @@ export default async function Inicio({
+           gastos de casa se venían apuntando desde el principio y no
+           había una sola pantalla que los sumara.
+         */}
++        {ve.cuentasCasa && (
+         <Link
+           href="/gastos"
+           className="mt-2.5 flex h-[74px] items-center gap-3.5 rounded-[22px] px-4"
+@@ -457,6 +514,7 @@ export default async function Inicio({
+             <Ico nombre="flecha" tam={22} grosor={2.2} />
+           </span>
+         </Link>
++        )}
+ 
+         {/* ── Conectar Drive ── */}
+         {!conectado && manda && (
+@@ -483,7 +541,7 @@ export default async function Inicio({
+         )}
+ 
+         {/* ── Hoy ── */}
+-        {hoy.length > 0 && (
++        {ve.agenda && hoy.length > 0 && (
+           <section className="mt-6">
+             <h2 className="rotulo">Hoy</h2>
+             <ul className="mt-2.5 space-y-2.5">
+@@ -514,7 +572,7 @@ export default async function Inicio({
+         )}
+ 
+         {/* ── Próximamente ── */}
+-        {proximos.length > 0 && (
++        {ve.agenda && proximos.length > 0 && (
+           <section className="mt-6">
+             <h2 className="rotulo">Próximamente</h2>
+             <ul className="mt-1">
+@@ -548,7 +606,7 @@ export default async function Inicio({
+           </section>
+         )}
+ 
+-        {hoy.length === 0 && proximos.length === 0 && conectado && (
++        {ve.agenda && hoy.length === 0 && proximos.length === 0 && conectado && (
+           <p className="mt-6 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
+             Hoy no hay nada apuntado.
+           </p>
+diff --git a/lib/roles.ts b/lib/roles.ts
+new file mode 100644
+index 0000000..40c6808
+--- /dev/null
++++ b/lib/roles.ts
+@@ -0,0 +1,143 @@
++/*
++  ═══════════════════════════════════════════════════════════════
++  QUIÉN ES CADA UNO EN LA CASA
++  ═══════════════════════════════════════════════════════════════
++
++  Antes había dos opciones al invitar: «todo, como tú» o «solo mirar».
++  Y eso deja fuera a casi todo el mundo real — quien ayuda en casa no
++  necesita las facturas del seguro, y un asesor necesita justo eso y
++  nada más.
++
++  ─────────────────────────────────────────────────────────────
++  EL ROL NO DECIDE NADA POR SÍ SOLO
++
++  Conviene que esto no se pierda. Los permisos que mandan son los de
++  siempre: el papel en la casa, `ve_todo`, y los permisos carpeta a
++  carpeta. El rol solo los RELLENA de golpe al elegirlo, y queda
++  guardado para que la pantalla sepa a quién le habla.
++
++  Si el rol decidiera permisos por su cuenta habría dos fuentes de
++  verdad, y ahí es donde se filtran las cosas.
++
++  ─────────────────────────────────────────────────────────────
++  Y LO QUE MÁS CAMBIA NO ES LO QUE VE: ES LO QUE SE ENCUENTRA
++
++  A quien ayuda en casa, HUBI no le abre en «Cuentas de casa» y
++  «Papeles». Le abre en lo de hoy y la compra. El permiso evita que
++  vea algo; la pantalla hace que encuentre lo suyo en un segundo, que
++  es lo que de verdad se agradece.
++*/
++
++export type Rol = 'familia' | 'ayuda' | 'asesor' | 'mirar'
++
++export const ROLES: {
++  valor: Rol
++  nombre: string
++  pie: string
++  /** Lo que se le dice a quien invita, sin adornos. */
++  detalle: string
++}[] = [
++  {
++    valor: 'familia',
++    nombre: 'Familia',
++    pie: 'Lo ve todo y puede con todo, igual que tú.',
++    detalle:
++      'Los papeles, las cuentas, la agenda y la salud. Para quien vive contigo o lleva la casa contigo.',
++  },
++  {
++    valor: 'ayuda',
++    nombre: 'Ayuda en casa',
++    pie: 'Sus tareas, la compra y los tickets. Nada más.',
++    detalle:
++      'Ve lo que le encargas y la lista de la compra, y puede subir el ticket del súper. No ve los papeles, ni las cuentas, ni Salud. Si necesita ver la medicación, se le abre esa carpeta a mano.',
++  },
++  {
++    valor: 'asesor',
++    nombre: 'Asesor o gestor',
++    pie: 'Las cuentas de tus actividades. No toca nada.',
++    detalle:
++      'Entra, mira y se descarga lo que necesite de la finca, las obras o los pisos. No puede cambiar ni borrar nada, ni ve lo de casa.',
++  },
++  {
++    valor: 'mirar',
++    nombre: 'Solo mirar',
++    pie: 'Lo ve todo pero no cambia nada.',
++    detalle:
++      'Como Familia, pero sin poder tocar. Para quien quieres que esté al tanto y nada más.',
++  },
++]
++
++export function nombreDelRol(rol: string | null | undefined): string {
++  return ROLES.find((r) => r.valor === rol)?.nombre ?? 'Familia'
++}
++
++export function esRol(x: unknown): x is Rol {
++  return x === 'familia' || x === 'ayuda' || x === 'asesor' || x === 'mirar'
++}
++
++/*
++  ─────────────────────────────────────────────────────────────
++  QUÉ ENSEÑA EL INICIO A CADA UNO
++
++  Se decide aquí y no en la pantalla para que haya UN sitio donde
++  mirarlo. Repartido por el JSX, dentro de seis condiciones, es donde
++  un día alguien enseña de más sin enterarse.
++
++  Y no sustituye a ningún permiso: es lo que se le OFRECE. Lo que no
++  puede ver sigue sin poder verlo aunque escriba la dirección a mano —
++  de eso se encargan las políticas.
++*/
++export type Inicio = {
++  guardarDocumento: boolean
++  compra: boolean
++  notas: boolean
++  cuentasCasa: boolean
++  /** Lo de hoy y lo que viene. */
++  agenda: boolean
++}
++
++export function queVeEnInicio(rol: string | null | undefined): Inicio {
++  switch (rol) {
++    case 'ayuda':
++      /* Lo de hoy y la compra. Los tickets se suben desde la propia
++         compra, que es donde tiene sentido: con el papel en la mano al
++         salir del súper. «Guardar documento» a secas la mandaría a
++         elegir carpeta entre veinte que no puede ver. */
++      return {
++        guardarDocumento: false,
++        compra: true,
++        notas: true,
++        cuentasCasa: false,
++        agenda: true,
++      }
++
++    case 'asesor':
++      /* Viene a las cuentas. Ni la compra ni las notas ni la agenda de
++         una familia que no es la suya. */
++      return {
++        guardarDocumento: false,
++        compra: false,
++        notas: false,
++        cuentasCasa: false,
++        agenda: false,
++      }
++
++    case 'mirar':
++      return {
++        guardarDocumento: false,
++        compra: true,
++        notas: true,
++        cuentasCasa: true,
++        agenda: true,
++      }
++
++    default:
++      return {
++        guardarDocumento: true,
++        compra: true,
++        notas: true,
++        cuentasCasa: true,
++        agenda: true,
++      }
++  }
++}
+diff --git a/sql/37-quien-es-cada-uno.sql b/sql/37-quien-es-cada-uno.sql
+new file mode 100644
+index 0000000..9a1bc0d
+--- /dev/null
++++ b/sql/37-quien-es-cada-uno.sql
+@@ -0,0 +1,320 @@
++-- ═══════════════════════════════════════════════════════════════
++-- 37 · QUIÉN ES CADA UNO EN ESTA CASA
++-- ═══════════════════════════════════════════════════════════════
++--
++-- Hoy al invitar a alguien se elige entre dos cosas: «todo, como tú» o
++-- «solo mirar». Y eso deja fuera a casi todo el mundo real.
++--
++-- Quien ayuda en casa no necesita ver las facturas del seguro ni los
++-- informes médicos: necesita saber qué toca hoy, la lista de la compra
++-- y poder subir el ticket del súper. Un asesor necesita justo lo
++-- contrario: las cuentas y los papeles, y no tocar nada.
++--
++-- Con «todo o nada» las dos cosas se resuelven mal: o le das de más, o
++-- le das de menos y te lo pide por teléfono.
++--
++-- ─────────────────────────────────────────────────────────────
++-- EL ROL ES UN ATAJO, NO UN SISTEMA NUEVO
++--
++-- Esto es lo importante de este archivo y conviene que no se pierda.
++--
++-- Los permisos que mandan siguen siendo los que ya había: `papel`,
++-- `ve_todo`, `escribe_todo` y `permisos_carpeta`. El rol NO se
++-- consulta en ninguna política. Lo único que hace es RELLENARLOS de
++-- golpe cuando se elige, y quedar guardado para que la pantalla sepa
++-- a quién le está hablando.
++--
++-- Si el rol decidiera permisos por su cuenta habría dos fuentes de
++-- verdad —una en las políticas y otra en el rol— y ahí es donde se
++-- filtran las cosas: la pantalla diciendo que no ve Salud y la base de
++-- datos dejándole verlo.
++--
++--   familia  →  papel miembro · ve todo · escribe todo
++--   ayuda    →  papel miembro · solo la carpeta Casa, con escritura
++--   asesor   →  papel lector  · solo las actividades con cuentas
++--   mirar    →  papel lector  · lo ve todo, no toca nada
++--
++-- ─────────────────────────────────────────────────────────────
++-- Y EL ACCESO PUEDE CADUCAR SOLO
++--
++-- Una empleada que se va, un asesor que deja de llevarte las cuentas.
++-- Hoy hay que ACORDARSE de quitarles el acceso, y nadie se acuerda:
++-- así es como se acumula gente mirando los papeles de una casa donde
++-- ya no está.
++--
++-- `acceso_hasta` lo resuelve sin que nadie tenga que hacer nada. Y se
++-- comprueba en `mi_hogar()` y en `mis_casas()`, que es por donde pasa
++-- absolutamente todo: no hay una sola pantalla que se lo pueda saltar.
++--
++-- Se puede ejecutar más de una vez sin estropear nada.
++-- ═══════════════════════════════════════════════════════════════
++
++
++-- ── 1 · Las dos columnas ───────────────────────────────────
++alter table miembros
++  add column if not exists rol text
++    check (rol is null or rol in ('familia', 'ayuda', 'asesor', 'mirar'));
++
++alter table miembros
++  add column if not exists acceso_hasta date;
++
++comment on column miembros.rol is
++  'Quién es esta persona en la casa. NO decide permisos por sí solo: '
++  'los rellena al elegirlo. Manda papel + ve_todo + permisos_carpeta.';
++
++comment on column miembros.acceso_hasta is
++  'Último día con acceso. Nulo = sin fecha de fin.';
++
++/*
++  A quien ya estaba se le pone el rol que le corresponde por lo que
++  puede hacer hoy. Nadie cambia de permisos por ejecutar esto: es
++  ponerle nombre a lo que ya era.
++*/
++update miembros
++   set rol = case when papel = 'lector' then 'mirar' else 'familia' end
++ where rol is null;
++
++
++-- ── 2 · Que el acceso caducado no abra ninguna puerta ──────
++/*
++  `mi_hogar()` otra vez, y por la misma razón de siempre: las cuarenta
++  políticas preguntan por ella. Añadir aquí la fecha de fin es añadirla
++  en todas partes a la vez, sin tocar ni una política.
++*/
++create or replace function mi_hogar() returns uuid
++language sql stable security definer set search_path = public
++as $$
++  select coalesce(
++    (
++      select p.casa_activa
++      from perfiles p
++      where p.id = auth.uid()
++        and p.casa_activa is not null
++        and exists (
++          select 1 from miembros m
++          where m.perfil_id = auth.uid()
++            and m.hogar_id = p.casa_activa
++            and m.aceptado_en is not null
++            and (m.acceso_hasta is null or m.acceso_hasta >= current_date)
++        )
++    ),
++    (
++      select m.hogar_id from miembros m
++      where m.perfil_id = auth.uid()
++        and m.aceptado_en is not null
++        and (m.acceso_hasta is null or m.acceso_hasta >= current_date)
++      order by m.unido_en
++      limit 1
++    )
++  )
++$$;
++
++create or replace function mis_casas() returns setof uuid
++language sql stable security definer set search_path = public
++as $$
++  select hogar_id from miembros
++  where perfil_id = auth.uid()
++    and aceptado_en is not null
++    and (acceso_hasta is null or acceso_hasta >= current_date)
++$$;
++
++
++-- ── 2b · La agenda y el corcho NO son de todo el mundo ─────
++/*
++  AQUÍ HABÍA UN AGUJERO, Y HAY QUE DECIRLO CLARO.
++
++  `permisos_carpeta` protege documentos y movimientos: son los que
++  cuelgan de una carpeta. Pero las tareas y las notas no cuelgan de
++  ninguna — sus políticas dicen simplemente `hogar_id = mi_hogar()`.
++
++  O sea: quien ayuda en casa, con el rol recién puesto y sin ver una
++  sola factura, entraría en la Agenda y vería TODO lo de la familia.
++  El médico del martes, el abogado del jueves. Y en las Notas, lo que
++  se dejan el uno al otro.
++
++  Eso no es lo que promete el rol, y un permiso que promete una cosa y
++  hace otra es peor que no tener permisos.
++
++  Se arregla donde tiene que arreglarse —en la base de datos, no
++  escondiendo botones—: quien es 'ayuda' ve lo SUYO. Lo que le han
++  asignado, lo que ha apuntado él, y las notas que le han dejado.
++*/
++create or replace function mi_rol() returns text
++language sql stable security definer set search_path = public
++as $$
++  select m.rol from miembros m
++  where m.perfil_id = auth.uid() and m.hogar_id = mi_hogar()
++$$;
++
++revoke all on function mi_rol() from public;
++grant execute on function mi_rol() to authenticated;
++
++drop policy if exists recordatorios_leer on recordatorios;
++create policy recordatorios_leer on recordatorios
++  for select to authenticated using (
++    hogar_id = mi_hogar()
++    and (
++      coalesce(mi_rol(), 'familia') <> 'ayuda'
++      or asignado_a = auth.uid()
++      or creado_por = auth.uid()
++      /* Sin asignar es de la casa entera: si se le escondiera, un
++         recado dejado sin poner nombre no lo vería nadie. */
++      or asignado_a is null
++    )
++  );
++
++/* Envuelto: si el SQL 35 todavía no se ha ejecutado, la tabla `notas`
++   no existe y este archivo entero se caería a la mitad — dejando los
++   roles puestos y la agenda a medio proteger. */
++do $$
++begin
++  if to_regclass('public.notas') is not null then
++    drop policy if exists notas_leer on notas;
++    create policy notas_leer on notas
++      for select to authenticated using (
++        hogar_id = mi_hogar()
++        and (
++          coalesce(mi_rol(), 'familia') <> 'ayuda'
++          or para = auth.uid()
++          or escrita_por = auth.uid()
++        )
++      );
++  else
++    raise notice 'La tabla notas no existe todavía: ejecuta antes el SQL 35.';
++  end if;
++end $$;
++
++
++-- ── 3 · Poner un rol, con todo lo que arrastra ─────────────
++/*
++  `security definer` porque escribe en `permisos_carpeta`, cuya
++  política dice «solo quien creó la casa». Aquí se comprueba lo mismo
++  a mano, y ANTES de tocar nada: quien llama tiene que ser propietario
++  de la casa de esa persona.
++
++  Se borra lo que hubiera y se pone lo del rol. Es lo honesto: elegir
++  «Asesor» tiene que dejar a esa persona como un asesor, no como un
++  asesor más lo que se le quedara de antes.
++*/
++create or replace function poner_rol(a_quien uuid, el_rol text)
++returns void
++language plpgsql
++security definer
++set search_path = public
++as $$
++declare
++  yo    uuid := auth.uid();
++  casa  uuid;
++begin
++  if el_rol not in ('familia', 'ayuda', 'asesor', 'mirar') then
++    raise exception 'Ese rol no existe.';
++  end if;
++
++  select m.hogar_id into casa
++  from miembros m
++  where m.perfil_id = a_quien
++    and m.hogar_id = mi_hogar();
++
++  if casa is null then
++    raise exception 'Esa persona no está en tu casa.';
++  end if;
++
++  if not exists (
++    select 1 from miembros m
++    where m.hogar_id = casa and m.perfil_id = yo and m.papel = 'propietario'
++  ) then
++    raise exception 'Solo quien creó la casa reparte los accesos.';
++  end if;
++
++  /* A quien creó la casa no se le cambia el rol: se quedaría sin poder
++     conectar su propio Drive ni volver a repartir accesos. */
++  if exists (
++    select 1 from miembros m
++    where m.hogar_id = casa and m.perfil_id = a_quien and m.papel = 'propietario'
++  ) then
++    raise exception 'Quien creó la casa no puede cambiar de rol.';
++  end if;
++
++  update miembros m
++     set rol          = el_rol,
++         papel        = case when el_rol in ('asesor', 'mirar') then 'lector' else 'miembro' end,
++         ve_todo      = (el_rol in ('familia', 'mirar')),
++         escribe_todo = (el_rol = 'familia')
++   where m.perfil_id = a_quien and m.hogar_id = casa;
++
++  delete from permisos_carpeta p
++   where p.perfil_id = a_quien and p.hogar_id = casa;
++
++  if el_rol = 'ayuda' then
++    /*
++      La carpeta Casa, y solo ésa. Con escritura, porque el ticket del
++      súper es justo lo que va a subir.
++
++      Fuera quedan Salud, Seguros y Documentos importantes. Si hace
++      falta que vea la medicación —y en una casa con alguien mayor hará
++      falta— se le abre esa carpeta a mano, que para eso existe
++      «¿Qué puede ver?». Lo que no puede es venir abierta de serie.
++    */
++    insert into permisos_carpeta (perfil_id, categoria_id, hogar_id, ver, escribir)
++    select a_quien, c.id, casa, true, true
++    from categorias c
++    where c.hogar_id = casa and c.padre_id is null and c.segmento_drive = 'CASA';
++
++  elsif el_rol = 'asesor' then
++    /* Las actividades con cuentas, para mirar. Es a lo que viene: las
++       cuentas de la finca, de las obras, de los pisos. */
++    insert into permisos_carpeta (perfil_id, categoria_id, hogar_id, ver, escribir)
++    select a_quien, c.id, casa, true, false
++    from categorias c
++    where c.hogar_id = casa and c.padre_id is null and c.lleva_cuentas is true;
++  end if;
++end;
++$$;
++
++revoke all on function poner_rol(uuid, text) from public;
++grant execute on function poner_rol(uuid, text) to authenticated;
++
++
++-- ── 4 · Comprobación ───────────────────────────────────────
++/*
++  DOS resultados.
++
++  1 · Quién es quién, y si lo que puede cuadra con lo que dice ser.
++      `coherente` tiene que salir **true en todas las filas**. Si sale
++      false, alguien tiene un rol puesto y unos permisos que no le
++      corresponden — que es justo el fallo del que avisa la cabecera de
++      este archivo.
++
++  2 · Las dos funciones, `definer` las dos, y `poner_rol` también.
++*/
++select
++  p.nombre                                          as persona,
++  h.nombre                                          as casa,
++  m.rol,
++  m.papel,
++  m.acceso_hasta,
++  (
++    case m.rol
++      when 'familia' then m.papel <> 'lector' and m.ve_todo and m.escribe_todo
++      when 'ayuda'   then m.papel <> 'lector' and not m.ve_todo and not m.escribe_todo
++      when 'asesor'  then m.papel  = 'lector' and not m.ve_todo
++      when 'mirar'   then m.papel  = 'lector' and m.ve_todo
++      else true
++    end
++    /* Quien creó la casa manda por encima del rol: es correcto que
++       tenga permisos de sobra. */
++    or m.papel = 'propietario'
++  )                                                 as coherente
++from miembros m
++join perfiles p on p.id = m.perfil_id
++join hogares  h on h.id = m.hogar_id
++order by h.nombre, p.nombre;
++
++select
++  p.proname as funcion,
++  case when p.prosecdef then 'definer' else '⚠ invoker' end as seguridad
++from pg_proc p
++join pg_namespace n on n.oid = p.pronamespace
++where n.nspname = 'public'
++  and p.proname in ('mi_hogar', 'mis_casas', 'poner_rol')
++order by p.proname;
+-- 
+2.43.0
+
