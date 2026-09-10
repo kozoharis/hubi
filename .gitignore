@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ── Lo que no es el producto ──
+*.patch
+*.zip
+/*.html
+/web/
+/Claude outputs/
+comprobar.mjs
