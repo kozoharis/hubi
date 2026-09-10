@@ -917,14 +917,50 @@ function conCantidad(x: string): { que: string; cantidad: string | null } | null
 }
 
 // ── Para quién ────────────────────────────────────────────
+/*
+  ═══════════════════════════════════════════════════════════════
+  PUEDEN SER VARIOS, Y UNO DE ELLOS PUEDES SER TÚ
+  ═══════════════════════════════════════════════════════════════
+
+  Antes se paraba en el primer nombre que encontraba. «Recuérdale a
+  Conchita y a mí lo de la ITV» salía solo para Conchita, y el «y a mí»
+  se quedaba además pegado dentro del título.
+
+  Ahora se devuelven TODOS los que se digan, separados por « y »: eso
+  es lo que resuelve después `aQuienes()` en la ruta, que es la que
+  tiene los identificadores de verdad. Aquí solo se oyen nombres.
+
+  ─────────────────────────────────────────────────────────────
+  Y «YO» ES UN NOMBRE MÁS
+
+  «Recuérdame», «avísame», «apúntame», «que no se me olvide»: quien
+  habla se está poniendo la tarea a sí mismo. Antes eso funcionaba de
+  rebote —al no oír ningún nombre, la ruta se la asignaba a quien
+  hablaba— y por eso nadie lo echó de menos.
+
+  Pero de rebote no basta en cuanto hay alguien más en la frase: «a
+  Conchita y a mí» tiene un nombre dicho, así que la regla del rebote
+  ya no salta y el «a mí» se perdía. Diciéndolo en voz alta —«yo»— se
+  suman los dos.
+
+  El orden importa: quien habla va PRIMERO si se ha nombrado, porque
+  es como lo diría cualquiera al leerlo de vuelta.
+*/
+const RE_A_MI = /\b(recuerdame|avisame|apuntame|anotame|ponme|dejame|acuerdame|para mi|a mi|conmigo|se me olvide|me olvide)\b/
+const RE_TODOS = /\b(los dos|las dos|ambos|ambas|a todos|para todos|todos nosotros|recuerdanos|avisanos|apuntanos|ponnos|dejanos|nos olvide)\b/
+
 function paraQuien(plano: string, personas: { nombre: string }[]): string | null {
-  if (/\blos dos\b|\bambos\b|\bambas\b/.test(plano)) return 'los dos'
+  if (RE_TODOS.test(plano)) return 'los dos'
+
+  const dichos: string[] = []
+  if (RE_A_MI.test(plano)) dichos.push('yo')
 
   for (const p of personas) {
     const pila = limpio(p.nombre).split(' ')[0]
-    if (pila.length > 2 && plano.includes(pila)) return p.nombre
+    if (pila.length > 2 && plano.includes(pila)) dichos.push(p.nombre)
   }
-  return null
+
+  return dichos.length > 0 ? dichos.join(' y ') : null
 }
 
 // ── Qué hay que hacer ─────────────────────────────────────
@@ -933,10 +969,35 @@ function paraQuien(plano: string, personas: { nombre: string }[]): string | null
   quién es, cuándo, y las muletillas del principio. Lo que sobrevive es
   la acción — que es justo lo que hay que leer en la lista.
 */
+/*
+  ── LOS ANDAMIOS ───────────────────────────────────────────
+
+  Lo que se dice para PEDIR algo, y que no forma parte de lo que hay
+  que hacer. «Recuérdame mañana que llame al fontanero» se apunta como
+  «Llamar al fontanero», no como «Recuérdame que llame al fontanero».
+
+  Faltaba media familia de verbos, y se notaba: «avísame mañana de la
+  reunión» se guardaba literalmente como «Avísame de la reunión», y
+  «apúntame para el viernes lo del banco» como «Para lo del banco».
+  Los dos salieron a la primera al probar frases de verdad, que es lo
+  que pasa cuando la lista se escribe de memoria en vez de dictándole
+  cosas a HUBI.
+
+  Van todas las personas del verbo —me, le, nos— porque las tres se
+  usan: uno se lo apunta a sí mismo, se lo deja al otro, o lo apunta
+  para los dos.
+*/
 const ANDAMIOS = [
   /^\s*(oye|mira|hola)[, ]+/i,
-  /\b(recuerdale|recuérdale|recuerdame|recuérdame|recuerda|acuerdate|acuérdate|apunta|ap[uú]ntame|anota|no te olvides de|no se te olvide|hay que|tengo que|tienes que|tenemos que)\b/gi,
-  /\b(a|para)\s+(mi|mí|nosotros)\b/gi,
+  /\b(recu[eé]rda(?:le|me|nos)?|recuerda|av[ií]sa(?:le|me|nos)?|ac[uo][eé]rdate|acu[eé]rdame|ap[uú]nta(?:le|me|nos)?|apunta|an[oó]ta(?:le|me|nos)?|anota|p[oó]n(?:me|nos)\b|no te olvides de|no se (?:me|te|nos) olvide|hay que|tengo que|tienes que|tenemos que)\b/gi,
+  /*
+    Ojo con el `\b` de después: en JavaScript la «í» NO es un carácter
+    de palabra, así que `\bmí\b` no casa NUNCA —entre la «í» y el
+    espacio siguiente no hay frontera que valer—. Ese detalle es el que
+    dejaba «Mí lo de la ITV» como título de «recuérdale a Conchita y a
+    mí lo de la ITV». Se cierra mirando que no siga una letra.
+  */
+  /\b(a|para)\s+(mi|mí|nosotros|nosotras)(?![a-záéíóúñ])/gi,
   /\b(por favor|porfa)\b/gi,
   /\bque\s+(me|te|le|nos)\b/gi,
 ]
@@ -967,7 +1028,12 @@ function elTitulo(
   for (const n of nombres) {
     t = t.replace(new RegExp(`\\b(a|para)?\\s*${n}\\b`, 'gi'), ' ')
   }
-  t = t.replace(/\b(a|para)\s+los dos\b/gi, ' ')
+  t = t.replace(/\b(a|para)\s+(los dos|las dos|ambos|ambas|todos)\b/gi, ' ')
+
+  /* Y la «y» que une a dos personas, cuando ya no queda ninguna de las
+     dos. «a Conchita y a mí lo de la ITV» dejaba un «y» huérfano en
+     medio del título. */
+  t = t.replace(/\s+y\s+(?=\s|$)/gi, ' ')
 
   // Lo que ya se ha entendido como fecha, hora o repetición
   t = t
@@ -981,8 +1047,18 @@ function elTitulo(
     .replace(/\s+/g, ' ')
     .trim()
 
-  // Conectores que se quedan colgando al principio
-  t = t.replace(/^\s*(que|de|a|el|la|los|las|y|,)\s+/i, '').trim()
+  /* Conectores que se quedan colgando al principio.
+
+     En bucle, y no una sola vez: al quitar «apúntame» de «apúntame
+     para el viernes lo del banco» queda «para lo del banco», y una
+     sola pasada dejaba el «Para» dentro del título. Se repite hasta
+     que ya no muerde, con tope por si algún día una frase es toda
+     conectores. */
+  for (let i = 0; i < 4; i++) {
+    const antes = t
+    t = t.replace(/^\s*(que|de|del|a|al|para|por|en|el|la|los|las|y|,)\s+/i, '').trim()
+    if (t === antes) break
+  }
   t = t.replace(/^[,;.\s]+|[,;.\s]+$/g, '')
 
   if (t.length < 3) {

@@ -20,6 +20,9 @@ export async function POST(peticion: NextRequest) {
   type Entrada = {
     titulo?: string
     asignado_a?: string | null
+    /* Varias personas. Ver más abajo por qué convive con `asignado_a`
+       en vez de sustituirlo. */
+    para?: string[]
     fecha?: string | null
     hora?: string | null
     nota?: string | null
@@ -47,14 +50,47 @@ export async function POST(peticion: NextRequest) {
 
   const REPITES = ['diaria', 'semanal', 'mensual', 'anual']
 
+  /*
+    ═══════════════════════════════════════════════════════════
+    UNA COSA PARA VARIAS PERSONAS SON VARIAS FILAS
+    ═══════════════════════════════════════════════════════════
+
+    Porque se decidió que **cada uno marca la suya**: que Juan Miguel
+    firme los papeles no los firma por Conchita. Y con esa decisión,
+    una tarea para dos personas ES dos tareas — dos estados, dos
+    avisos al móvil, dos fechas de hecho.
+
+    Nacen con el mismo `grupo_id` para saber que se apuntaron juntas.
+
+    `asignado_a` no se jubila: sigue siendo lo que lee toda la casa
+    —la agenda, el mes, el día, los avisos, los vencimientos— y una
+    fila hermana es, para todos ellos, una fila con nombre y dueño
+    como cualquier otra. Nada de eso hubo que tocarlo.
+
+    Y `para: []` vacío no es lo mismo que no mandarlo: quien no manda
+    `para` sigue mandando `asignado_a`, que es lo que hacen las
+    pantallas viejas y lo que significa «de la casa» cuando va nulo.
+  */
   const filas = entradas
-    .map((e) => {
+    .flatMap((e) => {
       const titulo = (e.titulo ?? '').trim()
-      if (!titulo) return null
-      return {
+      if (!titulo) return []
+
+      const dichas = Array.isArray(e.para)
+        ? [...new Set(e.para.filter((x): x is string => typeof x === 'string' && x.length > 0))]
+        : []
+
+      /* Con dos o más, una fila por persona y un grupo que las une.
+         Con una sola, no hay grupo que valga: es una tarea normal. */
+      const grupo = dichas.length > 1 ? crypto.randomUUID() : null
+      const dueños: (string | null)[] =
+        dichas.length > 0 ? dichas : [e.asignado_a || null]
+
+      return dueños.map((dueño) => ({
         titulo,
         tipo: e.tipo === 'vencimiento' ? 'vencimiento' : deducirTipo(titulo),
-        asignado_a: e.asignado_a || null,
+        asignado_a: dueño,
+        grupo_id: grupo,
         creado_por: user.id,
         fecha: e.fecha && /^\d{4}-\d{2}-\d{2}$/.test(e.fecha) ? e.fecha : null,
         hora: e.hora && /^\d{2}:\d{2}$/.test(e.hora) ? e.hora : null,
@@ -69,18 +105,43 @@ export async function POST(peticion: NextRequest) {
             : null,
         aviso_previo: e.aviso_previo ?? 'sin_aviso',
         documento_origen_id: e.documento_origen_id || null,
-      }
+      }))
     })
-    .filter((f): f is NonNullable<typeof f> => f !== null)
 
   if (filas.length === 0) {
     return NextResponse.json({ error: 'Falta decir qué hay que hacer.' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  /*
+    ── Y SI EL SQL 51 NO SE HA EJECUTADO TODAVÍA ──
+
+    Postgres no perdona una columna que no existe: rechaza el INSERT
+    ENTERO, no la columna. Sin este respaldo, el día que se publique
+    esto y antes de tocar la base de datos, NADIE podría apuntar nada
+    en toda la casa — ni a mano ni hablando.
+
+    Es la misma trampa de siempre (`ve_todo`, `lleva_cuentas`), y se
+    resuelve igual: se intenta con la columna nueva y, si la base de
+    datos dice que no la conoce, se vuelve a intentar sin ella. Lo que
+    se pierde entonces es solo saber que dos tareas nacieron juntas;
+    las dos tareas se guardan igual.
+  */
+  let { data, error } = await supabase
     .from('recordatorios')
     .insert(filas)
     .select('id, titulo, fecha, hora, nota, asignado_a')
+
+  if (error && /grupo_id/.test(error.message ?? '')) {
+    const sinGrupo = filas.map((f) => {
+      const copia: Record<string, unknown> = { ...f }
+      delete copia.grupo_id
+      return copia
+    })
+    ;({ data, error } = await supabase
+      .from('recordatorios')
+      .insert(sinGrupo)
+      .select('id, titulo, fecha, hora, nota, asignado_a'))
+  }
 
   if (error || !data) {
     console.error('[HUBI] Fallo creando recordatorio:', error)

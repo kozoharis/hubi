@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "probar-voz": "tsx pruebas/voz.ts",
     "postinstall": "node scripts/copiar-worker.mjs"
   },
   "dependencies": {

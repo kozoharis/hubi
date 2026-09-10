@@ -325,6 +325,56 @@ export async function POST(peticion: NextRequest) {
       return encontrada?.id
     }
 
+    /*
+      ═══════════════════════════════════════════════════════
+      Y AHORA PUEDEN SER VARIOS
+      ═══════════════════════════════════════════════════════
+
+      `aQuien` devuelve UNO, y sigue haciendo falta: la nota del corcho
+      y el cambio de una tarea van a una sola persona.
+
+      Pero una tarea puede ser de dos —«recuérdale a Conchita y a mí lo
+      de la ITV»— y entonces son DOS tareas hermanas, una por cabeza,
+      cada una con su «hecho». Aquí solo se resuelve QUIÉNES; el reparto
+      lo hace `/api/recordatorios`.
+
+      «Yo» es una respuesta legítima y hay que oírla en voz alta. Antes
+      funcionaba de rebote: al no oír ningún nombre, la tarea se le
+      quedaba a quien hablaba. Ese rebote deja de saltar en cuanto hay
+      OTRO nombre en la frase, y era justo el caso que se pedía.
+    */
+    /* Guardado aparte porque dentro de una función anidada
+       TypeScript ya no se acuerda de que arriba se comprobó que hay
+       sesión. */
+    const yoId = user.id
+
+    function aQuienes(dichoBruto: string | null): string[] | undefined {
+      if (!dichoBruto) return undefined
+      const dicho = sinTildes(dichoBruto)
+
+      /* «Los dos», «todos»: la casa entera, y a cada uno la suya. Antes
+         esto era UNA tarea sin dueño con UN solo «hecho», y el primero
+         que la marcaba la cerraba para el otro. */
+      if (/\blos dos\b|\blas dos\b|\bambos\b|\bambas\b|\btodos\b|\btodas\b/.test(dicho)) {
+        return (perfiles ?? []).map((p) => p.id)
+      }
+
+      const ids: string[] = []
+      if (/\byo\b|\bmi\b|\bme\b|\bconmigo\b/.test(dicho)) ids.push(yoId)
+
+      for (const p of perfiles ?? []) {
+        const nombre = sinTildes(p.nombre)
+        const pila = nombre.split(' ')[0]
+        /* Nombres de dos letras no: se meterían dentro de cualquier
+           palabra y le asignarían la tarea a quien pasara por ahí. */
+        if (pila.length > 2 && (dicho.includes(pila) || dicho.includes(nombre))) {
+          if (!ids.includes(p.id)) ids.push(p.id)
+        }
+      }
+
+      return ids.length > 0 ? ids : undefined
+    }
+
     const paraId = aQuien(oido.para)
 
     const categoria = todas.find((c) => c.id === oido.categoria_id) ?? null
@@ -782,17 +832,31 @@ export async function POST(peticion: NextRequest) {
         ? 'Los dos'
         : ((perfiles ?? []).find((p) => p.id === id)?.nombre ?? 'Los dos')
 
+    /* «Haris y Conchita». Con tres o más, con coma y la última con «y»,
+       que es como se escribe una lista en español y como se lee en voz
+       alta al confirmarla. */
+    const nombresDe = (ids: string[]) => {
+      const nombres = ids.map((id) => nombreDe(id).split(' ')[0])
+      if (nombres.length <= 1) return nombres[0] ?? 'Los dos'
+      return `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`
+    }
+
     const tareas = oido.tareas.map((t) => {
-      const suyo = aQuien(t.para)
-      const destino = suyo === undefined ? user.id : suyo
+      const suyos = aQuienes(t.para)
+      /* Si no dijo para quién, es para quien habla. Nunca se queda una
+         tarea sin dueño: una tarea de nadie no la hace nadie. */
+      const destinos = suyos ?? [user.id]
       return {
         titulo: t.titulo,
         nota: t.nota,
         fecha: t.fecha,
         hora: t.hora,
         repite: t.repite,
-        para_id: destino,
-        para_nombre: nombreDe(destino),
+        /* `para_id` sigue saliendo para lo que ya lo leía. Con varios
+           es el primero, y `para_ids` es la lista de verdad. */
+        para_id: destinos[0],
+        para_ids: destinos,
+        para_nombre: nombresDe(destinos),
         para_dicho: Boolean(t.para),
       }
     })

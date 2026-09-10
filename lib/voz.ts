@@ -171,7 +171,12 @@ const ESQUEMA = {
         properties: {
           titulo: { type: 'string', description: 'La acción completa: verbo y complemento' },
           nota: { type: 'string', nullable: true, description: 'El detalle que no quepa en el título' },
-          para: { type: 'string', nullable: true, description: 'Nombre de la persona, o "los dos"' },
+          para: {
+            type: 'string',
+            nullable: true,
+            description:
+              'A quién le toca. UN nombre, o VARIOS separados por " y ": "Conchita y Rosana". Si se lo pone a sí mismo —"recuérdame", "avísame", "que no se me olvide"— escribe "yo". Si se nombra a otro Y a sí mismo, los dos: "yo y Conchita". Si dicen "los dos", "ambos" o "todos", escribe "los dos". Vacío si no dicen para quién.',
+          },
           fecha: { type: 'string', nullable: true, description: 'AAAA-MM-DD' },
           hora: { type: 'string', nullable: true, description: 'HH:MM en 24 horas' },
           repite: {
@@ -189,7 +194,12 @@ const ESQUEMA = {
         required: ['titulo'],
       },
     },
-    para: { type: 'string', nullable: true, description: 'Nombre de la persona, o "los dos"' },
+    para: {
+            type: 'string',
+            nullable: true,
+            description:
+              'A quién le toca. UN nombre, o VARIOS separados por " y ": "Conchita y Rosana". Si se lo pone a sí mismo —"recuérdame", "avísame", "que no se me olvide"— escribe "yo". Si se nombra a otro Y a sí mismo, los dos: "yo y Conchita". Si dicen "los dos", "ambos" o "todos", escribe "los dos". Vacío si no dicen para quién.',
+          },
     fecha: { type: 'string', nullable: true, description: 'AAAA-MM-DD' },
     hora: { type: 'string', nullable: true, description: 'HH:MM en 24 horas' },
     importe: { type: 'number', nullable: true },
@@ -288,7 +298,24 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
    "Dale la pastilla todas las mañanas hasta fin de mes"
    → repite: "diaria", repite_hasta: el último día de este mes
 
-   Si no dicen para quién, deja "para" vacío.
+   A QUIÉN LE TOCA — "para"
+
+   Pueden ser varios, y uno de ellos puede ser quien habla:
+
+   "Recuérdame el jueves lo del banco"          → para: "yo"
+   "Avísame mañana de la reunión"               → para: "yo"
+   "Recuérdale a Conchita lo de la ITV"         → para: "Conchita"
+   "Recuérdale a Conchita y a mí lo de la ITV"  → para: "yo y Conchita"
+   "Apunta para Conchita y Rosana lo del riego" → para: "Conchita y Rosana"
+   "Recuérdanos mañana lo del médico"           → para: "los dos"
+
+   Cuando son varios, cada uno tendrá LA SUYA y cada uno la marca por su
+   cuenta. Tú no tienes que hacer nada con eso: pon los nombres y ya.
+
+   Y "recuérdame", "avísame", "apúntame", "ponme", "que no se me olvide"
+   son SIEMPRE "yo" — nunca los dejes vacíos por ser quien habla.
+
+   Si de verdad no dicen para quién, deja "para" vacío.
    Si no dicen cuándo, deja "fecha" vacía. No inventes una fecha.
 
    El "titulo" es LA ACCIÓN, no una etiqueta. "Llamar al médico para pedir

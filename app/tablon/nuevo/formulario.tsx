@@ -72,7 +72,7 @@ const AVISOS: { valor: string; texto: string; necesitaHora?: boolean }[] = [
 
 export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string }) {
   const [titulo, setTitulo] = useState('')
-  const [para, setPara] = useState<string | null>(yo)
+  const [para, setPara] = useState<string[]>([yo])
   const [fecha, setFecha] = useState<string | null>(HOY())
   const [hora, setHora] = useState('')
   const [nota, setNota] = useState('')
@@ -86,8 +86,23 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
 
   const otros = perfiles.filter((p) => p.id !== yo)
 
+  /* Marcar y desmarcar. Sin orden: la lista se pinta por perfiles, no
+     por el orden en que se fue tocando. */
+  function alternar(id: string) {
+    setPara((antes) => (antes.includes(id) ? antes.filter((x) => x !== id) : [...antes, id]))
+  }
+
   async function guardar() {
     setAviso(null)
+
+    /* Una tarea sin nadie no la hace nadie. Se dice y no se guarda —en
+       vez de guardarla «para la casa» por nuestra cuenta, que es
+       decidir por alguien algo que no ha dicho. */
+    if (otros.length > 0 && para.length === 0) {
+      setAviso('Marca a quién le toca.')
+      return
+    }
+
     setGuardando(true)
     try {
       const r = await fetch('/api/recordatorios', {
@@ -95,7 +110,11 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           titulo,
-          asignado_a: para,
+          /* `para` es la lista; `asignado_a` va también para que una
+             casa de una sola persona —donde no hay pregunta que
+             hacer— siga guardando como siempre. */
+          para,
+          asignado_a: para.length === 1 ? para[0] : null,
           fecha,
           hora: hora || null,
           nota,
@@ -178,25 +197,56 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
         */}
         {otros.length > 0 && (
           <>
-            <p className="rotulo mt-7">¿Para quién?</p>
+            {/*
+              ═══════════════════════════════════════════════════
+              DE ELEGIR UNO A MARCAR VARIOS
+              ═══════════════════════════════════════════════════
+
+              Aquí había una fila por persona y una última que decía
+              «Para los dos», y esa última mentía un poco: guardaba UNA
+              tarea sin dueño, con UN solo «hecho». El que llegara
+              primero la cerraba para el otro.
+
+              Va bien para recoger la medicación —se recoge una vez— y
+              va mal para todo lo demás: «firmad los dos los papeles»
+              se quedaba a medias sin que se notara.
+
+              Ahora se marca a quien le toque, y cada uno tiene la
+              suya. Por dentro son dos tareas hermanas; por fuera es
+              marcar dos casillas.
+
+              La marca es CUADRADA a propósito. Una redonda dice «elige
+              una» en cualquier pantalla del mundo, y aquí se pueden
+              elegir varias.
+            */}
+            <p className="rotulo mt-7">¿Quién tiene que hacerlo?</p>
             <div className="mt-2.5 space-y-2.5">
-              <Opcion activa={para === yo} onClick={() => setPara(yo)} texto="Para mí" />
+              <Opcion
+                activa={para.includes(yo)}
+                onClick={() => alternar(yo)}
+                texto="Yo"
+                cuadrada
+              />
               {otros.map((p) => (
                 <Opcion
                   key={p.id}
-                  activa={para === p.id}
-                  onClick={() => setPara(p.id)}
-                  texto={`Para ${p.nombre.split(' ')[0]}`}
+                  activa={para.includes(p.id)}
+                  onClick={() => alternar(p.id)}
+                  texto={p.nombre.split(' ')[0]}
+                  cuadrada
                 />
               ))}
-              {/* «Los dos» solo cuando son dos. Con cuatro personas en
-                  casa esa frase es sencillamente falsa. */}
-              <Opcion
-                activa={para === null}
-                onClick={() => setPara(null)}
-                texto={otros.length === 1 ? 'Para los dos' : 'Para todos'}
-              />
             </div>
+
+            {/* Y se dice lo que va a pasar, una sola vez y solo cuando
+                pasa. Sin esto, alguien marca a los dos y no sabe si con
+                que lo haga uno vale. */}
+            {para.length > 1 && (
+              <p className="t-apoyo mt-2.5">
+                Le aparecerá a cada uno en su agenda, y cada uno la marca por su
+                cuenta.
+              </p>
+            )}
           </>
         )}
 
@@ -323,10 +373,13 @@ function Opcion({
   activa,
   onClick,
   texto,
+  cuadrada = false,
 }: {
   activa: boolean
   onClick: () => void
   texto: string
+  /** Marca cuadrada: se pueden elegir varias. */
+  cuadrada?: boolean
 }) {
   /*
     El «✓ » iba pegado al texto, así que la etiqueta se desplazaba dos
@@ -349,7 +402,9 @@ function Opcion({
     >
       <span
         aria-hidden
-        className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full"
+        className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center ${
+          cuadrada ? 'rounded-[7px]' : 'rounded-full'
+        }`}
         style={{
           border: activa ? 'none' : '2px solid var(--t-borde)',
           background: activa ? 'var(--color-accion)' : 'transparent',

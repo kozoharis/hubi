@@ -16,6 +16,9 @@ type TareaOida = {
   hora: string | null
   repite: 'diaria' | 'semanal' | 'mensual' | 'anual' | null
   para_id: string | null
+  /* Quiénes, cuando son varios. El servidor abre una tarea por cabeza
+     para que cada uno marque la suya. */
+  para_ids?: string[]
   para_nombre: string | null
   para_dicho: boolean
   repite_hasta?: string | null
@@ -586,6 +589,10 @@ export default function Grabar({
           body: JSON.stringify({
             tareas: (oido.tareas ?? []).map((t) => ({
               titulo: t.titulo,
+              /* Los dos, si dijo dos. `asignado_a` va detrás para las
+                 casas de una sola persona y para no romper nada de lo
+                 que ya llamaba a esta ruta. */
+              para: t.para_ids ?? (t.para_id ? [t.para_id] : []),
               asignado_a: t.para_id,
               fecha: t.fecha,
               hora: t.hora,
