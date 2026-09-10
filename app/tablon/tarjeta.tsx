@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cuando, atrasado, type Recordatorio } from '@/lib/tablon'
-import { Ico, Pastilla, pintaDe } from '../iconos'
+import { Ico, pintaDe } from '../iconos'
+import { PastillaAmbito } from '../piezas'
 
 export default function Tarjeta({
   r,
@@ -59,7 +60,7 @@ export default function Tarjeta({
       )}
 
       <Link href={`/tablon/${r.id}`} className="mt-2 flex items-start gap-3">
-        <Pastilla nombre={p.icono} color={p.color} fondo={p.fondo} tam={42} icono={21} />
+        <PastillaAmbito icono={p.icono} ambito={p.ambito} tam={44} />
         <span className="min-w-0 flex-1">
           <span
             className={`block text-[17.5px] font-bold leading-snug ${
@@ -69,7 +70,8 @@ export default function Tarjeta({
             {r.titulo}
           </span>
           <span
-            className={`mt-0.5 block text-[14.5px] font-bold ${tarde ? 'text-coral' : 'text-tenue'}`}
+            className="t-apoyo mt-0.5 block"
+            style={tarde ? { color: 'var(--t-alerta)' } : undefined}
           >
             {cuando(r.fecha, r.hora)}
             {tarde && ' · sin hacer'}
@@ -85,16 +87,28 @@ export default function Tarjeta({
       <div className="-mx-3.5 mt-3 h-px bg-borde" />
 
       <div className="flex items-center justify-between pt-3">
-        <Link href={`/tablon/${r.id}`} className="text-[14.5px] font-bold text-verde">
+        {/* «Ver todo» iba en `text-verde` —el verde de la Finca— y
+            sin altura propia. Es un enlace de paso: terciario. */}
+        <Link
+          href={`/tablon/${r.id}`}
+          className="flex h-[48px] items-center pr-2 text-[15px] font-extrabold text-tinta-suave"
+        >
           Ver todo
         </Link>
+        {/*
+          Marcar algo hecho SÍ es la acción de esta tarjeta, así que
+          va con el color de acción. Ya hecho, deja de serlo: se
+          convierte en un «deshacer» de paso.
+
+          Y sube de 44 a 48 px, que es el suelo.
+        */}
         <button
           onClick={cambiar}
           disabled={cambiando}
-          className={`flex h-11 items-center rounded-full px-4 text-[13.5px] font-extrabold tracking-wide disabled:opacity-50 ${
+          className={`flex h-[48px] items-center rounded-full px-4 text-[13.5px] font-extrabold tracking-wide disabled:opacity-50 ${
             hecho
               ? 'border border-borde bg-fondo text-tinta-suave'
-              : 'bg-boton text-boton-texto'
+              : 'bg-accion text-accion-tinta'
           }`}
         >
           {cambiando ? '…' : hecho ? 'DESHACER' : etiqueta(r, yo)}

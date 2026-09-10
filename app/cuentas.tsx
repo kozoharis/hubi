@@ -8,8 +8,24 @@ import { nombreApartamento } from '@/lib/reservas'
 import { unidadesDe, comoEsLaSeccion } from '@/lib/unidades'
 import Barra from './barra'
 import Cabecera from './cabecera'
-import { Ico, Pastilla, type Icono } from './iconos'
+import { Ico, type Icono } from './iconos'
+import {
+  Aviso,
+  BotonPrincipal,
+  Fila,
+  PastillaAmbito,
+  Pildora,
+  Vacio,
+  type Ambito,
+} from './piezas'
 import { hoyAqui } from '@/lib/tablon'
+import { miHogar } from '@/lib/hogar'
+import {
+  cuentaDelImpuesto,
+  comoSeLlama,
+  esImpuesto,
+  type Impuesto,
+} from '@/lib/impuesto'
 
 /*
   Las cuentas de una sección.
@@ -36,8 +52,17 @@ export type Cuenta = {
   raiz: string | null
   nombre: string
   icono: Icono
-  color: string
-  fondo: string
+  /*
+    El color de ámbito, apagado. Antes venían `color` y `fondo` en
+    hexadecimal —los cinco saturados del manual antiguo— y con ellos se
+    pintaba la pastilla, las píldoras del periodo Y el relleno de los
+    botones. Un mismo color haciendo de identidad y de acción a la vez
+    es lo que hacía que ninguno de los dos se leyera.
+
+    Ahora el color solo identifica, y va donde tiene que ir: la
+    pastilla del icono y nada más.
+  */
+  ambito: Ambito
   /** Dónde vive esta pantalla, para los enlaces de periodo. */
   ruta: string
   /* Cuál de las pestañas de abajo se marca. Ya no es una lista
@@ -78,6 +103,8 @@ type Movimiento = {
   personas: number | null
   noches: number | null
   huesped: string | null
+  /* Del SQL 46. Nulo = este apunte no está desglosado. */
+  impuesto_cuota?: number | null
 }
 
 export default async function Cuentas({
@@ -166,7 +193,23 @@ export default async function Cuentas({
     'id, tipo, concepto, importe, fecha, categoria_id, documento_id, apartamento, personas, noches, huesped'
 
   let data: unknown[] | null = null
-  const conUnidad = await supabase
+
+  /* En cascada, de más a menos: con impuesto y unidad, solo con unidad,
+     y pelado. Cada columna nueva que se añade aquí es una forma más de
+     que la pantalla entera se quede en blanco el día que falte un SQL,
+     así que ninguna es obligatoria. */
+  const conTodo = await supabase
+    .from('movimientos')
+    .select(`${columnas}, unidad_id, impuesto_cuota`)
+    .gte('fecha', periodo.desde)
+    .lte('fecha', periodo.hasta)
+    .order('fecha', { ascending: false })
+
+  if (!conTodo.error && conTodo.data) data = conTodo.data
+
+  const conUnidad = data
+    ? { error: null, data }
+    : await supabase
     .from('movimientos')
     .select(`${columnas}, unidad_id`)
     .gte('fecha', periodo.desde)
@@ -205,6 +248,34 @@ export default async function Cuentas({
   const ingresos = suma(movimientos.filter((m) => m.tipo === 'ingreso'))
   const gastos = suma(movimientos.filter((m) => m.tipo === 'gasto'))
   const balance = ingresos - gastos
+
+  /*
+    ── LO QUE NO ES NI GANANCIA NI GASTO ──
+
+    El IGIC o el IVA que ha pasado por aquí. Va aparte del balance a
+    propósito: no es dinero de la casa, es dinero de paso que hay que
+    liquidar. Meterlo en el balance haría parecer más rico a quien
+    factura mucho justo antes de tener que ingresarlo.
+
+    Si la casa no lleva impuesto —lo normal— esto no sale ni se calcula.
+  */
+  let impuestoCasa: Impuesto = 'ninguno'
+  try {
+    const casa = await miHogar(supabase, user.id)
+    if (casa) {
+      const { data: fila } = await supabase
+        .from('hogares')
+        .select('impuesto')
+        .eq('id', casa)
+        .maybeSingle()
+      if (fila && esImpuesto(fila.impuesto)) impuestoCasa = fila.impuesto
+    }
+  } catch {
+    /* Sin la columna todavía: como siempre, sin impuesto. */
+  }
+
+  const cuentaImpuesto =
+    impuestoCasa === 'ninguno' ? null : cuentaDelImpuesto(movimientos)
 
   /*
     ── A QUÉ ALTURA SE DESGLOSA ──
@@ -300,14 +371,8 @@ export default async function Cuentas({
     <main className="min-h-screen pb-40">
       <Cabecera>
         <div className="flex h-14 items-center gap-3">
-          <Pastilla
-            nombre={seccion.icono}
-            color={seccion.color}
-            fondo={seccion.fondo}
-            tam={44}
-            icono={23}
-          />
-          <h1 className="text-[27px] font-extrabold tracking-tight">{seccion.nombre}</h1>
+          <PastillaAmbito icono={seccion.icono} ambito={seccion.ambito} tam={44} />
+          <h1 className="t-titulo min-w-0 truncate">{seccion.nombre}</h1>
 
           {/*
             Cómo se lleva esta actividad: si va por partes, cómo se
@@ -322,7 +387,7 @@ export default async function Cuentas({
             <Link
               href={`/seccion/${raiz.id}/ajustes`}
               aria-label={`Cómo llevas ${seccion.nombre}`}
-              className="ml-auto flex h-12 w-12 items-center justify-center rounded-[14px] text-tenue"
+              className="ml-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] text-tenue"
             >
               <Ico nombre="lapiz" tam={20} grosor={2.2} />
             </Link>
@@ -333,20 +398,20 @@ export default async function Cuentas({
       <div className="mx-auto w-full max-w-md px-5 pt-1">
 
         {/* ── Qué periodo ── */}
+        {/* Eran de 44 px —por debajo del suelo de 48 del propio CSS— y
+            se rellenaban del color de la sección. Ahora son las del
+            sistema: la elegida se rellena de tinta, igual en todas las
+            pantallas. */}
         <div className="flex gap-2" role="group" aria-label="Periodo">
           {(['mes', 'trimestre', 'anio'] as const).map((v) => (
-            <Link
+            <Pildora
               key={v}
               href={`${seccion.ruta}?vista=${v}&ancla=${periodo.desde}`}
-              className="flex h-11 flex-1 items-center justify-center rounded-full text-[15px] font-extrabold"
-              style={
-                v === vista
-                  ? { background: seccion.color, color: '#0F172A' }
-                  : { background: 'var(--t-superficie)', color: 'var(--t-tinta-suave)', border: '1px solid var(--t-borde)' }
-              }
+              puesta={v === vista}
+              className="flex-1"
             >
               {v === 'mes' ? 'Mes' : v === 'trimestre' ? 'Trimestre' : 'Año'}
-            </Link>
+            </Pildora>
           ))}
         </div>
 
@@ -355,21 +420,21 @@ export default async function Cuentas({
           <Link
             href={`${seccion.ruta}?vista=${vista}&ancla=${periodo.anterior}`}
             aria-label="Periodo anterior"
-            className="flex h-11 w-11 items-center justify-center text-tenue"
+            className="flex h-12 w-12 items-center justify-center text-tenue"
           >
             <Ico nombre="atras" tam={21} grosor={2.4} />
           </Link>
-          <p className="text-[18px] font-extrabold">{periodo.titulo}</p>
+          <p className="t-tarjeta">{periodo.titulo}</p>
           {periodo.siguiente ? (
             <Link
               href={`${seccion.ruta}?vista=${vista}&ancla=${periodo.siguiente}`}
               aria-label="Periodo siguiente"
-              className="flex h-11 w-11 items-center justify-center text-tenue"
+              className="flex h-12 w-12 items-center justify-center text-tenue"
             >
               <Ico nombre="flecha" tam={21} grosor={2.4} />
             </Link>
           ) : (
-            <span className="flex h-11 w-11 items-center justify-center text-borde">
+            <span className="flex h-12 w-12 items-center justify-center text-apagado">
               <Ico nombre="flecha" tam={21} grosor={2.4} />
             </span>
           )}
@@ -377,18 +442,119 @@ export default async function Cuentas({
 
         {/* ── Los tres números ── */}
         <div className="mt-3 flex gap-2.5">
-          <Cifra etiqueta="INGRESOS" valor={eurosRedondo(ingresos)} punto="#14B8A6" />
-          <Cifra etiqueta="GASTOS" valor={eurosRedondo(gastos)} punto="#FF6B6B" />
+          <Cifra etiqueta="Ingresos" valor={eurosRedondo(ingresos)} punto="bien" />
+          <Cifra etiqueta="Gastos" valor={eurosRedondo(gastos)} punto="alerta" />
         </div>
 
-        <div
-          className="mt-2.5 rounded-[20px] px-4 py-4 text-white"
-          style={{ background: 'linear-gradient(135deg,#8B5CF6,#7C4DEC)' }}
-        >
-          <p className="text-[13px] font-extrabold tracking-widest opacity-85">BALANCE</p>
-          <p className="mt-0.5 text-[38px] font-extrabold leading-none tracking-tight">
+        {/*
+          ═══════════════════════════════════════════════════════
+          EL BALANCE DEJA DE SER UNA TARJETA VIOLETA
+          ═══════════════════════════════════════════════════════
+
+          Iba con un degradado `#8B5CF6 → #7C4DEC` y texto blanco. Y
+          exactamente el mismo degradado se usaba en la tarjeta de
+          «horas de más» de quien ayuda en casa: mismo formato, mismo
+          color, mismo tamaño de cifra — una es dinero y la otra es
+          tiempo. Cuando dos cosas sin relación se pintan igual, el
+          color ha dejado de informar.
+
+          Ahora es papel con borde, como todo lo demás, y el color va
+          donde sí dice algo: EL SIGNO. Verde si sobra, coral si falta.
+          Eso es lo que se viene a mirar.
+        */}
+        <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4">
+          <p className="rotulo">Balance</p>
+          <p
+            className="t-cifra mt-2"
+            style={{ color: balance >= 0 ? 'var(--t-bien)' : 'var(--t-alerta)' }}
+          >
             {eurosRedondo(balance, true)}
           </p>
+        </div>
+
+        {/*
+          ── EL IGIC O EL IVA DEL PERIODO ──
+
+          Debajo del balance y visiblemente aparte, con otro color y sin
+          número gigante. La jerarquía dice lo que hay que entender: el
+          balance es tu dinero, esto no. Es dinero que está de paso.
+
+          Y los apuntes sin desglosar se cuentan a la vista en vez de
+          repartirse a ojo. Decir «se deben 340 €» escondiendo que hay
+          doce facturas sin tipo sería dar por buena una cuenta que no
+          lo es — y esta pantalla la va a mirar una gestoría.
+        */}
+        {cuentaImpuesto && (
+          <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="rotulo">{comoSeLlama(impuestoCasa)}</p>
+              <p
+                className="t-cifra-2"
+                style={{
+                  color: cuentaImpuesto.diferencia >= 0 ? 'var(--t-alerta)' : 'var(--t-bien)',
+                }}
+              >
+                {eurosRedondo(Math.abs(cuentaImpuesto.diferencia))}
+              </p>
+            </div>
+
+            <p className="t-apoyo mt-1 text-tinta-suave">
+              {cuentaImpuesto.diferencia >= 0 ? 'A ingresar' : 'A devolver'}
+            </p>
+
+            <div className="mt-3 flex gap-2.5 border-t border-borde pt-3">
+              <span className="min-w-0 flex-1">
+                <span className="rotulo block">Cobrado</span>
+                <span className="t-cuerpo mt-1 block font-extrabold tabular-nums">
+                  {eurosRedondo(cuentaImpuesto.repercutido)}
+                </span>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="rotulo block">Pagado</span>
+                <span className="t-cuerpo mt-1 block font-extrabold tabular-nums">
+                  {eurosRedondo(cuentaImpuesto.soportado)}
+                </span>
+              </span>
+            </div>
+
+            {/* Coral era el color de «esto está mal». Un apunte sin
+                desglosar no está mal: está a medias, y eso es
+                atención, no alerta. */}
+            {cuentaImpuesto.sinDesglosar > 0 && (
+              <div className="mt-3">
+                <Aviso
+                  tono="atencion"
+                  titulo={
+                    cuentaImpuesto.sinDesglosar === 1
+                      ? 'Hay 1 apunte sin desglosar'
+                      : `Hay ${cuentaImpuesto.sinDesglosar} apuntes sin desglosar`
+                  }
+                  explicacion="No están contados en esta cuenta. Al ponerles el tipo, entran solos."
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/*
+          ── LO QUE SE PAGA SIEMPRE ──
+
+          Junto al balance y no escondido en Ajustes, porque es dinero y
+          se mira como se mira el balance. Aquí es donde alguien se
+          pregunta «¿y el recibo de la luz de este mes?» — que es
+          justamente la pregunta que contesta esa pantalla.
+        */}
+        <div className="mt-2.5">
+          <Fila href="/pagos" alto="alta">
+            <PastillaAmbito icono="reloj" ambito="violeta" tam={44} />
+            <span className="min-w-0 flex-1">
+              <span className="t-tarjeta block truncate">Pagos fijos</span>
+              <span className="t-apoyo mt-0.5 block truncate">
+                Lo que se paga todos los meses
+              </span>
+            </span>
+            <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-apagado" />
+          </Fila>
         </div>
 
         {/*
@@ -404,21 +570,20 @@ export default async function Cuentas({
           aquí no hay nada que sumar, hay algo que abrir.
         */}
         {carpetaPapeles && (
-          <Link
-            href={`/documentos/carpeta/${carpetaPapeles.id}`}
-            className="mt-2.5 flex items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-3.5"
-          >
-            <Pastilla nombre="papel" color={seccion.color} fondo={seccion.fondo} tam={44} icono={22} />
-            <span className="min-w-0 flex-1">
-              <span className="block text-[18px] font-extrabold tracking-tight">Documentos</span>
-              <span className="block text-[14.5px] font-semibold text-tenue">
-                {cuantosPapeles === 0
-                  ? 'Contratos, seguros, licencias…'
-                  : `${cuantosPapeles} ${cuantosPapeles === 1 ? 'papel guardado' : 'papeles guardados'} · todos los años`}
+          <div className="mt-2.5">
+            <Fila href={`/documentos/carpeta/${carpetaPapeles.id}`} alto="alta">
+              <PastillaAmbito icono="papel" ambito={seccion.ambito} />
+              <span className="min-w-0 flex-1">
+                <span className="t-tarjeta block truncate">Documentos</span>
+                <span className="t-apoyo block truncate">
+                  {cuantosPapeles === 0
+                    ? 'Contratos, seguros, licencias…'
+                    : `${cuantosPapeles} ${cuantosPapeles === 1 ? 'papel guardado' : 'papeles guardados'} · todos los años`}
+                </span>
               </span>
-            </span>
-            <Ico nombre="flecha" tam={20} grosor={2.4} />
-          </Link>
+              <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-apagado" />
+            </Fila>
+          </div>
         )}
 
         {/* ── Cada unidad ── */}
@@ -433,18 +598,16 @@ export default async function Cuentas({
                   className="rounded-[20px] border border-borde bg-superficie px-4 py-4"
                 >
                   <div className="flex items-baseline justify-between gap-3">
-                    <p className="text-[18px] font-extrabold tracking-tight">
-                      {c.nombre}
-                    </p>
+                    <p className="t-tarjeta min-w-0 truncate">{c.nombre}</p>
                     <p
-                      className="text-[21px] font-extrabold tabular-nums"
-                      style={{ color: c.balance >= 0 ? '#14B8A6' : '#FF6B6B' }}
+                      className="t-cifra-2 shrink-0"
+                      style={{ color: c.balance >= 0 ? 'var(--t-bien)' : 'var(--t-alerta)' }}
                     >
                       {eurosRedondo(c.balance, true)}
                     </p>
                   </div>
 
-                  <p className="mt-1 text-[14.5px] font-semibold text-tenue">
+                  <p className="t-apoyo mt-1">
                     {eurosRedondo(c.ingresos)} entra · {eurosRedondo(c.gastos)} sale
                   </p>
 
@@ -457,19 +620,19 @@ export default async function Cuentas({
                       className="h-2.5"
                       style={{
                         width: `${casas.tope > 0 ? (c.ingresos / casas.tope) * 100 : 0}%`,
-                        background: '#14B8A6',
+                        background: 'var(--t-bien)',
                       }}
                     />
                     <div
                       className="h-2.5"
                       style={{
                         width: `${casas.tope > 0 ? (c.gastos / casas.tope) * 100 : 0}%`,
-                        background: '#FF6B6B',
+                        background: 'var(--t-alerta)',
                       }}
                     />
                   </div>
 
-                  <p className="mt-2.5 text-[15px] font-bold text-tinta-suave">
+                  <p className="t-apoyo mt-2.5 text-tinta-suave">
                     {c.reservas === 0
                       ? 'Sin reservas'
                       : `${c.reservas} ${c.reservas === 1 ? 'reserva' : 'reservas'} · ${c.noches} ${c.noches === 1 ? 'noche' : 'noches'} · ${c.personas} ${c.personas === 1 ? 'persona' : 'personas'}`}
@@ -487,13 +650,13 @@ export default async function Cuentas({
             */}
             {casas.comunes > 0 &&
               (casas.reparte ? (
-                <p className="mt-3 text-[15px] font-semibold leading-snug text-tenue">
+                <p className="t-apoyo mt-3">
                   Incluye {euros(casas.comunes)} de gastos comunes —luz, seguro,
                   gestoría— repartidos a partes iguales entre{' '}
                   {casas.cuantas === 2 ? 'las dos' : `las ${casas.cuantas}`}.
                 </p>
               ) : (
-                <p className="mt-3 text-[15px] font-semibold leading-snug text-tenue">
+                <p className="t-apoyo mt-3">
                   Aparte hay {euros(casas.comunes)} de gastos comunes que no son de
                   ninguna en concreto. No se reparten: sí cuentan en el balance de
                   arriba.
@@ -509,8 +672,8 @@ export default async function Cuentas({
             <ul className="mt-3">
               {desglose.map((d) => (
                 <li key={d.nombre} className="mb-3.5">
-                  <div className="flex items-baseline justify-between gap-4 text-[16px] font-bold">
-                    <span>{d.nombre}</span>
+                  <div className="t-cuerpo flex items-baseline justify-between gap-4 font-extrabold">
+                    <span className="min-w-0 truncate">{d.nombre}</span>
                     <span className="shrink-0 tabular-nums">{euros(d.total)}</span>
                   </div>
                   <div
@@ -519,8 +682,11 @@ export default async function Cuentas({
                     aria-label={`${d.nombre}: ${euros(d.total)}`}
                   >
                     <div
-                      className="h-2 rounded-full bg-coral"
-                      style={{ width: `${mayor > 0 ? Math.max(4, (d.total / mayor) * 100) : 0}%` }}
+                      className="h-2 rounded-full"
+                      style={{
+                        width: `${mayor > 0 ? Math.max(4, (d.total / mayor) * 100) : 0}%`,
+                        background: 'var(--t-alerta)',
+                      }}
                     />
                   </div>
                 </li>
@@ -534,19 +700,22 @@ export default async function Cuentas({
           <h2 className="rotulo">Movimientos</h2>
 
           {movimientos.length === 0 ? (
-            <p className="mt-3 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
-              No hay nada apuntado en {periodo.titulo.toLowerCase()}.
-            </p>
+            <div className="mt-3">
+              <Vacio
+                titulo={`No hay nada apuntado en ${periodo.titulo.toLowerCase()}`}
+                explicacion="Las facturas con importe entran solas al guardarlas."
+              />
+            </div>
           ) : (
             <ul className="mt-3 space-y-2.5">
               {movimientos.map((m) => (
                 <li
                   key={m.id}
-                  className="flex items-center justify-between gap-3 rounded-[18px] border border-borde bg-superficie px-4 py-3"
+                  className="flex min-h-[64px] items-center justify-between gap-3 rounded-[20px] border border-borde bg-superficie px-4 py-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-[17px] font-bold">{m.concepto}</p>
-                    <p className="text-[14.5px] font-semibold text-tenue">
+                    <p className="t-cuerpo truncate font-extrabold">{m.concepto}</p>
+                    <p className="t-apoyo">
                       {fechaBreve(m.fecha)}
                       {m.categoria_id && porId.get(m.categoria_id)
                         ? ` · ${porId.get(m.categoria_id)!.nombre}`
@@ -558,7 +727,7 @@ export default async function Cuentas({
                         : ''}
                     </p>
                     {m.noches != null && (
-                      <p className="text-[14.5px] font-semibold text-tenue">
+                      <p className="t-apoyo">
                         {m.noches} {m.noches === 1 ? 'noche' : 'noches'}
                         {m.personas != null
                           ? ` · ${m.personas} ${m.personas === 1 ? 'persona' : 'personas'}`
@@ -567,18 +736,20 @@ export default async function Cuentas({
                     )}
                   </div>
                   <div className="shrink-0 text-right">
+                    {/* El signo LO DICE el color y también el símbolo:
+                        quien no distinga verde de coral sigue viendo
+                        el + y el −. Nunca solo el color. */}
                     <p
-                      className="text-[17px] font-extrabold tabular-nums"
-                      style={{ color: m.tipo === 'ingreso' ? '#14B8A6' : '#FF6B6B' }}
+                      className="t-cuerpo font-extrabold tabular-nums"
+                      style={{
+                        color: m.tipo === 'ingreso' ? 'var(--t-bien)' : 'var(--t-alerta)',
+                      }}
                     >
                       {m.tipo === 'ingreso' ? '+' : '−'}
                       {euros(m.importe)}
                     </p>
                     {m.documento_id && (
-                      <Link
-                        href={`/documentos/${m.documento_id}`}
-                        className="text-[14.5px] font-bold text-tenue"
-                      >
+                      <Link href={`/documentos/${m.documento_id}`} className="t-apoyo font-extrabold">
                         Ver papel
                       </Link>
                     )}
@@ -602,13 +773,14 @@ export default async function Cuentas({
           dice MOVIMIENTOS: son la misma cosa llamada de dos maneras
           en la misma pantalla.
         */}
-        <Link
-          href={`/finca/apuntar?seccion=${seccion.raiz ?? 'resto'}`}
-          className="mt-5 flex h-[60px] items-center justify-center gap-2.5 rounded-[18px] bg-boton text-[18px] font-extrabold text-boton-texto"
-        >
-          <Ico nombre="mas" tam={22} grosor={2.3} />
-          Apuntar un movimiento
-        </Link>
+        <div className="mt-5">
+          <BotonPrincipal
+            href={`/finca/apuntar?seccion=${seccion.raiz ?? 'resto'}`}
+            icono="mas"
+          >
+            Apuntar un movimiento
+          </BotonPrincipal>
+        </div>
 
         {/* Sin `pr-24`: ese hueco a la derecha estaba para esquivar el
             botón de voz, que ahora va pegado a la barra de abajo y ya
@@ -616,24 +788,45 @@ export default async function Cuentas({
         {/* El hueco a la derecha SÍ hace falta: el botón de voz flota
             justo encima de la barra y se comía el final de la frase —
             «entran aquí solas» quedaba tapado por él. */}
-        <p className="mt-3 px-14 text-center text-[14.5px] font-semibold leading-snug text-tenue">
+        <p className="t-apoyo mt-3 px-14 text-center">
           Un gasto o un ingreso. Las facturas con importe entran solas.
         </p>
       </div>
 
-      <Barra activa={seccion.pestana} />
+      {/* Las actividades viven ahora dentro de Cuentas: estando en la
+          Finca, la pestaña que está encendida es Cuentas. */}
+      <Barra activa="cuentas" />
     </main>
   )
 }
 
-function Cifra({ etiqueta, valor, punto }: { etiqueta: string; valor: string; punto: string }) {
+/*
+  Ingresos y gastos, uno al lado del otro.
+
+  El punto de color es la leyenda de las barras de más abajo: verde lo
+  que entra, coral lo que sale. La cifra en sí va en tinta — el color
+  ya lo lleva el punto, y repetirlo en el número sería decir dos veces
+  lo mismo y a costa de la legibilidad.
+*/
+function Cifra({
+  etiqueta,
+  valor,
+  punto,
+}: {
+  etiqueta: string
+  valor: string
+  punto: 'bien' | 'alerta'
+}) {
   return (
-    <div className="flex-1 rounded-[18px] border border-borde bg-superficie px-4 py-3">
-      <p className="flex items-center gap-2 text-[13px] font-extrabold tracking-widest text-tenue">
-        <span className="h-2.5 w-2.5 rounded-full" style={{ background: punto }} />
+    <div className="flex-1 rounded-[20px] border border-borde bg-superficie px-4 py-3">
+      <p className="rotulo flex items-center gap-2">
+        <span
+          className="h-2.5 w-2.5 shrink-0 rounded-full"
+          style={{ background: `var(--t-${punto})` }}
+        />
         {etiqueta}
       </p>
-      <p className="mt-1.5 text-[23px] font-extrabold tracking-tight">{valor}</p>
+      <p className="t-cifra-2 mt-2">{valor}</p>
     </div>
   )
 }

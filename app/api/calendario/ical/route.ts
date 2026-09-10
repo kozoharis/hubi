@@ -154,7 +154,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: error.message.includes('ical_cifrado')
-          ? 'Falta ejecutar sql/21-calendario-google.sql en la base de datos.'
+          ? 'El calendario todavía no está disponible en esta casa.'
           : 'No se ha podido guardar.',
         detalle: error.message,
       },
@@ -200,7 +200,7 @@ export async function PATCH(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: error.message.includes('ical_compartido')
-          ? 'Falta ejecutar sql/22-calendario-compartido.sql en la base de datos.'
+          ? 'El calendario compartido todavía no está disponible en esta casa.'
           : 'No se ha podido guardar.',
       },
       { status: 500 }

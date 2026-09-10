@@ -1,9 +1,9 @@
 'use client'
 
-import Link from 'next/link'
-import { Ico, iconoDeEmoji, type Icono } from './iconos'
+import Link, { useLinkStatus } from 'next/link'
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
+import { Ico, type Icono } from './iconos'
 import { useCasa } from './actividades-contexto'
-import { nombreCorto } from '@/lib/actividades'
 
 /*
   La barra de abajo.
@@ -32,52 +32,61 @@ type Seccion = string | null
 
 /*
   ═══════════════════════════════════════════════════════════════
-  CINCO PESTAÑAS, Y NI UNA MÁS
+  CINCO PESTAÑAS FIJAS · Fase 2
   ═══════════════════════════════════════════════════════════════
 
-  Con seis, cada botón baja de los 48 px que fijamos como mínimo para
-  lo que hay que pulsar — la regla que protege a un dedo de 75 años. Y
-  ese suelo no se negocia por hacer sitio a una sección.
+      Inicio · Papeles · Agenda · Cuentas · El día a día
 
-  Tareas y Calendario eran DOS pestañas de la misma tabla: una lista y
-  un mes de lo mismo. Tenerlas separadas obligaba a decidir dónde
-  buscar algo que estaba en los dos sitios — justo la complejidad que
-  el punto 18 dice que no debe existir para ellos: "todo debe ser
-  cosas que tengo que recordar". Ahora son una: Agenda, con sus dos
-  vistas dentro.
+  Cinco es el tope de verdad: con seis, cada botón baja de los 48 px
+  que protegen a un dedo de 75 años, y ese suelo no se negocia por
+  hacer sitio a una sección.
 
   ─────────────────────────────────────────────────────────────
-  Y LAS DOS QUE SOBRAN LAS DECIDE EL SISTEMA, NO LA PERSONA
+  LO QUE HABÍA, Y POR QUÉ NO PODÍA QUEDARSE
 
-  Quedan dos huecos y cada casa tiene las actividades que tiene: aquí
-  la Finca y Los Helechos; en otra, cuatro obras y la casa.
+  La barra era ésta:
 
-  Se barajaron dos maneras, y las dos tenían un pero:
+      Inicio · Papeles · Agenda · Finca · Helechos
 
-  · Dejar elegir en Ajustes cuáles dos van abajo. Es una decisión más
-    que cobrarle a alguien, y quien tenga cinco actividades esconde
-    tres.
+  Tres funciones y dos NOMBRES PROPIOS. En esta casa son la Finca y
+  Los Helechos; en la de al lado serán «Alquileres» y «Obra del
+  garaje». O sea: la barra no tenía una forma fija, así que no se
+  podía aprender — y explicársela a alguien por teléfono era imposible
+  porque en su móvil ponía otra cosa.
 
-  · Poner siempre un botón «Actividades» que abra la lista. Resuelve
-    lo anterior, pero le cobra UN TOQUE MÁS TODOS LOS DÍAS a quien
-    solo tiene dos y las usa a diario. Arreglar con su tiempo un
-    problema que no tiene.
+  Y arrastraba un problema mayor. Con esas dos ocupando sitio, NO
+  QUEDABA HUECO para nada más, así que La compra, los Menús, las
+  Notas, La casa y el asesor colgaban todos del Inicio. Por eso Inicio
+  medía mil doscientas líneas y había que bajar media pantalla para
+  llegar al médico de las diez.
 
-  Así que la regla la aplica HUBI y nadie configura nada:
+  No eran dos problemas: era uno. El sitio de las actividades en la
+  barra era el sitio que le faltaba al día a día.
 
-      Una o dos actividades  →  cada una es su pestaña. Un toque.
-      Tres o más             →  una sola pestaña, «Actividades».
+  ─────────────────────────────────────────────────────────────
+  LO QUE CUESTA, DICHO CLARO
 
-  Juan Miguel y Conchita, que tienen dos, siguen viendo exactamente lo
-  de siempre. Es el punto 29: la complejidad pertenece al sistema.
+  Quien tiene una o dos actividades y las abre a diario paga UN TOQUE
+  MÁS: antes la Finca estaba abajo, ahora está dentro de Cuentas.
+
+  Se acepta porque a cambio la barra es igual en todas las casas, no
+  cambia de forma cuando alguien crea una actividad nueva, y el día a
+  día —que se usa varias veces al día, no una vez a la semana— pasa a
+  estar a un toque en vez de a un scroll.
 */
 type Pestana = { clave: string; texto: string; icono: Icono; href: string }
 
-const FIJAS: Pestana[] = [
-  { clave: 'inicio',     texto: 'Inicio',  icono: 'casa',       href: '/' },
-  { clave: 'documentos', texto: 'Papeles', icono: 'carpeta',    href: '/documentos' },
-  { clave: 'agenda',     texto: 'Agenda',  icono: 'calendario', href: '/agenda' },
-]
+const INICIO:   Pestana = { clave: 'inicio',     texto: 'Inicio',  icono: 'casa',       href: '/' }
+const PAPELES:  Pestana = { clave: 'documentos', texto: 'Papeles', icono: 'carpeta',    href: '/documentos' }
+const AGENDA:   Pestana = { clave: 'agenda',     texto: 'Agenda',  icono: 'calendario', href: '/agenda' }
+const CUENTAS:  Pestana = { clave: 'cuentas',    texto: 'Cuentas', icono: 'euro',       href: '/cuentas' }
+/*
+  «Día a día» y no «El día a día»: a 360 px la barra reparte 72 px por
+  botón, y el rótulo va a 12 px. «El día a día» se parte en dos
+  renglones y descuadra las otras cuatro. Dentro, la pantalla sí se
+  llama por su nombre entero.
+*/
+const DIA_A_DIA: Pestana = { clave: 'dia', texto: 'Día a día', icono: 'taza', href: '/dia' }
 
 
 /*
@@ -110,66 +119,70 @@ export default function Barra({
   activa?: Seccion
   voz?: boolean
 }) {
-  const { actividades, rol, usaCompra } = useCasa()
+  const { rol } = useCasa()
 
-  /* Tres o más no caben: se juntan detrás de una sola pestaña. Dos o
-     menos van directas, que es lo que ahorra un toque diario a quien
-     las usa. */
-  const sueltas = actividades.length <= 2
+  /*
+    ═══════════════════════════════════════════════════════════
+    «VOY EN CAMINO» · a qué pestaña vamos
+    ═══════════════════════════════════════════════════════════
 
-  const DE_ACTIVIDADES: Pestana[] = sueltas
-    ? actividades.map((a) => ({
-        clave: a.id,
-        texto: nombreCorto(a.nombre),
-        icono: iconoDeEmoji(a.icono),
-        href: a.ruta,
-      }))
-    : [
-        {
-          clave: 'actividades',
-          texto: 'Actividades',
-          icono: 'euro' as Icono,
-          href: '/actividades',
-        },
-      ]
+    Esto arregla un fallo, no es un pulido.
+
+    Todas las pantallas de HUBI son `force-dynamic`: al pulsar una
+    pestaña hay un viaje al servidor, y en un móvil con cobertura
+    regular eso son entre 400 y 1500 ms. Durante todo ese rato la
+    barra seguía señalando la pestaña ANTERIOR.
+
+    O sea que lo único de la pantalla capaz de confirmar el toque
+    estaba diciendo justo lo contrario: «sigues donde estabas». Ahí
+    es donde se vuelve a pulsar, y entonces se encadenan dos
+    navegaciones y la cosa va aún más lenta.
+
+    Se guarda AQUÍ y no en cada pestaña porque hacen falta las dos
+    mitades a la vez: encender la de destino y apagar la de origen.
+    Con el estado repartido, las dos se encenderían y quedaría peor
+    que antes — dos sitios señalados y ninguno claro.
+
+    Se limpia solo: `useLinkStatus` pasa a falso cuando la navegación
+    termina, y para entonces la pantalla nueva ya manda su `activa`.
+  */
+  const [yendo, setYendo] = useState<string | null>(null)
 
   /* La voz sirve para APUNTAR y para preguntar. A quien no puede
      escribir nada —el asesor, quien solo mira— le daría un botón
      grande que falla en cuanto lo use. */
   const puedeHablar = rol !== 'asesor' && rol !== 'mirar'
 
-  const INICIO = FIJAS[0]
-  const PAPELES = FIJAS[1]
-  const AGENDA = FIJAS[2]
+  /*
+    ── Y LA BARRA NO ES LA MISMA PARA TODOS ──
 
+    Cada papel ve las suyas, y de paso le caben más anchas. Con la
+    barra fija esto se simplifica: ya no hay que calcular nada, solo
+    quitar lo que a esa persona no le lleva a ningún sitio.
+
+      Ayuda en casa   Inicio · Agenda · Día a día
+      Asesor          Inicio · Papeles · Agenda · Cuentas
+      Familia         las cinco
+
+    A quien ayuda en casa se le quitan Papeles y Cuentas: la base de
+    datos se los vacía —eso funciona— pero pasarse el día viendo dos
+    pestañas que no llevan a nada no se lee como «esto no es para ti»,
+    se lee como «esto está roto». Y el Día a día se le queda porque es
+    literalmente su pantalla: ahí están la compra, los menús y lo que
+    toca hoy.
+
+    Al asesor se le quita el Día a día por lo mismo: la compra y los
+    recados de una familia que no es la suya no le corresponden. La
+    agenda sí, porque desde que puede poner fechas es donde hace su
+    trabajo — «el día 20 hay un pago» va en un calendario, no en un
+    WhatsApp.
+  */
   const PESTANAS: Pestana[] =
     rol === 'ayuda'
-      ? /* Lo suyo y nada más. La compra sube a pestaña porque para ella
-           es lo del día a día, y aquí hay sitio de sobra: con tres
-           botones cada uno mide el doble. */
-        [
-          INICIO,
-          AGENDA,
-          ...(usaCompra
-            ? [{ clave: 'compra', texto: 'La compra', icono: 'bolsa' as Icono, href: '/compra' }]
-            : []),
-        ]
+      ? [INICIO, AGENDA, DIA_A_DIA]
       : rol === 'asesor'
-        ? /*
-             Las cuentas, los papeles de las actividades… y la agenda.
-
-             La agenda estaba fuera —«la de una familia que no es la
-             suya no pinta nada»— y era verdad mientras el asesor solo
-             podía mirar. Desde que puede dejar avisos y poner fechas,
-             quitársela es quitarle el sitio donde hace su trabajo:
-             «el día 20 hay un pago» va en un calendario, no en un
-             WhatsApp.
-
-             Con las actividades sueltas serían cinco pestañas, que es
-             el tope. Cuando hay tres o más, ya se juntan solas.
-          */
-          [INICIO, PAPELES, AGENDA, ...DE_ACTIVIDADES]
-        : [INICIO, PAPELES, AGENDA, ...DE_ACTIVIDADES]
+        ? [INICIO, PAPELES, AGENDA, CUENTAS]
+        : [INICIO, PAPELES, AGENDA, CUENTAS, DIA_A_DIA]
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40">
@@ -178,7 +191,7 @@ export default function Barra({
           <Link
             href="/hablar"
             aria-label="Hablar con HUBI"
-            className="pointer-events-auto absolute bottom-[10px] right-4 flex flex-col items-center"
+            className="tocable pointer-events-auto absolute bottom-[10px] right-4 flex flex-col items-center"
           >
             <span className="relative flex h-[52px] w-[52px] items-center justify-center">
               <span className="pulso" />
@@ -203,25 +216,95 @@ export default function Barra({
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="mx-auto flex h-[68px] max-w-md">
-          {PESTANAS.map((p) => {
-            const puesta = p.clave === activa
-            return (
-              <Link
-                key={p.clave}
-                href={p.href}
-                prefetch={false}
-                aria-current={puesta ? 'page' : undefined}
-                className={`flex flex-1 flex-col items-center justify-center gap-1 text-[12px] font-bold ${
-                  puesta ? 'text-verde' : 'text-apagado'
-                }`}
-              >
-                <Ico nombre={p.icono} tam={25} grosor={puesta ? 2.1 : 1.9} />
-                <span>{p.texto}</span>
-              </Link>
-            )
-          })}
+          {PESTANAS.map((p) => (
+            <Link
+              key={p.clave}
+              href={p.href}
+              prefetch={false}
+              aria-current={p.clave === activa ? 'page' : undefined}
+              className="flex flex-1"
+            >
+              {/* El color y el grosor viven DENTRO, no aquí: quien
+                  decide si esta pestaña está encendida es el hijo, que
+                  es el único que puede preguntarle al router si la
+                  navegación va en camino. */}
+              <Dentro
+                icono={p.icono}
+                texto={p.texto}
+                clave={p.clave}
+                activa={activa}
+                yendo={yendo}
+                avisar={setYendo}
+              />
+            </Link>
+          ))}
         </div>
       </nav>
     </div>
+  )
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  EL INTERIOR DE UNA PESTAÑA
+  ═══════════════════════════════════════════════════════════════
+
+  Vive dentro del `<Link>` y no fuera por una razón técnica concreta:
+  `useLinkStatus` solo contesta si quien pregunta está DENTRO del
+  enlace del que quiere saber. Por eso el enlace se queda con la
+  distribución y todo lo demás —color, grosor, respuesta al tacto—
+  baja aquí.
+
+  ── QUÉ SIGNIFICA CADA ESTADO ──
+
+      alguien va en camino  →  la encendida es la de destino
+      nadie va a ningún lado →  la encendida es donde estás
+
+  Nunca las dos. Dos pestañas encendidas no es «estoy aquí y voy
+  allí»: es no saber dónde estás.
+
+  ── LA PESTAÑA EN LA QUE ESTÁS VA EN TINTA, NO EN VERDE ──
+
+  Es la misma regla que la píldora del sistema: estar en un sitio es
+  un ESTADO, no una acción. Y el verde ya no es un acento — es el
+  color de ámbito de la Finca, así que la pestaña activa iba pintada
+  del color de una sección concreta.
+*/
+function Dentro({
+  icono,
+  texto,
+  clave,
+  activa,
+  yendo,
+  avisar,
+}: {
+  icono: Icono
+  texto: string
+  clave: string
+  activa: Seccion
+  yendo: string | null
+  avisar: Dispatch<SetStateAction<string | null>>
+}) {
+  const { pending } = useLinkStatus()
+
+  useEffect(() => {
+    if (pending) avisar(clave)
+    /* Y al terminar se borra SOLO si el que sobra es el mío: si para
+       entonces ya hay otra pestaña en camino, borrar sin mirar me
+       llevaría por delante la suya. */
+    else avisar((y) => (y === clave ? null : y))
+  }, [pending, clave, avisar])
+
+  const encendida = yendo ? yendo === clave : clave === activa
+
+  return (
+    <span
+      className={`tocable flex h-full w-full flex-col items-center justify-center gap-1 text-[12px] font-bold ${
+        encendida ? 'text-tinta' : 'text-apagado'
+      }`}
+    >
+      <Ico nombre={icono} tam={25} grosor={encendida ? 2.1 : 1.9} />
+      <span>{texto}</span>
+    </span>
   )
 }

@@ -206,7 +206,7 @@ export default function QuienVe({
         acceso tiene que saber dónde está el límite. Prometer más
         privacidad de la que hay es peor que no ofrecerla.
       */}
-      <p className="mt-4 rounded-[14px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
+      <p className="mt-4 rounded-[16px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
         El permiso es por carpeta entera: quien ve <strong className="text-tinta">Casa</strong>{' '}
         ve todo lo que hay dentro. Las tareas, la agenda y la lista de la compra las siguen
         viendo todos.
@@ -216,7 +216,7 @@ export default function QuienVe({
         <button
           onClick={guardar}
           disabled={ocupado}
-          className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+          className="flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-accion text-[17px] font-extrabold text-accion-tinta disabled:opacity-50"
         >
           <Ico nombre="check" tam={19} grosor={2.3} />
           {ocupado ? 'Guardando…' : 'Guardar'}
@@ -224,14 +224,15 @@ export default function QuienVe({
         <button
           onClick={alCerrar}
           disabled={ocupado}
-          className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+          className="h-[60px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
         >
           Dejarlo
         </button>
       </div>
 
       {fallo && (
-        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
+        <p className="mt-3 t-apoyo rounded-[16px] border px-4 py-3"
+          style={{ background: 'var(--t-alerta-velo)', borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)', color: 'var(--t-alerta)' }}>
           {fallo}
         </p>
       )}
@@ -293,7 +294,7 @@ function Casilla({
       role="switch"
       aria-checked={puesta}
       aria-label={etiqueta}
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] disabled:opacity-45"
+      className="flex h-12 w-11 shrink-0 items-center justify-center rounded-[13px] disabled:opacity-45"
       style={
         puesta
           ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }

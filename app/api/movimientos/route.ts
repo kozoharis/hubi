@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
+import { miHogar } from '@/lib/hogar'
+import { desgloseQueToca } from '@/lib/impuesto'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +27,8 @@ export async function POST(peticion: NextRequest) {
     noches?: number | null
     huesped?: string
     referencia?: string
+    /** El tipo de IGIC/IVA de este apunte, si la pantalla lo pregunta. */
+    impuesto_tipo?: number | null
   }
 
   const tipo = cuerpo.tipo === 'ingreso' ? 'ingreso' : 'gasto'
@@ -59,9 +63,25 @@ export async function POST(peticion: NextRequest) {
   const huesped = tipo === 'ingreso' ? (cuerpo.huesped ?? '').trim().slice(0, 120) : ''
   const referencia = tipo === 'ingreso' ? (cuerpo.referencia ?? '').trim().slice(0, 40) : ''
 
-  const { data, error } = await supabase
-    .from('movimientos')
-    .insert({
+  /*
+    EL DESGLOSE DEL IMPUESTO.
+
+    El importe de arriba es y sigue siendo el TOTAL. Esto solo lo lee y
+    dice cuánto de ese total es impuesto. Si la casa no lleva, devuelve
+    nulos y el apunte queda exactamente igual que antes.
+
+    Y va en su propio objeto para poder añadirlo al insert solo cuando
+    existe: mandar columnas que la base de datos no tiene todavía
+    tumbaría el apunte entero, que es la trampa de siempre.
+  */
+  const conImpuesto = await desgloseQueToca(supabase, {
+    hogarId: await miHogar(supabase, user.id),
+    categoriaId: cuerpo.categoria_id,
+    total: importe,
+    tipoDicho: cuerpo.impuesto_tipo ?? null,
+  })
+
+  const elApunte: Record<string, unknown> = {
       tipo,
       concepto,
       importe,
@@ -74,7 +94,16 @@ export async function POST(peticion: NextRequest) {
       noches,
       huesped: huesped || null,
       referencia: referencia || null,
-    })
+  }
+
+  if (conImpuesto.impuesto_tipo !== null) {
+    elApunte.impuesto_tipo = conImpuesto.impuesto_tipo
+    elApunte.impuesto_cuota = conImpuesto.impuesto_cuota
+  }
+
+  const { data, error } = await supabase
+    .from('movimientos')
+    .insert(elApunte)
     .select('id, fecha')
     .single()
 

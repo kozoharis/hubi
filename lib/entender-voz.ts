@@ -165,14 +165,132 @@ const SEÑALES: { accion: Entendido['accion']; palabras: string[] }[] = [
   },
 ]
 
+/*
+  ═══════════════════════════════════════════════════════════════
+  CUANDO NO HAY NADA QUE INTERPRETAR
+  ═══════════════════════════════════════════════════════════════
+
+  Hay frases que no son ambiguas para nadie:
+
+      «Ponle una nota a Julia. Los papeles están en la mesa.»
+
+  Llevan la palabra «nota» y no llevan ningún día ni ninguna hora. No
+  hay dos lecturas posibles. Y sin embargo acababan en la Agenda,
+  porque el modelo tiene ocho acciones que se parecen y a veces elige
+  la de al lado.
+
+  Esto se decide AQUÍ, con reglas, antes de preguntarle a nadie. No es
+  desconfianza: es que a una pregunta sin dudas no se le pide opinión
+  a un modelo que tarda dos segundos y acierta el noventa por ciento.
+  Se gana en acierto y se gana en rapidez a la vez.
+
+  Y es deliberadamente estrecho. Solo dispara con las palabras que no
+  significan otra cosa —«una nota», «en el corcho», «deja dicho»— y
+  solo si NO hay rastro de cuándo. En cuanto aparece un «mañana» o un
+  «a las seis», esto se calla y decide quien sabe más: una nota mal
+  puesta se arrastra a mano en diez segundos, pero un recordatorio que
+  pierde su hora no avisa a nadie.
+*/
+const SEGURO_NOTA =
+  /\b(una nota|la nota|nota para|en el corcho|al corcho|en el tablon|al tablon|deja dicho|dejale dicho|deja escrito|dejale escrito|que quede escrito)\b/
+
+const HAY_CUANDO =
+  /\b(hoy|manana|pasado manana|ayer|lunes|martes|miercoles|jueves|viernes|sabado|domingo|a las?\s*\d|\d{1,2}\s*(h|horas)\b|esta (manana|tarde|noche)|por la (manana|tarde|noche)|dentro de|el dia \d|proxim\w+|semana que viene|cada (dia|semana|mes|lunes|martes|miercoles|jueves|viernes|sabado|domingo)|todos los)\b/
+
+/**
+ * ¿Es una nota sin lugar a dudas? Palabra de nota y ni rastro de
+ * cuándo. Se usa para no preguntarle al modelo lo que ya se sabe.
+ */
+export function seguroQueEsNota(frase: string): boolean {
+  const plano = limpio(frase)
+  return SEGURO_NOTA.test(plano) && !HAY_CUANDO.test(plano)
+}
+
 function queQuiere(plano: string): Entendido['accion'] {
-  for (const s of SEÑALES) {
-    if (s.palabras.some((p) => plano.includes(p))) return s.accion
-  }
+  const señalada = queSeñalPega(plano)
+  if (señalada) return señalada
   // Lo más común con diferencia. Y es el que menos daño hace si se
   // equivoca: sale la pantalla de confirmación y se corrige.
   return 'recordatorio'
 }
+
+/** La señal que pega, o nada. Sin la caída a «recordatorio». */
+function queSeñalPega(plano: string): Entendido['accion'] | null {
+  for (const s of SEÑALES) {
+    if (s.palabras.some((p) => plano.includes(p))) return s.accion
+  }
+  return null
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  ¿ESTO ES UNA ORDEN, O ES QUE ESTÁ BUSCANDO ALGO?
+  ═══════════════════════════════════════════════════════════════
+
+  Y ESTA PREGUNTA NO LA PODÍA CONTESTAR `entenderFrase`.
+
+  `queQuiere` acaba en «recordatorio» cuando no reconoce nada, y eso
+  es correcto DENTRO de la pantalla de voz: allí ya has decidido
+  hablarle a HUBI, así que ante la duda apuntar algo y enseñarte la
+  confirmación es lo que menos daño hace.
+
+  Pero la caja de HUBI vive dentro de Papeles, donde antes había un
+  buscador. Ahí esa misma caída es lo peor que puede pasar: escribes
+  «seguro coche» buscando tu póliza y HUBI te apunta una tarea que se
+  llama «seguro coche». Buscar no tiene efectos; apuntar sí.
+
+  Así que aquí se pregunta al revés: no «qué es esto», sino «¿hay
+  alguna señal de que sea una orden o una pregunta?». Si no la hay, se
+  busca — que es instantáneo, gratis y no cambia nada.
+
+  Devuelve la acción cuando está señalada, y `null` cuando lo que hay
+  delante son solo palabras sueltas.
+*/
+export function esUnaOrden(frase: string): Entendido['accion'] | null {
+  const plano = limpio(frase.trim())
+  if (!plano) return null
+
+  /* Las dos preguntas largas van primero, por lo mismo que dentro de
+     `entenderFrase`: «dime los ingresos de Los Helechos» lleva señales
+     de varias cosas y solo el patrón entero acierta. */
+  if (ES_UNA_PREGUNTA.test(plano)) return 'consulta'
+  if (PREGUNTA_POR_LA_AGENDA.test(plano)) return 'consulta'
+
+  const señalada = queSeñalPega(plano)
+  if (señalada) return señalada
+
+  /*
+    Y AQUÍ FALTABA LA MITAD DEL PRODUCTO.
+
+    `recordatorio` no tiene señales propias en `SEÑALES` porque es la
+    CAÍDA de `queQuiere`: todo lo que no se reconoce acaba ahí. Y eso
+    deja sin señal justo las dos frases del planteamiento:
+
+        «Recuérdale a Juan Miguel mañana a las diez que…»
+        «Pon lentejas el martes»
+
+    Dentro de la pantalla de voz daba igual —caían en recordatorio por
+    descarte y funcionaban— pero desde la caja, sin señal, se irían a
+    buscar. Escribir «recuérdale a Juan Miguel que…» y que HUBI te
+    enseñe una lista de papeles sería el peor fallo de esta caja.
+
+    Así que lo que era una caída se escribe: los verbos con los que la
+    gente apunta cosas de verdad.
+  */
+  return RE_APUNTAR.test(plano) ? 'recordatorio' : null
+}
+
+/*
+  Los verbos de apuntar algo, y los avisos de tiempo que los
+  acompañan. Se piden con límite de palabra —`\b`— para que «pon» no
+  pegue dentro de «ponente» ni «cita» dentro de «citando».
+
+  «tengo que» y «hay que» entran porque es como se dice en casa: «hay
+  que llamar al fontanero» es una tarea aunque no lleve ningún verbo
+  de los de apuntar.
+*/
+const RE_APUNTAR =
+  /\b(recuerda|recuerdale|recuerdame|recordar|acuerdate|acuerdale|apunta|apuntame|apuntale|apuntar|pon|ponle|poner|programa|programar|agenda|agendar|avisa|avisame|avisale|avisar|no te olvides|no se te olvide|tengo que|tenemos que|hay que|tiene que|manana|pasado manana|el lunes|el martes|el miercoles|el jueves|el viernes|el sabado|el domingo|a las \d)\b/
 
 // ── Los números ───────────────────────────────────────────
 /*
@@ -982,6 +1100,56 @@ export function entenderFrase(opciones: {
   const importe = elImporte(plano)
   const categoria_id = laCategoria(plano, opciones.categorias)
 
+  /*
+    ── EL TEXTO DE UNA NOTA ──────────────────────────────────
+
+    Una nota no es una tarea, así que no pasa por `tareas`. Pero sí
+    necesita lo mismo: qué pone y para quién.
+
+    Y hay que quitarle el envoltorio —«ponle una nota a Julia»— o la
+    nota acabaría diciéndose a sí misma. Lo que queda es el recado:
+    «Los papeles están en la mesa».
+
+    Si después de limpiar no queda nada —«déjale una nota a Julia» y
+    punto—, se devuelve vacío y la pantalla lo enseña vacío para que
+    la persona lo escriba. Nunca se inventa el contenido de una nota:
+    una nota inventada es peor que ninguna.
+  */
+  const laNota = ((): string | null => {
+    if (accion !== 'nota') return null
+
+    let t = frase.trim()
+
+    /* El envoltorio, con el nombre de la persona si lo lleva. Se hace
+       sobre el texto ORIGINAL para conservar tildes y mayúsculas: es
+       lo que se va a leer en el corcho. */
+    t = t.replace(
+      /* Los largos ANTES que los cortos, o «pon» se come el principio
+         de «poner» y deja un «er» suelto al empezar la nota. Y con
+         tildes: «déjale» no lo captura un patrón escrito «deja». */
+      /^\s*(?:y\s+)?(?:por favor\s+)?(?:me\s+)?(?:le\s+)?(?:poner|p[oó]n(?:le|me)?|dejar|d[eé]ja(?:le|me)?|apuntar|ap[uú]nta(?:le|me)?|escribir|escribe|anotar|anota)\b\s*/i,
+      ''
+    )
+    t = t.replace(
+      /^\s*(?:una|la|otra)?\s*nota\s*(?:para|a|en el corcho|al corcho|en el tabl[oó]n|al tabl[oó]n)?\s*/i,
+      ''
+    )
+    t = t.replace(/^\s*(?:en el corcho|al corcho|en el tabl[oó]n|al tabl[oó]n)\s*/i, '')
+    t = t.replace(/^\s*dicho\s*/i, '').replace(/^\s*escrito\s*/i, '')
+
+    /* El nombre de a quién va, si está justo al principio. */
+    for (const p of opciones.personas) {
+      const pila = p.nombre.split(' ')[0]
+      t = t.replace(new RegExp('^\\s*' + pila + '\\b[\\s,.:;]*', 'i'), '')
+    }
+
+    t = t.replace(/^\s*(?:que|de que|:|,|\.|-|–|—)\s*/i, '').trim()
+
+    /* Mayúscula al empezar, que es una frase y se va a leer sola. */
+    if (!t) return null
+    return t.charAt(0).toUpperCase() + t.slice(1)
+  })()
+
   const tareas: Tarea[] =
     accion === 'recordatorio'
       ? [
@@ -1028,9 +1196,9 @@ export function entenderFrase(opciones: {
     compra_nueva: accion === 'compra' ? RE_LISTA_NUEVA.test(plano) : false,
     repite: accion === 'cambiar' ? laRepeticion(plano) : null,
     repite_hasta: null,
-    titulo: tareas[0]?.titulo ?? null,
+    titulo: accion === 'nota' ? laNota : (tareas[0]?.titulo ?? null),
     nota: null,
-    para: tareas[0]?.para ?? null,
+    para: accion === 'nota' ? paraQuien(plano, opciones.personas) : (tareas[0]?.para ?? null),
     fecha: cuando.fecha,
     hora: cuando.hora,
     importe,

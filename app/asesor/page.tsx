@@ -4,6 +4,7 @@ import { quien } from '@/lib/supabase/quien'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
+import { Persona } from '../piezas'
 import { miHogar } from '@/lib/hogar'
 import { genteDeLaCasa, elAsesor, type Quien } from '@/lib/gente'
 import { cuandoSePuso } from '@/lib/notas'
@@ -197,19 +198,12 @@ export default async function DelAsesor() {
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href="/" />
+        <Volver href="/dia" />
         <div className="flex h-14 items-center gap-3">
-          <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
-            style={{ background: suyo.color }}
-          >
-            {titulo.charAt(0).toUpperCase()}
-          </span>
+          <Persona nombre={titulo} color={suyo.color} tam={44} />
           <span className="min-w-0">
-            <h1 className="truncate text-[25px] font-extrabold leading-tight tracking-tight">
-              {titulo}
-            </h1>
-            <p className="text-[14.5px] font-bold text-tenue">
+            <h1 className="t-titulo truncate">{titulo}</h1>
+            <p className="t-apoyo">
               {soyElAsesor ? 'Lo que les dejas y lo que te piden' : 'Tu asesor'}
             </p>
           </span>
@@ -226,7 +220,7 @@ export default async function DelAsesor() {
         />
       </div>
 
-      <Barra activa={null} voz={false} />
+      <Barra activa="dia" voz={false} />
     </main>
   )
 }

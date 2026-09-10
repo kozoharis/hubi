@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../../../iconos'
+import { Aviso } from '../../../piezas'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -136,6 +137,9 @@ function Lista({
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
+  /* Cuál se está preguntando si se retira. Antes esto lo hacía el
+     diálogo del navegador y no había que guardar nada. */
+  const [retirando, setRetirando] = useState<Partida | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
 
   async function crear() {
@@ -184,30 +188,35 @@ function Lista({
     router.refresh()
   }
 
-  async function retirar(p: Partida) {
-    /*
-      La pregunta dice lo que va a pasar DE VERDAD, y dice cuánto hay
-      dentro. No es lo mismo retirar una partida vacía que una con
-      cuarenta facturas: quien está a punto de pulsar tiene derecho a
-      saberlo ANTES, no a descubrirlo después.
-    */
-    const cuantas =
-      p.apuntes === 0
-        ? esPapel
-          ? 'No tiene ningún papel dentro.'
-          : 'No tiene nada apuntado.'
-        : esPapel
-          ? `Tiene ${p.apuntes} ${p.apuntes === 1 ? 'papel' : 'papeles'}, y NO se pierden: siguen guardados y se siguen viendo.`
-          : `Tiene ${p.apuntes} ${p.apuntes === 1 ? 'apunte' : 'apuntes'}, y NO se pierden: siguen contando en las cuentas de siempre.`
+  /*
+    ═══════════════════════════════════════════════════════════
+    AQUÍ HABÍA UN `window.confirm()`
+    ═══════════════════════════════════════════════════════════
 
-    const luego = esPapel
-      ? 'Deja de salir al guardar papeles nuevos.'
-      : 'Deja de salir al apuntar cosas nuevas.'
+    El diálogo gris del navegador: letra pequeña, botones diminutos, en
+    inglés en algunos teléfonos, y encima con los saltos de línea
+    escritos a mano con `\n\n` porque no admite otra cosa.
 
-    if (!window.confirm(`¿Retirar «${p.nombre}»?\n\n${cuantas}\n\n${luego}`)) {
-      return
+    Justo en el momento de más riesgo, la aplicación dejaba de ser la
+    aplicación. Ahora la pregunta se hace dentro, con las mismas
+    palabras y con los botones del sistema — y el que borra no va
+    relleno de rojo: borde y texto, que se distingue y cuesta un poco
+    más de pulsar a propósito.
+  */
+  function loQueHayDentro(p: Partida): string {
+    if (p.apuntes === 0) {
+      return esPapel ? 'No tiene ningún papel dentro.' : 'No tiene nada apuntado.'
     }
+    return esPapel
+      ? `Tiene ${p.apuntes} ${p.apuntes === 1 ? 'papel' : 'papeles'}, y no se pierden: siguen guardados y se siguen viendo.`
+      : `Tiene ${p.apuntes} ${p.apuntes === 1 ? 'apunte' : 'apuntes'}, y no se pierden: siguen contando en las cuentas de siempre.`
+  }
 
+  const loQuePasaLuego = esPapel
+    ? 'Deja de salir al guardar papeles nuevos.'
+    : 'Deja de salir al apuntar cosas nuevas.'
+
+  async function retirar(p: Partida) {
     setOcupado(true)
     const r = await fetch(`/api/categorias?id=${encodeURIComponent(p.id)}`, { method: 'DELETE' })
     setOcupado(false)
@@ -217,18 +226,19 @@ function Lista({
       setFallo(d.error ?? 'No se ha podido retirar.')
       return
     }
+    setRetirando(null)
     router.refresh()
   }
 
   return (
     <section className="mt-6">
       <h2 className="rotulo">{titulo}</h2>
-      <p className="mt-1 text-[15px] font-semibold leading-snug text-tenue">{pie}</p>
+      <p className="t-apoyo mt-1">{pie}</p>
 
       {partidas.length > 0 && (
         <ul className="mt-3 space-y-2">
           {partidas.map((p) => (
-            <li key={p.id} className="rounded-[18px] border border-borde bg-superficie px-4 py-3">
+            <li key={p.id} className="rounded-[20px] border border-borde bg-superficie px-4 py-3">
               {editando === p.id ? (
                 <div>
                   <input
@@ -242,48 +252,95 @@ function Lista({
                     <button
                       onClick={() => renombrar(p.id)}
                       disabled={ocupado}
-                      className="h-12 flex-1 rounded-[14px] bg-boton text-[16px] font-extrabold text-boton-texto disabled:opacity-50"
+                      className="t-cuerpo h-[60px] flex-1 rounded-[16px] font-extrabold disabled:opacity-50"
+                      style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
                     >
                       Guardar
                     </button>
                     <button
                       onClick={() => setEditando(null)}
-                      className="h-12 flex-1 rounded-[14px] border border-borde text-[16px] font-extrabold text-tinta-suave"
+                      className="t-cuerpo h-[60px] flex-1 rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta"
                     >
                       Dejarlo
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-[17px] font-bold">{p.nombre}</p>
+                <>
+                <div className="flex min-h-[52px] items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="t-cuerpo truncate font-extrabold">{p.nombre}</p>
                     {p.apuntes > 0 && (
-                      <p className="text-[14.5px] font-semibold text-tenue">
+                      <p className="t-apoyo">
                         {p.apuntes} {p.apuntes === 1 ? cosa.uno : cosa.varios}
                       </p>
                     )}
                   </div>
-                  <div className="flex shrink-0 gap-1">
+                  {/*
+                    EL BOTÓN DE RETIRAR LLEVABA UN TRIÁNGULO DE AVISO.
+
+                    Un icono de advertencia haciendo de papelera, sin
+                    texto, en 48×48. Nadie puede adivinar que eso borra
+                    — y contradice la regla del planteamiento: los
+                    iconos van siempre acompañados de texto.
+
+                    Ahora los dos llevan su palabra.
+                  */}
+                  <div className="flex shrink-0 gap-1.5">
                     <button
                       onClick={() => {
                         setEditando(p.id)
                         setNuevoNombre(p.nombre)
                       }}
-                      aria-label={`Cambiar el nombre de ${p.nombre}`}
-                      className="flex h-12 w-12 items-center justify-center rounded-[14px] text-tinta-suave"
+                      className="t-apoyo flex h-12 items-center gap-1.5 rounded-[16px] border border-borde bg-superficie px-3 font-extrabold text-tinta"
                     >
-                      <Ico nombre="lapiz" tam={19} grosor={2.2} />
+                      <Ico nombre="lapiz" tam={18} grosor={2.2} />
+                      Cambiar
                     </button>
                     <button
-                      onClick={() => retirar(p)}
-                      aria-label={`Retirar ${p.nombre}`}
-                      className="flex h-12 w-12 items-center justify-center rounded-[14px] text-tinta-suave"
+                      onClick={() => setRetirando(p)}
+                      className="t-apoyo flex h-12 items-center rounded-[16px] border bg-superficie px-3 font-extrabold"
+                      style={{ borderColor: 'var(--t-borde)', color: 'var(--t-alerta)' }}
                     >
-                      <Ico nombre="aviso" tam={19} grosor={2.2} />
+                      Retirar
                     </button>
                   </div>
                 </div>
+
+                {/* La pregunta, dentro de la aplicación y en el sitio. */}
+                {retirando?.id === p.id && (
+                  <div
+                    className="mt-3 rounded-[16px] border px-4 py-3.5"
+                    style={{
+                      background: 'var(--t-alerta-velo)',
+                      borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)',
+                    }}
+                  >
+                    <p className="t-cuerpo font-extrabold" style={{ color: 'var(--t-alerta)' }}>
+                      ¿Retirar «{p.nombre}»?
+                    </p>
+                    <p className="t-apoyo mt-1.5 text-tinta-suave">{loQueHayDentro(p)}</p>
+                    <p className="t-apoyo mt-1 text-tinta-suave">{loQuePasaLuego}</p>
+                    <div className="mt-3 space-y-2">
+                      <button
+                        onClick={() => retirar(p)}
+                        disabled={ocupado}
+                        className="t-cuerpo h-[60px] w-full rounded-[16px] border bg-superficie font-extrabold disabled:opacity-50"
+                        style={{ borderColor: 'var(--t-alerta)', color: 'var(--t-alerta)' }}
+                      >
+                        {ocupado ? 'Retirando…' : 'Sí, retirarla'}
+                      </button>
+                      <button
+                        onClick={() => setRetirando(null)}
+                        disabled={ocupado}
+                        className="t-cuerpo h-[60px] w-full rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta disabled:opacity-50"
+                      >
+                        Dejarlo como está
+                      </button>
+                    </div>
+                  </div>
+                )}
+                </>
               )}
             </li>
           ))}
@@ -291,8 +348,8 @@ function Lista({
       )}
 
       {creando ? (
-        <div className="mt-3 rounded-[18px] border border-borde bg-superficie px-4 py-4">
-          <p className="text-[16px] font-extrabold">¿Cómo se llama?</p>
+        <div className="mt-3 rounded-[20px] border border-borde bg-superficie px-4 py-4">
+          <p className="t-tarjeta">¿Cómo se llama?</p>
           <input
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
@@ -305,9 +362,10 @@ function Lista({
             <button
               onClick={crear}
               disabled={ocupado || nombre.trim().length < 2}
-              className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+              className="t-cuerpo flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] font-extrabold disabled:opacity-50"
+              style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
             >
-              <Ico nombre="check" tam={19} grosor={2.3} />
+              <Ico nombre="check" tam={20} grosor={2.3} />
               {ocupado ? 'Creando…' : 'Crear'}
             </button>
             <button
@@ -316,9 +374,9 @@ function Lista({
                 setFallo(null)
               }}
               disabled={ocupado}
-              className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+              className="t-cuerpo h-[60px] flex-1 rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta disabled:opacity-50"
             >
-              Ahora no
+              Dejarlo
             </button>
           </div>
         </div>
@@ -328,20 +386,20 @@ function Lista({
             setCreando(true)
             setAviso(null)
           }}
-          className="mt-3 flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
+          className="t-cuerpo mt-3 flex h-[60px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta"
         >
-          <Ico nombre="mas" tam={20} grosor={2.4} />
+          <Ico nombre="mas" tam={22} grosor={2.4} />
           {cosa.nueva}
         </button>
       )}
 
       {fallo && (
-        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
-          {fallo}
-        </p>
+        <div className="mt-3">
+          <Aviso titulo="No se ha podido" explicacion={fallo} />
+        </div>
       )}
       {aviso && (
-        <p className="mt-3 rounded-[16px] border border-borde px-4 py-3 text-[15.5px] font-semibold text-tinta-suave">
+        <p className="t-apoyo mt-3 rounded-[16px] border border-borde px-4 py-3 text-tinta-suave">
           {aviso}
         </p>
       )}

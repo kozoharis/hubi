@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { miHogar, SIN_CASA } from '@/lib/hogar'
+import { desgloseQueToca } from '@/lib/impuesto'
 import { tipoDe, TIPOS_BUENOS } from '@/lib/archivos'
 import { accesoDrive, idDeCarpeta, subirArchivo } from '@/lib/google/drive'
 import {
@@ -52,6 +53,17 @@ export async function POST(peticion: NextRequest) {
     new Date().toISOString().slice(0, 10)
 
   const vencimiento = fechaOnula(String(formulario.get('vencimiento') ?? ''))
+
+  /* El tipo de IGIC/IVA que venía escrito en el papel. Ausente = el
+     papel no lo decía, y entonces manda el general de la casa. */
+  const impuestoLeido = formulario.has('impuesto_tipo')
+    ? Number(String(formulario.get('impuesto_tipo')).replace(',', '.'))
+    : null
+  const impuestoTipo =
+    impuestoLeido != null && Number.isFinite(impuestoLeido) &&
+    impuestoLeido >= 0 && impuestoLeido <= 100
+      ? impuestoLeido
+      : null
 
   const importeBruto = String(formulario.get('importe') ?? '').replace(',', '.')
   const importe =
@@ -238,7 +250,21 @@ export async function POST(peticion: NextRequest) {
   let repetida: string | null = null
 
   if (importe && importe > 0 && (hoja.naturaleza === 'gasto' || hoja.naturaleza === 'ingreso')) {
-    const { error: fallo } = await supabase.from('movimientos').insert({
+    /* El IGIC o el IVA de esta factura. Sale del tipo de su partida, o
+       del general de la casa si la partida no dice nada. Nadie teclea
+       nada: fotografiar una factura no puede convertirse en rellenar un
+       formulario. Y se puede corregir después desde el propio apunte. */
+    const conImpuesto = await desgloseQueToca(supabase, {
+      hogarId,
+      categoriaId,
+      total: importe,
+      /* Lo que DICE el papel manda sobre lo que suponemos. Suponiendo
+         se acierta casi siempre; leyendo se acierta siempre que el
+         papel lo ponga, que es la mayoría de las facturas. */
+      tipoDicho: impuestoTipo,
+    })
+
+    const elApunte: Record<string, unknown> = {
       tipo: hoja.naturaleza,
       /* En una reserva el nombre de quien viene identifica mucho mejor
          que "Airbnb", que se repite en todas. */
@@ -253,7 +279,14 @@ export async function POST(peticion: NextRequest) {
       noches: hoja.naturaleza === 'ingreso' ? noches : null,
       huesped: hoja.naturaleza === 'ingreso' ? huesped : null,
       referencia: hoja.naturaleza === 'ingreso' ? referencia : null,
-    })
+    }
+
+    if (conImpuesto.impuesto_tipo !== null) {
+      elApunte.impuesto_tipo = conImpuesto.impuesto_tipo
+      elApunte.impuesto_cuota = conImpuesto.impuesto_cuota
+    }
+
+    const { error: fallo } = await supabase.from('movimientos').insert(elApunte)
     /* El documento ya está a salvo en Drive: un apunte que falla no
        puede tumbar el guardado. Pero si falla por reserva repetida,
        eso hay que DECIRLO — es la diferencia entre "ya lo tenías" y

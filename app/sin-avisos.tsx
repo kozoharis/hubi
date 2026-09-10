@@ -125,13 +125,18 @@ export default function SinAvisos() {
   return (
     <section
       className="mt-4 rounded-[20px] border px-4 py-4"
+      /* Iba con `#F59E0B`, el ámbar que salió de la paleta en la
+         Fase 1. Y lo que dice esta caja —«ahora mismo HUBI no puede
+         avisarte»— es literalmente el estado ATENCIÓN: no está roto,
+         falta un paso. Ahora lleva su token, que además está medido
+         para leerse en claro y en oscuro. */
       style={{
-        borderColor: 'color-mix(in srgb, #F59E0B 45%, transparent)',
-        background: 'color-mix(in srgb, #F59E0B 10%, transparent)',
+        borderColor: 'color-mix(in srgb, var(--t-atencion) 45%, transparent)',
+        background: 'var(--t-atencion-velo)',
       }}
     >
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 shrink-0" style={{ color: '#F59E0B' }}>
+        <span className="mt-0.5 shrink-0" style={{ color: 'var(--t-atencion)' }}>
           <Ico nombre="campana" tam={22} grosor={2.2} />
         </span>
         <div className="min-w-0">
@@ -149,10 +154,18 @@ export default function SinAvisos() {
       </div>
 
       <div className="mt-3.5 flex gap-2">
+        {/*
+          Iba relleno del ámbar `#F59E0B`. Dos cosas mal: ese color ya
+          no existe en la paleta, y un botón relleno de color de AVISO
+          confunde el problema con la salida — parece que el botón es
+          la alarma.
+
+          Encender los avisos es una ACCIÓN, y las acciones llevan el
+          color de acción. El aviso ya está dicho arriba, con su color.
+        */}
         <Link
           href="/avisos"
-          className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] text-[16.5px] font-extrabold"
-          style={{ background: '#F59E0B', color: '#3B2400' }}
+          className="r-campo flex h-[52px] flex-1 items-center justify-center bg-accion text-[16.5px] font-extrabold text-accion-tinta"
         >
           {falta === 'instalar' ? 'Cómo se hace' : 'Encenderlos'}
         </Link>

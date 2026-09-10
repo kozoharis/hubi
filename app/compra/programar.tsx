@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
+import { Aviso } from '../piezas'
 import { hoyAqui } from '@/lib/tablon'
 
 /*
@@ -117,8 +118,8 @@ export default function Programar({
   }
 
   return (
-    <div className="mt-4 rounded-[22px] border border-borde bg-superficie px-4 py-4">
-      <p className="text-[19px] font-extrabold tracking-tight">
+    <div className="mt-4 rounded-[20px] border border-borde bg-superficie px-4 py-4">
+      <p className="t-tarjeta">
         ¿Cuándo se hace {lista ? `«${lista.nombre}»` : `la compra de ${nombreCategoria}`}?
       </p>
 
@@ -126,7 +127,7 @@ export default function Programar({
       <div className="mt-3 flex flex-wrap gap-2">
         <Pastilla texto="Hoy" puesta={fecha === hoy} alPulsar={() => setFecha(hoy)} />
         <Pastilla texto="Mañana" puesta={fecha === manana} alPulsar={() => setFecha(manana)} />
-        <label className="flex h-11 items-center rounded-full border border-borde px-3 text-[15px] font-extrabold text-tinta-suave">
+        <label className="flex h-12 items-center rounded-full border border-borde bg-superficie px-3 text-[15px] font-extrabold text-tinta-suave">
           <input
             type="date"
             value={fecha}
@@ -191,16 +192,17 @@ export default function Programar({
       )}
 
       {fallo && (
-        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
-          {fallo}
-        </p>
+        <div className="mt-3">
+          <Aviso titulo="No se ha podido" explicacion={fallo} />
+        </div>
       )}
 
       <div className="mt-4 flex gap-2.5">
         <button
           onClick={guardar}
           disabled={guardando}
-          className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+          className="t-cuerpo flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] font-extrabold disabled:opacity-50"
+          style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
         >
           <Ico nombre="check" tam={19} grosor={2.3} />
           {guardando ? 'Guardando…' : 'Guardar'}
@@ -208,7 +210,7 @@ export default function Programar({
         <button
           onClick={alCerrar}
           disabled={guardando}
-          className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+          className="t-cuerpo h-[60px] flex-1 rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta disabled:opacity-50"
         >
           Dejarlo
         </button>
@@ -230,12 +232,12 @@ function Pastilla({
     <button
       onClick={alPulsar}
       aria-pressed={puesta}
-      className="flex h-11 items-center rounded-full px-4 text-[15px] font-extrabold"
+      className="flex h-12 items-center rounded-full px-4 text-[15px] font-extrabold"
       style={
         puesta
-          ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
+          ? { background: 'var(--t-tinta)', color: 'var(--t-fondo)', border: '1px solid var(--t-tinta)' }
           : {
-              background: 'var(--t-fondo)',
+              background: 'var(--t-superficie)',
               color: 'var(--t-tinta-suave)',
               border: '1px solid var(--t-borde)',
             }

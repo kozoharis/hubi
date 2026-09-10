@@ -42,36 +42,98 @@ export type Quien = {
 }
 
 /*
-  La paleta. Colores que se leen igual en claro y en oscuro: nada de
-  pastel, que a catorce píxeles es gris.
+  ═══════════════════════════════════════════════════════════════
+  LA PALETA: LA MISMA DEL PRODUCTO, NO UNA SUYA
+  ═══════════════════════════════════════════════════════════════
 
-  Es la misma lista que usa el SQL 39 al repartirlos, y las dos tienen
-  que moverse juntas.
+  Aquí había nueve colores propios, y dos de ellos eran un problema de
+  verdad:
+
+  · `#14B8A6` — el turquesa que ahora significa ACCIÓN. Con él, la
+    primera persona de la casa llevaba en la cara exactamente el color
+    que en el resto de HUBI quiere decir «pulsa esto». Un color no
+    puede significar dos cosas.
+
+  · `#0EA5E9` — un cian que no estaba declarado en ninguna paleta y
+    que iba de salida para quien ayuda en casa.
+
+  Y el resto eran colores vivos —el naranja, el rosa fuerte— usados
+  para IDENTIFICAR, que es justo el trabajo de los apagados.
+
+  Así que las personas pasan a los ocho colores de ámbito. No es
+  ahorro: es que HUBI tiene UNA paleta que identifica y otra que
+  avisa, y una persona se identifica. No se confunden con las
+  secciones porque no se parecen en nada más: una persona es un
+  círculo con su cara o sus iniciales, siempre al lado de su nombre;
+  una sección es un cuadrado redondeado con un icono.
+
+  ─────────────────────────────────────────────────────────────
+  Y LOS COLORES YA GUARDADOS SIGUEN VALIENDO
+
+  `miembros.color` guarda el hexadecimal, no un nombre. Los que ya
+  están puestos son los de antes, y no se puede pedir que alguien
+  entre en Ajustes a recolocar a los suyos para que HUBI se vea bien.
+  Se traducen al leer, uno a uno, al apagado que más se le parece.
 */
 export const COLORES = [
-  '#14B8A6', // turquesa
-  '#0EA5E9', // azul cielo
-  '#F59E0B', // ámbar
-  '#8B5CF6', // morado
-  '#EC4899', // rosa
-  '#3B82F6', // azul
-  '#F97316', // naranja
-  '#10B981', // verde
-  '#64748B', // pizarra
+  '#6FA88A', // verde
+  '#6B93D6', // azul
+  '#9482D9', // violeta
+  '#C09A62', // arena
+  '#D07E97', // rosa
+  '#9AA85E', // oliva
+  '#A87BB5', // ciruela
+  '#7A8899', // pizarra
 ]
 
 /** El color de salida de un papel, cuando no hay otro guardado. */
 export function colorDeRol(rol: string | null | undefined): string {
   switch (rol) {
     case 'ayuda':
-      return '#0EA5E9'
+      return '#6B93D6' // azul
     case 'asesor':
-      return '#F59E0B'
+      return '#C09A62' // arena
     case 'mirar':
-      return '#64748B'
+      return '#7A8899' // pizarra
     default:
-      return '#14B8A6'
+      return '#6FA88A' // verde
   }
+}
+
+/*
+  De un color guardado al de la paleta de hoy.
+
+  Los nueve de antes tienen su equivalente escrito a mano —el morado
+  al violeta, el ámbar a la arena— porque «el más parecido» calculado
+  a ojo de máquina manda dos personas al mismo sitio. Cualquier otro
+  valor (uno futuro, uno escrito a mano en la base de datos) se
+  reparte por la rueda a partir de sus propias letras: siempre el
+  mismo, y nunca el color de acción.
+*/
+const ANTES: Record<string, string> = {
+  '#14B8A6': '#6FA88A', // turquesa → verde
+  '#10B981': '#6FA88A', // verde vivo → verde
+  '#0EA5E9': '#6B93D6', // cian → azul
+  '#3B82F6': '#6B93D6', // azul vivo → azul
+  '#8B5CF6': '#9482D9', // morado → violeta
+  '#EC4899': '#D07E97', // rosa fuerte → rosa
+  '#F59E0B': '#C09A62', // ámbar → arena
+  '#F97316': '#C09A62', // naranja → arena
+  '#64748B': '#7A8899', // pizarra → pizarra
+}
+
+export function colorApagado(color: string | null | undefined, rol?: string | null): string {
+  if (!color) return colorDeRol(rol)
+
+  const hex = color.trim().toUpperCase()
+  if (COLORES.includes(hex)) return hex
+
+  const conocido = ANTES[hex]
+  if (conocido) return conocido
+
+  let n = 0
+  for (let i = 0; i < hex.length; i++) n = (n * 31 + hex.charCodeAt(i)) % 100000
+  return COLORES[n % COLORES.length]
 }
 
 /**
@@ -133,7 +195,7 @@ export async function genteDeLaCasa(
       id: m.perfil_id,
       nombre: nombreDe.get(m.perfil_id) ?? 'Alguien',
       rol: m.rol ?? null,
-      color: m.color ?? colorDeRol(m.rol),
+      color: colorApagado(m.color, m.rol),
       pendiente: m.aceptado_en === null,
     }))
   } catch {

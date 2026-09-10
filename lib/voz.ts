@@ -2,7 +2,27 @@ import type { Categoria } from '@/lib/rutas'
 
 const MODELO = 'gemini-3.5-flash'
 const RAZONAMIENTO = 'minimal'
-const LIMITE_MS = 45_000
+/*
+  ── CUÁNTO SE ESPERA A GEMINI ─────────────────────────────
+
+  Cuarenta y cinco segundos cuando hay que SUBIR Y TRANSCRIBIR audio:
+  es un megabyte desde un teléfono y transcribir lleva lo que lleva.
+  Nadie que acabe de hablar treinta segundos quiere que se le corte a
+  los diez.
+
+  Doce cuando ya tenemos el texto. Ahí Gemini solo tiene que clasificar
+  una frase corta, y si tarda más de doce segundos es que algo va mal
+  —no que esté pensando—. Con texto en la mano el intérprete de casa
+  contesta al instante y bastante bien, así que esperar cuarenta y
+  cinco segundos a que quizá conteste mejor es cambiar una pantalla que
+  funciona por una pantalla congelada.
+
+  Y se nota sobre todo al pulsar los botones de «¿qué quieres que haga
+  con esto?»: ahí la persona YA ha dicho lo que es, y quedarse medio
+  minuto mirando «Un momento…» se lee como que el botón no funciona.
+*/
+const LIMITE_TRANSCRIBIENDO_MS = 45_000
+const LIMITE_CON_TEXTO_MS = 12_000
 const API = 'https://generativelanguage.googleapis.com/v1beta/models'
 
 export type Tarea = {
@@ -642,7 +662,7 @@ export async function escuchar(opciones: {
   async function pedir(conRazonamientoMinimo: boolean) {
     return fetch(`${API}/${MODELO}:generateContent`, {
       method: 'POST',
-      signal: AbortSignal.timeout(LIMITE_MS),
+      signal: AbortSignal.timeout(dicho ? LIMITE_CON_TEXTO_MS : LIMITE_TRANSCRIBIENDO_MS),
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': clave! },
       body: JSON.stringify({
         ...contenido,

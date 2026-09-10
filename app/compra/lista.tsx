@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { pasilloDe, PASILLOS } from '@/lib/comprables'
 import { Ico } from '../iconos'
+import { Aviso } from '../piezas'
 import Programar from './programar'
 
 type Cosa = {
@@ -170,6 +171,13 @@ export default function Pantalla({
   const [creando, setCreando] = useState(false)
   const [nombreNuevo, setNombreNuevo] = useState('')
 
+  /* Cambiar el nombre o quitar la lista que se está mirando. Estaba
+     todo en la API desde el principio y no había forma de llegar:
+     se podían crear listas y no tocarlas nunca más. */
+  const [tocando, setTocando] = useState(false)
+  const [otroNombre, setOtroNombre] = useState('')
+  const [seguroQuitar, setSeguroQuitar] = useState(false)
+
   /*
     EN QUÉ LISTA DE ESA CATEGORÍA.
 
@@ -247,6 +255,57 @@ export default function Pantalla({
 
   const cuantasEnLista = (id: string) =>
     cosas.filter((c) => !c.comprado && c.lista_id === id).length
+
+  async function renombrar() {
+    const nombre = otroNombre.trim()
+    if (!laLista || nombre.length < 2 || nombre === laLista.nombre) {
+      setTocando(false)
+      return
+    }
+    setAviso(null)
+
+    const r = await fetch('/api/compra/listas', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      /* `solo_nombre` es lo que evita que renombrar le quite el día a
+         la compra y borre su tarea de la Agenda. */
+      body: JSON.stringify({ id: laLista.id, nombre, solo_nombre: true }),
+    })
+
+    if (!r.ok) {
+      const d = (await r.json().catch(() => ({}))) as { error?: string; detalle?: string }
+      setAviso(d.detalle ?? d.error ?? 'No se ha podido cambiar el nombre.')
+      return
+    }
+    setTocando(false)
+    empezar(() => router.refresh())
+  }
+
+  async function quitarLista() {
+    if (!laLista) return
+    setAviso(null)
+
+    const r = await fetch(`/api/compra/listas?id=${laLista.id}`, { method: 'DELETE' })
+    if (!r.ok) {
+      const d = (await r.json().catch(() => ({}))) as { error?: string; detalle?: string }
+      setAviso(d.detalle ?? d.error ?? 'No se ha podido quitar.')
+      return
+    }
+
+    const d = (await r.json().catch(() => ({}))) as { guardadas?: number }
+    if (d.guardadas && d.guardadas > 0) {
+      setAviso(
+        d.guardadas === 1
+          ? 'Quitada. La cosa que quedaba dentro se ha guardado con ella, no se ha perdido.'
+          : `Quitada. Las ${d.guardadas} cosas que quedaban dentro se han guardado con ella, no se han perdido.`
+      )
+    }
+
+    setSeguroQuitar(false)
+    setTocando(false)
+    setListaActiva(null)
+    empezar(() => router.refresh())
+  }
 
   async function crearLista() {
     const nombre = nombreNuevo.trim()
@@ -491,13 +550,124 @@ export default function Pantalla({
         {!creando && (
           <button
             onClick={() => setCreando(true)}
-            className="flex h-11 items-center gap-1.5 rounded-full border border-dashed border-borde px-3.5 text-[14.5px] font-extrabold text-tenue"
+            className="flex h-12 items-center gap-1.5 rounded-full border border-dashed border-borde px-3.5 text-[15px] font-extrabold text-tenue"
           >
             <Ico nombre="mas" tam={16} grosor={2.4} />
             Otra lista
           </button>
         )}
+
+        {/*
+          ── CAMBIARLA O QUITARLA ──
+
+          Se podían crear listas y no tocarlas nunca más: ni corregir
+          una falta de ortografía, ni quitar la de las Navidades pasadas.
+          Y una lista que no se puede quitar se queda ahí para siempre
+          estorbando entre las que sí se usan.
+
+          Va en pequeño y al lado de «Otra lista», no como un botón
+          grande: es una acción de mantenimiento, no algo que se hace
+          cada día. Y solo aparece cuando hay una lista con nombre
+          delante — sin listas no hay nada que cambiar.
+        */}
+        {laLista && !creando && !tocando && (
+          <button
+            onClick={() => {
+              setOtroNombre(laLista.nombre)
+              setSeguroQuitar(false)
+              setTocando(true)
+            }}
+            className="flex h-12 items-center gap-1.5 rounded-full px-2 text-[15px] font-extrabold text-tenue underline decoration-borde underline-offset-4"
+          >
+            Cambiar «{laLista.nombre}»
+          </button>
+        )}
       </div>
+
+      {tocando && laLista && (
+        <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4">
+          <p className="rotulo">Cómo se llama</p>
+          <div className="mt-2 flex gap-2">
+            <input
+              value={otroNombre}
+              onChange={(e) => setOtroNombre(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && renombrar()}
+              maxLength={60}
+              autoFocus
+              className="entrada flex-1 text-[16px]"
+            />
+            <button
+              onClick={renombrar}
+              disabled={otroNombre.trim().length < 2}
+              className="t-cuerpo h-[60px] shrink-0 rounded-[16px] px-5 font-extrabold disabled:opacity-40"
+              style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
+            >
+              Guardar
+            </button>
+          </div>
+
+          {/*
+            Quitar va abajo, separado, en dos toques y sin el color de
+            guardar. Es la única acción de aquí que no se deshace desde
+            esta pantalla.
+          */}
+          <div className="mt-4 border-t border-borde pt-3.5">
+            {!seguroQuitar ? (
+              <button
+                onClick={() => setSeguroQuitar(true)}
+                className="t-apoyo flex h-12 items-center font-extrabold"
+                style={{ color: 'var(--t-alerta)' }}
+              >
+                Quitar esta lista
+              </button>
+            ) : (
+              <div
+                className="rounded-[16px] border px-4 py-3.5"
+                style={{
+                  background: 'var(--t-alerta-velo)',
+                  borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)',
+                }}
+              >
+                <p className="t-cuerpo font-extrabold" style={{ color: 'var(--t-alerta)' }}>
+                  ¿Quitamos «{laLista.nombre}»?
+                </p>
+                {/* Se dice exactamente qué pasa con lo de dentro. Es la
+                    única duda real que tiene quien va a tocar esto. */}
+                <p className="t-apoyo mt-1.5 text-tinta-suave">
+                  {cuantasEnLista(laLista.id) > 0
+                    ? `Lo que queda dentro (${cuantasEnLista(laLista.id)}) se guarda con ella. No se pierde: se puede recuperar como cualquier compra cerrada.`
+                    : 'Está vacía, así que no se pierde nada.'}
+                </p>
+                <div className="mt-3 flex gap-2.5">
+                  <button
+                    onClick={quitarLista}
+                    className="t-cuerpo h-[60px] flex-1 rounded-[16px] border bg-superficie font-extrabold"
+                    style={{
+                      borderColor: 'var(--t-alerta)',
+                      color: 'var(--t-alerta)',
+                    }}
+                  >
+                    Sí, quitarla
+                  </button>
+                  <button
+                    onClick={() => setSeguroQuitar(false)}
+                    className="t-cuerpo h-[60px] flex-1 rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta"
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => setTocando(false)}
+              className="t-apoyo ml-4 flex h-12 items-center font-extrabold"
+            >
+              Dejarlo
+            </button>
+          </div>
+        </div>
+      )}
 
       {creando && (
         <div className="mt-2 flex gap-2">
@@ -511,7 +681,8 @@ export default function Pantalla({
           />
           <button
             onClick={crearLista}
-            className="h-[58px] shrink-0 rounded-[16px] bg-boton px-5 text-[16px] font-extrabold text-boton-texto"
+            className="t-cuerpo h-[60px] shrink-0 rounded-[16px] px-5 font-extrabold"
+            style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
           >
             Crear
           </button>
@@ -520,7 +691,7 @@ export default function Pantalla({
               setCreando(false)
               setNombreNuevo('')
             }}
-            className="h-[58px] shrink-0 rounded-[16px] border border-borde px-4 text-[16px] font-extrabold text-tinta-suave"
+            className="t-cuerpo h-[60px] shrink-0 rounded-[16px] border border-borde bg-superficie px-4 font-extrabold text-tinta"
           >
             No
           </button>
@@ -540,31 +711,32 @@ export default function Pantalla({
           onChange={(e) => setTexto(e.target.value)}
           placeholder={destino ? `Para ${nombreSeccion(destino)}…` : 'Leche, pan, huevos…'}
           aria-label="Qué hay que comprar"
-          className="h-[60px] min-w-0 flex-1 rounded-[18px] border-2 border-borde bg-fondo px-4 text-[18px] font-semibold text-tinta placeholder:text-tenue focus:border-verde focus:outline-none"
+          className="h-[60px] min-w-0 flex-1 rounded-[16px] border border-borde bg-superficie px-4 text-[19px] font-bold text-tinta placeholder:font-semibold placeholder:text-tenue focus:border-[color:var(--color-accion)] focus:outline-none"
         />
         <button
           type="submit"
           disabled={!texto.trim()}
           aria-label="Añadir a la compra"
-          className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] bg-boton text-boton-texto disabled:opacity-35"
+          className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[16px] disabled:opacity-35"
+          style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
         >
           <Ico nombre="mas" tam={26} grosor={2.4} />
         </button>
       </form>
 
-      <p className="mt-2.5 text-[15px] font-semibold leading-snug text-tenue">
+      <p className="t-apoyo mt-2.5">
         También puedes decirlo: «apunta leche, pan y huevos en la compra».
       </p>
 
       {aviso && (
-        <p className="mt-4 rounded-[16px] bg-coral-suave px-4 py-3.5 text-[16px] font-semibold leading-snug text-coral">
-          {aviso}
-        </p>
+        <div className="mt-4">
+          <Aviso titulo="No se ha podido" explicacion={aviso} />
+        </div>
       )}
 
       {/* ── Lo que falta ── */}
       {deEstaLista.length === 0 ? (
-        <p className="mt-6 rounded-[20px] bg-superficie px-6 py-10 text-center text-[17px] font-medium text-tinta-suave">
+        <p className="t-cuerpo mt-6 rounded-[20px] border border-borde bg-superficie px-6 py-8 text-center text-tinta-suave">
           {destino
             ? `La compra de ${nombreSeccion(destino)} está vacía.`
             : 'La lista está vacía.'}
@@ -613,7 +785,7 @@ export default function Pantalla({
               if (suyas.length === 0) return null
               return (
                 <section key={zona} className="mt-4">
-                  <p className="text-[14px] font-extrabold tracking-wider text-tenue">
+                  <p className="rotulo">
                     {zona.toUpperCase()}
                   </p>
                   <ul className="mt-2 space-y-2">
@@ -647,7 +819,7 @@ export default function Pantalla({
       {pendientes.length > 0 && !programando && (
         <button
           onClick={() => setProgramando(true)}
-          className="mt-4 flex h-[56px] w-full items-center justify-center gap-2.5 rounded-[18px] border border-borde bg-superficie text-[16.5px] font-extrabold text-tinta"
+          className="t-cuerpo mt-4 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta"
         >
           <Ico nombre="calendario" tam={20} grosor={2.2} />
           {laLista?.fecha
@@ -691,12 +863,13 @@ export default function Pantalla({
           <button
             onClick={yaHeComprado}
             disabled={cerrando}
-            className="mt-5 flex h-[62px] w-full items-center justify-center gap-2.5 rounded-[18px] bg-verde text-[18px] font-extrabold text-white disabled:opacity-40"
+            className="t-tarjeta mt-5 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[16px] disabled:opacity-40"
+            style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
           >
             <Ico nombre="check" tam={22} grosor={2.4} />
             {cerrando ? 'Guardando…' : 'Ya he comprado'}
           </button>
-          <p className="mt-2.5 text-center text-[15px] font-semibold leading-snug text-tenue">
+          <p className="t-apoyo mt-2.5 text-center">
             Quita de la lista lo que ya está en el carro.
           </p>
 
@@ -716,9 +889,9 @@ export default function Pantalla({
           {ticketEn && (
             <Link
               href={`/guardar?en=${ticketEn}`}
-              className="mt-3 flex h-[58px] w-full items-center justify-center gap-2.5 rounded-[18px] border border-borde bg-superficie text-[17px] font-extrabold text-tinta"
+              className="t-tarjeta mt-3 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[16px] border border-borde bg-superficie text-tinta"
             >
-              <Ico nombre="foto" tam={21} grosor={2.2} />
+              <Ico nombre="foto" tam={22} grosor={2.2} />
               Guardar el ticket
             </Link>
           )}
@@ -741,17 +914,19 @@ export default function Pantalla({
       */}
       {recienCerrada && (
         <div
-          className="mt-5 rounded-[20px] px-4 py-4"
+          className="mt-5 rounded-[20px] border px-4 py-4"
           style={{
-            background: 'color-mix(in srgb, var(--color-verde) 12%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--color-verde) 32%, transparent)',
+            background: 'var(--t-bien-velo)',
+            borderColor: 'color-mix(in srgb, var(--t-bien) 42%, transparent)',
           }}
         >
-          <p className="flex items-center gap-2 text-[17.5px] font-extrabold tracking-tight">
-            <Ico nombre="check" tam={20} grosor={2.4} className="text-verde" />
+          <p className="t-tarjeta flex items-center gap-2">
+            <span style={{ color: 'var(--t-bien)' }} className="flex">
+              <Ico nombre="check" tam={20} grosor={2.4} />
+            </span>
             Compra guardada
           </p>
-          <p className="mt-1.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
+          <p className="t-apoyo mt-1.5 text-tinta-suave">
             «{recienCerrada.nombre}» queda guardada entera. La lista de arriba empieza
             vacía, y puedes recuperar ésta cuando quieras.
           </p>
@@ -759,15 +934,16 @@ export default function Pantalla({
           {ticketEn && (
             <Link
               href={`/guardar?en=${ticketEn}&lista=${recienCerrada.id}`}
-              className="mt-3 flex h-[58px] w-full items-center justify-center gap-2.5 rounded-[18px] bg-boton text-[17px] font-extrabold text-boton-texto"
+              className="t-tarjeta mt-3 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[16px]"
+              style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
             >
-              <Ico nombre="foto" tam={21} grosor={2.2} />
+              <Ico nombre="foto" tam={22} grosor={2.2} />
               Guardar el ticket
             </Link>
           )}
           <button
             onClick={() => setReciencerrada(null)}
-            className="mt-2 h-[50px] w-full rounded-[16px] text-[16px] font-bold text-tinta-suave underline underline-offset-4"
+            className="t-cuerpo mt-2 h-[48px] w-full rounded-[16px] font-extrabold text-tinta"
           >
             Ahora no
           </button>
@@ -794,7 +970,7 @@ export default function Pantalla({
       {pendientes.length === 0 && !recienCerrada && anterioresDeAqui.length > 0 && (
         <section className="mt-6">
           <h2 className="rotulo">¿Recuperas una de otra semana?</h2>
-          <p className="mt-1.5 text-[15px] font-semibold leading-snug text-tenue">
+          <p className="t-apoyo mt-1.5">
             Se copian sus cosas aquí. La de aquel día se queda como está.
           </p>
           <ul className="mt-3 space-y-2">
@@ -803,16 +979,16 @@ export default function Pantalla({
                 <button
                   onClick={() => recuperar(c)}
                   disabled={recuperando !== null || !listaId}
-                  className="flex w-full items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-3.5 text-left disabled:opacity-50"
+                  className="flex min-h-[76px] w-full items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-3 text-left disabled:opacity-50"
                 >
                   <span className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px] bg-fondo text-tinta-suave">
                     <Ico nombre="bolsa" tam={21} grosor={2.1} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[17px] font-extrabold tracking-tight">
+                    <span className="t-tarjeta block truncate">
                       {cuandoSeCerro(c.cerrada)}
                     </span>
-                    <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
+                    <span className="t-apoyo mt-0.5 block truncate">
                       {c.cosas === 1 ? '1 cosa' : `${c.cosas} cosas`}
                       {c.ticket_id ? ' · con ticket' : ''}
                     </span>
@@ -837,7 +1013,7 @@ export default function Pantalla({
               <button
                 key={h}
                 onClick={() => anadir(h)}
-                className="flex h-[50px] items-center gap-1.5 rounded-full border border-borde bg-superficie px-4 text-[16.5px] font-bold text-tinta"
+                className="t-cuerpo flex h-[48px] items-center gap-1.5 rounded-full border border-borde bg-superficie px-4 font-extrabold text-tinta"
               >
                 <Ico nombre="mas" tam={17} grosor={2.6} className="text-tenue" />
                 {h}
@@ -879,9 +1055,19 @@ function Chip({
       type="button"
       onClick={alPulsar}
       aria-pressed={activo}
-      className={`flex h-[46px] items-center rounded-full border-2 px-4 text-[16px] font-extrabold ${
-        activo ? 'border-verde bg-verde-suave text-verde' : 'border-borde bg-superficie text-tinta-suave'
-      }`}
+      /* Eran 46 px con borde de dos y relleno del verde de sección.
+         Ahora la píldora del sistema: 48 px, borde de uno, y la
+         elegida se rellena de tinta. */
+      className="flex h-12 items-center rounded-full border px-4 text-[15px] font-extrabold"
+      style={
+        activo
+          ? { background: 'var(--t-tinta)', color: 'var(--t-fondo)', borderColor: 'var(--t-tinta)' }
+          : {
+              background: 'var(--t-superficie)',
+              color: 'var(--t-tinta-suave)',
+              borderColor: 'var(--t-borde)',
+            }
+      }
     >
       {texto}
     </button>
@@ -905,8 +1091,11 @@ function Linea({
 }) {
   return (
     <li
-      className={`flex items-stretch overflow-hidden rounded-[18px] border bg-superficie ${
-        cosa.comprado ? 'border-borde opacity-60' : 'border-borde'
+      /* `llega` es de entrada y se dispara sola al montarse; la
+         opacidad de lo tachado va con transición para que la fila
+         se apague acompañando al tic, no antes que él. */
+      className={`llega flex items-stretch overflow-hidden rounded-[20px] border border-borde bg-superficie transition-opacity duration-300 ${
+        cosa.comprado ? 'opacity-60' : ''
       }`}
     >
       {/*
@@ -921,18 +1110,28 @@ function Linea({
         aria-pressed={cosa.comprado}
         className="flex min-h-[64px] flex-1 items-center gap-3.5 px-4 py-3 text-left"
       >
+        {/* Tachado es un ESTADO —«ya está»—, así que va en el verde
+            de estado y no en el de sección. Y el círculo se queda: la
+            zona pulsable son los 64 px de la fila entera. */}
         <span
-          className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border-2 ${
-            cosa.comprado ? 'border-verde bg-verde text-white' : 'border-borde'
-          }`}
+          className="casilla flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border-2"
+          style={{
+            borderColor: cosa.comprado ? 'var(--t-bien)' : 'var(--t-borde)',
+            background: cosa.comprado ? 'var(--t-bien)' : 'transparent',
+            color: 'var(--t-superficie)',
+          }}
         >
-          {cosa.comprado && <Ico nombre="check" tam={17} grosor={3} />}
+          {cosa.comprado && (
+            <span className="tic flex">
+              <Ico nombre="check" tam={17} grosor={3} />
+            </span>
+          )}
         </span>
 
         <span className="min-w-0 flex-1">
           <span
-            className={`block text-[18px] font-bold leading-snug ${
-              cosa.comprado ? 'text-tinta-suave line-through' : 'text-tinta'
+            className={`tachable block text-[19px] font-extrabold leading-snug ${
+              cosa.comprado ? 'tachable-puesto text-tinta-suave' : 'text-tinta'
             }`}
           >
             {cosa.que}
@@ -943,7 +1142,7 @@ function Linea({
           {/* Solo se dice quién lo apuntó si lo apuntó el otro. Ver tu
               propio nombre en cada línea no informa de nada. */}
           {(seccion || (!mio && de)) && (
-            <span className="mt-0.5 block text-[14px] font-extrabold tracking-wider text-tenue">
+            <span className="rotulo mt-0.5 block">
               {[seccion?.toUpperCase(), !mio && de ? de.split(' ')[0].toUpperCase() : null]
                 .filter(Boolean)
                 .join(' · ')}
@@ -955,7 +1154,7 @@ function Linea({
       <button
         onClick={alQuitar}
         aria-label={`Quitar ${cosa.que} de la lista`}
-        className="flex w-[56px] shrink-0 items-center justify-center border-l border-borde text-[26px] font-light leading-none text-tenue"
+        className="flex w-[56px] shrink-0 items-center justify-center border-l border-borde text-[26px] font-light leading-none text-apagado"
       >
         {/* Una equis, que la entiende todo el mundo. Un icono de
             papelera hay que aprendérselo; esto no. */}

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Barra from '../barra'
+import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
+import { Aviso, BotonPrincipal, BotonSecundario, PastillaAmbito } from '../piezas'
 
 type Estado = 'mirando' | 'instalar' | 'apagados' | 'encendidos' | 'bloqueados' | 'imposible'
 
@@ -10,7 +12,15 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
   const [estado, setEstado] = useState<Estado>('mirando')
   const [esIphone, setEsIphone] = useState(false)
   const [ocupado, setOcupado] = useState(false)
+
+  /*
+    Antes esto era UNA caja gris que servía igual para «enviado» que
+    para «no se ha podido activar». La buena noticia y el fallo se
+    pintaban del mismo color y con las mismas palabras alrededor, así
+    que había que leerlas enteras para saber cuál era cuál.
+  */
   const [aviso, setAviso] = useState<string | null>(null)
+  const [bien, setBien] = useState<string | null>(null)
 
   useEffect(() => {
     const iphone = /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -51,7 +61,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
 
     try {
       if (!clavePublica) {
-        setAviso('Los avisos todavía no están configurados.')
+        setAviso('Los avisos todavía no están configurados en el servidor.')
         setOcupado(false)
         return
       }
@@ -109,48 +119,62 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
         await sub.unsubscribe()
       }
       setEstado('apagados')
+      setBien(null)
     } catch {
-      setAviso('No se ha podido desactivar.')
+      setAviso('No se ha podido desactivar. Los avisos siguen llegando a este teléfono.')
     }
     setOcupado(false)
   }
 
   async function probar() {
     setAviso(null)
+    setBien(null)
     setOcupado(true)
+
     const r = await fetch('/api/push/probar', { method: 'POST' })
-    const datos = await r.json()
-    setAviso(r.ok ? 'Enviado. Debería llegarte en unos segundos.' : datos.error)
+    const datos = (await r.json().catch(() => ({}))) as { error?: string }
+
+    /* El motivo técnico va al registro, no a la pantalla: aquí solo
+       hace ruido. Es la misma regla del P0 de los mensajes de SQL. */
+    if (r.ok) {
+      setBien('Enviado. Debería llegarte en unos segundos.')
+    } else {
+      if (datos.error) console.error('[HUBI] El aviso de prueba no ha salido:', datos.error)
+      setAviso('No ha salido el aviso de prueba. Los avisos siguen activados.')
+    }
     setOcupado(false)
   }
 
   return (
-    <main className="techo-holgado min-h-screen px-5 pb-40">
-      <div className="mx-auto w-full max-w-md">
+    <main className="min-h-screen pb-40">
+      {/* El título va en la cabecera, como en el resto (decisión D6).
+          Y el emoji sale: los iconos de HUBI son de trazo, y un emoji
+          de campana se pinta distinto en cada teléfono. */}
+      <Cabecera>
         <Volver href="/" />
+        <div className="flex h-14 items-center gap-3">
+          <PastillaAmbito icono="campana" ambito="azul" tam={44} />
+          <h1 className="t-titulo">Avisos</h1>
+        </div>
+      </Cabecera>
 
-        <h1 className="mt-8 text-[27px] font-extrabold leading-tight tracking-tight text-tinta">
-          🔔 Avisos
-        </h1>
-
-        {estado === 'mirando' && (
-          <p className="mt-8 text-lg text-tinta-suave">Comprobando…</p>
-        )}
+      <div className="mx-auto w-full max-w-md px-5 pt-1">
+        {estado === 'mirando' && <p className="t-cuerpo mt-4 text-tenue">Comprobando…</p>}
 
         {/* ── Hay que instalarla primero (iPhone) ── */}
         {estado === 'instalar' && (
           <>
-            <p className="mt-6 text-lg leading-relaxed text-tinta-suave">
+            <p className="t-cuerpo mt-4">
               Para que los avisos lleguen a este iPhone, HUBI tiene que estar
               en la pantalla de inicio. Es cosa de Apple: dentro de Safari los avisos
               no existen.
             </p>
 
-            <p className="mt-4 text-lg leading-relaxed text-tinta-suave">
+            <p className="t-cuerpo mt-3">
               Se hace una vez y además queda con su icono, como cualquier otra app.
             </p>
 
-            <ol className="mt-8 space-y-4">
+            <ol className="mt-6 space-y-3.5">
               <Paso n={1} texto="Toca el botón de compartir, abajo en el centro de Safari: un cuadrado con una flecha hacia arriba." />
               <Paso n={2} texto="Desliza la lista hacia abajo hasta ver «Añadir a pantalla de inicio»." />
               <Paso n={3} texto="Toca «Añadir», arriba a la derecha." />
@@ -163,21 +187,22 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
         {/* ── Todo listo para activarlos ── */}
         {estado === 'apagados' && (
           <>
-            <p className="mt-6 text-lg leading-relaxed text-tinta-suave">
+            <p className="t-cuerpo mt-4">
               Con los avisos activados, este teléfono sonará cuando la otra persona
               te deje algo, cuando toque algo del día, y cuando se acerque un
               vencimiento.
             </p>
 
-            <button
-              onClick={encender}
-              disabled={ocupado}
-              className="mt-10 w-full rounded-2xl bg-verde px-6 py-6 text-2xl font-semibold text-white disabled:opacity-40"
-            >
-              {ocupado ? 'Activando…' : 'Activar los avisos'}
-            </button>
+            {/* Iba de `bg-verde` a 24 px de letra y 96 px de alto: el
+                verde ya no es acento sino ámbito, y la acción se dice
+                con el color de acción y con la altura de siempre. */}
+            <div className="mt-6">
+              <BotonPrincipal onClick={encender} desactivado={ocupado} icono="campana">
+                {ocupado ? 'Activando…' : 'Activar los avisos'}
+              </BotonPrincipal>
+            </div>
 
-            <p className="mt-5 text-base leading-relaxed text-tenue">
+            <p className="t-apoyo mt-3">
               El teléfono te preguntará si permites las notificaciones. Hay que
               responder que sí.
             </p>
@@ -187,27 +212,23 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
         {/* ── Ya funcionan ── */}
         {estado === 'encendidos' && (
           <>
-            <p className="mt-6 rounded-2xl bg-verde-suave px-5 py-4 text-lg leading-snug text-verde">
-              ✓ Los avisos están activados en este teléfono.
-            </p>
+            <div className="mt-4">
+              <Aviso tono="bien" titulo="Los avisos están activados en este teléfono." />
+            </div>
 
-            <button
-              onClick={probar}
-              disabled={ocupado}
-              className="mt-8 w-full rounded-2xl bg-verde px-6 py-6 text-xl font-semibold text-white disabled:opacity-40"
-            >
-              {ocupado ? 'Enviando…' : 'Enviarme un aviso de prueba'}
-            </button>
+            <div className="mt-6">
+              <BotonPrincipal onClick={probar} desactivado={ocupado}>
+                {ocupado ? 'Enviando…' : 'Enviarme un aviso de prueba'}
+              </BotonPrincipal>
+            </div>
 
-            <button
-              onClick={apagar}
-              disabled={ocupado}
-              className="mt-4 w-full rounded-2xl border-2 border-borde px-6 py-5 text-lg font-medium text-tinta-suave disabled:opacity-40"
-            >
-              Desactivar en este teléfono
-            </button>
+            <div className="mt-2.5">
+              <BotonSecundario onClick={apagar} desactivado={ocupado}>
+                Desactivar en este teléfono
+              </BotonSecundario>
+            </div>
 
-            <p className="mt-6 text-base leading-relaxed text-tenue">
+            <p className="t-apoyo mt-4">
               Cada teléfono se activa por separado. Si usas también una tablet,
               tendrás que activarla ahí.
             </p>
@@ -217,28 +238,36 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
         {/* ── El navegador los tiene bloqueados ── */}
         {estado === 'bloqueados' && (
           <>
-            <p className="mt-6 rounded-2xl bg-coral-suave px-5 py-4 text-lg leading-snug text-coral">
-              Este teléfono tiene los avisos bloqueados para HUBI.
-            </p>
-            <p className="mt-6 text-lg leading-relaxed text-tinta-suave">
-              {esIphone
-                ? 'Entra en Ajustes → Notificaciones → HUBI y permite las notificaciones. Después vuelve aquí.'
-                : 'Abre los ajustes del navegador para esta página y permite las notificaciones. Después vuelve aquí.'}
-            </p>
+            <div className="mt-4">
+              <Aviso
+                titulo="Este teléfono tiene los avisos bloqueados para HUBI"
+                explicacion={
+                  esIphone
+                    ? 'Entra en Ajustes → Notificaciones → HUBI y permite las notificaciones. Después vuelve aquí.'
+                    : 'Abre los ajustes del navegador para esta página y permite las notificaciones. Después vuelve aquí.'
+                }
+              />
+            </div>
           </>
         )}
 
         {estado === 'imposible' && (
-          <p className="mt-6 text-lg leading-relaxed text-tinta-suave">
+          <p className="t-cuerpo mt-4">
             Este navegador no admite avisos. Prueba desde el móvil, con HUBI
             añadida a la pantalla de inicio.
           </p>
         )}
 
+        {bien && (
+          <div className="mt-4">
+            <Aviso tono="bien" titulo={bien} />
+          </div>
+        )}
+
         {aviso && (
-          <p className="mt-6 rounded-2xl bg-superficie px-5 py-4 text-lg leading-snug text-tinta">
-            {aviso}
-          </p>
+          <div className="mt-4">
+            <Aviso titulo="No ha podido ser" explicacion={aviso} />
+          </div>
         )}
       </div>
       <Barra activa={null} />
@@ -248,11 +277,11 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
 
 function Paso({ n, texto }: { n: number; texto: string }) {
   return (
-    <li className="flex items-start gap-4">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-verde text-lg font-semibold text-white">
+    <li className="flex items-start gap-3">
+      <span className="t-apoyo flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-fondo font-extrabold text-tinta-suave">
         {n}
       </span>
-      <span className="pt-1 text-lg leading-snug text-tinta">{texto}</span>
+      <span className="t-cuerpo min-w-0 flex-1">{texto}</span>
     </li>
   )
 }

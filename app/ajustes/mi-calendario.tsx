@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Ico, Pastilla } from '../iconos'
+import { Ico } from '../iconos'
+import { PastillaAmbito } from '../piezas'
 
 /*
   Conectar tu calendario de Google.
@@ -96,7 +97,7 @@ export default function MiCalendario({
     <div>
       <div className="rounded-[20px] border border-borde bg-superficie px-3.5 py-3">
         <div className="flex items-center gap-3">
-          <Pastilla nombre="calendario" color="#3B82F6" fondo="#E3EDFD" tam={44} icono={22} />
+          <PastillaAmbito icono="calendario" ambito="azul" tam={44} />
           <span className="min-w-0 flex-1">
             <span className="block text-[17.5px] font-extrabold tracking-tight">
               Tus citas de Google
@@ -112,7 +113,7 @@ export default function MiCalendario({
           {!conectado && (
             <button
               onClick={() => setAbierto(!abierto)}
-              className="flex h-11 shrink-0 items-center rounded-full border border-borde px-3.5 text-[13.5px] font-extrabold tracking-wide text-tinta"
+              className="flex h-12 shrink-0 items-center rounded-full border border-borde px-3.5 text-[13.5px] font-extrabold tracking-wide text-tinta"
             >
               {abierto ? 'CERRAR' : 'CONECTAR'}
             </button>
@@ -163,7 +164,7 @@ export default function MiCalendario({
             <button
               onClick={desconectar}
               disabled={ocupado}
-              className="mt-2 h-11 px-1 text-[15px] font-bold text-tenue disabled:opacity-50"
+              className="mt-2 flex h-12 items-center px-1 text-[15px] font-extrabold text-tenue disabled:opacity-50"
             >
               Dejar de ver mis citas de Google
             </button>
@@ -216,7 +217,8 @@ export default function MiCalendario({
             </p>
 
             {aviso && (
-              <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold leading-snug text-coral">
+              <p className="mt-3 t-apoyo rounded-[16px] border px-4 py-3"
+          style={{ background: 'var(--t-alerta-velo)', borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)', color: 'var(--t-alerta)' }}>
                 {aviso}
               </p>
             )}
@@ -224,7 +226,7 @@ export default function MiCalendario({
             <button
               onClick={conectar}
               disabled={ocupado || url.trim().length < 20}
-              className="mt-3 flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+              className="mt-3 flex h-[60px] w-full items-center justify-center gap-2 rounded-[16px] bg-accion text-[17px] font-extrabold text-accion-tinta disabled:opacity-50"
             >
               {ocupado ? 'Comprobando…' : 'Conectar'}
             </button>
@@ -233,7 +235,7 @@ export default function MiCalendario({
       </div>
 
       {bien && (
-        <p className="mt-2 flex items-start gap-2 rounded-[16px] bg-verde-suave px-4 py-3 text-[15.5px] font-semibold leading-snug text-verde">
+        <p className="mt-2 flex items-start gap-2 rounded-[16px] bg-[color:var(--t-bien-velo)] px-4 py-3 text-[15px] font-semibold leading-snug text-[color:var(--t-bien)]">
           <Ico nombre="check" tam={19} grosor={2.3} className="mt-0.5 shrink-0" />
           {bien}
         </p>

@@ -3,6 +3,17 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
+import {
+  ambitoDeColor,
+  AMBITO,
+  Aviso,
+  BotonPrincipal,
+  BotonSecundario,
+  Campo,
+  PastillaAmbito,
+  Pildora,
+  Tarjeta,
+} from '../piezas'
 import { enHoras } from '@/lib/dia'
 
 /*
@@ -77,6 +88,9 @@ export default function Parte({
   const cambiado = extra !== parte.extra || nota !== (parte.nota ?? '')
   const diaNormal = parte.extra == null && !parte.nota
 
+  /* Su color, dicho en el idioma de las piezas. */
+  const suyo = ambitoDeColor(color)
+
   function mover(paso: number) {
     setExtra((h) => {
       const n = Math.round(((h ?? 0) + paso) * 4) / 4
@@ -119,40 +133,41 @@ export default function Parte({
   if (!mio) {
     return (
       <section className="mt-6">
-        <h2 className="rotulo">El día de {deQuien}</h2>
+        <h2 className="t-seccion">El día de {deQuien}</h2>
 
         {diaNormal ? (
           /* Un día sin nada apuntado NO es un día sin información: es
              un día normal, que es la mayoría. Se dice así en vez de
              dejar un hueco que parece que falta algo. */
-          <p className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4 text-[16px] font-semibold leading-snug text-tenue">
-            Un día normal. Sin horas de más.
-          </p>
+          <div className="mt-2.5">
+            <Tarjeta>
+              <p className="t-cuerpo text-tenue">Un día normal. Sin horas de más.</p>
+            </Tarjeta>
+          </div>
         ) : (
-          <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4">
-            {parte.extra != null && (
-              <>
-                <p className="text-[14.5px] font-bold text-tenue">Horas de más</p>
+          <div className="mt-2.5">
+            <Tarjeta>
+              {parte.extra != null && (
+                <>
+                  <p className="t-apoyo">Horas de más</p>
+                  {/* La cifra va en TINTA. Antes iba del color de la
+                      persona, y un número grande de color dice «esto
+                      va mal» — y unas horas de más no van mal: son un
+                      dato que hay que cuadrar. */}
+                  <p className="t-cifra mt-0.5">+{enHoras(parte.extra)}</p>
+                </>
+              )}
+              {parte.nota && (
                 <p
-                  className="mt-0.5 text-[28px] font-extrabold leading-none tracking-tight"
-                  style={{ color }}
+                  className={`t-cuerpo whitespace-pre-wrap ${parte.extra != null ? 'mt-3' : ''}`}
                 >
-                  +{enHoras(parte.extra)}
+                  {parte.nota}
                 </p>
-              </>
-            )}
-            {parte.nota && (
-              <p
-                className={`whitespace-pre-wrap text-[16.5px] font-semibold leading-snug ${
-                  parte.extra != null ? 'mt-3' : ''
-                }`}
-              >
-                {parte.nota}
+              )}
+              <p className="t-apoyo mt-3 border-t border-borde pt-2.5">
+                Lo apunta {deQuien}. Tú lo ves y no lo puedes cambiar.
               </p>
-            )}
-            <p className="mt-3 border-t border-borde pt-2.5 text-[13.5px] font-semibold leading-snug text-tenue">
-              Lo apunta {deQuien}. Tú lo ves y no lo puedes cambiar.
-            </p>
+            </Tarjeta>
           </div>
         )}
 
@@ -164,56 +179,54 @@ export default function Parte({
   // ══ Y lo que ve ella: su parte, para escribirlo ═══════════
   return (
     <section className="mt-6">
-      <h2 className="rotulo">Tu día</h2>
+      <h2 className="t-seccion">Tu día</h2>
 
       {!abierto ? (
+        /*
+          El tinte del 5 % (decisión D3), y aquí con motivo: un día con
+          horas apuntadas es lo que hay que mirar de esta pantalla. Un
+          día normal —la mayoría— se queda en papel liso.
+        */
         <button
           onClick={() => setAbierto(true)}
-          className="mt-2.5 flex w-full items-center gap-3.5 rounded-[20px] border px-4 py-4 text-left"
+          className="r-tarjeta mt-2.5 flex min-h-[76px] w-full items-center gap-3.5 border px-3.5 py-3 text-left"
           style={
             diaNormal
               ? { borderColor: 'var(--t-borde)', background: 'var(--t-superficie)' }
               : {
-                  borderColor: `color-mix(in srgb, ${color} 40%, transparent)`,
-                  background: `color-mix(in srgb, ${color} 10%, var(--t-superficie))`,
+                  borderColor: `color-mix(in srgb, ${color} 38%, transparent)`,
+                  background: `color-mix(in srgb, ${color} 5%, var(--t-superficie))`,
                 }
           }
         >
-          <span
-            className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[15px]"
-            style={{ background: `color-mix(in srgb, ${color} 16%, transparent)`, color }}
-          >
-            <Ico nombre="reloj" tam={23} grosor={2.1} />
-          </span>
+          <PastillaAmbito icono="reloj" ambito={suyo} tam={48} />
           <span className="min-w-0 flex-1">
             {diaNormal ? (
               <>
-                <span className="block text-[17.5px] font-extrabold tracking-tight">
-                  ¿Has hecho horas de más?
-                </span>
-                <span className="mt-0.5 block text-[14.5px] font-bold text-tenue">
+                <span className="t-tarjeta block">¿Has hecho horas de más?</span>
+                <span className="t-apoyo mt-0.5 block">
                   {esHoy ? 'Si no, no hace falta que pongas nada' : 'Si aquel día te quedaste más'}
                 </span>
               </>
             ) : (
               <>
-                <span className="block text-[17.5px] font-extrabold tracking-tight">
+                <span className="t-tarjeta block">
                   {parte.extra != null ? `+${enHoras(parte.extra)}` : 'Sin horas de más'}
                 </span>
-                <span className="mt-0.5 block truncate text-[14.5px] font-bold text-tenue">
+                <span className="t-apoyo mt-0.5 block truncate">
                   {parte.nota ?? 'Toca para cambiarlo'}
                 </span>
               </>
             )}
           </span>
-          <Ico nombre="lapiz" tam={19} grosor={2.2} className="shrink-0 text-tinta-suave" />
+          <Ico nombre="lapiz" tam={20} grosor={2.2} className="shrink-0 text-tinta-suave" />
         </button>
       ) : (
-        <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4">
-          <p className="text-[17px] font-extrabold leading-snug">
+        <div className="r-tarjeta mt-2.5 border border-borde bg-superficie px-4 py-4">
+          <p className="t-tarjeta">
             {esHoy ? '¿Cuántas horas de más hoy?' : '¿Cuántas horas de más aquel día?'}
           </p>
-          <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
+          <p className="t-apoyo mt-1">
             Solo lo que se salga de tu horario. Un día normal se deja en blanco.
           </p>
 
@@ -222,25 +235,21 @@ export default function Parte({
             casi todos los casos reales; para lo demás están los
             botones de arriba y abajo.
           */}
-          <div className="mt-3 flex gap-2">
+          {/* Eran tres botones que al elegirse se rellenaban del color
+              de la persona con la letra en blanco — y sobre un color
+              apagado, blanco no se lee. Son la misma píldora que
+              Semana/Mes/Día y ahora se pintan como ella: la elegida en
+              tinta. */}
+          <div className="mt-3 grid grid-cols-3 gap-2">
             {[0.5, 1, 2].map((h) => (
-              <button
+              <Pildora
                 key={h}
+                puesta={extra === h}
                 onClick={() => setExtra(extra === h ? null : h)}
-                aria-pressed={extra === h}
-                className="h-[54px] flex-1 rounded-[14px] text-[16.5px] font-extrabold"
-                style={
-                  extra === h
-                    ? { background: color, color: '#FFFFFF' }
-                    : {
-                        background: 'var(--t-fondo)',
-                        color: 'var(--t-tenue)',
-                        border: '1px solid var(--t-borde)',
-                      }
-                }
+                className="w-full"
               >
                 +{enHoras(h)}
-              </button>
+              </Pildora>
             ))}
           </div>
 
@@ -252,73 +261,75 @@ export default function Parte({
               onClick={() => mover(-0.5)}
               disabled={ocupado || extra == null}
               aria-label="Media hora menos"
-              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[14px] border border-borde text-[26px] font-light leading-none text-tinta-suave disabled:opacity-40"
+              className="r-campo flex h-[56px] w-[56px] shrink-0 items-center justify-center border border-borde text-[26px] font-light leading-none text-tinta-suave disabled:opacity-40"
             >
               −
             </button>
-            <span className="flex h-[54px] flex-1 items-center justify-center rounded-[14px] border border-borde text-[22px] font-extrabold tracking-tight">
+            <span className="r-campo flex h-[56px] flex-1 items-center justify-center border border-borde">
               {extra == null ? (
-                <span className="text-[17px] text-tenue">Ninguna</span>
+                <span className="t-cuerpo text-tenue">Ninguna</span>
               ) : (
-                `+${enHoras(extra)}`
+                <span className="t-cifra-2">+{enHoras(extra)}</span>
               )}
             </span>
             <button
               onClick={() => mover(0.5)}
               disabled={ocupado}
               aria-label="Media hora más"
-              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[14px] border border-borde text-[26px] font-light leading-none text-tinta-suave disabled:opacity-40"
+              className="r-campo flex h-[56px] w-[56px] shrink-0 items-center justify-center border border-borde text-[26px] font-light leading-none text-tinta-suave disabled:opacity-40"
             >
               +
             </button>
           </div>
 
-          <label htmlFor="nota" className="mt-5 block text-[17px] font-extrabold leading-snug">
-            ¿Algo que contar? <span className="font-bold text-tenue">· si quieres</span>
-          </label>
-          <textarea
-            id="nota"
-            value={nota}
-            onChange={(e) => setNota(e.target.value)}
-            rows={3}
-            maxLength={600}
-            placeholder="No pude planchar, no había plancha."
-            className="entrada mt-2.5 min-h-[92px] py-3 leading-snug"
-          />
+          <div className="mt-5">
+            <Campo etiqueta="¿Algo que contar? · si quieres" htmlFor="nota">
+              <textarea
+                id="nota"
+                value={nota}
+                onChange={(e) => setNota(e.target.value)}
+                rows={3}
+                maxLength={600}
+                placeholder="No pude planchar, no había plancha."
+                className="entrada min-h-[92px] py-3 leading-snug"
+              />
+            </Campo>
+          </div>
 
-          <div className="mt-3 flex gap-2">
-            <button
+          {fallo && (
+            <div className="mt-3">
+              <Aviso titulo="No se ha podido guardar" explicacion={fallo} />
+            </div>
+          )}
+
+          <div className="mt-3 flex gap-2.5">
+            <BotonPrincipal
               onClick={guardar}
-              disabled={ocupado || !cambiado}
-              className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+              desactivado={ocupado || !cambiado}
+              porQue={!cambiado ? 'No has cambiado nada todavía' : undefined}
+              icono="check"
+              ancho="completo"
             >
-              <Ico nombre="check" tam={19} grosor={2.3} />
               {ocupado ? 'Guardando…' : 'Guardar'}
-            </button>
-            <button
+            </BotonPrincipal>
+            <BotonSecundario
               onClick={() => {
                 setExtra(parte.extra)
                 setNota(parte.nota ?? '')
                 setAbierto(false)
               }}
-              disabled={ocupado}
-              className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+              desactivado={ocupado}
+              ancho="completo"
             >
               Dejarlo
-            </button>
+            </BotonSecundario>
           </div>
-
-          {fallo && (
-            <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
-              {fallo}
-            </p>
-          )}
         </div>
       )}
 
       <DelMes horas={extraDelMes} dias={diasConExtra} color={color} />
 
-      <p className="mt-3 rounded-[16px] border border-borde px-4 py-3 text-[14px] font-semibold leading-snug text-tenue">
+      <p className="t-apoyo r-campo mt-3 border border-borde px-4 py-3">
         Esto son apuntes para cuadrar el mes entre vosotros, no un registro de jornada
         oficial. Los escribes tú y nadie más los puede cambiar.
       </p>
@@ -348,30 +359,30 @@ function DelMes({
 }) {
   if (horas <= 0) {
     return (
-      <p className="mt-2.5 px-1 text-[14.5px] font-semibold leading-snug text-tenue">
+      <p className="t-apoyo mt-2.5 px-1">
         Este mes no hay horas de más apuntadas
         {deQuien ? ` por ${deQuien}` : ''}.
       </p>
     )
   }
 
+  /*
+    Aquí SÍ se tiñe (decisión D3): es el número por el que existe esta
+    pantalla, y es uno solo. Al 5 %, no al 9 % de antes.
+  */
   return (
     <div
-      className="mt-2.5 flex items-center gap-3.5 rounded-[20px] border px-4 py-3.5"
+      className="r-tarjeta mt-2.5 flex items-center gap-3.5 border px-4 py-3.5"
       style={{
-        borderColor: `color-mix(in srgb, ${color} 34%, transparent)`,
-        background: `color-mix(in srgb, ${color} 9%, transparent)`,
+        borderColor: `color-mix(in srgb, ${AMBITO[ambitoDeColor(color)]} 34%, transparent)`,
+        background: `color-mix(in srgb, ${AMBITO[ambitoDeColor(color)]} 5%, var(--t-superficie))`,
       }}
     >
       <span className="min-w-0 flex-1">
-        <span className="block text-[14.5px] font-bold text-tenue">Horas de más este mes</span>
-        <span className="mt-0.5 block text-[24px] font-extrabold leading-tight tracking-tight">
-          +{enHoras(horas)}
-        </span>
+        <span className="t-apoyo block">Horas de más este mes</span>
+        <span className="t-cifra-2 mt-0.5 block">+{enHoras(horas)}</span>
       </span>
-      <span className="shrink-0 text-[14.5px] font-bold" style={{ color }}>
-        {dias === 1 ? '1 día' : `${dias} días`}
-      </span>
+      <span className="t-apoyo shrink-0">{dias === 1 ? '1 día' : `${dias} días`}</span>
     </div>
   )
 }

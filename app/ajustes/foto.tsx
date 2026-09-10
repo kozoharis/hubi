@@ -140,11 +140,12 @@ export default function TuPerfil({
           onKeyDown={(e) => {
             if (e.key === 'Enter') guardarNombre()
           }}
-          className="mt-3 h-[58px] w-full rounded-[16px] border border-borde bg-fondo px-4 text-[19px] font-bold text-tinta outline-none focus:border-boton"
+          className="mt-3 h-[60px] w-full rounded-[16px] border border-borde bg-fondo px-4 text-[19px] font-bold text-tinta outline-none focus:border-boton"
         />
 
         {aviso && (
-          <p className="mt-2.5 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
+          <p className="mt-2.5 t-apoyo rounded-[16px] border px-4 py-3"
+          style={{ background: 'var(--t-alerta-velo)', borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)', color: 'var(--t-alerta)' }}>
             {aviso}
           </p>
         )}
@@ -153,7 +154,7 @@ export default function TuPerfil({
           <button
             onClick={guardarNombre}
             disabled={ocupado}
-            className="h-[56px] flex-1 rounded-[16px] bg-boton text-[17.5px] font-extrabold text-boton-texto disabled:opacity-50"
+            className="h-[60px] flex-1 rounded-[16px] bg-accion text-[17px] font-extrabold text-accion-tinta disabled:opacity-50"
           >
             {ocupado ? 'Guardando…' : 'Guardar'}
           </button>
@@ -164,7 +165,7 @@ export default function TuPerfil({
               setEditando(false)
             }}
             disabled={ocupado}
-            className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17.5px] font-extrabold text-tinta-suave disabled:opacity-50"
+            className="h-[60px] flex-1 rounded-[16px] border border-borde text-[17.5px] font-extrabold text-tinta-suave disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -212,13 +213,14 @@ export default function TuPerfil({
       </div>
 
       {foto && !ocupado && (
-        <button onClick={quitarFoto} className="mt-2 h-11 px-1 text-[15px] font-bold text-tenue">
+        <button onClick={quitarFoto} className="mt-2 flex h-12 items-center px-1 text-[15px] font-extrabold text-tenue">
           Quitar la foto
         </button>
       )}
 
       {aviso && (
-        <p className="mt-2 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
+        <p className="mt-2 t-apoyo rounded-[16px] border px-4 py-3"
+          style={{ background: 'var(--t-alerta-velo)', borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)', color: 'var(--t-alerta)' }}>
           {aviso}
         </p>
       )}

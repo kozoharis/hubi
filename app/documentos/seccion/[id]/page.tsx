@@ -5,7 +5,15 @@ import { quien } from '@/lib/supabase/quien'
 import Anadir from "../../anadir"
 import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
-import { Ico, Pastilla, Volver, seccionDe, tintaSobre, MORADO_CLARO } from '../../../iconos'
+import { Ico, Volver } from '../../../iconos'
+import {
+  Aviso,
+  Fila,
+  PastillaAmbito,
+  Pildora,
+  Vacio,
+  seccionPintada,
+} from '../../../piezas'
 import {
   contar,
   hijosDe,
@@ -80,8 +88,7 @@ export default async function Seccion({
   )
 
   const cuantos = contar(todas, filtrados)
-  const s = seccionDe(seccion.segmento_drive)
-  const colorPildora = s.color === '#8B5CF6' ? MORADO_CLARO : s.color
+  const s = seccionPintada(seccion.segmento_drive)
 
   // ── Los grupos que se enseñan ──
   const hijas = hijosDe(todas, seccion.id)
@@ -107,52 +114,50 @@ export default async function Seccion({
 
   return (
     <main className="min-h-screen pb-40">
+      {/* El título vive en la cabecera (D6): aquí estaba en el cuerpo
+          y se perdía al hacer scroll. */}
       <Cabecera>
         <Volver href="/documentos" />
-      </Cabecera>
-
-      <div className="mx-auto w-full max-w-md px-5">
-
-        <div className="flex items-center gap-3">
-          <Pastilla nombre={s.icono} color={s.color} fondo={s.fondo} tam={48} icono={25} redondez={15} />
-          <div>
-            <h1 className="text-[27px] font-extrabold tracking-tight">{seccion.nombre}</h1>
-            <p className="text-[14.5px] font-bold text-tenue">
+        <div className="mt-2.5 flex items-center gap-3">
+          <PastillaAmbito icono={s.icono} ambito={s.ambito} />
+          <div className="min-w-0">
+            <h1 className="t-titulo truncate">{seccion.nombre}</h1>
+            <p className="t-apoyo">
               {papeles.length} {papeles.length === 1 ? 'papel guardado' : 'papeles guardados'}
             </p>
           </div>
         </div>
+      </Cabecera>
+
+      <div className="mx-auto w-full max-w-md px-5">
 
         {averia && (
-          <div className="mt-4 rounded-[20px] border border-coral bg-coral-suave px-4 py-4">
-            <p className="text-[17px] font-extrabold text-coral">
-              No se han podido leer los papeles
-            </p>
-            <p className="mt-2 break-words rounded-[14px] bg-superficie px-3 py-2 text-[14px] font-semibold text-tinta-suave">
-              {averia}
-            </p>
+          <div className="mt-4">
+            <Aviso
+              titulo="No se han podido leer los papeles"
+              explicacion="Siguen guardados. Esto es un fallo al leerlos, no una pérdida."
+            />
           </div>
         )}
 
         {/* ── Cuándo ── */}
+        {/* Las píldoras eran de 44 px —por debajo del suelo de 48 que
+            declara el propio CSS— y se rellenaban del color de la
+            sección al elegirlas. Ahora son las del sistema: 48 px y
+            relleno de tinta, iguales en toda la aplicación. */}
         {anios.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-2">
-            <Pildora href={base} puesta={anio == null} color={colorPildora}>
+            <Pildora href={base} puesta={anio == null}>
               Todo
             </Pildora>
             {anios.slice(0, 4).map((a) => (
-              <Pildora
-                key={a}
-                href={conFiltro(a, null)}
-                puesta={anio === a && trimestre == null}
-                color={colorPildora}
-              >
+              <Pildora key={a} href={conFiltro(a, null)} puesta={anio === a && trimestre == null}>
                 {a}
               </Pildora>
             ))}
             {anio != null &&
               [1, 2, 3, 4].map((t) => (
-                <Pildora key={t} href={conFiltro(anio, t)} puesta={trimestre === t} color={colorPildora}>
+                <Pildora key={t} href={conFiltro(anio, t)} puesta={trimestre === t}>
                   T{t}
                 </Pildora>
               ))}
@@ -173,27 +178,32 @@ export default async function Seccion({
                   <li key={c.id}>
                     <Link
                       href={`/documentos/carpeta/${c.id}${anio != null ? `?anio=${anio}${trimestre ? `&t=${trimestre}` : ''}` : ''}`}
-                      className="block rounded-[18px] border border-borde bg-superficie px-4 py-3"
+                      className="block rounded-[20px] border border-borde bg-superficie px-4 py-3"
                     >
                       <div className="flex items-center gap-3">
                         <div className="min-w-0 flex-1">
-                          <p className="text-[17.5px] font-extrabold tracking-tight">{c.nombre}</p>
-                          <p className="text-[14.5px] font-semibold text-tenue">
+                          <p className="t-tarjeta truncate">{c.nombre}</p>
+                          <p className="t-apoyo">
                             {n === 0 ? 'vacía' : `${n} ${n === 1 ? 'papel' : 'papeles'}`}
                           </p>
                         </div>
                         {dineros > 0 && (
-                          <p className="shrink-0 text-[17px] font-extrabold tabular-nums">
+                          <p className="t-cuerpo shrink-0 font-extrabold tabular-nums">
                             {euros(dineros)}
                           </p>
                         )}
-                        <Ico nombre="flecha" tam={19} grosor={2.2} className="shrink-0 text-borde" />
+                        <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-apagado" />
                       </div>
+                      {/* La barra toma el color de ámbito de la sección:
+                          es una señal de cuánto hay, no una acción. */}
                       {n > 0 && (
-                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-fondo">
+                        <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-fondo">
                           <div
                             className="h-1.5 rounded-full"
-                            style={{ width: `${Math.max(6, (n / mayor) * 100)}%`, background: s.color }}
+                            style={{
+                              width: `${Math.max(6, (n / mayor) * 100)}%`,
+                              background: `var(--color-ambito-${s.ambito})`,
+                            }}
                           />
                         </div>
                       )}
@@ -206,9 +216,12 @@ export default async function Seccion({
         ))}
 
         {grupos.length === 0 && (
-          <p className="mt-6 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
-            Esta sección todavía no tiene carpetas dentro.
-          </p>
+          <div className="mt-6">
+            <Vacio
+              titulo="Esta sección todavía no tiene carpetas"
+              explicacion="Se crean solas al guardar el primer papel de cada tipo."
+            />
+          </div>
         )}
 
         {/*
@@ -237,22 +250,19 @@ export default async function Seccion({
             <ul className="mt-2.5 space-y-2.5">
               {filtrados.slice(0, 100).map((d) => (
                 <li key={d.id}>
-                  <Link
-                    href={`/documentos/${d.id}`}
-                    className="flex items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-3.5 py-3"
-                  >
-                    <Pastilla nombre={s.icono} color={s.color} fondo={s.fondo} tam={44} icono={22} />
+                  <Fila href={`/documentos/${d.id}`}>
+                    <PastillaAmbito icono={s.icono} ambito={s.ambito} tam={44} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[17.5px] font-bold">{d.titulo}</span>
-                      <span className="mt-0.5 block text-[15px] font-semibold text-tenue">
+                      <span className="t-cuerpo block truncate font-extrabold">{d.titulo}</span>
+                      <span className="t-apoyo mt-0.5 block truncate">
                         {todas.find((c) => c.id === d.categoria_id)?.nombre ?? 'Sin carpeta'}
                         {' · '}
                         {fechaBreve(d.fecha_documento)}
                         {d.importe != null ? ` · ${euros(Number(d.importe))}` : ''}
                       </span>
                     </span>
-                    <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0 text-borde" />
-                  </Link>
+                    <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-apagado" />
+                  </Fila>
                 </li>
               ))}
             </ul>
@@ -269,28 +279,3 @@ export default async function Seccion({
   )
 }
 
-function Pildora({
-  href,
-  puesta,
-  color,
-  children,
-}: {
-  href: string
-  puesta: boolean
-  color: string
-  children: React.ReactNode
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex h-11 items-center rounded-full px-4 text-[15px] font-extrabold"
-      style={
-        puesta
-          ? { background: color, color: tintaSobre(color) }
-          : { background: 'var(--t-superficie)', color: 'var(--t-tinta-suave)', border: '1px solid var(--t-borde)' }
-      }
-    >
-      {children}
-    </Link>
-  )
-}

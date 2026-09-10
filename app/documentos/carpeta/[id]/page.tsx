@@ -5,7 +5,8 @@ import { quien } from '@/lib/supabase/quien'
 import Anadir from "../../anadir"
 import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
-import { Ico, Pastilla, Volver, seccionDe } from '../../../iconos'
+import { Ico, Volver } from '../../../iconos'
+import { Aviso, PastillaAmbito, Vacio, seccionPintada } from '../../../piezas'
 import { caminoDe, ramaDe, fechaCorta, type Categoria } from '@/lib/carpetas'
 import { euros } from '@/lib/periodos'
 
@@ -48,7 +49,7 @@ export default async function Carpeta({
 
   const camino = caminoDe(todas, carpeta.id)
   const seccion = camino[0]
-  const s = seccionDe(seccion?.segmento_drive)
+  const s = seccionPintada(seccion?.segmento_drive)
   const dentro = [...ramaDe(todas, carpeta.id)]
 
   let consulta = supabase
@@ -94,61 +95,69 @@ export default async function Carpeta({
     <main className="min-h-screen pb-40">
       <Cabecera>
         <Volver href={volver} />
-      </Cabecera>
-
-      <div className="mx-auto w-full max-w-md px-5">
-
-        <div className="flex items-center gap-3">
-          <Pastilla nombre={s.icono} color={s.color} fondo={s.fondo} tam={48} icono={25} redondez={15} />
+        <div className="mt-2.5 flex items-center gap-3">
+          <PastillaAmbito icono={s.icono} ambito={s.ambito} />
           <div className="min-w-0">
-            <h1 className="truncate text-[27px] font-extrabold tracking-tight">{carpeta.nombre}</h1>
-            <p className="text-[14.5px] font-bold text-tenue">
+            <h1 className="t-titulo truncate">{carpeta.nombre}</h1>
+            <p className="t-apoyo">
               {cuando} · {papeles.length} {papeles.length === 1 ? 'papel' : 'papeles'}
               {total > 0 ? ` · ${euros(total)}` : ''}
             </p>
           </div>
         </div>
+      </Cabecera>
+
+      <div className="mx-auto w-full max-w-md px-5">
 
         {averia ? (
-          <div className="mt-6 rounded-[20px] border border-coral bg-coral-suave px-4 py-4">
-            <p className="text-[17px] font-extrabold text-coral">
-              No se han podido leer los papeles de esta carpeta
-            </p>
-            <p className="mt-1.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
-              Siguen guardados. Esto es un fallo al leerlos.
-            </p>
-            <p className="mt-2 break-words rounded-[14px] bg-superficie px-3 py-2 text-[14px] font-semibold text-tinta-suave">
-              {averia.message}
-            </p>
+          <div className="mt-6">
+            <Aviso
+              titulo="No se han podido leer los papeles de esta carpeta"
+              explicacion="Siguen guardados. Esto es un fallo al leerlos, no una pérdida."
+            />
           </div>
         ) : papeles.length === 0 ? (
-          <p className="mt-6 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
-            Aquí no hay nada guardado todavía.
-          </p>
+          <div className="mt-6">
+            <Vacio
+              titulo="Aquí no hay nada guardado todavía"
+              explicacion="Haz una foto y yo lo archivo en esta carpeta."
+              accion={{ texto: 'Guardar un papel', href: `/guardar?carpeta=${carpeta.id}`, icono: 'foto' }}
+            />
+          </div>
         ) : (
           <ul className="mt-5 space-y-2.5">
             {papeles.map((p) => (
               <li key={p.id}>
+                {/*
+                  La hojita se queda: enseña de un vistazo si es una foto
+                  o un PDF, y eso es información, no adorno. Lo que
+                  cambia es su color, que ahora es el de ámbito.
+
+                  Es la tercera manera de pintar una fila que hay en
+                  Papeles. Unificarla con la Fila del sistema sería un
+                  cambio visible, y eso es rediseño: queda anotado para
+                  que lo decidas tú.
+                */}
                 <Link
                   href={`/documentos/${p.id}`}
                   className="flex items-start gap-3.5 rounded-[20px] border border-borde bg-superficie px-3.5 py-3"
                 >
-                  <Hoja color={s.color} pdf={p.tipo_mime === 'application/pdf'} />
+                  <Hoja ambito={s.ambito} pdf={p.tipo_mime === 'application/pdf'} />
                   <span className="min-w-0 flex-1 pt-0.5">
-                    <span className="block text-[17px] font-extrabold leading-snug">{p.titulo}</span>
-                    <span className="mt-1 block text-[14.5px] font-semibold text-tenue">
+                    <span className="t-cuerpo block font-extrabold leading-snug">{p.titulo}</span>
+                    <span className="t-apoyo mt-1 block truncate">
                       {p.proveedor ? `${p.proveedor} · ` : ''}
                       {fechaCorta(p.fecha_documento)}
                     </span>
-                    <span className="mt-1 flex items-center gap-1.5 text-[14px] font-semibold text-tenue">
-                      <Ico nombre={p.visibilidad === 'privado' ? 'candado' : 'gente'} tam={15} grosor={2} />
+                    <span className="t-apoyo mt-1 flex items-center gap-1.5">
+                      <Ico nombre={p.visibilidad === 'privado' ? 'candado' : 'gente'} tam={16} grosor={2} />
                       {p.visibilidad === 'privado'
                         ? 'Privado'
                         : `Guardó ${(p.subido_por && quienEs.get(p.subido_por)) ?? 'alguien'}`}
                     </span>
                   </span>
                   {p.importe != null && (
-                    <span className="shrink-0 pt-0.5 text-[17px] font-extrabold tabular-nums">
+                    <span className="t-cuerpo shrink-0 pt-0.5 font-extrabold tabular-nums">
                       {euros(Number(p.importe))}
                     </span>
                   )}
@@ -167,10 +176,10 @@ export default async function Carpeta({
 }
 
 /** Una hojita de papel, para que la lista se lea de un vistazo. */
-function Hoja({ color, pdf }: { color: string; pdf: boolean }) {
+function Hoja({ ambito, pdf }: { ambito: string; pdf: boolean }) {
   return (
     <span className="flex h-[66px] w-[52px] shrink-0 flex-col gap-1 rounded-[9px] border border-borde bg-superficie px-[7px] pt-[9px]">
-      <span className="h-[3px] rounded-sm" style={{ background: color }} />
+      <span className="h-[3px] rounded-sm" style={{ background: `var(--color-ambito-${ambito})` }} />
       <span className="h-[3px] w-[70%] rounded-sm bg-borde" />
       <span className="h-[3px] rounded-sm bg-borde" />
       <span className="h-[3px] w-[55%] rounded-sm bg-borde" />

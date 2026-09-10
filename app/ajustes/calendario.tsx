@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Ico, Pastilla } from '../iconos'
+import { Ico } from '../iconos'
+import { PastillaAmbito } from '../piezas'
 
 /*
   Poner en marcha el calendario de Google.
@@ -56,7 +57,7 @@ export default function PrepararCalendario({
         disabled={ocupado}
         className="flex w-full items-center gap-3 rounded-[20px] border border-borde bg-superficie px-3.5 py-3 text-left disabled:opacity-60"
       >
-        <Pastilla nombre="calendario" color="#8B5CF6" fondo="#EEE8FE" tam={44} icono={22} />
+        <PastillaAmbito icono="calendario" ambito="violeta" tam={44} />
         <span className="min-w-0 flex-1">
           <span className="block text-[17.5px] font-extrabold tracking-tight">
             {ocupado ? 'Preparando…' : 'Calendario en Google'}
@@ -69,17 +70,18 @@ export default function PrepararCalendario({
             {pie}
           </span>
         </span>
-        <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0 text-borde" />
+        <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0 text-apagado" />
       </button>
 
       {resultado?.error && (
-        <p className="mt-2 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold leading-snug text-coral">
+        <p className="mt-2 t-apoyo rounded-[16px] border px-4 py-3"
+          style={{ background: 'var(--t-alerta-velo)', borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)', color: 'var(--t-alerta)' }}>
           {resultado.error}
         </p>
       )}
 
       {resultado?.bien && (
-        <div className="mt-2 rounded-[16px] bg-verde-suave px-4 py-3 text-[15.5px] font-semibold leading-snug text-verde">
+        <div className="mt-2 rounded-[16px] bg-[color:var(--t-bien-velo)] px-4 py-3 text-[15px] font-semibold leading-snug text-[color:var(--t-bien)]">
           <p>
             {resultado.yaExistia
               ? 'El calendario HUBI ya estaba en tu Google.'
@@ -91,8 +93,10 @@ export default function PrepararCalendario({
               Google para aceptarlo.
             </p>
           )}
+          {/* No es un fallo del calendario —ya está creado—: es que
+              falta compartirlo con alguien. `atencion`, no alerta. */}
           {resultado.fallidos && resultado.fallidos.length > 0 && (
-            <p className="mt-1.5 text-coral">
+            <p className="mt-1.5" style={{ color: 'var(--t-atencion)' }}>
               No se ha podido compartir con {resultado.fallidos.join(', ')}.
             </p>
           )}
@@ -148,7 +152,7 @@ export default function PrepararCalendario({
 function Paso({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <li className="flex gap-2.5">
-      <span className="mt-0.5 flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-verde text-[15px] font-extrabold text-white">
+      <span className="mt-0.5 flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-[color:var(--t-bien)] text-[15px] font-extrabold text-[color:var(--t-superficie)]">
         {n}
       </span>
       <span className="text-[16px] font-semibold leading-snug">{children}</span>

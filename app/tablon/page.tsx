@@ -8,11 +8,12 @@ import { redirect } from 'next/navigation'
   un mes tiene que llegar a algún sitio. Un enlace roto en un aviso es
   peor que no haber avisado.
 */
-export default async function Tablon({
-  searchParams,
-}: {
-  searchParams: Promise<{ ver?: string }>
-}) {
-  const { ver } = await searchParams
-  redirect(ver === 'hechas' ? '/agenda?ver=hechas' : '/agenda')
+/*
+  Antes esto miraba `?ver=hechas` y redirigía a `/agenda?ver=hechas`.
+  Ese parámetro dejó de existir en Fase 2 —lo hecho ya no tiene
+  pestaña propia, se ve tachado en su día— así que ahora todo va a la
+  Agenda a secas, que es donde está lo que se buscaba.
+*/
+export default function Tablon() {
+  redirect('/agenda')
 }

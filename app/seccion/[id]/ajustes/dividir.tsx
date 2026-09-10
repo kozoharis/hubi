@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../../../iconos'
+import { Aviso } from '../../../piezas'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -56,6 +57,9 @@ export default function Dividir({
   const router = useRouter()
 
   const [ocupado, setOcupado] = useState(false)
+  /* Si se está preguntando por dejar de dividir. Antes lo llevaba el
+     diálogo del navegador y no hacía falta guardarlo. */
+  const [preguntando, setPreguntando] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
   const [editandoPalabra, setEditandoPalabra] = useState(false)
   const [comoSeLlama, setComoSeLlama] = useState(sinArticulo(palabra ?? ''))
@@ -80,14 +84,25 @@ export default function Dividir({
     return true
   }
 
+  /*
+    Aquí había un `window.confirm()`. La pregunta era buena —decía que
+    no se borra nada, que es el miedo real— pero salía en el diálogo
+    gris del navegador, con los saltos de línea escritos a mano.
+
+    Ahora se pregunta dentro, debajo del propio botón, y la respuesta
+    está donde está la pregunta.
+  */
   async function cambiarDivision(nuevo: boolean) {
     if (!nuevo && cuantas > 0) {
-      const seguro = window.confirm(
-        `¿Dejar de llevar ${seccionNombre} por partes?\n\nLas ${cuantas} que tienes NO se borran y lo apuntado en cada una tampoco. Solo dejan de enseñarse, y si vuelves a encenderlo aparecen igual que estaban.`
-      )
-      if (!seguro) return
+      setPreguntando(true)
+      return
     }
     await guardar({ usa_unidades: nuevo })
+  }
+
+  async function confirmarNoDividir() {
+    setPreguntando(false)
+    await guardar({ usa_unidades: false })
   }
 
   async function guardarPalabra() {
@@ -101,10 +116,8 @@ export default function Dividir({
 
       {/* ── ¿Se divide? ── */}
       <div className="mt-3 rounded-[20px] border border-borde bg-superficie px-4 py-4">
-        <p className="text-[17px] font-extrabold leading-snug">
-          ¿Llevas {seccionNombre} por partes?
-        </p>
-        <p className="mt-1 text-[15px] font-semibold leading-snug text-tenue">
+        <p className="t-tarjeta">¿Llevas {seccionNombre} por partes?</p>
+        <p className="t-apoyo mt-1">
           Como una finca con la huerta y la viña, o un reformista con sus obras. Si es
           una sola cosa, déjalo en «No».
         </p>
@@ -123,12 +136,48 @@ export default function Dividir({
             ocupado={ocupado}
           />
         </div>
+
+        {preguntando && (
+          <div
+            className="mt-3 rounded-[16px] border px-4 py-3.5"
+            style={{
+              background: 'var(--t-atencion-velo)',
+              borderColor: 'color-mix(in srgb, var(--t-atencion) 45%, transparent)',
+            }}
+          >
+            <p className="t-cuerpo font-extrabold" style={{ color: 'var(--t-atencion)' }}>
+              ¿Dejar de llevar {seccionNombre} por partes?
+            </p>
+            <p className="t-apoyo mt-1.5 text-tinta-suave">
+              Las {cuantas} que tienes no se borran, y lo apuntado en cada una tampoco.
+              Solo dejan de enseñarse — y si vuelves a encenderlo, aparecen igual que
+              estaban.
+            </p>
+            <div className="mt-3 space-y-2">
+              <button
+                onClick={confirmarNoDividir}
+                disabled={ocupado}
+                className="t-cuerpo h-[60px] w-full rounded-[16px] font-extrabold disabled:opacity-50"
+                style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
+              >
+                Sí, es una sola
+              </button>
+              <button
+                onClick={() => setPreguntando(false)}
+                disabled={ocupado}
+                className="t-cuerpo h-[60px] w-full rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta disabled:opacity-50"
+              >
+                Dejarlo como está
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Cómo se llama cada una ── */}
       {seDivide && (
         <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4">
-          <p className="text-[17px] font-extrabold leading-snug">¿Cómo llamas a cada una?</p>
+          <p className="t-tarjeta">¿Cómo llamas a cada una?</p>
 
           {editandoPalabra ? (
             <>
@@ -140,7 +189,7 @@ export default function Dividir({
                 autoFocus
                 maxLength={30}
               />
-              <p className="mt-2 text-[15px] font-semibold leading-snug text-tenue">
+              <p className="t-apoyo mt-2">
                 En singular y sin artículo: «obra», «parcela», «piso», «coche». HUBI
                 escribe el resto.
               </p>
@@ -148,7 +197,8 @@ export default function Dividir({
                 <button
                   onClick={guardarPalabra}
                   disabled={ocupado || comoSeLlama.trim().length < 3}
-                  className="h-12 flex-1 rounded-[14px] bg-boton text-[16px] font-extrabold text-boton-texto disabled:opacity-50"
+                  className="t-cuerpo h-[60px] flex-1 rounded-[16px] font-extrabold disabled:opacity-50"
+                  style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
                 >
                   Guardar
                 </button>
@@ -157,7 +207,7 @@ export default function Dividir({
                     setEditandoPalabra(false)
                     setComoSeLlama(sinArticulo(palabra ?? ''))
                   }}
-                  className="h-12 flex-1 rounded-[14px] border border-borde text-[16px] font-extrabold text-tinta-suave"
+                  className="t-cuerpo h-[60px] flex-1 rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta"
                 >
                   Dejarlo
                 </button>
@@ -165,15 +215,15 @@ export default function Dividir({
             </>
           ) : (
             <>
-              <p className="mt-1 text-[15px] font-semibold leading-snug text-tenue">
+              <p className="t-apoyo mt-1">
                 Aparecerá como <strong className="text-tinta">«+ {nueva(palabra)} {sinArticulo(palabra ?? 'parte')}»</strong> y{' '}
                 <strong className="text-tinta">«Cada {sinArticulo(palabra ?? 'parte')}»</strong>.
               </p>
               <button
                 onClick={() => setEditandoPalabra(true)}
-                className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[14px] border border-borde text-[16px] font-extrabold text-tinta-suave"
+                className="t-cuerpo mt-3 flex h-[60px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta"
               >
-                <Ico nombre="lapiz" tam={18} grosor={2.2} />
+                <Ico nombre="lapiz" tam={20} grosor={2.2} />
                 Cambiar la palabra
               </button>
             </>
@@ -211,9 +261,9 @@ export default function Dividir({
       )}
 
       {fallo && (
-        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
-          {fallo}
-        </p>
+        <div className="mt-3">
+          <Aviso titulo="No se ha podido guardar" explicacion={fallo} />
+        </div>
       )}
     </section>
   )

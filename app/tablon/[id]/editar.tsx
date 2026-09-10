@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Ico } from '../../iconos'
+import { Aviso, BotonDestructivo, BotonSecundario } from '../../piezas'
 
 /*
   Cambiar o borrar una tarea que ya existe.
@@ -18,6 +18,22 @@ import { Ico } from '../../iconos'
 */
 
 type Persona = { id: string; nombre: string }
+
+/*
+  Con cuánta antelación avisar.
+
+  El campo existía en la base de datos y se enseñaba en la ficha, pero
+  no había ningún formulario donde ponerlo. Estaba en el planteamiento
+  —«¿quieres que te avisemos? un mes / una semana / un día antes»— y
+  era, en la práctica, de solo lectura.
+*/
+const AVISOS: { valor: string; texto: string }[] = [
+  { valor: 'sin_aviso', texto: 'Sin aviso' },
+  { valor: '30_min', texto: '30 minutos antes' },
+  { valor: '1_dia', texto: 'Un día antes' },
+  { valor: '1_semana', texto: 'Una semana antes' },
+  { valor: '1_mes', texto: 'Un mes antes' },
+]
 
 const REPETICIONES: { valor: string; texto: string }[] = [
   { valor: '', texto: 'No se repite' },
@@ -41,6 +57,7 @@ export default function Editar({
     nota: string | null
     repite: string | null
     repite_hasta: string | null
+    aviso_previo?: string | null
   }
   personas: Persona[]
 }) {
@@ -59,6 +76,7 @@ export default function Editar({
   const [nota, setNota] = useState(inicial.nota ?? '')
   const [repite, setRepite] = useState(inicial.repite ?? '')
   const [hasta, setHasta] = useState(inicial.repite_hasta ?? '')
+  const [avisoPrevio, setAvisoPrevio] = useState(inicial.aviso_previo ?? 'sin_aviso')
 
   async function guardar() {
     if (!titulo.trim()) {
@@ -80,6 +98,8 @@ export default function Editar({
           nota,
           repite: repite || null,
           repite_hasta: repite ? hasta || null : null,
+          /* Sin día no hay desde cuándo contar la antelación. */
+          aviso_previo: fecha ? avisoPrevio : 'sin_aviso',
         }),
       })
       if (!r.ok) throw new Error((await r.json()).error)
@@ -106,23 +126,27 @@ export default function Editar({
     }
   }
 
+  /*
+    ── EL BOTÓN DE BORRAR ERA UN CUADRADO CON UN TRIÁNGULO ──
+
+    60×60, sin una palabra, en coral, al lado de «Cambiar». Un icono
+    solo no dice qué hace: un triángulo de aviso puede ser «borrar»,
+    «denunciar» o «hay un problema con esto», y el único sitio donde
+    ponía «Borrar» era la etiqueta invisible para lectores de pantalla.
+
+    La acción más irreversible de la pantalla era la única que no se
+    explicaba. Ahora lleva su palabra, como las otras dos veces que
+    apareció esto mismo en Ajustes.
+  */
   if (!abierto) {
     return (
-      <div className="mt-4 flex gap-3">
-        <button
-          onClick={() => setAbierto(true)}
-          className="flex h-[60px] flex-1 items-center justify-center gap-2.5 rounded-[18px] border border-borde bg-superficie text-[17.5px] font-extrabold text-tinta"
-        >
-          <Ico nombre="lapiz" tam={21} grosor={2.1} />
+      <div className="mt-4 space-y-2.5">
+        <BotonSecundario onClick={() => setAbierto(true)} icono="lapiz">
           Cambiar
-        </button>
-        <button
-          onClick={() => setSeguro(true)}
-          className="flex h-[60px] w-[60px] items-center justify-center rounded-[18px] border border-borde bg-superficie text-coral"
-          aria-label="Borrar esta tarea"
-        >
-          <Ico nombre="aviso" tam={22} grosor={2.1} />
-        </button>
+        </BotonSecundario>
+        <BotonDestructivo onClick={() => setSeguro(true)}>
+          Borrar esta tarea
+        </BotonDestructivo>
 
         {/*
           Borrar pregunta antes, y la pregunta dice QUÉ se va a borrar.
@@ -207,6 +231,24 @@ export default function Editar({
         </div>
       </div>
 
+      {/* Avisar necesita día: sin fecha no hay desde cuándo contar.
+          Y «30 minutos antes» necesita hora, por lo mismo. */}
+      {fecha && (
+        <Campo etiqueta="¿Os avisamos antes?">
+          <select
+            value={avisoPrevio}
+            onChange={(e) => setAvisoPrevio(e.target.value)}
+            className="h-[58px] w-full rounded-[14px] border border-borde bg-fondo px-4 font-semibold text-tinta"
+          >
+            {AVISOS.filter((a) => a.valor !== '30_min' || hora).map((a) => (
+              <option key={a.valor} value={a.valor}>
+                {a.texto}
+              </option>
+            ))}
+          </select>
+        </Campo>
+      )}
+
       <Campo etiqueta="Se repite">
         <select
           value={repite}
@@ -248,9 +290,9 @@ export default function Editar({
       </Campo>
 
       {aviso && (
-        <p className="mt-4 rounded-[14px] bg-coral-suave px-4 py-3 text-[16px] font-semibold text-coral">
-          {aviso}
-        </p>
+        <div className="mt-4">
+          <Aviso titulo="No se ha podido guardar" explicacion={aviso} />
+        </div>
       )}
 
       <button

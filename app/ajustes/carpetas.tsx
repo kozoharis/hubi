@@ -147,7 +147,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
             <button
               onClick={() => setCambiandoIcono(cambiandoIcono === c.id ? null : c.id)}
               aria-label={`Cambiar el icono de ${c.nombre}`}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-borde text-[22px] leading-none"
+              className="flex h-12 w-11 shrink-0 items-center justify-center rounded-[13px] border border-borde text-[22px] leading-none"
             >
               {c.icono || '📁'}
             </button>
@@ -195,7 +195,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
                 key={e}
                 onClick={() => ponerIcono(cambiandoIcono, e)}
                 aria-label={`Poner ${e}`}
-                className="flex h-12 w-12 items-center justify-center rounded-[14px] border border-borde text-[24px]"
+                className="flex h-12 w-12 items-center justify-center rounded-[16px] border border-borde text-[24px]"
               >
                 {e}
               </button>
@@ -226,7 +226,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
                 onClick={() => setIcono(e)}
                 aria-label={`Poner ${e}`}
                 aria-pressed={icono === e}
-                className="flex h-11 w-11 items-center justify-center rounded-[13px] text-[22px]"
+                className="flex h-12 w-11 items-center justify-center rounded-[13px] text-[22px]"
                 style={
                   icono === e
                     ? { background: 'var(--t-boton)', border: '1px solid var(--t-boton)' }
@@ -249,7 +249,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
             <button
               onClick={crear}
               disabled={ocupado !== null || nombre.trim().length < 2}
-              className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+              className="flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-accion text-[17px] font-extrabold text-accion-tinta disabled:opacity-50"
             >
               <Ico nombre="check" tam={19} grosor={2.3} />
               {ocupado === 'nueva' ? 'Creando…' : 'Crear'}
@@ -260,7 +260,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
                 setFallo(null)
               }}
               disabled={ocupado !== null}
-              className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+              className="h-[60px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
             >
               Ahora no
             </button>
@@ -272,7 +272,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
             setCreando(true)
             setAviso(null)
           }}
-          className="flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
+          className="flex h-[60px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
         >
           <Ico nombre="mas" tam={20} grosor={2.4} />
           Nueva carpeta
@@ -285,7 +285,8 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
         </p>
       )}
       {fallo && (
-        <p className="rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
+        <p className="t-apoyo rounded-[16px] border px-4 py-3"
+          style={{ background: 'var(--t-alerta-velo)', borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)', color: 'var(--t-alerta)' }}>
           {fallo}
         </p>
       )}

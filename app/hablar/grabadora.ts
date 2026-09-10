@@ -116,25 +116,59 @@ export async function grabarVoz(manejadores: Manejadores): Promise<Grabando | nu
     return null
   }
 
+  /*
+    ─────────────────────────────────────────────────────────────
+    DESDE AQUÍ EL MICRÓFONO YA ESTÁ ABIERTO.
+
+    Y eso cambia las reglas: a partir de esta línea, rendirse sin
+    cerrarlo deja el micrófono cogido. En el móvil eso se ve —el punto
+    naranja de «te están escuchando» encendido sin motivo— y, peor,
+    hace que la siguiente vez no se pueda abrir.
+
+    Antes no había ninguna red aquí. Si fallaba montar la grabadora o
+    el medidor de sonido, la función se iba con el micrófono puesto y
+    sin decir nada. Ahora cualquier fallo de aquí abajo lo suelta
+    primero y avisa después.
+  */
+  function rendirse(): null {
+    micro.getTracks().forEach((t) => t.stop())
+    manejadores.alFallar('sin-micro')
+    return null
+  }
+
   // ── Lo que se graba ──
   const trozos: Blob[] = []
   let grabadora: MediaRecorder
   try {
     grabadora = new MediaRecorder(micro, elMejorFormato())
   } catch {
-    grabadora = new MediaRecorder(micro)
+    try {
+      grabadora = new MediaRecorder(micro)
+    } catch {
+      return rendirse()
+    }
   }
   grabadora.ondataavailable = (e) => {
     if (e.data.size > 0) trozos.push(e.data)
   }
 
   // ── Lo que se oye, para saber si hay alguien hablando ──
-  const contexto = new AudioContext()
-  const fuente = contexto.createMediaStreamSource(micro)
-  const analizador = contexto.createAnalyser()
-  analizador.fftSize = 1024
-  analizador.smoothingTimeConstant = 0.4
-  fuente.connect(analizador)
+  /* Éste es el que se agotaba. Un iPhone deja abrir unos pocos
+     contextos de audio a la vez, y hasta ahora la pantalla de confirmar
+     se dejaba los suyos abiertos por el camino. Cuando se acababan,
+     esta línea lanzaba… y el micrófono se quedaba cogido y mudo. */
+  let contexto: AudioContext
+  let analizador: AnalyserNode
+  try {
+    contexto = new AudioContext()
+    const fuente = contexto.createMediaStreamSource(micro)
+    analizador = contexto.createAnalyser()
+    analizador.fftSize = 1024
+    analizador.smoothingTimeConstant = 0.4
+    fuente.connect(analizador)
+  } catch {
+    return rendirse()
+  }
   const muestras = new Float32Array(analizador.fftSize)
 
   /*
@@ -244,7 +278,16 @@ export async function grabarVoz(manejadores: Manejadores): Promise<Grabando | nu
     if (Date.now() - arranque > TOPE) terminar()
   }, LATIDO)
 
-  grabadora.start(250)
+  try {
+    grabadora.start(250)
+  } catch {
+    /* Y si ni siquiera arranca, se suelta todo: el micrófono y el
+       medidor, que ya está abierto a estas alturas. */
+    if (vigilante) clearInterval(vigilante)
+    vigilante = null
+    contexto.close().catch(() => {})
+    return rendirse()
+  }
 
   return {
     parar: terminar,

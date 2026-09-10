@@ -68,8 +68,12 @@ export default function Arranque() {
       {/* El color, moviéndose despacio */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <span className="mancha deriva-1" style={{ width: 330, height: 330, left: -130, top: -100, background: 'rgba(20,184,166,.40)' }} />
-        <span className="mancha deriva-3" style={{ width: 320, height: 320, right: -135, top: 0, background: 'rgba(249,115,22,.34)' }} />
-        <span className="mancha deriva-2" style={{ width: 360, height: 360, right: -120, bottom: -130, background: 'rgba(236,72,110,.30)' }} />
+        {/* Eran naranja y rosa, los dos de la paleta que salió en la
+            Fase 1. Ahora arena y violeta, que sí existen dentro — las
+            mismas cuatro que en `entrar`, para que la carga y la
+            puerta sean la misma escena. */}
+        <span className="mancha deriva-3" style={{ width: 320, height: 320, right: -135, top: 0, background: 'rgba(192,154,98,.30)' }} />
+        <span className="mancha deriva-2" style={{ width: 360, height: 360, right: -120, bottom: -130, background: 'rgba(148,130,217,.26)' }} />
         <span className="mancha deriva-4" style={{ width: 320, height: 320, left: -120, bottom: -110, background: 'rgba(59,130,246,.30)' }} />
         <span
           className="brillo absolute"
@@ -95,10 +99,24 @@ export default function Arranque() {
         <p className="mt-6 text-[44px] font-extrabold tracking-[0.25em] text-white">
           <span className="ml-[0.25em]">HUBI</span>
         </p>
+        {/*
+          ── LA RAYA DEL LOGOTIPO ──
+
+          Era un arcoíris de CINCO colores: turquesa, azul, morado,
+          coral y ámbar. Y los tres últimos salieron de la paleta en la
+          Fase 1: no aparecen en ninguna pantalla del producto.
+
+          O sea que lo PRIMERO que ve alguien al abrir HUBI anunciaba
+          cinco colores, y dentro no había ninguno de tres de ellos.
+
+          Ahora es el degradado de HUBI, el mismo del botón de voz y de
+          la caja. Que es lo que esa raya debería haber sido siempre:
+          la firma, no una paleta.
+        */}
         <span
           className="mt-4 block h-[3px] w-[132px] rounded-sm"
           style={{
-            background: 'linear-gradient(90deg,#14B8A6,#3B82F6,#8B5CF6,#FF6B6B,#F59E0B)',
+            background: 'linear-gradient(90deg,#2DD4BF,#14B8A6 45%,#3B82F6)',
           }}
         />
         <p className="mt-6 text-center text-[18px] font-semibold leading-relaxed text-slate-300">

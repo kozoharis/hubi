@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Ico } from '../iconos'
+import { Aviso, BotonSecundario } from '../piezas'
 
 /*
   Buscar un papel que ya está en el Drive.
@@ -68,7 +68,9 @@ export default function BuscarEnDrive({
       const r = await fetch('/api/google/permiso-picker')
       const datos = await r.json()
       if (!r.ok || !datos.acceso) {
-        setAviso(datos.error ?? 'No se ha podido abrir el Drive.')
+        /* El motivo al registro, no a la pantalla: aquí solo asusta. */
+        if (datos.error) console.error('[HUBI] El pase del buscador de Drive:', datos.error)
+        setAviso('Puedes hacerle una foto o elegir el archivo del teléfono.')
         setOcupado(false)
         return
       }
@@ -105,7 +107,7 @@ export default function BuscarEnDrive({
 
       buscador.setVisible(true)
     } catch {
-      setAviso('No se ha podido abrir el buscador de Drive.')
+      setAviso('Puedes hacerle una foto o elegir el archivo del teléfono.')
       setOcupado(false)
     }
   }
@@ -122,27 +124,18 @@ export default function BuscarEnDrive({
       const trozo = await r.blob()
       onArchivo(new File([trozo], nombre, { type: trozo.type }))
     } catch {
-      setAviso('El documento no se ha podido traer del Drive. Inténtalo otra vez.')
+      setAviso('El documento sigue en tu Drive. Vuelve a intentarlo.')
     }
     setOcupado(false)
   }
 
   return (
     <>
-      <button
-        onClick={abrir}
-        disabled={ocupado}
-        className="flex h-[76px] w-full items-center justify-center gap-3 rounded-[20px] border border-borde bg-superficie text-[19px] font-bold text-tinta disabled:opacity-50"
-      >
-        <Ico nombre="carpeta" tam={24} grosor={2.1} />
+      <BotonSecundario onClick={abrir} desactivado={ocupado} icono="carpeta">
         {ocupado ? 'Abriendo el Drive…' : 'Buscar en mi Drive'}
-      </button>
+      </BotonSecundario>
 
-      {aviso && (
-        <p className="rounded-[16px] bg-coral-suave px-4 py-3 text-[16px] font-semibold leading-snug text-coral">
-          {aviso}
-        </p>
-      )}
+      {aviso && <Aviso titulo="No se ha podido abrir tu Drive" explicacion={aviso} />}
     </>
   )
 }

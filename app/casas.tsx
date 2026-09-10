@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from './iconos'
+import { Aviso, BotonPrincipal, BotonSecundario, Tarjeta } from './piezas'
 import type { Casa } from '@/lib/casas'
 
 /*
@@ -82,31 +83,32 @@ export default function Casas({ casas }: { casas: Casa[] }) {
     <div className="mt-3 space-y-2.5">
       {/* ── Te han invitado ── */}
       {ofrecidas.map((c) => (
-        <div key={c.id} className="rounded-[20px] border border-borde bg-superficie px-4 py-4">
-          <p className="text-[17px] font-extrabold leading-snug">
-            Te han invitado a <span className="text-verde">{c.nombre}</span>
-          </p>
-          <p className="mt-1 text-[15px] font-semibold leading-snug text-tenue">
+        <Tarjeta key={c.id}>
+          {/* El nombre iba en `text-verde`, que ya no es un color de
+              acento sino el verde de ámbito. Aquí no identifica nada:
+              es el nombre de una casa dentro de una frase. */}
+          <p className="t-tarjeta">Te han invitado a {c.nombre}</p>
+          <p className="t-apoyo mt-1">
             Podrás ver sus papeles y su agenda, con los permisos que te hayan dado. Lo tuyo
             no se comparte con ellos.
           </p>
-          <div className="mt-3 flex gap-2">
-            <button
+          <div className="mt-3 flex gap-2.5">
+            <BotonPrincipal
               onClick={() => pedir(c.id, 'aceptar')}
-              disabled={ocupado}
-              className="h-[52px] flex-1 rounded-[14px] bg-boton text-[16.5px] font-extrabold text-boton-texto disabled:opacity-50"
+              desactivado={ocupado}
+              ancho="completo"
             >
               Aceptar
-            </button>
-            <button
+            </BotonPrincipal>
+            <BotonSecundario
               onClick={() => pedir(c.id, 'rechazar')}
-              disabled={ocupado}
-              className="h-[52px] flex-1 rounded-[14px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
+              desactivado={ocupado}
+              ancho="completo"
             >
               No, gracias
-            </button>
+            </BotonSecundario>
           </div>
-        </div>
+        </Tarjeta>
       ))}
 
       {/* ── En cuál estás ── */}
@@ -114,13 +116,13 @@ export default function Casas({ casas }: { casas: Casa[] }) {
         <>
           <button
             onClick={() => setAbierto(!abierto)}
-            className="flex h-[52px] w-full items-center gap-2.5 rounded-[16px] border border-borde bg-superficie px-4"
+            className="r-campo flex h-[56px] w-full items-center gap-2.5 border border-borde bg-superficie px-4"
           >
             <Ico nombre="casa" tam={19} grosor={2.2} className="shrink-0 text-tenue" />
-            <span className="min-w-0 flex-1 truncate text-left text-[16px] font-extrabold">
+            <span className="t-cuerpo min-w-0 flex-1 truncate text-left font-extrabold">
               {aqui?.nombre ?? 'Tu casa'}
             </span>
-            <span className="shrink-0 text-[14.5px] font-bold text-tenue">Cambiar</span>
+            <span className="t-apoyo shrink-0">Cambiar</span>
             <Ico nombre="flecha" tam={18} grosor={2.2} className="shrink-0 text-borde" />
           </button>
 
@@ -131,19 +133,26 @@ export default function Casas({ casas }: { casas: Casa[] }) {
                   <button
                     onClick={() => (c.mirando ? setAbierto(false) : pedir(c.id, 'mirar'))}
                     disabled={ocupado}
-                    className="flex min-h-[52px] w-full items-center gap-2.5 rounded-[14px] px-4 text-left disabled:opacity-50"
+                    className="r-campo flex min-h-[56px] w-full items-center gap-2.5 border px-4 text-left disabled:opacity-50"
                     style={
+                      /* La casa en la que estás es la ELEGIDA de una
+                         lista, no una acción: se rellena de tinta,
+                         como cualquier píldora puesta. */
                       c.mirando
-                        ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
+                        ? {
+                            background: 'var(--t-tinta)',
+                            color: 'var(--t-fondo)',
+                            borderColor: 'var(--t-tinta)',
+                          }
                         : {
-                            background: 'var(--t-fondo)',
+                            background: 'var(--t-superficie)',
                             color: 'var(--t-tinta-suave)',
-                            border: '1px solid var(--t-borde)',
+                            borderColor: 'var(--t-borde)',
                           }
                     }
                   >
                     {c.mirando && <Ico nombre="check" tam={18} grosor={2.3} />}
-                    <span className="min-w-0 flex-1 truncate text-[16px] font-extrabold">
+                    <span className="t-cuerpo min-w-0 flex-1 truncate font-extrabold">
                       {c.nombre}
                     </span>
                   </button>
@@ -154,11 +163,7 @@ export default function Casas({ casas }: { casas: Casa[] }) {
         </>
       )}
 
-      {fallo && (
-        <p className="rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
-          {fallo}
-        </p>
-      )}
+      {fallo && <Aviso titulo="No se ha podido cambiar" explicacion={fallo} />}
     </div>
   )
 }

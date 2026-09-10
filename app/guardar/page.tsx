@@ -3,7 +3,9 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { miHogar, quienManda } from '@/lib/hogar'
 import { clienteServidor } from '@/lib/supabase/servidor'
+import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
+import { Aviso, BotonSecundario } from '../piezas'
 import Formulario from './formulario'
 import type { Categoria } from '@/lib/rutas'
 
@@ -46,18 +48,34 @@ export default async function Guardar({
     const elJefe = hogarId ? await quienManda(supabase, hogarId) : null
 
     return (
-      <main className="techo-holgado min-h-screen px-5 pb-12">
-        <div className="mx-auto w-full max-w-md">
+      <main className="min-h-screen pb-12">
+        <Cabecera>
           <Volver href="/" />
-          <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
-            Todavía no se pueden guardar documentos
-          </h1>
-          {/* El nombre sale de la casa, no está escrito aquí: en la casa
-              de al lado «Juan Miguel» es un desconocido. */}
-          <p className="mt-5 text-lg leading-relaxed text-tinta-suave">
-            {elJefe ?? 'Quien creó esta casa'} tiene que conectar su Google Drive
-            antes de que los documentos tengan dónde guardarse.
-          </p>
+          <h1 className="t-titulo">Guardar un papel</h1>
+        </Cabecera>
+
+        <div className="mx-auto w-full max-w-md px-5 pt-1">
+          {/*
+            Esto no es un error: es una espera, y hay que decirlo así.
+            El nombre sale de la casa y no está escrito aquí — en la
+            casa de al lado «Juan Miguel» es un desconocido.
+
+            Y lleva salida. Antes era una pantalla sin fondo: se leía
+            el problema y no había ningún sitio adonde ir salvo el
+            botón de atrás del teléfono.
+          */}
+          <Aviso
+            tono="atencion"
+            titulo="Todavía no hay dónde guardarlos"
+            explicacion={`${elJefe ?? 'Quien creó esta casa'} tiene que conectar su Google Drive antes de que los documentos tengan dónde guardarse.`}
+            detalle="Lo que ya está guardado se sigue viendo con normalidad."
+          />
+
+          <div className="mt-4">
+            <BotonSecundario href="/" icono="atras">
+              Volver al inicio
+            </BotonSecundario>
+          </div>
         </div>
       </main>
     )

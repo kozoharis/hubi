@@ -10,6 +10,9 @@ import {
   extensionDe,
   type Categoria,
 } from '@/lib/rutas'
+import { rehacerAvisos, esAviso, type Vencimiento } from '@/lib/vencimientos'
+import { desgloseQueToca } from '@/lib/impuesto'
+import { hoyAqui } from '@/lib/tablon'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -40,6 +43,15 @@ function fechaOnula(valor: unknown): string | null {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null
 }
 
+/* El preaviso, en días. Fuera de rango se trata como «no hay»: es
+   preferible un contrato sin preaviso —que avisa el día que vence— a
+   uno con un aviso calculado a tres años vista, que sería ruido fijo en
+   el calendario y acabaría enseñando a no mirarlo. */
+function diasDePreaviso(valor: unknown): number | null {
+  const n = Number(valor)
+  return Number.isInteger(n) && n > 0 && n <= 365 ? n : null
+}
+
 // ── CORREGIR ─────────────────────────────────────────────────
 export async function PATCH(
   peticion: NextRequest,
@@ -60,13 +72,59 @@ export async function PATCH(
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
   }
 
-  const { data: antes } = await supabase
-    .from('documentos')
-    .select(
-      'id, titulo, categoria_id, drive_file_id, drive_folder_id, nombre_archivo, tipo_mime, fecha_documento, importe, proveedor'
-    )
-    .eq('id', id)
-    .maybeSingle()
+  const BASE =
+    'id, titulo, categoria_id, drive_file_id, drive_folder_id, nombre_archivo, tipo_mime, fecha_documento, importe, proveedor, fecha_vencimiento'
+
+  /*
+    DOS INTENTOS, POR LA TRAMPA DE SIEMPRE.
+
+    `fecha_vencimiento` YA EXISTÍA —el guardado la escribe desde que hay
+    OCR—; lo que es nuevo del SQL 43 es lo que la rodea: si se renueva,
+    con cuánto hay que avisar y qué aviso quiere la familia.
+
+    Y por eso van en el segundo intento. Si el SQL todavía no se ha
+    ejecutado, pedirlas no falla solo por ellas: Postgres rechaza LA
+    CONSULTA ENTERA, y entonces corregir cualquier papel —el título, el
+    importe, la carpeta— empezaría a dar «ese papel ya no está» sobre
+    papeles que están perfectamente.
+
+    Una columna nueva nunca puede romper lo que ya funcionaba.
+  */
+  type Antes = {
+    id: string
+    titulo: string
+    categoria_id: string
+    drive_file_id: string
+    drive_folder_id: string
+    nombre_archivo: string
+    tipo_mime: string
+    fecha_documento: string
+    importe: number | null
+    proveedor: string | null
+    fecha_vencimiento?: string | null
+    se_renueva?: boolean | null
+    preaviso_dias?: number | null
+    avisar_con?: string | null
+  }
+
+  let antes: Antes | null = null
+  let hayVencimientos = true
+
+  {
+    const r = await supabase
+      .from('documentos')
+      .select(`${BASE}, se_renueva, preaviso_dias, avisar_con`)
+      .eq('id', id)
+      .maybeSingle()
+
+    if (r.error) {
+      hayVencimientos = false
+      const r2 = await supabase.from('documentos').select(BASE).eq('id', id).maybeSingle()
+      antes = r2.data as Antes | null
+    } else {
+      antes = r.data as Antes | null
+    }
+  }
 
   if (!antes) {
     return NextResponse.json({ error: 'Ese papel ya no está.' }, { status: 404 })
@@ -89,6 +147,46 @@ export async function PATCH(
   if (titulo.length < 2) {
     return NextResponse.json({ error: 'El título no puede quedarse vacío.' }, { status: 400 })
   }
+
+  /*
+    ── EL VENCIMIENTO ──
+
+    Solo se toca lo que venga en la petición: `undefined` significa «no
+    me preguntes por esto», y `null` significa «quítalo». Es la
+    distinción que hace falta para que la pantalla de corregir el
+    importe no borre sin querer el aviso del seguro.
+  */
+  /* Dos cosas distintas, y confundirlas costaría un aviso perdido:
+     `gobierna` es que ESTA pantalla manda sobre el vencimiento;
+     `hayVencimientos` es que la base de datos ya sabe de renovaciones.
+     La fecha se puede guardar sin lo segundo — existe desde antes. */
+  const gobierna = 'fecha_vencimiento' in cuerpo
+  const tocaVencimiento = hayVencimientos && gobierna
+
+  const vence: Vencimiento = {
+    fecha_vencimiento: gobierna
+      ? fechaOnula(cuerpo.fecha_vencimiento)
+      : (antes.fecha_vencimiento ?? null),
+    se_renueva: tocaVencimiento
+      ? cuerpo.se_renueva === true
+      : Boolean(antes.se_renueva),
+    preaviso_dias: tocaVencimiento
+      ? diasDePreaviso(cuerpo.preaviso_dias)
+      : (antes.preaviso_dias ?? null),
+    avisar_con: tocaVencimiento
+      ? (esAviso(cuerpo.avisar_con) ? cuerpo.avisar_con : 'sin_aviso')
+      : (esAviso(antes.avisar_con) ? antes.avisar_con : 'sin_aviso'),
+  }
+
+  /* Sin fecha de vencimiento, lo demás no gobierna nada. Guardar «se
+     renueva con un mes de preaviso» sobre un papel que no vence deja
+     datos que no significan nada y que un día se leerán como si sí. */
+  if (!vence.fecha_vencimiento) {
+    vence.se_renueva = false
+    vence.preaviso_dias = null
+    vence.avisar_con = 'sin_aviso'
+  }
+  if (!vence.se_renueva) vence.preaviso_dias = null
 
   /* Con la sesión: así la base de datos impide colocar un papel en la
      carpeta de otra familia pasando su identificador a mano. */
@@ -149,18 +247,30 @@ export async function PATCH(
   }
 
   // ── Ahora sí, la base de datos ──
+  const cambios: Record<string, unknown> = {
+    titulo,
+    proveedor,
+    importe,
+    fecha_documento: fecha,
+    categoria_id: categoriaId,
+    drive_folder_id: carpetaId,
+    nombre_archivo: nombre,
+    ruta_texto: camino.map((c) => c.nombre).join(' '),
+  }
+
+  /* Las columnas del vencimiento solo se mandan si existen. Mandarlas
+     sin el SQL 43 tumbaría el UPDATE entero y no se guardaría tampoco
+     el título. */
+  if (gobierna) cambios.fecha_vencimiento = vence.fecha_vencimiento
+  if (hayVencimientos) {
+    cambios.se_renueva = vence.se_renueva
+    cambios.preaviso_dias = vence.preaviso_dias
+    cambios.avisar_con = vence.avisar_con
+  }
+
   const { data: guardado, error } = await supabase
     .from('documentos')
-    .update({
-      titulo,
-      proveedor,
-      importe,
-      fecha_documento: fecha,
-      categoria_id: categoriaId,
-      drive_folder_id: carpetaId,
-      nombre_archivo: nombre,
-      ruta_texto: camino.map((c) => c.nombre).join(' '),
-    })
+    .update(cambios)
     .eq('id', id)
     .select('id')
 
@@ -200,17 +310,34 @@ export async function PATCH(
     .eq('documento_id', id)
     .maybeSingle()
 
+  /*
+    Y el impuesto se REHACE, no se conserva.
+
+    Si se corrige el importe de la factura, la cuota vieja deja de tener
+    nada que ver con ella; si se cambia de partida, puede que le toque
+    otro tipo. Dejar la cuota anterior pegada a un importe nuevo es
+    justo el descuadre que una gestoría encuentra en dos minutos y
+    nosotros no encontraríamos nunca.
+  */
+  const impuestoAhora =
+    importe != null && importe > 0 && esDinero
+      ? await desgloseQueToca(supabase, { hogarId, categoriaId, total: importe })
+      : { impuesto_tipo: null, impuesto_cuota: null }
+
   if (apunte && importe != null && importe > 0 && esDinero) {
-    await supabase
-      .from('movimientos')
-      .update({
-        tipo: hoja.naturaleza,
-        concepto: proveedor || titulo || hoja.nombre,
-        importe,
-        fecha,
-        categoria_id: categoriaId,
-      })
-      .eq('id', apunte.id)
+    const cambioDelApunte: Record<string, unknown> = {
+      tipo: hoja.naturaleza,
+      concepto: proveedor || titulo || hoja.nombre,
+      importe,
+      fecha,
+      categoria_id: categoriaId,
+    }
+    if (impuestoAhora.impuesto_tipo !== null) {
+      cambioDelApunte.impuesto_tipo = impuestoAhora.impuesto_tipo
+      cambioDelApunte.impuesto_cuota = impuestoAhora.impuesto_cuota
+    }
+
+    await supabase.from('movimientos').update(cambioDelApunte).eq('id', apunte.id)
   } else if (apunte) {
     /* Ya no es dinero, o se le ha quitado el importe: el apunte deja de
        tener sentido y se quita del balance. */
@@ -225,7 +352,7 @@ export async function PATCH(
       contar — si no, corregir la carpeta arregla el archivo y deja el
       balance igual de mal que estaba.
     */
-    await supabase.from('movimientos').insert({
+    const nuevoApunte: Record<string, unknown> = {
       tipo: hoja.naturaleza,
       concepto: proveedor || titulo || hoja.nombre,
       importe,
@@ -233,10 +360,74 @@ export async function PATCH(
       categoria_id: categoriaId,
       documento_id: id,
       creado_por: user.id,
-    })
+    }
+    if (impuestoAhora.impuesto_tipo !== null) {
+      nuevoApunte.impuesto_tipo = impuestoAhora.impuesto_tipo
+      nuevoApunte.impuesto_cuota = impuestoAhora.impuesto_cuota
+    }
+
+    await supabase.from('movimientos').insert(nuevoApunte)
   }
 
-  return NextResponse.json({ bien: true, movido: cambiaSitio })
+  /*
+    ── Y LOS AVISOS, AL FINAL ──
+
+    Se rehacen enteros a partir de lo que dice el papel: los que había
+    se borran y nacen otra vez con los datos de ahora. Es lo que impide
+    que corregir la fecha del seguro deje el aviso viejo puesto —dos
+    verdades sobre el mismo papel, y ninguna forma de saber cuál manda.
+
+    Si esto falla, el papel YA está guardado y no se deshace: se dice.
+    Callar aquí sería dejar a alguien creyendo que le vamos a avisar de
+    la ITV.
+  */
+  let avisoDelAviso: string | null = null
+  let porQue: string | null = null
+
+  if (tocaVencimiento) {
+    const { fallo, sinMarca, aMedias } = await rehacerAvisos(supabase, {
+      documentoId: id,
+      titulo,
+      creadoPor: user.id,
+      hoy: hoyAqui(),
+      ...vence,
+    })
+
+    /* El aviso se creó, pero solo al segundo intento: falta ejecutar un
+       SQL. No se le dice nada a quien está usando HUBI —su aviso está
+       puesto— pero queda en el registro, que es donde hace falta. */
+    if (sinMarca) {
+      console.warn('[HUBI] Aviso creado sin `motivo`. ¿Falta el sql/43?:', sinMarca)
+    }
+
+    /* Entró uno de los dos. El papel está guardado y el aviso que
+       importa existe, así que NO se para a nadie por esto — pero se
+       dice, porque falta la mitad de lo que se prometió en pantalla. */
+    if (aMedias) {
+      console.error('[HUBI] Solo se ha creado parte de los avisos:', aMedias)
+      avisoDelAviso =
+        'Se ha guardado, pero solo he podido poner uno de los dos avisos en el calendario. Míralo en la Agenda.'
+      porQue = aMedias
+    }
+
+    if (fallo) {
+      console.error('[HUBI] No se han podido rehacer los avisos del papel:', fallo)
+      avisoDelAviso =
+        'El papel se ha guardado, pero no se ha podido poner el aviso en el calendario. Vuelve a entrar aquí e inténtalo otra vez.'
+      /* Y el motivo exacto, aparte. A Juan Miguel no le dice nada y por
+         eso va en su propia línea y en pequeño; pero mientras esto se
+         está montando, tener delante lo que contesta la base de datos
+         ahorra una tarde de probar a ciegas. Ya nos ha pasado. */
+      porQue = fallo
+    }
+  }
+
+  return NextResponse.json({
+    bien: true,
+    movido: cambiaSitio,
+    aviso: avisoDelAviso,
+    detalle: porQue,
+  })
 }
 
 // ── BORRAR ───────────────────────────────────────────────────

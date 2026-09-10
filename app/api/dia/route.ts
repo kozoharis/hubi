@@ -129,7 +129,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: 'No se ha podido guardar.',
-        detalle: error?.message ?? 'Puede que falte ejecutar el SQL 41.',
+        detalle: error?.message ?? 'Esto todavía no está disponible en esta casa.',
       },
       { status: 500 }
     )

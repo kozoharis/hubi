@@ -3,7 +3,8 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
-import { Pastilla, Volver, iconoDeEmoji } from '../../../iconos'
+import { Volver, iconoDeEmoji } from '../../../iconos'
+import { PastillaAmbito, ambitoDe } from '../../../piezas'
 import Unidades, { type UnidadDeLaLista } from '../../../ajustes/unidades'
 import Dividir from './dividir'
 import Partidas, { type Partida } from './partidas'
@@ -61,7 +62,10 @@ export default async function AjustesDeLaSeccion({
   /* Las columnas nuevas, en su propio intento: si el SQL no está,
      Postgres rechaza la consulta ENTERA y esta pantalla diría «no
      existe» sobre una actividad que sí está. */
-  const columnas = 'id, nombre, icono, padre_id, activa'
+  /* `segmento_drive` entra en las columnas BASE, no en el intento
+     ampliado: existe desde el primer día y de ella sale ahora el color
+     de ámbito de la cabecera. */
+  const columnas = 'id, nombre, icono, padre_id, activa, segmento_drive'
 
   let fila: Record<string, unknown> | null = null
 
@@ -166,14 +170,14 @@ export default async function AjustesDeLaSeccion({
       <Cabecera>
         <Volver href={`/seccion/${id}`} />
         <div className="flex h-14 items-center gap-3">
-          <Pastilla
-            nombre={iconoDeEmoji(fila.icono as string | null)}
-            color={(fila.color as string) || '#64748B'}
-            fondo={(fila.fondo as string) || '#EEF2F7'}
+          <PastillaAmbito
+            icono={iconoDeEmoji(fila.icono as string | null)}
+            ambito={ambitoDe(fila.segmento_drive as string | null)}
             tam={44}
-            icono={23}
           />
-          <h1 className="text-[25px] font-extrabold tracking-tight">Cómo la llevas</h1>
+          {/* Era 25 px. El título de pantalla es 27 en todas partes:
+              seis tamaños distintos de h1 no son jerarquía, son ruido. */}
+          <h1 className="t-titulo">Cómo la llevas</h1>
         </div>
       </Cabecera>
 
@@ -214,7 +218,7 @@ export default async function AjustesDeLaSeccion({
         <Quitar seccionId={id} nombre={nombre} apuntes={apuntes} papeles={papeles} />
       </div>
 
-      <Barra activa={id} voz={false} />
+      <Barra activa="cuentas" voz={false} />
     </main>
   )
 }

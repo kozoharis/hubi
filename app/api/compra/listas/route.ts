@@ -70,7 +70,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: error.message.includes('listas_compra')
-          ? 'Falta ejecutar sql/23-listas-compra.sql en la base de datos.'
+          ? 'Las listas de la compra todavía no están disponibles en esta casa.'
           : 'No se ha podido crear la lista.',
         detalle: error.message,
       },
@@ -89,9 +89,13 @@ export async function PATCH(peticion: NextRequest) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  let cuerpo: Entrada & { id?: string; ticket_id?: string | null }
+  let cuerpo: Entrada & { id?: string; ticket_id?: string | null; solo_nombre?: boolean }
   try {
-    cuerpo = (await peticion.json()) as Entrada & { id?: string; ticket_id?: string | null }
+    cuerpo = (await peticion.json()) as Entrada & {
+      id?: string
+      ticket_id?: string | null
+      solo_nombre?: boolean
+    }
   } catch {
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
   }
@@ -127,13 +131,48 @@ export async function PATCH(peticion: NextRequest) {
       return NextResponse.json(
         {
           error: 'No se ha podido guardar el ticket en la lista.',
-          detalle: error?.message ?? 'Puede que falte ejecutar el SQL 40.',
+          detalle: error?.message ?? 'Esto todavía no está disponible en esta casa.',
         },
         { status: 500 }
       )
     }
 
     return NextResponse.json({ ok: true, ticket_id: ticket })
+  }
+
+  /*
+    ── SOLO CAMBIAR EL NOMBRE ──
+
+    Un camino corto y aparte, por el mismo motivo que el del ticket:
+    todo lo de abajo gobierna además el DÍA de la compra y su tarea en
+    la Agenda. Mandar solo el nombre por ahí haría que `fecha` llegara
+    vacía, y una fecha vacía significa «quítale el día» — así que
+    corregir una falta de ortografía borraría de la Agenda «Hacer la
+    compra el sábado».
+
+    Renombrar es renombrar. No puede tener efectos secundarios.
+  */
+  if (cuerpo.solo_nombre === true) {
+    const nuevo = String(cuerpo.nombre ?? '').trim().slice(0, 60)
+    if (nuevo.length < 2) {
+      return NextResponse.json({ error: 'Ponle un nombre.' }, { status: 400 })
+    }
+
+    const { data, error } = await supabase
+      .from('listas_compra')
+      .update({ nombre: nuevo })
+      .eq('id', id)
+      .select('id')
+
+    /* Con `.select()`: un cambio que la seguridad no permite contesta
+       «todo bien» habiendo tocado cero filas. */
+    if (error || !data || data.length === 0) {
+      return NextResponse.json(
+        { error: 'No se ha podido cambiar el nombre.', detalle: error?.message ?? 'Cero filas.' },
+        { status: 500 }
+      )
+    }
+    return NextResponse.json({ bien: true, nombre: nuevo })
   }
 
   const { data: antes } = await supabase
@@ -289,19 +328,42 @@ export async function DELETE(peticion: NextRequest) {
   const id = new URL(peticion.url).searchParams.get('id') ?? ''
   if (!id) return NextResponse.json({ error: 'Falta la lista.' }, { status: 400 })
 
-  await supabase.from('compra').update({ lista_id: null }).eq('lista_id', id)
+  /*
+    ── LO QUE HABÍA DENTRO SE VA CON ELLA ──
+
+    Antes esto solo soltaba la amarra (`lista_id = null`), y eso tenía
+    una consecuencia que nadie espera: las cosas sueltas se ven en la
+    PRIMERA lista de la categoría. O sea, quitar «Comida familiar» con
+    veinte cosas dentro las volcaba todas en la compra de casa, sin
+    avisar y sin forma de distinguirlas de las de verdad.
+
+    Quien quita una lista la da por terminada. Así que lo de dentro se
+    archiva con ella — archivar, no borrar: sigue en la base de datos y
+    se puede recuperar como cualquier compra cerrada.
+  */
+  const ahora = new Date().toISOString()
+
+  const { data: dentro } = await supabase
+    .from('compra')
+    .update({ archivado_en: ahora })
+    .eq('lista_id', id)
+    .is('archivado_en', null)
+    .select('id')
 
   const { data, error } = await supabase
     .from('listas_compra')
-    .update({ archivada_en: new Date().toISOString() })
+    .update({ archivada_en: ahora })
     .eq('id', id)
     .select('id')
 
   if (error || !data || data.length === 0) {
-    return NextResponse.json({ error: 'No se ha podido quitar.' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'No se ha podido quitar.', detalle: error?.message ?? 'Cero filas.' },
+      { status: 500 }
+    )
   }
 
-  return NextResponse.json({ bien: true })
+  return NextResponse.json({ bien: true, guardadas: dentro?.length ?? 0 })
 }
 
 /** «mañana a las 10:00» · «el 12 de septiembre». Para el aviso. */

@@ -55,7 +55,7 @@ export default async function AjustesDeGoogle() {
     <main className="min-h-screen pb-40">
       <Cabecera>
         <Volver href="/ajustes" />
-        <h1 className="text-[27px] font-extrabold tracking-tight">Google</h1>
+        <h1 className="t-titulo mt-2.5">Google</h1>
       </Cabecera>
 
       <div className="mx-auto w-full max-w-md px-5 pt-1">
@@ -86,7 +86,7 @@ export default async function AjustesDeGoogle() {
             pulsa o cierra la pestaña. Se dice aquí, donde está la
             duda, y no en un texto legal que nadie abre.
           */}
-          <p className="mt-3 rounded-[14px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
+          <p className="mt-3 rounded-[16px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
             HUBI solo ve los archivos que ella misma crea. No puede abrir nada de lo que ya
             tengas en tu Drive.
           </p>
@@ -96,7 +96,7 @@ export default async function AjustesDeGoogle() {
           <>
             <a
               href="/api/google/conectar"
-              className="mt-3 flex h-[60px] items-center justify-center rounded-[18px] bg-verde text-[18px] font-extrabold text-white"
+              className="mt-3 flex h-[60px] items-center justify-center rounded-[16px] bg-accion text-[19px] font-extrabold text-accion-tinta"
             >
               {conectado ? 'Volver a conectar' : caducado ? 'Volver a conectar' : 'Conectar Google Drive'}
             </a>

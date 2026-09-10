@@ -6,17 +6,20 @@ import { clienteServidor } from '@/lib/supabase/servidor'
 import BotonSalir from '../boton-salir'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
-import { Ico, Pastilla, Volver, type Icono } from '../iconos'
+import { Ico, Volver, type Icono } from '../iconos'
+import { ambitoDe, type Ambito, PastillaAmbito, Pildora } from '../piezas'
 import SelectorTema from '../tema'
 import { leerPerfil } from '@/lib/perfil'
 import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
 import { planDeLaCasa, type Rutina } from '@/lib/rutinas'
-import { colorDeRol } from '@/lib/gente'
+import { colorApagado } from '@/lib/gente'
 import TuPerfil from './foto'
 import NuevaActividad from './nueva-actividad'
 import Gente, { type Vecino } from './gente'
 import Carpetas, { type Carpeta } from './carpetas'
 import Compra from './compra'
+import ImpuestoDeLaCasa from './impuesto'
+import { esImpuesto, type Impuesto } from '@/lib/impuesto'
 import MiCalendario from './mi-calendario'
 
 export const dynamic = 'force-dynamic'
@@ -29,7 +32,54 @@ export const dynamic = 'force-dynamic'
   verdad y ningún ajuste ocupa sitio.
 */
 
-export default async function Ajustes() {
+/*
+  ═══════════════════════════════════════════════════════════════
+  AJUSTES, EN DOS · Fase 2
+  ═══════════════════════════════════════════════════════════════
+
+  Aquí había NUEVE bloques y unos veinticinco controles en una sola
+  pantalla: tu nombre, la gente de la casa, el tema, los avisos, los
+  papeles, Google, las carpetas, la compra, el impuesto, tu
+  calendario, tus actividades y salir. Todo seguido, todo del mismo
+  tamaño, y para llegar a lo último había que pasar por delante de
+  todo lo demás.
+
+  ─────────────────────────────────────────────────────────────
+  EN DOS, NO EN TRES
+
+  La nota de Fase 1 decía «partirlo en tres: Tú / La casa /
+  Conexiones». Al mirar los contenidos uno por uno, eso no se sostiene:
+  «Conexiones» es un cajón TÉCNICO, y además rompe por el sitio
+  equivocado — el Drive es de la casa y tu calendario es tuyo, y los
+  metería juntos por el único motivo de que los dos son de Google.
+
+  Se parten en dos, y en dos que cualquiera hace sin pensar:
+
+      TÚ         tu nombre y tu foto · cómo se ve · los avisos de
+                 ESTE teléfono · tu calendario · salir
+      LA CASA    quién vive aquí · el Drive · las carpetas · la
+                 compra · el impuesto · tus actividades
+
+  La regla que las separa es una sola: **lo de «Tú» solo te afecta a
+  ti; lo de «La casa» lo notan los demás.** Cambiar el tema oscuro no
+  se lo cambia a nadie más; apagar la lista de la compra sí.
+
+  ─────────────────────────────────────────────────────────────
+  Y NO CUESTA UN TOQUE MÁS
+
+  Se pensó en una pantalla-índice con dos tarjetas, y eso sí cobra un
+  toque a todo el mundo cada vez. Son dos píldoras arriba, las mismas
+  que Semana/Mes en la Agenda: se entra directamente en «Tú» —que es
+  donde está lo que más se toca— y «La casa» está al lado.
+*/
+export default async function Ajustes({
+  searchParams,
+}: {
+  searchParams: Promise<{ ver?: string }>
+}) {
+  const { ver } = await searchParams
+  const enLaCasa = ver === 'casa'
+
   const supabase = await clienteSesion()
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
@@ -214,8 +264,9 @@ export default async function Ajustes() {
           hasta: m.acceso_hasta ?? null,
           /* Sin la columna del SQL 39, el de su papel. Se pierde poder
              distinguir a dos personas del mismo papel, pero la lista
-             sale con color igual. */
-          color: m.color ?? colorDeRol(m.rol),
+             sale con color igual. Y lo guardado se traduce a la paleta
+             apagada: los colores de antes incluían el de acción. */
+          color: colorApagado(m.color, m.rol),
           veTodo: m.ve_todo !== false,
           escribeTodo: m.escribe_todo !== false,
           carpetas: raices.map((r) => {
@@ -251,8 +302,10 @@ export default async function Ajustes() {
   const conUnidades: {
     id: string
     nombre: string
-    color: string
-    fondo: string
+    /* Su carpeta de Drive, que es de donde sale su color. Antes se
+       llevaban el `color` y el `fondo` guardados en la fila, que son
+       los de la paleta vieja. */
+    segmento: string | null
     pie: string
   }[] = []
 
@@ -263,7 +316,7 @@ export default async function Ajustes() {
        por partes». El interruptor está ahora dentro de cada una. */
     const { data: secciones } = await supabase
       .from('categorias')
-      .select('id, nombre, color, fondo, usa_unidades, palabra_unidad')
+      .select('id, nombre, segmento_drive, usa_unidades, palabra_unidad')
       .is('padre_id', null)
       .eq('lleva_cuentas', true)
       .eq('activa', true)
@@ -279,8 +332,7 @@ export default async function Ajustes() {
       conUnidades.push({
         id: s.id as string,
         nombre: s.nombre as string,
-        color: (s.color as string) || '#64748B',
-        fondo: (s.fondo as string) || '#EEF2F7',
+        segmento: (s.segmento_drive as string | null) ?? null,
         pie: divide
           ? `Por ${palabra || 'partes'} · partidas`
           : 'Una sola · partidas',
@@ -346,17 +398,33 @@ export default async function Ajustes() {
      el SQL 32 no se ha ejecutado, Postgres rechaza la consulta entera
      en vez de decir «esa columna no existe». */
   let usaCompra = true
+  let impuesto: Impuesto = 'ninguno'
   try {
     /* Nunca `.eq('id', hogarId ?? '')`: la cadena vacía no es un
        identificador válido y Postgres rechazaría la consulta entera,
        en silencio. */
     if (hogarId) {
-      const { data: casa } = await supabase
+      /* En dos intentos: `impuesto` es del SQL 46 y no puede tumbar la
+         lectura de `usa_compra`, que funciona desde el 32. */
+      let casa: { usa_compra?: boolean; impuesto?: string } | null = null
+
+      const con = await supabase
         .from('hogares')
-        .select('usa_compra')
+        .select('usa_compra, impuesto')
         .eq('id', hogarId)
         .maybeSingle()
+
+      if (con.error) {
+        const sin = await supabase
+          .from('hogares')
+          .select('usa_compra')
+          .eq('id', hogarId)
+          .maybeSingle()
+        casa = sin.data
+      } else casa = con.data
+
       if (casa && casa.usa_compra === false) usaCompra = false
+      if (casa && esImpuesto(casa.impuesto)) impuesto = casa.impuesto
     }
   } catch {
     /* Sin la columna todavía: se comporta como siempre. */
@@ -392,31 +460,27 @@ export default async function Ajustes() {
       <Cabecera>
         <Volver href="/" />
 
-        <h1 className="text-[27px] font-extrabold tracking-tight">Ajustes</h1>
+        <h1 className="t-titulo">Ajustes</h1>
+
+        <div className="mt-2 flex gap-2" role="group" aria-label="Qué ajustes">
+          <Pildora href="/ajustes" puesta={!enLaCasa} className="flex-1">
+            Tú
+          </Pildora>
+          <Pildora href="/ajustes?ver=casa" puesta={enLaCasa} className="flex-1">
+            La casa
+          </Pildora>
+        </div>
       </Cabecera>
 
       <div className="mx-auto w-full max-w-md px-5 pt-1">
 
+        {/* ══════════════ TÚ ══════════════ */}
+        {!enLaCasa && (
+          <>
         {/* ── Quién eres ── */}
         <div className="mt-3">
           <TuPerfil nombre={nombre} foto={perfil.foto} />
         </div>
-
-        {/* ── Quién vive aquí ── */}
-        {/*
-          Va arriba, justo debajo de quién eres. Es la respuesta a la
-          pregunta que más importa de toda esta pantalla: quién más ve
-          mis facturas y mis informes. Enterrarla debajo del tema
-          oscuro y de los avisos sería decir que importa menos.
-        */}
-        {gente.length > 0 && (
-          <>
-            <h2 className="rotulo mt-5">Quién vive aquí</h2>
-            <div className="mt-2.5">
-              <Gente gente={gente} puedoInvitar={manda} plan={plan} />
-            </div>
-          </>
-        )}
 
         {/* ── Cómo se ve ── */}
         <h2 className="rotulo mt-5">Cómo se ve</h2>
@@ -424,37 +488,73 @@ export default async function Ajustes() {
           <SelectorTema />
         </div>
 
-        {/* ── La aplicación ── */}
-        <h2 className="rotulo mt-5">La aplicación</h2>
+        {/* ── Los avisos de ESTE teléfono ── */}
+        <h2 className="rotulo mt-5">Tus avisos</h2>
         <div className="mt-2.5 space-y-2.5">
           <Opcion
             href="/avisos"
             icono="campana"
-            color="#F59E0B"
-            fondo="#FEF1DC"
+            ambito="arena"
             titulo="Avisos en el móvil"
             pie="Recordatorios y vencimientos"
           />
-          {/*
-            AQUÍ HABÍA DOS OPCIONES QUE MENTÍAN.
+        </div>
 
-            "Quién ve qué · papeles compartidos y privados" y "Carpetas
-            · dónde se guarda cada papel" llevaban LAS DOS a la misma
-            pantalla —la lista de documentos—, que no tiene ni ajuste
-            de visibilidad ni gestión de carpetas. Y lo de "privados"
-            prometía algo que no existe: hoy todo documento se guarda
-            como compartido, sin excepción.
+        {/*
+          ── AQUÍ ESTABA «LOS PAPELES», Y SE HA IDO ──
 
-            Se quedan en una sola, que dice lo que de verdad hace.
-          */}
-          <Opcion
-            href="/documentos"
-            icono="carpeta"
-            color="#14B8A6"
-            fondo="#DFF7F3"
-            titulo="Los papeles"
-            pie="Ver todo lo guardado y sus carpetas"
+          Era un enlace a `/documentos`. Y `/documentos` es una de las
+          CINCO PESTAÑAS de la barra desde la Fase 2: está siempre
+          abajo, en todas las pantallas, a un toque. Una fila en
+          Ajustes para llegar a algo que ya tienes debajo del pulgar no
+          es un ajuste, es un rodeo.
+        */}
+
+        {/* ── Tu calendario de Google ── */}
+        {/*
+          Va en «Tú» y no en «La casa»: esto lo hace cada uno con SU
+          calendario, y cada uno ve solo el suyo. El calendario personal
+          de alguien no se le enseña al otro porque sí — si lo quieren
+          compartir, Google Calendar sirve para eso y es su decisión,
+          no la nuestra.
+        */}
+        <h2 className="rotulo mt-5">Tu calendario</h2>
+        <div className="mt-2.5">
+          <MiCalendario
+            conectado={Boolean(mio?.ical_desde)}
+            desde={icalDesde}
+            compartido={mio?.ical_compartido === true}
+            elOtro={elOtro}
           />
+        </div>
+
+        <div className="mt-5">
+          <BotonSalir />
+        </div>
+          </>
+        )}
+
+        {/* ══════════════ LA CASA ══════════════ */}
+        {enLaCasa && (
+          <>
+        {/* ── Quién vive aquí ── */}
+        {/*
+          Va lo primero. Es la respuesta a la pregunta que más importa
+          de toda esta pantalla: quién más ve mis facturas y mis
+          informes.
+        */}
+        {gente.length > 0 && (
+          <>
+            <h2 className="rotulo mt-3">Quién vive aquí</h2>
+            <div className="mt-2.5">
+              <Gente gente={gente} puedoInvitar={manda} plan={plan} />
+            </div>
+          </>
+        )}
+
+        {/* ── Dónde se guardan los papeles ── */}
+        <h2 className="rotulo mt-5">Dónde se guarda todo</h2>
+        <div className="mt-2.5 space-y-2.5">
           {/*
             UNA SOLA FILA PARA GOOGLE.
 
@@ -462,17 +562,11 @@ export default async function Ajustes() {
             conectar Google» y «Calendario en Google»— diciendo casi lo
             mismo, y la primera llevaba a la pantalla de diagnóstico,
             que es una herramienta de mantenimiento y no un ajuste.
-
-            Ajustes es donde alguien busca UNA cosa concreta. Con tres
-            filas hablando del mismo asunto hay que leerlas las tres
-            para saber cuál es. Ahora es una, y lo de dentro está
-            dentro.
           */}
           <Opcion
             href="/ajustes/google"
             icono="escudo"
-            color={conectado ? '#14B8A6' : '#64748B'}
-            fondo={conectado ? '#DFF7F3' : '#EEF2F7'}
+            ambito="azul"
             titulo="Google"
             pie={
               conectado
@@ -508,24 +602,10 @@ export default async function Ajustes() {
         <h2 className="rotulo mt-5">La lista de la compra</h2>
         <div className="mt-2.5">
           <Compra puesta={usaCompra} />
-        </div>
 
-        {/* ── Tu calendario de Google ── */}
-        {/*
-          Va aquí y no dentro del bloque de Juan Miguel: esto lo puede
-          hacer cada uno con SU calendario, y cada uno ve solo el suyo.
-          El calendario personal de alguien no se le enseña al otro
-          porque sí — si lo quieren compartir, Google Calendar sirve
-          para eso y es su decisión, no la nuestra.
-        */}
-        <h2 className="rotulo mt-5">Tu calendario</h2>
-        <div className="mt-2.5">
-          <MiCalendario
-            conectado={Boolean(mio?.ical_desde)}
-            desde={icalDesde}
-            compartido={mio?.ical_compartido === true}
-            elOtro={elOtro}
-          />
+          <div className="mt-3">
+            <ImpuestoDeLaCasa puesto={impuesto} />
+          </div>
         </div>
 
         {/*
@@ -554,18 +634,15 @@ export default async function Ajustes() {
               key={s.id}
               href={`/seccion/${s.id}/ajustes`}
               icono="euro"
-              color={s.color}
-              fondo={s.fondo}
+              ambito={ambitoDe(s.segmento)}
               titulo={s.nombre}
               pie={s.pie}
             />
           ))}
           <NuevaActividad />
         </div>
-
-        <div className="mt-5">
-          <BotonSalir />
-        </div>
+          </>
+        )}
 
         <p className="mt-5 text-center text-[14.5px] font-semibold text-tenue">
           <Link href="/privacidad">Privacidad</Link>
@@ -579,19 +656,23 @@ export default async function Ajustes() {
   )
 }
 
+/*
+  Esta fila se me quedó a medias al migrar Ajustes: usaba `Opcion` del
+  sistema para el texto pero seguía pidiendo `color` y `fondo` en
+  hexadecimal, y por ahí se colaban el `#14B8A6` de acción y el ámbar
+  vivo. Ahora habla en ámbitos, como el resto.
+*/
 function Opcion({
   href,
   icono,
-  color,
-  fondo,
+  ambito = 'pizarra',
   titulo,
   pie,
   bien = false,
 }: {
   href: string
   icono: Icono
-  color: string
-  fondo: string
+  ambito?: Ambito
   titulo: string
   pie: string
   bien?: boolean
@@ -601,16 +682,19 @@ function Opcion({
       href={href}
       className="flex items-center gap-3 rounded-[20px] border border-borde bg-superficie px-3.5 py-3"
     >
-      <Pastilla nombre={icono} color={color} fondo={fondo} tam={44} icono={22} />
+      <PastillaAmbito icono={icono} ambito={ambito} tam={44} />
       <span className="min-w-0 flex-1">
-        <span className="block text-[17.5px] font-extrabold tracking-tight">{titulo}</span>
+        <span className="t-tarjeta block truncate">{titulo}</span>
+        {/* `text-verde` era el verde de sección. «Conectado» es un
+            estado, y va con el color de estado. */}
         <span
-          className={`mt-0.5 block text-[14.5px] font-bold ${bien ? 'text-verde' : 'text-tenue'}`}
+          className="t-apoyo mt-0.5 block"
+          style={bien ? { color: 'var(--t-bien)' } : undefined}
         >
           {pie}
         </span>
       </span>
-      <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0 text-borde" />
+      <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0" />
     </Link>
   )
 }

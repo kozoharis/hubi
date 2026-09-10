@@ -5,7 +5,9 @@ import { quien } from '@/lib/supabase/quien'
 import Anadir from "./anadir"
 import Barra from '../barra'
 import Cabecera from '../cabecera'
-import { Ico, Pastilla, seccionDe } from '../iconos'
+import { Ico } from '../iconos'
+import { Fila, Vacio, Aviso, PastillaAmbito, seccionPintada } from '../piezas'
+import HubiCaja from '../hubi-caja'
 import {
   contar,
   hijosDe,
@@ -143,21 +145,15 @@ export default async function Documentos({
         <div className="mx-auto w-full max-w-md px-5 pt-2">
 
           {averia && (
-            <div className="mt-4 rounded-[20px] border border-coral bg-coral-suave px-4 py-4">
-              <p className="text-[17px] font-extrabold text-coral">
-                La búsqueda ha fallado
-              </p>
-              <p className="mt-1.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
-                No quiere decir que no esté guardado: quiere decir que no se ha
-                podido buscar.
-              </p>
-              <p className="mt-2 break-words rounded-[14px] bg-superficie px-3 py-2 text-[14px] font-semibold text-tinta-suave">
-                {averia}
-              </p>
+            <div className="mt-4">
+              <Aviso
+                titulo="La búsqueda ha fallado"
+                explicacion="No quiere decir que no esté guardado: quiere decir que no se ha podido buscar. Inténtalo otra vez en un momento."
+              />
             </div>
           )}
 
-          <p className="mt-4 text-[16px] font-semibold text-tinta-suave">
+          <p className="t-cuerpo mt-4 text-tinta-suave">
             {averia
               ? 'No se ha podido buscar.'
               : encontrados.length === 0
@@ -172,7 +168,7 @@ export default async function Documentos({
 
           {/* Que se sepa que esto es lo parecido, no lo pedido. */}
           {comoSalio === 'parecida' && (
-            <p className="mt-2.5 rounded-[16px] bg-superficie px-4 py-3 text-[15.5px] font-semibold leading-snug text-tinta-suave">
+            <p className="t-apoyo mt-2.5 rounded-[16px] border border-borde bg-superficie px-4 py-3">
               No hay nada con todas esas palabras. Esto es lo más parecido que
               tenemos guardado.
             </p>
@@ -181,22 +177,19 @@ export default async function Documentos({
           <ul className="mt-4 space-y-2.5">
             {encontrados.map((d) => {
               const c = todasCat.find((x) => x.id === d.categoria_id)
-              const s = seccionDe(c?.segmento_drive)
+              const s = seccionPintada(c?.segmento_drive)
               return (
                 <li key={d.id}>
-                  <Link
-                    href={`/documentos/${d.id}`}
-                    className="flex items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-3.5 py-3"
-                  >
-                    <Pastilla nombre={s.icono} color={s.color} fondo={s.fondo} tam={44} icono={22} />
+                  <Fila href={`/documentos/${d.id}`}>
+                    <PastillaAmbito icono={s.icono} ambito={s.ambito} tam={44} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[17.5px] font-bold">{d.titulo}</span>
-                      <span className="mt-0.5 block text-[15px] font-semibold text-tenue">
+                      <span className="t-cuerpo block truncate font-extrabold">{d.titulo}</span>
+                      <span className="t-apoyo mt-0.5 block truncate">
                         {c?.nombre ?? 'Sin carpeta'} · {fechaBreve(d.fecha_documento)}
                       </span>
                     </span>
-                    <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0 text-borde" />
-                  </Link>
+                    <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-apagado" />
+                  </Fila>
                 </li>
               )
             })}
@@ -280,17 +273,11 @@ export default async function Documentos({
       <div className="mx-auto w-full max-w-md px-5 pt-2">
 
         {averia && (
-          <div className="mt-3 rounded-[20px] border border-coral bg-coral-suave px-4 py-4">
-            <p className="text-[17px] font-extrabold text-coral">
-              Los papeles no se han podido cargar
-            </p>
-            <p className="mt-1.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
-              Están guardados: esto es un fallo al leerlos, no una pérdida.
-              Enséñale esto a quien lleva HUBI:
-            </p>
-            <p className="mt-2 break-words rounded-[14px] bg-superficie px-3 py-2 text-[14px] font-semibold text-tinta-suave">
-              {averia}
-            </p>
+          <div className="mt-3">
+            <Aviso
+              titulo="Los papeles no se han podido cargar"
+              explicacion="Están guardados: esto es un fallo al leerlos, no una pérdida. Vuelve a entrar en un momento."
+            />
           </div>
         )}
 
@@ -300,25 +287,22 @@ export default async function Documentos({
             <h2 className="rotulo mt-3">Lo último guardado</h2>
             <ul className="mt-3 space-y-2.5">
               {recientes.map((d) => {
-                const s = seccionDe(segmentoPorId.get(d.categoria_id))
+                const s = seccionPintada(segmentoPorId.get(d.categoria_id))
                 return (
                   <li key={d.id}>
-                    <Link
-                      href={`/documentos/${d.id}`}
-                      className="flex items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-3.5 py-3"
-                    >
-                      <Pastilla nombre={s.icono} color={s.color} fondo={s.fondo} tam={44} icono={22} />
+                    <Fila href={`/documentos/${d.id}`}>
+                      <PastillaAmbito icono={s.icono} ambito={s.ambito} tam={44} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[17.5px] font-bold">
+                        <span className="t-cuerpo block truncate font-extrabold">
                           {d.titulo}
                         </span>
-                        <span className="mt-0.5 block text-[15px] font-semibold text-tenue">
+                        <span className="t-apoyo mt-0.5 block truncate">
                           {nombrePorId.get(d.categoria_id) ?? 'Sin carpeta'} ·{' '}
                           {fechaBreve(d.fecha_documento)}
                         </span>
                       </span>
-                      <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0 text-borde" />
-                    </Link>
+                      <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-apagado" />
+                    </Fila>
                   </li>
                 )
               })}
@@ -329,28 +313,23 @@ export default async function Documentos({
         <h2 className="rotulo mt-6">Todo, por carpetas</h2>
         <ul className="mt-3 space-y-2.5">
           {secciones.map((c) => {
-            const s = seccionDe(c.segmento_drive)
+            const s = seccionPintada(c.segmento_drive)
             const n = cuantos.get(c.id) ?? 0
             const u = ultimas.get(c.id)
             return (
               <li key={c.id}>
-                <Link
-                  href={`/documentos/seccion/${c.id}`}
-                  className="flex items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-3.5 py-3"
-                >
-                  <Pastilla nombre={s.icono} color={s.color} fondo={s.fondo} tam={46} icono={23} />
+                <Fila href={`/documentos/seccion/${c.id}`} alto="alta">
+                  <PastillaAmbito icono={s.icono} ambito={s.ambito} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[18px] font-extrabold tracking-tight">
-                      {c.nombre}
-                    </span>
-                    <span className="mt-0.5 block text-[15px] font-semibold text-tenue">
+                    <span className="t-tarjeta block truncate">{c.nombre}</span>
+                    <span className="t-apoyo mt-0.5 block truncate">
                       {n === 0
                         ? 'Todavía vacía'
                         : `${n} ${n === 1 ? 'papel' : 'papeles'}${u ? ` · ${fechaBreve(u)}` : ''}`}
                     </span>
                   </span>
-                  <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0 text-borde" />
-                </Link>
+                  <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-apagado" />
+                </Fila>
               </li>
             )
           })}
@@ -361,18 +340,12 @@ export default async function Documentos({
             papeles" cuando lo que pasa es que no se han podido leer es
             mentirle a alguien sobre sus propios documentos. */}
         {papeles.length === 0 && !averia && (
-          <div className="mt-6 rounded-[22px] bg-superficie px-6 py-8 text-center">
-            <p className="text-[18px] font-bold">Todavía no hay papeles</p>
-            <p className="mt-2 text-[16.5px] font-medium text-tinta-suave">
-              El primero que guardéis aparecerá aquí.
-            </p>
-            <Link
-              href="/guardar"
-              className="mt-6 flex h-[60px] items-center justify-center gap-2.5 rounded-[18px] bg-verde text-[18px] font-extrabold text-white"
-            >
-              <Ico nombre="foto" tam={22} grosor={2.1} />
-              Guardar documento
-            </Link>
+          <div className="mt-6">
+            <Vacio
+              titulo="Todavía no hay papeles"
+              explicacion="Haz una foto del primero y yo lo archivo donde toca."
+              accion={{ texto: 'Guardar un papel', href: '/guardar', icono: 'foto' }}
+            />
           </div>
         )}
 
@@ -389,28 +362,40 @@ export default async function Documentos({
 function Titulo() {
   return (
     <div className="flex h-12 items-center">
-      <h1 className="text-[27px] font-extrabold tracking-tight">Documentos</h1>
+      <h1 className="t-titulo">Documentos</h1>
     </div>
   )
 }
 
+/*
+  El buscador, a la medida del sistema: 58 px y radio de campo, como
+  cualquier otro campo de la aplicación. Era el único `rounded-2xl` de
+  esta pantalla y medía 54.
+
+  ─────────────────────────────────────────────────────────────
+  Y ESTO ES LO QUE DECÍA LA FASE 1 QUE PASARÍA AQUÍ
+
+  «Esta caja y el asistente hacen hoy la misma pregunta con dos
+  motores distintos. Aquí es donde entrará HUBI Input — no un buscador
+  Y un asistente, sino una sola caja que entiende.»
+
+  Ya está. Escribes lo que sea:
+
+    «facturas agua 2026»          → busca, al instante, como siempre
+    «apunta 85 euros de la finca» → lo entiende HUBI
+
+  Y lo decide EN EL MÓVIL, sin llamar a ningún modelo: buscar sigue
+  costando exactamente lo mismo que antes.
+*/
 function Buscador({ valor }: { valor: string }) {
   return (
-    <form action="/documentos" className="mt-1">
-      <div className="flex h-[54px] items-center gap-3 rounded-2xl border border-borde bg-superficie px-4">
-        <span className="text-tenue">
-          <Ico nombre="lupa" tam={22} grosor={2.1} />
-        </span>
-        <input
-          name="q"
-          defaultValue={valor}
-          placeholder="¿Qué estás buscando?"
-          className="h-full flex-1 bg-transparent font-semibold text-tinta placeholder:font-semibold placeholder:text-tenue focus:outline-none"
-        />
-      </div>
-    </form>
+    <div className="mt-1">
+      <HubiCaja donde="papeles" valor={valor} buscarEn="/documentos" />
+    </div>
   )
 }
+
+
 
 /*
   Parte la frase en palabras buscables.

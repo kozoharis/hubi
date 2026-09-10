@@ -60,7 +60,12 @@ export default function SelectorTema() {
             className="flex h-[76px] flex-1 flex-col items-center justify-center gap-1 rounded-[18px] text-[14px] font-extrabold"
             style={
               puesta
-                ? { background: '#14B8A6', color: '#0F172A' }
+                /* Era el azul-negro de la paleta vieja escrito a
+                   mano. El botón de acción tiene su propia tinta. */
+                ? {
+                    background: 'var(--color-accion)',
+                    color: 'var(--color-accion-tinta)',
+                  }
                 : {
                     background: 'var(--t-superficie)',
                     border: '1px solid var(--t-borde)',

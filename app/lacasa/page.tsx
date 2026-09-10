@@ -4,6 +4,7 @@ import { quien } from '@/lib/supabase/quien'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
+import { ambitoDeColor, Persona, TarjetaAccion, Vacio } from '../piezas'
 import { miHogar } from '@/lib/hogar'
 import { genteDeLaCasa, type Quien } from '@/lib/gente'
 import { loDeHoy } from '@/lib/rutinas'
@@ -105,21 +106,14 @@ export default async function LaCasaHoy({
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href="/" />
+        <Volver href="/dia" />
         <div className="flex h-14 items-center gap-3">
-          {laAyuda && (
-            <span
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
-              style={{ background: laAyuda.color }}
-            >
-              {laAyuda.nombre.charAt(0).toUpperCase()}
-            </span>
-          )}
+          {laAyuda && <Persona nombre={laAyuda.nombre} color={laAyuda.color} tam={44} />}
           <span className="min-w-0">
-            <h1 className="truncate text-[25px] font-extrabold leading-tight tracking-tight">
+            <h1 className="t-titulo truncate">
               {esHoy ? 'La casa hoy' : enPalabras(fecha)}
             </h1>
-            <p className="text-[14.5px] font-bold text-tenue">
+            <p className="t-apoyo">
               {laAyuda
                 ? `${laAyuda.nombre.split(' ')[0]} · ${hechas} de ${deberes.length}`
                 : `${hechas} de ${deberes.length}`}
@@ -137,9 +131,14 @@ export default async function LaCasaHoy({
             titulo="Lo que toca"
           />
         ) : (
-          <p className="mt-5 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium leading-snug text-tinta-suave">
-            {esHoy ? 'Hoy no toca nada.' : 'Ese día no tocaba nada.'}
-          </p>
+          <div className="mt-5">
+            <Vacio
+              titulo={esHoy ? 'Hoy no toca nada' : 'Ese día no tocaba nada'}
+              explicacion={
+                esHoy ? 'Las cosas de cada día se ponen en Ajustes, en «Su semana».' : undefined
+              }
+            />
+          </div>
         )}
 
         {/*
@@ -164,9 +163,36 @@ export default async function LaCasaHoy({
             diasConExtra={delMes.filter((p) => Number(p.extra ?? 0) > 0).length}
           />
         )}
+
+        {/*
+          ── Y EL REGISTRO ──
+
+          El total del mes dice que hay algo que pagar; no dice qué días
+          fueron. A fin de mes lo que hace falta es repasar juntos los
+          días, y para eso el número solo no vale.
+
+          Lo ven los dos y ven lo mismo: si cada uno mirara una cuenta
+          distinta, la conversación de fin de mes empezaría discutiendo
+          cuál es la buena.
+        */}
+        {laAyuda && (
+          <div className="mt-2.5">
+            {/* Era una pastilla morada `#8B5CF6` escrita a mano, el
+                mismo morado con el que se pintaba el balance de la
+                finca. Las horas son de quien las hace: llevan SU
+                color, como en la cabecera. */}
+            <TarjetaAccion
+              href={`/horas/${laAyuda.id}`}
+              icono="reloj"
+              ambito={ambitoDeColor(laAyuda.color)}
+              titulo={soyLaAyuda ? 'Mis horas de más' : 'Sus horas de más'}
+              pie="Mes a mes, día a día"
+            />
+          </div>
+        )}
       </div>
 
-      <Barra activa={null} voz={false} />
+      <Barra activa="dia" voz={false} />
     </main>
   )
 }

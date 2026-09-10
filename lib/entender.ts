@@ -177,6 +177,108 @@ function elImporte(texto: string, plano: string): number | null {
   return finalistas.reduce((a, b) => (b.valor > a.valor ? b : a)).valor
 }
 
+// ── El IGIC o el IVA, que viene ESCRITO en el papel ───────
+/*
+  Hasta ahora HUBI aplicaba el tipo general de la casa y calculaba el
+  desglose hacia atrás. Acierta casi siempre y es exactamente lo que
+  hace falta cuando el papel no dice nada… pero es una suposición, y la
+  factura normalmente LO PONE:
+
+      Base imponible      2,83 €
+      IGIC 7%             0,20 €
+      Total               3,03 €
+
+  Suponer teniendo el dato delante es de las cosas que hacen desconfiar
+  de un programa. Así que se lee.
+
+  ─────────────────────────────────────────────────────────────
+  SE BUSCA EL PORCENTAJE, NO LA CUOTA
+
+  Podrían leerse los dos, y sería peor. La cuota depende del total, y
+  el total ya lo tenemos leído con sus propias reglas; si además
+  leyéramos la cuota podrían no cuadrar entre sí —por un céntimo de
+  redondeo, o porque el papel tiene dos tipos— y entonces habría dos
+  verdades y ninguna forma de elegir.
+
+  Leyendo solo el TIPO, la cuota se calcula del total y el desglose
+  cuadra siempre por construcción. Un dato leído, uno derivado.
+
+  La cuota impresa sí se busca, pero solo para COMPROBAR: si no se
+  parece a la calculada, es que el tipo leído no gobierna ese total —una
+  factura con dos tipos, o un total mal cogido— y entonces es más
+  honesto no decir nada que dar un desglose que no cuadra.
+*/
+export function elImpuesto(
+  texto: string,
+  plano: string,
+  total: number | null
+): { tipo: number | null; comprobado: boolean } {
+  const nada = { tipo: null, comprobado: false }
+
+  /* Cada aparición de la palabra, con su porcentaje detrás. El % puede
+     ir pegado ("IGIC 7%"), separado ("IGIC 7 %"), entre paréntesis
+     ("IVA (21%)") o delante ("21% IVA"). */
+  const candidatos: { tipo: number; donde: number }[] = []
+
+  for (const m of plano.matchAll(/\b(iva|igic|i\.?g\.?i\.?c\.?)\b/g)) {
+    const donde = m.index ?? 0
+    /* Ventana corta a propósito: 24 caracteres desde la etiqueta. Más
+       ancha y en una factura con varias líneas se coge el porcentaje de
+       la línea siguiente, que es otro concepto. */
+    const cerca = plano.slice(donde, donde + 24)
+    const pct = cerca.match(/(\d{1,2}(?:[.,]\d{1,2})?)\s*%/)
+
+    /* Y también justo delante: "21% IVA" se escribe bastante. */
+    const antes = plano.slice(Math.max(0, donde - 12), donde)
+    const pctAntes = antes.match(/(\d{1,2}(?:[.,]\d{1,2})?)\s*%\s*(?:de\s+)?$/)
+
+    const bruto = pct?.[1] ?? pctAntes?.[1]
+    if (!bruto) continue
+
+    const tipo = Number(bruto.replace(',', '.'))
+    /* Por encima del 30 no es un impuesto: es un número que se ha
+       colado —un porcentaje de descuento, un consumo, un código—. El
+       más alto que existe aquí es el 21 del IVA general. */
+    if (!Number.isFinite(tipo) || tipo < 0 || tipo > 30) continue
+
+    candidatos.push({ tipo, donde })
+  }
+
+  if (candidatos.length === 0) return nada
+
+  /*
+    Con varios, gana el que cuadre con el total.
+
+    Una factura con dos tipos —muy común: material al 7 y mano de obra
+    al 3— no tiene UN tipo, y elegir uno al azar sería inventarse el
+    desglose. Si ninguno cuadra, se dice que no se sabe y que lo ponga
+    una persona: es información contable, no una sugerencia.
+  */
+  if (total != null && total > 0) {
+    const cuotasEscritas = [...texto.matchAll(/(\d{1,3}(?:[.\s]\d{3})*|\d+)[,.](\d{2})/g)].map(
+      (m) => Number(`${m[1].replace(/[.\s]/g, '')}.${m[2]}`)
+    )
+
+    for (const c of candidatos) {
+      const cuota = Math.round((total - total / (1 + c.tipo / 100)) * 100) / 100
+      /* Dos céntimos de margen: cada papel redondea a su manera y
+         exigir el céntimo exacto haría fallar lecturas correctas. */
+      if (cuotasEscritas.some((v) => Math.abs(v - cuota) <= 0.02)) {
+        return { tipo: c.tipo, comprobado: true }
+      }
+    }
+  }
+
+  /* Ninguno cuadra con el total, pero el papel nombra un tipo. Si todos
+     los que nombra son el mismo, se da por bueno sin comprobar: una
+     factura que dice «IGIC 7%» tres veces dice el 7. Si dice varios
+     distintos y ninguno cuadra, no se elige por nadie. */
+  const distintos = [...new Set(candidatos.map((c) => c.tipo))]
+  if (distintos.length === 1) return { tipo: distintos[0], comprobado: false }
+
+  return nada
+}
+
 // ── Las fechas ────────────────────────────────────────────
 type Fechada = { iso: string; donde: number }
 
@@ -469,6 +571,10 @@ export function entenderPapel(
     Es más honesta que la de antes: aquella era la opinión del modelo
     sobre sí mismo. Ésta cuenta datos.
   */
+  /* El impuesto que dice el papel, si lo dice. Va con el importe ya
+     leído: sin el total no hay con qué comprobar el tipo. */
+  const impuesto = elImpuesto(texto, plano, importe)
+
   const aciertos = [importe, fecha, proveedor].filter(Boolean).length
   const confianza: Lectura['confianza'] =
     aciertos >= 2 && texto.length > 40 ? 'alta' : aciertos >= 1 ? 'media' : 'baja'
@@ -518,6 +624,8 @@ export function entenderPapel(
     texto: texto.slice(0, 1200) || null,
     reserva: null,
     conocido: reconocido != null,
+    impuesto_tipo: impuesto.tipo,
+    impuesto_comprobado: impuesto.comprobado,
   }
 }
 

@@ -416,7 +416,8 @@ export async function DELETE(
     if (error.code === '23503') {
       return NextResponse.json(
         {
-          error: 'Esta tarea se repite y hay otra que nace de ella. Falta ejecutar el SQL 14.',
+          error:
+            'Esta tarea se repite y hay otra que nace de ella. Borrar tareas que se repiten todavía no está disponible en esta casa.',
           detalle: error.message,
         },
         { status: 409 }
@@ -433,7 +434,7 @@ export async function DELETE(
     return NextResponse.json(
       {
         error: 'No se ha borrado nada. Falta el permiso de borrado en la base de datos.',
-        detalle: 'DELETE devolvió 0 filas: no hay política de borrado (SQL 14).',
+        detalle: 'No se ha podido borrar: la base de datos no ha dejado.',
       },
       { status: 409 }
     )

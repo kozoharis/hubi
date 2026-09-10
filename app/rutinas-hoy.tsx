@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from './iconos'
+import { Aviso } from './piezas'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -79,7 +80,7 @@ export default function RutinasHoy({
       /* Se deshace. Dejarlo marcado sería mentir en la única pantalla
          donde alguien mira si ya hizo algo. */
       setEstado((e) => ({ ...e, [r.id]: !nueva }))
-      setFallo('No se ha podido guardar. Mira la cobertura y vuelve a tocarlo.')
+      setFallo('Mira la cobertura y vuelve a tocarlo. Sigue sin marcar.')
       return
     }
 
@@ -91,10 +92,10 @@ export default function RutinasHoy({
   return (
     <section className="mt-6">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="rotulo">{titulo}</h2>
+        <h2 className="t-seccion">{titulo}</h2>
         {/* Cuántas van. Es lo único que se quiere saber de un vistazo
             a media mañana, y evita contar los tics a ojo. */}
-        <span className="text-[14.5px] font-bold text-tenue">
+        <span className="t-apoyo shrink-0 tabular-nums">
           {cuantas} de {rutinas.length}
         </span>
       </div>
@@ -108,23 +109,29 @@ export default function RutinasHoy({
                 onClick={() => marcar(r)}
                 disabled={!puedeMarcar}
                 aria-pressed={ya}
-                className="flex w-full items-center gap-3.5 rounded-[20px] border px-3.5 py-3 text-left disabled:opacity-100"
+                className="tocable r-tarjeta flex min-h-[64px] w-full items-center gap-3.5 border px-3.5 py-3 text-left transition-colors duration-200 disabled:opacity-100"
                 style={{
-                  background: ya
-                    ? 'color-mix(in srgb, #14B8A6 10%, var(--t-superficie))'
-                    : 'var(--t-superficie)',
+                  background: ya ? 'var(--t-bien-velo)' : 'var(--t-superficie)',
                   borderColor: ya
-                    ? 'color-mix(in srgb, #14B8A6 35%, transparent)'
+                    ? 'color-mix(in srgb, var(--t-bien) 35%, transparent)'
                     : 'var(--t-borde)',
                 }}
               >
-                {/* La casilla, grande. 44 px: el punto 5 pide botones
-                    grandes, y aquí es lo único que hay que acertar. */}
+                {/*
+                  La casilla, grande. 44 px: el punto 5 pide botones
+                  grandes, y aquí es lo único que hay que acertar.
+
+                  Iba rellena del `#14B8A6` de acción. Pero una cosa
+                  hecha no es una acción: es un ESTADO, y el estado
+                  bueno tiene su propio color. Con el teal, la mitad
+                  de la pantalla de La casa acababa pintada del color
+                  que en el resto de HUBI quiere decir «pulsa aquí».
+                */}
                 <span
-                  className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px]"
+                  className="casilla r-campo flex h-[44px] w-[44px] shrink-0 items-center justify-center"
                   style={
                     ya
-                      ? { background: '#14B8A6', color: '#FFFFFF' }
+                      ? { background: 'var(--t-bien)', color: 'var(--t-superficie)' }
                       : {
                           background: 'var(--t-fondo)',
                           color: 'var(--t-tenue)',
@@ -132,18 +139,23 @@ export default function RutinasHoy({
                         }
                   }
                 >
-                  {ya && <Ico nombre="check" tam={22} grosor={2.6} />}
+                  {ya && (
+                    <span className="tic flex">
+                      <Ico nombre="check" tam={22} grosor={2.6} />
+                    </span>
+                  )}
                 </span>
 
                 <span className="min-w-0 flex-1">
                   <span
-                    className="block text-[17.5px] font-bold leading-snug"
-                    style={ya ? { textDecorationLine: 'line-through', opacity: 0.55 } : undefined}
+                    className={`tachable t-cuerpo block transition-opacity duration-300 ${
+                      ya ? 'tachable-puesto opacity-55' : ''
+                    }`}
                   >
                     {r.que}
                   </span>
                   {(r.hora || (!soloMias && r.deQuien)) && (
-                    <span className="mt-0.5 block text-[15px] font-semibold text-tenue">
+                    <span className="t-apoyo mt-0.5 block">
                       {[r.hora?.slice(0, 5), soloMias ? null : r.deQuien]
                         .filter(Boolean)
                         .join(' · ')}
@@ -157,9 +169,9 @@ export default function RutinasHoy({
       </ul>
 
       {fallo && (
-        <p className="mt-2.5 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
-          {fallo}
-        </p>
+        <div className="mt-2.5">
+          <Aviso titulo="No se ha podido guardar" explicacion={fallo} />
+        </div>
       )}
     </section>
   )

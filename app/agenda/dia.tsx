@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { Ico, pintaDe } from '../iconos'
+import { AMBITO } from '@/lib/ambitos'
+import { BotonPrincipal } from '../piezas'
 import { hoyAqui, type Recordatorio } from '@/lib/tablon'
 import { citasDeLaFamilia, calendariosVisibles } from '@/lib/agenda-google'
 
@@ -105,7 +107,7 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
       clave: `t-${r.id}`,
       titulo: r.titulo,
       minuto: enMinutos(r.hora),
-      color: p.color,
+      color: AMBITO[p.ambito],
       pie: quienEs,
       href: `/tablon/${r.id}`,
       hecha: r.estado === 'hecho',
@@ -187,7 +189,7 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
       {/* ── Lo que no tiene hora ── */}
       {sinHora.length > 0 && (
         <section className="mt-4">
-          <h2 className="rotulo">A lo largo del día</h2>
+          <h2 className="t-seccion">A lo largo del día</h2>
           <ul className="mt-2 space-y-1.5">
             {sinHora.map((b) => (
               <li key={b.clave}>
@@ -227,7 +229,7 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
 
       {/* ══ LAS HORAS ══════════════════════════════════════ */}
       <section className="mt-5">
-        <h2 className="rotulo">Las horas</h2>
+        <h2 className="t-seccion">Las horas</h2>
 
         <div className="relative mt-2.5" style={{ height: alto }}>
           {/* Las rayas de cada hora, con su número a la izquierda. */}
@@ -319,13 +321,11 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
         )}
       </section>
 
-      <Link
-        href="/tablon/nuevo"
-        className="mt-5 flex h-[60px] items-center justify-center gap-2.5 rounded-[18px] bg-boton text-[18px] font-extrabold text-boton-texto"
-      >
-        <Ico nombre="mas" tam={22} grosor={2.3} />
-        Apuntar algo
-      </Link>
+      <div className="mt-5">
+        <BotonPrincipal href="/tablon/nuevo" icono="mas">
+          Apuntar algo
+        </BotonPrincipal>
+      </div>
     </>
   )
 }

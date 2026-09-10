@@ -3,7 +3,15 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Ico } from '../iconos'
+import {
+  ambitoDeColor,
+  AMBITO,
+  Aviso,
+  BotonPrincipal,
+  BotonSecundario,
+  Campo,
+  Vacio,
+} from '../piezas'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -60,6 +68,11 @@ export default function Hilo({
 }) {
   const router = useRouter()
 
+  /* Su color, ya traducido a la paleta apagada. La marca del borde
+     baja de 4 px a 3, que es la de `Fila`: cuatro colores distintos a
+     cuatro anchos distintos para decir lo mismo era el problema. */
+  const tono = AMBITO[ambitoDeColor(color)]
+
   const [texto, setTexto] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
@@ -106,61 +119,60 @@ export default function Hilo({
         viene a hacer aquí la mitad de las veces, y esconderlo detrás
         de un botón convierte cinco segundos en tres toques.
       */}
-      <div className="rounded-[20px] border border-borde bg-superficie px-4 py-4">
-        <label htmlFor="paraEl" className="block text-[17px] font-extrabold leading-snug">
-          {soyElAsesor ? `Dejarles un aviso` : `Escribirle a ${comoSeLlama}`}
-        </label>
-        <textarea
-          id="paraEl"
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          rows={3}
-          maxLength={600}
-          placeholder={
-            soyElAsesor
-              ? 'Falta la factura de septiembre…'
-              : 'Te he subido las facturas del trimestre…'
-          }
-          className="entrada mt-2.5 min-h-[92px] py-3 leading-snug"
-        />
-        <div className="mt-2.5 flex gap-2">
-          <button
+      <div className="r-tarjeta border border-borde bg-superficie px-4 py-4">
+        <Campo
+          etiqueta={soyElAsesor ? 'Dejarles un aviso' : `Escribirle a ${comoSeLlama}`}
+          htmlFor="paraEl"
+          ayuda="Esto lo ve toda la casa, como el corcho. No es un mensaje privado."
+        >
+          <textarea
+            id="paraEl"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            rows={3}
+            maxLength={600}
+            placeholder={
+              soyElAsesor
+                ? 'Falta la factura de septiembre…'
+                : 'Te he subido las facturas del trimestre…'
+            }
+            className="entrada min-h-[92px] py-3 leading-snug"
+          />
+        </Campo>
+
+        {fallo && (
+          <div className="mt-3">
+            <Aviso titulo="No se ha podido enviar" explicacion={fallo} />
+          </div>
+        )}
+
+        <div className="mt-3 flex gap-2.5">
+          <BotonPrincipal
             onClick={mandar}
-            disabled={ocupado || texto.trim().length < 2}
-            className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+            desactivado={ocupado || texto.trim().length < 2}
+            porQue={texto.trim().length < 2 ? 'Escribe el aviso primero' : undefined}
+            icono="check"
+            ancho="completo"
           >
-            <Ico nombre="check" tam={19} grosor={2.3} />
             {ocupado ? 'Enviando…' : 'Enviar'}
-          </button>
+          </BotonPrincipal>
           {/* Poner una fecha es otra cosa y vive en la Agenda. Aquí
               solo el enlace: duplicar el formulario de tareas sería
               duplicar también sus fallos. */}
-          <Link
-            href="/tablon/nuevo"
-            className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] border border-borde text-[16.5px] font-extrabold text-tinta-suave"
-          >
-            <Ico nombre="calendario" tam={18} grosor={2.3} />
+          <BotonSecundario href="/tablon/nuevo" icono="calendario" ancho="completo">
             Con fecha
-          </Link>
+          </BotonSecundario>
         </div>
-
-        {fallo && (
-          <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
-            {fallo}
-          </p>
-        )}
-
-        <p className="mt-3 text-[14px] font-semibold leading-snug text-tenue">
-          Esto lo ve toda la casa, como el corcho. No es un mensaje privado.
-        </p>
       </div>
 
       {/* ── Lo que os habéis dejado ── */}
       {cosas.length === 0 ? (
-        <p className="mt-4 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium leading-snug text-tinta-suave">
-          Todavía no hay nada. Lo que {soyElAsesor ? 'les dejes' : `te deje ${comoSeLlama}`} saldrá
-          aquí.
-        </p>
+        <div className="mt-4">
+          <Vacio
+            titulo="Todavía no hay nada"
+            explicacion={`Lo que ${soyElAsesor ? 'les dejes' : `te deje ${comoSeLlama}`} saldrá aquí.`}
+          />
+        </div>
       ) : (
         <ul className="mt-4 space-y-2.5">
           {cosas.map((c) => {
@@ -168,25 +180,32 @@ export default function Hilo({
               <>
                 <span className="flex items-center gap-2">
                   {c.clase === 'tarea' && (
+                    /* Era `#64748B` escrito a mano para lo tuyo. Y una
+                       tarea hecha se decía con la misma tinta que una
+                       pendiente: es lo único de esta lista que tiene
+                       estado, y ahora lo dice el color de estado. */
                     <span
                       className="flex h-[22px] shrink-0 items-center rounded-full px-2 text-[12.5px] font-extrabold uppercase tracking-wide"
-                      style={{
-                        background: `color-mix(in srgb, ${c.suya ? color : '#64748B'} 18%, transparent)`,
-                        color: c.suya ? color : '#64748B',
-                      }}
+                      style={
+                        c.hecha
+                          ? {
+                              background: 'var(--t-bien-velo)',
+                              color: 'var(--t-bien)',
+                            }
+                          : {
+                              background: `color-mix(in srgb, ${tono} 18%, var(--t-superficie))`,
+                              color: 'var(--t-tinta)',
+                            }
+                      }
                     >
                       {c.hecha ? 'Hecho' : 'Tarea'}
                     </span>
                   )}
-                  <span className="truncate text-[14px] font-bold text-tenue">{c.cuando}</span>
+                  <span className="t-apoyo truncate">{c.cuando}</span>
                 </span>
-                <span className="mt-1 block whitespace-pre-wrap text-[17px] font-semibold leading-snug">
-                  {c.texto}
-                </span>
+                <span className="t-cuerpo mt-1 block whitespace-pre-wrap">{c.texto}</span>
                 {c.fecha && (
-                  <span className="mt-1 block text-[14.5px] font-bold text-tenue">
-                    Para el {enPalabras(c.fecha)}
-                  </span>
+                  <span className="t-apoyo mt-1 block">Para el {enPalabras(c.fecha)}</span>
                 )}
               </>
             )
@@ -198,9 +217,9 @@ export default function Hilo({
             */
             const pinta = c.suya
               ? {
-                  background: `color-mix(in srgb, ${color} 9%, var(--t-superficie))`,
-                  borderColor: `color-mix(in srgb, ${color} 32%, transparent)`,
-                  borderLeft: `4px solid ${color}`,
+                  background: `color-mix(in srgb, ${tono} 5%, var(--t-superficie))`,
+                  borderColor: `color-mix(in srgb, ${tono} 32%, transparent)`,
+                  borderLeft: `3px solid ${tono}`,
                 }
               : {
                   background: 'var(--t-superficie)',
@@ -212,13 +231,13 @@ export default function Hilo({
                 {c.clase === 'tarea' ? (
                   <Link
                     href={`/tablon/${c.id}`}
-                    className="block rounded-[20px] border px-4 py-3.5"
+                    className="r-tarjeta block border px-4 py-3.5"
                     style={pinta}
                   >
                     {cuerpo}
                   </Link>
                 ) : (
-                  <div className="rounded-[20px] border px-4 py-3.5" style={pinta}>
+                  <div className="r-tarjeta border px-4 py-3.5" style={pinta}>
                     {cuerpo}
                   </div>
                 )}

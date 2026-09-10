@@ -3,6 +3,15 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico, Logo } from '../iconos'
+import {
+  type Ambito,
+  Aviso,
+  BotonPrincipal,
+  BotonTerciario,
+  Campo,
+  Fila,
+  PastillaAmbito,
+} from '../piezas'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -34,28 +43,51 @@ import { Ico, Logo } from '../iconos'
 
 type Actividad = 'finca' | 'obra' | 'alquileres' | 'ninguna'
 
-const ACTIVIDADES: { id: Actividad; emoji: string; titulo: string; pie: string }[] = [
+/*
+  Iconos de trazo, no emojis.
+
+  Esta es la PRIMERA pantalla que ve alguien, y con emojis prometía un
+  producto que no es el que hay detrás: dentro de HUBI todo son iconos
+  de trazo. Además cada teléfono pinta el suyo —el 🧱 de Apple y el de
+  Android no se parecen—, así que ni siquiera era una decisión nuestra.
+
+  Y son EXACTAMENTE los mismos icono y color con los que va a salir
+  esa actividad dos minutos después, cuando entre en su HUBI. Elegir
+  «Una finca» y que aparezca una hoja verde es la primera vez que el
+  producto le confirma que le ha entendido.
+*/
+const ACTIVIDADES: {
+  id: Actividad
+  icono: 'hoja' | 'casco' | 'llave' | 'casa'
+  ambito: Ambito
+  titulo: string
+  pie: string
+}[] = [
   {
     id: 'finca',
-    emoji: '🌿',
+    icono: 'hoja',
+    ambito: 'verde',
     titulo: 'Una finca o huerta',
     pie: 'Agua, luz, productos, maquinaria… y lo que se venda.',
   },
   {
     id: 'obra',
-    emoji: '🧱',
+    icono: 'casco',
+    ambito: 'arena',
     titulo: 'Obras o reformas',
     pie: 'Cada obra por separado, con albañilería, carpintería…',
   },
   {
     id: 'alquileres',
-    emoji: '🔑',
+    icono: 'llave',
+    ambito: 'oliva',
     titulo: 'Pisos en alquiler',
     pie: 'Cada piso por separado, y lo común repartido.',
   },
   {
     id: 'ninguna',
-    emoji: '🏡',
+    icono: 'casa',
+    ambito: 'pizarra',
     titulo: 'Nada de eso, solo mi casa',
     pie: 'Papeles, citas, recados y compra. Siempre puedes añadirlo después.',
   },
@@ -85,7 +117,7 @@ export default function Empezar({ nombre }: { nombre: string }) {
     if (!r.ok) {
       const d = (await r.json().catch(() => ({}))) as { error?: string }
       setOcupado(false)
-      setFallo(d.error ?? 'No se ha podido crear tu casa.')
+      setFallo(d.error ?? 'Mira la cobertura y vuelve a tocar la opción.')
       return
     }
 
@@ -105,72 +137,66 @@ export default function Empezar({ nombre }: { nombre: string }) {
 
         {paso === 'nombre' ? (
           <>
-            <h1 className="mt-7 text-[30px] font-extrabold leading-tight tracking-tight">
-              Hola, {nombre}
-            </h1>
-            <p className="mt-2 text-[17px] font-semibold leading-snug text-tenue">
+            <h1 className="t-titulo mt-7">Hola, {nombre}</h1>
+            <p className="t-cuerpo mt-2 text-tenue">
               Vamos a crear tu espacio en HUBI. Son dos preguntas y ya está.
             </p>
 
-            <label htmlFor="casa" className="mt-8 block text-[19px] font-extrabold leading-snug">
-              ¿Cómo quieres llamarlo?
-            </label>
-            <p className="mt-1 text-[16px] font-semibold leading-snug text-tenue">
-              Lo que os digáis en casa. «Casa de Marta y Luis», «La finca», «Mi
-              despacho».
-            </p>
-
-            <input
-              id="casa"
-              value={comoSeLlama}
-              onChange={(e) => setComoSeLlama(e.target.value)}
-              placeholder="Casa de Marta y Luis"
-              className="entrada mt-4"
-              autoFocus
-              maxLength={60}
-            />
-
-            <button
-              onClick={() => {
-                setFallo(null)
-                setPaso('actividad')
-              }}
-              disabled={comoSeLlama.trim().length < 2}
-              className="mt-5 flex h-[62px] w-full items-center justify-center gap-2 rounded-[16px] bg-boton text-[18px] font-extrabold text-boton-texto disabled:opacity-40"
+            <Campo
+              etiqueta="¿Cómo quieres llamarlo?"
+              htmlFor="casa"
+              ayuda="Lo que os digáis en casa. «Casa de Marta y Luis», «La finca», «Mi despacho»."
+              className="mt-8"
             >
-              Continuar
-              <Ico nombre="flecha" tam={20} grosor={2.4} />
-            </button>
+              <input
+                id="casa"
+                value={comoSeLlama}
+                onChange={(e) => setComoSeLlama(e.target.value)}
+                placeholder="Casa de Marta y Luis"
+                className="entrada"
+                autoFocus
+                maxLength={60}
+              />
+            </Campo>
+
+            <div className="mt-5">
+              <BotonPrincipal
+                onClick={() => {
+                  setFallo(null)
+                  setPaso('actividad')
+                }}
+                desactivado={comoSeLlama.trim().length < 2}
+                porQue="Escribe primero cómo se llama"
+                icono="flecha"
+              >
+                Continuar
+              </BotonPrincipal>
+            </div>
           </>
         ) : (
           <>
-            <h1 className="mt-7 text-[30px] font-extrabold leading-tight tracking-tight">
-              ¿Llevas cuentas de algo?
-            </h1>
-            <p className="mt-2 text-[17px] font-semibold leading-snug text-tenue">
+            <h1 className="t-titulo mt-7">¿Llevas cuentas de algo?</h1>
+            <p className="t-cuerpo mt-2 text-tenue">
               Si tienes gastos e ingresos de algo concreto, HUBI te lleva las cuentas
               solo con fotografiar las facturas.
             </p>
 
             <div className="mt-6 space-y-3">
               {ACTIVIDADES.map((a) => (
-                <button
+                <Fila
                   key={a.id}
                   onClick={() => crear(a.id)}
-                  disabled={ocupado}
-                  className="flex w-full items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-4 text-left disabled:opacity-50"
+                  desactivada={ocupado}
+                  alto="alta"
+                  ambito={a.ambito}
                 >
-                  <span className="text-[30px] leading-none">{a.emoji}</span>
+                  <PastillaAmbito icono={a.icono} ambito={a.ambito} tam={48} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[18px] font-extrabold leading-snug">
-                      {a.titulo}
-                    </span>
-                    <span className="mt-0.5 block text-[15px] font-semibold leading-snug text-tenue">
-                      {a.pie}
-                    </span>
+                    <span className="t-tarjeta block">{a.titulo}</span>
+                    <span className="t-apoyo mt-0.5 block">{a.pie}</span>
                   </span>
-                  <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0 text-borde" />
-                </button>
+                  <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0" />
+                </Fila>
               ))}
             </div>
 
@@ -191,7 +217,7 @@ export default function Empezar({ nombre }: { nombre: string }) {
               tiene coche cuesta un toque y lo hará entendiendo lo que
               hace.
             */}
-            <p className="mt-6 rounded-[18px] border border-borde px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tenue">
+            <p className="t-apoyo r-tarjeta mt-6 border border-borde px-4 py-3.5">
               Además tendrás carpetas para <strong className="text-tinta">Casa</strong>,{' '}
               <strong className="text-tinta">Salud</strong>,{' '}
               <strong className="text-tinta">Vehículos</strong>,{' '}
@@ -200,33 +226,37 @@ export default function Empezar({ nombre }: { nombre: string }) {
               se apagan en Ajustes, y puedes añadir las que te falten.
             </p>
 
-            <p className="mt-4 text-center text-[15.5px] font-semibold leading-snug text-tenue">
+            <p className="t-apoyo mt-4 text-center">
               Elijas lo que elijas, se puede cambiar después.
             </p>
 
-            <button
-              onClick={() => {
-                setFallo(null)
-                setPaso('nombre')
-              }}
-              disabled={ocupado}
-              className="mt-3 w-full py-3 text-[16px] font-bold text-tinta-suave underline underline-offset-4 disabled:opacity-50"
-            >
-              Volver
-            </button>
+            {/* Era texto subrayado de 44 px de alto: por debajo del
+                suelo de 48 que protege a un dedo. */}
+            <div className="mt-3">
+              <BotonTerciario
+                onClick={() => {
+                  setFallo(null)
+                  setPaso('nombre')
+                }}
+                desactivado={ocupado}
+                icono="atras"
+              >
+                Volver
+              </BotonTerciario>
+            </div>
           </>
         )}
 
-        {ocupado && (
-          <p className="mt-5 text-center text-[16px] font-bold text-tenue">
-            Creando tu espacio…
-          </p>
-        )}
+        {ocupado && <p className="t-apoyo mt-5 text-center">Creando tu espacio…</p>}
 
         {fallo && (
-          <p className="mt-5 rounded-[16px] bg-coral-suave px-4 py-3.5 text-[16px] font-semibold leading-snug text-coral">
-            {fallo}
-          </p>
+          <div className="mt-5">
+            <Aviso
+              titulo="No se ha podido crear tu casa"
+              explicacion={fallo}
+              detalle="No se ha creado nada a medias: puedes volver a intentarlo."
+            />
+          </div>
         )}
       </div>
     </main>

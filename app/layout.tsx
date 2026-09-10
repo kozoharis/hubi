@@ -64,7 +64,10 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F1F5F9' },
+    /* Es el `--t-fondo` de cada modo, y tiene que ir a la par: si
+       aquí se queda el gris viejo, la barra de arriba del iPhone sale
+       de otro color que la pantalla y se ve la juntura. */
+    { media: '(prefers-color-scheme: light)', color: '#F7F5F1' },
     { media: '(prefers-color-scheme: dark)', color: '#0B1220' },
   ],
   width: 'device-width',

@@ -7,15 +7,15 @@ export default function Privacidad() {
   return (
     <main className="min-h-screen px-6 py-16">
       <article className="mx-auto w-full max-w-2xl">
-        <p className="text-sm tracking-[0.25em] text-tenue">HUBI</p>
-        <h1 className="mt-4 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
+        <p className="rotulo tracking-[0.25em]">HUBI</p>
+        <h1 className="t-titulo mt-4">
           Política de privacidad
         </h1>
-        <p className="mt-3 text-base text-tenue">Actualizada el 26 de agosto de 2026</p>
+        <p className="t-apoyo mt-3">Actualizada el 26 de agosto de 2026</p>
 
         <div className="mt-10 space-y-8 text-lg leading-relaxed text-tinta-suave">
           <section>
-            <h2 className="text-[21px] font-extrabold text-tinta">Qué es HUBI</h2>
+            <h2 className="t-seccion">Qué es HUBI</h2>
             <p className="mt-3">
               HUBI es una aplicación privada de uso familiar, creada para dos
               personas concretas. No es un servicio público, no admite registro
@@ -25,7 +25,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="text-[21px] font-extrabold text-tinta">Qué datos se guardan</h2>
+            <h2 className="t-seccion">Qué datos se guardan</h2>
             <p className="mt-3">
               Documentos personales y familiares que los propios usuarios suben —
               facturas, seguros, informes, contratos y similares — junto con la
@@ -39,7 +39,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="text-[21px] font-extrabold text-tinta">Dónde se guardan</h2>
+            <h2 className="t-seccion">Dónde se guardan</h2>
             <p className="mt-3">
               Los archivos se almacenan en la cuenta personal de Google Drive del
               titular de la aplicación, dentro de una carpeta creada específicamente
@@ -49,7 +49,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="text-[21px] font-extrabold text-tinta">
+            <h2 className="t-seccion">
               Qué permisos de Google se utilizan
             </h2>
             <p className="mt-3">
@@ -65,7 +65,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="text-[21px] font-extrabold text-tinta">Con quién se comparten</h2>
+            <h2 className="t-seccion">Con quién se comparten</h2>
             <p className="mt-3">
               Los datos no se venden, no se ceden a terceros, no se utilizan con
               fines publicitarios y no se emplean para entrenar sistemas de
@@ -91,7 +91,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="text-[21px] font-extrabold text-tinta">Salud y datos personales</h2>
+            <h2 className="t-seccion">Salud y datos personales</h2>
             <p className="mt-3">
               De los documentos guardados en <strong>Salud</strong> y en{' '}
               <strong>Personal</strong>, HUBI <strong>no conserva el texto leído</strong>.
@@ -107,7 +107,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="text-[21px] font-extrabold text-tinta">Quién puede verlos</h2>
+            <h2 className="t-seccion">Quién puede verlos</h2>
             <p className="mt-3">
               Solo las personas de la misma casa. Sin haber iniciado sesión no es
               posible acceder a ningún dato, y la separación entre casas la impone
@@ -121,7 +121,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="text-[21px] font-extrabold text-tinta">Borrado</h2>
+            <h2 className="t-seccion">Borrado</h2>
             <p className="mt-3">
               Los usuarios pueden eliminar sus documentos en cualquier momento, tanto
               desde HUBI como directamente desde Google Drive. Si se revoca el
@@ -131,7 +131,7 @@ export default function Privacidad() {
           </section>
 
           <section>
-            <h2 className="text-[21px] font-extrabold text-tinta">Contacto</h2>
+            <h2 className="t-seccion">Contacto</h2>
             <p className="mt-3">
               Para cualquier cuestión relacionada con la privacidad:{' '}
               <a className="text-verde underline" href="mailto:jmnazco@gmail.com">

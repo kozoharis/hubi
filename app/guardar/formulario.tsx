@@ -1,9 +1,20 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cadena, type Categoria } from '@/lib/rutas'
 import { Ico, Volver } from '../iconos'
+import {
+  Aviso,
+  BotonPrincipal,
+  BotonSecundario,
+  BotonTerciario,
+  Campo as CampoDS,
+  Dato as DatoDS,
+  Fila,
+  Hecho,
+  PastillaAmbito,
+  seccionPintada,
+} from '../piezas'
 import BuscarEnDrive, { hayBuscadorDrive } from './buscar-en-drive'
 import { leerAqui } from './leer-aqui'
 import { leerPdf, primeraPagina } from './leer-pdf'
@@ -28,9 +39,15 @@ type Datos = {
   importe: string
   proveedor: string
   vencimiento: string
+  /* El tipo de IGIC/IVA que dice el papel. Vacío = no lo pone, y
+     entonces manda el general de la casa. */
+  impuestoTipo: string
   texto: string | null
   confianza: 'alta' | 'media' | 'baja' | null
   tipo: string | null
+  /* Con cuál de los dos lectores se ha leído. Ver la nota en la
+     pantalla de confirmar. */
+  comoSeLeyo: 'modelo' | 'reglas' | null
 }
 
 const HOY = () => new Date().toISOString().slice(0, 10)
@@ -121,6 +138,23 @@ export default function Formulario({
   const [avisoResuelto, setAvisoResuelto] = useState(false)
   const [creandoAviso, setCreandoAviso] = useState(false)
 
+  /*
+    ── LAS PREGUNTAS DEL VENCIMIENTO ──
+
+    Tres pantallas con UNA decisión cada una, en vez de un formulario
+    con cuatro controles. Es más lento de contar y bastante más rápido
+    de contestar: quien acaba de fotografiar una póliza está de pie, con
+    el papel en la otra mano, y no va a leerse un formulario.
+
+    Y el orden no es casual. Primero si se renueva, porque es lo que
+    cambia CUÁL es la fecha importante; y solo después con cuánto hay
+    que avisar. Al revés habría que preguntar por un preaviso que a lo
+    mejor no existe.
+  */
+  const [pasoVence, setPasoVence] = useState<'renueva' | 'preaviso' | 'aviso'>('renueva')
+  const [seRenueva, setSeRenueva] = useState(false)
+  const [preaviso, setPreaviso] = useState(30)
+
   /* Los datos de Los Helechos: apartamento, noches, personas, huésped
      y número de reserva. Solo se piden si el documento acaba en esa
      sección — una factura de la luz de la finca no los ve. */
@@ -133,9 +167,11 @@ export default function Formulario({
     importe: '',
     proveedor: '',
     vencimiento: '',
+    impuestoTipo: '',
     texto: null,
     confianza: null,
     tipo: null,
+    comoSeLeyo: null,
   })
 
   const camara = useRef<HTMLInputElement>(null)
@@ -391,13 +427,44 @@ export default function Formulario({
         admite una petición, se encoge lo justo y con calidad alta —no
         con la del archivo—.
       */
+      /*
+        ── AQUÍ SE ESTABA QUEDANDO EL MODELO SIN VER LA FOTO ──
+
+        Antes: si la foto pasaba de 4 MB se encogía UNA vez a 2600 px y
+        calidad 0,92 — y si aun así seguía pesando de más, `archivoSirve`
+        decía que no y EL MODELO NI SE INTENTABA. Sin error, sin aviso,
+        sin nada: se caía al lector de respaldo en silencio.
+
+        Una foto de un iPhone reciente pasa de 4 MB con facilidad, así
+        que dependía del teléfono y de la luz. De ahí lo de «a veces lee
+        de miedo y otras veces no»: no era el papel, era el peso.
+
+        Ahora se insiste. Se baja de escalón en escalón hasta que entra,
+        y solo se rinde cuando ya no hay nada más que bajar. Perder algo
+        de nitidez es infinitamente mejor que no enseñarle la foto al
+        único lector que sabe leerla.
+      */
       const original = paraLeer?.length === 1 ? paraLeer[0] : null
-      const paraElModelo =
-        original && original.size <= MAXIMO
-          ? original
-          : original
-            ? await comprimir(original, 2600, 0.92)
-            : f
+      let paraElModelo = original ?? f
+
+      if (original && original.size > MAXIMO) {
+        for (const [lado, calidad] of [
+          [2600, 0.92],
+          [2200, 0.85],
+          [1800, 0.8],
+          [1400, 0.72],
+        ] as [number, number][]) {
+          paraElModelo = await comprimir(original, lado, calidad)
+          if (paraElModelo.size <= MAXIMO) break
+          if (abandonado.current) return
+        }
+      }
+
+      /* Y si no cabe ni así, se dice. Antes este caso era mudo y se
+         vivía como que HUBI «leía mal» por capricho. */
+      if (!digital && !archivoSirve(paraElModelo)) {
+        falloDelModelo = `La foto pesa ${Math.round(paraElModelo.size / 1024 / 1024 * 10) / 10} MB y no he podido reducirla lo suficiente para mandarla al lector bueno.`
+      }
 
       if (!digital && archivoSirve(paraElModelo)) {
         setAyuda(true)
@@ -482,9 +549,20 @@ export default function Formulario({
       /* Se ha leído, pero por la red de emergencia y a medias. El papel
          se guarda igual; lo que no puede pasar es que nadie sepa por
          qué los datos vienen cojos. */
+      /* El motivo se guarda SIEMPRE que lo haya, aunque el respaldo
+         haya leído bastante. Antes solo se guardaba si además la
+         lectura venía coja, y por eso el porqué se perdía justo en el
+         caso que más despista: datos completos pero pobres, sin
+         ninguna pista de que el lector bueno no había llegado. */
+      /* Y el del servidor también: puede que el móvil mandara la foto
+         sin problema y el modelo se cayera al otro lado. Los dos
+         motivos juntos, que cada uno cuenta una mitad. */
+      const porElServidor = (leido as { por_que_reglas?: string | null }).por_que_reglas ?? null
+      const elMotivo = [falloDelModelo, porElServidor].filter(Boolean).join(' · ')
+      if (elMotivo) setDetalle(elMotivo)
+
       if (falloDelModelo && !bastante(leido)) {
         setAviso('No he podido leerlo del todo. Repasa los datos antes de guardar.')
-        setDetalle(falloDelModelo)
       }
 
       const reserva: Reserva | null = leido.reserva ?? null
@@ -507,8 +585,11 @@ export default function Formulario({
         importe: leido.importe != null ? String(leido.importe) : '',
         proveedor: leido.proveedor ?? '',
         vencimiento: leido.vencimiento ?? '',
+        impuestoTipo:
+          leido.impuesto_tipo != null ? String(leido.impuesto_tipo) : '',
         texto: leido.texto ?? null,
         confianza: leido.confianza ?? null,
+        comoSeLeyo: leido.como_se_leyo ?? null,
         tipo: leido.tipo ?? null,
       })
 
@@ -547,6 +628,10 @@ export default function Formulario({
     cuerpo.append('importe', datos.importe)
     cuerpo.append('proveedor', datos.proveedor)
     cuerpo.append('vencimiento', datos.vencimiento)
+    /* Solo si el papel lo decía. Mandar vacío no es lo mismo que no
+       mandarlo: el servidor tiene que poder distinguir «el papel dice
+       0%» de «el papel no dice nada». */
+    if (datos.impuestoTipo !== '') cuerpo.append('impuesto_tipo', datos.impuestoTipo)
     if (datos.texto) cuerpo.append('texto_ocr', datos.texto)
     if (datos.confianza) cuerpo.append('confianza', datos.confianza)
 
@@ -600,22 +685,32 @@ export default function Formulario({
   }
 
   // ══ ¿VENCE? ═══════════════════════════════════════════════
-  // Nunca se crea un aviso sin preguntar. Pero el vencimiento sí se
-  // marca siempre en el calendario: es información del documento.
+  /*
+    Nunca se crea un aviso sin preguntar. Pero el vencimiento sí se
+    marca siempre en el calendario: es información del documento.
+
+    LO QUE CAMBIÓ, Y ES LO IMPORTANTE.
+
+    Antes esto creaba el recordatorio a pelo. El aviso quedaba suelto y
+    el papel no se acordaba de nada: no había forma de cambiarlo después
+    —ni la fecha, ni el aviso, ni quitarlo— porque no estaba guardado en
+    ninguna parte.
+
+    Ahora se guarda EN EL PAPEL, y los avisos los deduce el servidor de
+    ahí. Un camino, una verdad, y todo editable mañana desde «Corregir».
+  */
   async function marcarVencimiento(aviso: string) {
     if (!resultado?.vencimiento) return
     setCreandoAviso(true)
     try {
-      await fetch('/api/recordatorios', {
-        method: 'POST',
+      await fetch(`/api/documentos/${resultado.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          titulo: `Vence: ${resultado.titulo}`,
-          tipo: 'vencimiento',
-          asignado_a: null,
-          fecha: resultado.vencimiento,
-          aviso_previo: aviso,
-          documento_origen_id: resultado.id,
+          fecha_vencimiento: resultado.vencimiento,
+          se_renueva: seRenueva,
+          preaviso_dias: seRenueva ? preaviso : null,
+          avisar_con: aviso,
         }),
       })
     } catch {
@@ -627,46 +722,132 @@ export default function Formulario({
 
   if (paso === 'guardado' && resultado?.vencimiento && !avisoResuelto) {
     return (
-      <main className="flex min-h-screen flex-col justify-center px-6 py-16">
+      <main className="flex min-h-screen flex-col justify-center px-5 py-16">
         <div className="mx-auto w-full max-w-md">
-          <p className="flex items-center justify-center gap-2 text-center text-[17px] font-bold text-verde"><Ico nombre="check" tam={20} grosor={2.2} /> Documento guardado</p>
+          {/* Primero se confirma que YA ESTÁ GUARDADO, y luego se
+              pregunta. Estas tres preguntas son opcionales; si alguien
+              cierra el móvil aquí, su papel está a salvo, y eso tiene
+              que verse antes de nada. */}
+          <Aviso tono="bien" titulo="El papel ya está guardado" />
 
-          <h1 className="mt-8 text-center text-[26px] font-extrabold leading-tight tracking-tight text-tinta">
-            Este documento vence el
-          </h1>
-          <p className="mt-3 text-center text-[24px] font-extrabold text-coral">
-            {enPalabras(resultado.vencimiento)}
-          </p>
+          <h1 className="t-titulo mt-8 text-center">Este documento vence el</h1>
+          {/* Iba en coral, el color de alarma. Un vencimiento futuro no
+              es una alarma: es una fecha. En tinta, y grande. */}
+          <p className="t-cifra-2 mt-2 text-center">{enPalabras(resultado.vencimiento)}</p>
 
-          <p className="mt-8 text-center text-lg leading-relaxed text-tinta-suave">
-            Lo marcamos en el calendario.
-            <br />
-            ¿Queréis que además os avisemos?
-          </p>
+          {/* ── 1 · ¿Se renueva solo? ── */}
+          {pasoVence === 'renueva' && (
+            <>
+              <p className="t-cuerpo mt-6 text-center">Si ese día no hacéis nada, ¿qué pasa?</p>
 
-          <div className="mt-10 space-y-4">
-            {[
-              ['1_mes', 'Un mes antes'],
-              ['1_semana', 'Una semana antes'],
-              ['1_dia', 'Un día antes'],
-            ].map(([valor, texto]) => (
-              <button
-                key={valor}
-                onClick={() => marcarVencimiento(valor)}
-                disabled={creandoAviso}
-                className="w-full flex h-[64px] items-center justify-center rounded-[18px] bg-verde text-[18px] font-extrabold text-white disabled:opacity-40"
-              >
-                {texto}
-              </button>
-            ))}
-            <button
-              onClick={() => marcarVencimiento('sin_aviso')}
-              disabled={creandoAviso}
-              className="w-full flex h-[64px] items-center justify-center rounded-[18px] border border-borde bg-superficie text-[18px] font-bold text-tinta-suave disabled:opacity-40"
-            >
-              Solo en el calendario
-            </button>
-          </div>
+              {/*
+                ── DOS OPCIONES, NO UN BOTÓN Y UN «CANCELAR» ──
+
+                Aquí «Se renueva solo» iba relleno de verde y «Se acaba»
+                con borde. Eso es el reparto de un botón principal y uno
+                secundario, y dice: «lo normal es lo verde». Pero no hay
+                respuesta normal — depende del papel, y elegir la mala
+                porque parecía la recomendada estropea el aviso.
+
+                Las dos igual de fuertes: son una PREGUNTA, no una
+                acción con salida.
+              */}
+              <div className="mt-8 space-y-2.5">
+                <Opcion
+                  texto="Se renueva solo"
+                  alPulsar={() => {
+                    setSeRenueva(true)
+                    setPasoVence('preaviso')
+                  }}
+                />
+                <Opcion
+                  texto="Se acaba"
+                  alPulsar={() => {
+                    setSeRenueva(false)
+                    setPasoVence('aviso')
+                  }}
+                />
+              </div>
+              <p className="t-apoyo mt-5 text-center">
+                Los seguros y casi todas las suscripciones se renuevan solas.
+              </p>
+            </>
+          )}
+
+          {/* ── 2 · ¿Con cuánto hay que avisar? ── */}
+          {pasoVence === 'preaviso' && (
+            <>
+              <p className="t-cuerpo mt-6 text-center">Para cancelarlo hay que avisar con…</p>
+
+              {/* Eran TRES botones rellenos de verde, uno debajo de
+                  otro. Tres acciones principales en una pantalla no son
+                  tres acciones principales: son una lista. */}
+              <div className="mt-8 space-y-2.5">
+                {([[30, 'Un mes de antelación'], [15, 'Quince días'], [7, 'Una semana']] as [number, string][]).map(
+                  ([dias, texto]) => (
+                    <Opcion
+                      key={dias}
+                      texto={texto}
+                      alPulsar={() => {
+                        setPreaviso(dias)
+                        setPasoVence('aviso')
+                      }}
+                    />
+                  )
+                )}
+                <Opcion
+                  texto="No lo sé"
+                  tenue
+                  alPulsar={() => {
+                    setSeRenueva(false)
+                    setPasoVence('aviso')
+                  }}
+                />
+              </div>
+              {/*
+                Y aquí está el motivo de toda esta pregunta, dicho antes
+                de contestarla. Sin esta frase, «un mes de antelación»
+                es burocracia; con ella se entiende que la fecha que hay
+                que apuntarse no es la del vencimiento.
+              */}
+              <p className="mt-6 text-center text-[15.5px] font-semibold leading-snug text-tenue">
+                Os avisaremos ese día, no el del vencimiento: para entonces ya
+                sería tarde.
+              </p>
+            </>
+          )}
+
+          {/* ── 3 · ¿Y cuándo suena el teléfono? ── */}
+          {pasoVence === 'aviso' && (
+            <>
+              <p className="t-cuerpo mt-6 text-center">
+                Lo marcamos en el calendario.
+                <br />
+                ¿Queréis que además os avisemos?
+              </p>
+
+              <div className="mt-8 space-y-2.5">
+                {[
+                  ['1_mes', 'Un mes antes'],
+                  ['1_semana', 'Una semana antes'],
+                  ['1_dia', 'Un día antes'],
+                ].map(([valor, texto]) => (
+                  <Opcion
+                    key={valor}
+                    texto={texto}
+                    desactivada={creandoAviso}
+                    alPulsar={() => marcarVencimiento(valor)}
+                  />
+                ))}
+                <Opcion
+                  texto="Solo en el calendario"
+                  tenue
+                  desactivada={creandoAviso}
+                  alPulsar={() => marcarVencimiento('sin_aviso')}
+                />
+              </div>
+            </>
+          )}
         </div>
       </main>
     )
@@ -675,37 +856,30 @@ export default function Formulario({
   // ══ PANTALLA FINAL ════════════════════════════════════════
   if (paso === 'guardado' && resultado) {
     return (
-      <main className="flex min-h-screen flex-col justify-center px-6 py-16">
-        <div className="mx-auto w-full max-w-md text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-verde text-white">
-            <Ico nombre="check" tam={40} grosor={2.2} />
-          </div>
-          <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
-            Documento guardado
-          </h1>
-          <p className="mt-4 text-lg text-tinta-suave">{resultado.ruta}</p>
+      <main className="flex min-h-screen flex-col justify-center px-5 py-16">
+        <div className="mx-auto w-full max-w-md">
+          <Hecho titulo="Documento guardado" explicacion={resultado.ruta}>
+            {resultado.repetida && (
+              /* Esto NO es un error: es que HUBI ha sabido que ese
+                 ingreso ya estaba y no lo ha contado dos veces. Iba en
+                 coral, que lo leía como un fallo. */
+              <Aviso
+                tono="atencion"
+                titulo={`La reserva ${resultado.repetida} ya estaba apuntada`}
+                explicacion="El ingreso no se ha sumado otra vez. El documento sí se ha guardado."
+              />
+            )}
 
-          {resultado.repetida && (
-            <p className="mt-6 rounded-[16px] bg-coral-suave px-4 py-3.5 text-left text-[16px] font-semibold leading-snug text-coral">
-              La reserva {resultado.repetida} ya estaba apuntada, así que el ingreso no se
-              ha sumado otra vez. El documento sí se ha guardado.
-            </p>
-          )}
-
-          <div className="mt-12 space-y-4">
-            <Link
-              href={`/documentos/${resultado.id}`}
-              className="block flex h-[62px] items-center justify-center rounded-[18px] bg-verde text-[18px] font-extrabold text-white"
-            >
+            <BotonPrincipal href={`/documentos/${resultado.id}`} icono="ojo">
               Ver documento
-            </Link>
-            <Link href="/guardar" className="block flex h-[62px] items-center justify-center rounded-[18px] border border-borde bg-superficie text-[18px] font-bold text-tinta-suave">
+            </BotonPrincipal>
+            <BotonSecundario href="/guardar" icono="mas">
               Guardar otro
-            </Link>
-            <Link href="/" className="block flex h-[62px] items-center justify-center rounded-[18px] border border-borde bg-superficie text-[18px] font-bold text-tinta-suave">
+            </BotonSecundario>
+            <BotonTerciario href="/" icono="casa">
               Volver al inicio
-            </Link>
-          </div>
+            </BotonTerciario>
+          </Hecho>
         </div>
       </main>
     )
@@ -744,24 +918,30 @@ export default function Formulario({
         {/* ══ 1 · EL ARCHIVO ══ */}
         {paso === 'archivo' && (
           <>
-            <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
-              Guardar documento
-            </h1>
-            <div className="mt-10 space-y-4">
-              <button onClick={() => camara.current?.click()} className="w-full flex h-[76px] items-center justify-center gap-3 rounded-[20px] bg-verde text-[19px] font-extrabold text-white">
-                <Ico nombre="foto" tam={24} grosor={2.1} /> Hacer foto
-              </button>
-              <button onClick={() => disco.current?.click()} className="w-full flex h-[76px] items-center justify-center gap-3 rounded-[20px] border border-borde bg-superficie text-[19px] font-bold text-tinta">
-                <Ico nombre="papel" tam={24} grosor={2.1} /> Elegir archivo
-              </button>
+            <h1 className="t-titulo mt-8">Guardar documento</h1>
+
+            {/*
+              «Hacer foto» ES la acción de esta pantalla, y aquí sí le
+              corresponde el botón principal: HABLAR · FOTOGRAFIAR ·
+              CONSULTAR. Las otras dos son maneras alternativas de traer
+              el mismo papel.
+
+              Iba de `bg-verde` a 76 px de alto. El verde ya no es
+              acento sino ámbito, y la altura es la del sistema.
+            */}
+            <div className="mt-8 space-y-2.5">
+              <BotonPrincipal onClick={() => camara.current?.click()} icono="foto">
+                Hacer foto
+              </BotonPrincipal>
+              <BotonSecundario onClick={() => disco.current?.click()} icono="papel">
+                Elegir archivo
+              </BotonSecundario>
 
               {/* Solo aparece si está configurado Y si es su Drive.
                   Un botón que no puede funcionar es peor que no tenerlo. */}
-              {esPropietario && hayBuscadorDrive && (
-                <BuscarEnDrive onArchivo={admitir} />
-              )}
+              {esPropietario && hayBuscadorDrive && <BuscarEnDrive onArchivo={admitir} />}
             </div>
-            <p className="mt-8 text-center text-base leading-relaxed text-tenue">
+            <p className="t-apoyo mt-6 text-center">
               Si el documento tiene varias páginas, podrás añadirlas después.
             </p>
           </>
@@ -770,50 +950,56 @@ export default function Formulario({
         {/* ══ 2 · LAS PÁGINAS ══ */}
         {paso === 'paginas' && (
           <>
-            <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
-              {paginas.length === 1
-                ? '¿Tiene más páginas?'
-                : `${paginas.length} páginas`}
+            <h1 className="t-titulo mt-8">
+              {paginas.length === 1 ? '¿Tiene más páginas?' : `${paginas.length} páginas`}
             </h1>
 
-            <p className="mt-4 text-lg leading-relaxed text-tinta-suave">
+            <p className="t-cuerpo mt-3">
               {paginas.length === 1
                 ? 'Si el documento sigue por detrás o en otra hoja, fotografía también esa página.'
                 : 'Se guardarán juntas como un solo documento.'}
             </p>
 
-            <ul className="mt-8 space-y-4">
+            <ul className="mt-6 space-y-2.5">
               {paginas.map((p, i) => (
-                <li key={i} className="overflow-hidden rounded-[18px] border border-borde bg-superficie">
-                  <div className="flex items-center justify-between px-5 py-4">
-                    <span className="text-lg font-medium text-tinta">Página {i + 1}</span>
+                <li key={i} className="r-tarjeta overflow-hidden border border-borde bg-superficie">
+                  <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+                    <span className="t-cuerpo">Página {i + 1}</span>
+                    {/*
+                      Era «Quitar» en coral, a 16 px y sin altura: un
+                      blanco de 22 px para deshacer una foto. Ahora es
+                      un botón de verdad, de 48, y en tinta — quitar una
+                      página de las tres que llevas no es una alarma.
+                    */}
                     <button
                       onClick={() => setPaginas((ps) => ps.filter((_, j) => j !== i))}
-                      className="text-[16px] font-bold text-coral"
+                      className="flex h-[48px] shrink-0 items-center px-2 text-[16px] font-extrabold text-tinta-suave"
                     >
                       Quitar
                     </button>
                   </div>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={URL.createObjectURL(p.subir)} alt={`Página ${i + 1}`} className="max-h-64 w-full object-contain" />
+                  <img
+                    src={URL.createObjectURL(p.subir)}
+                    alt={`Página ${i + 1}`}
+                    className="max-h-64 w-full object-contain"
+                  />
                 </li>
               ))}
             </ul>
 
-            <div className="mt-8 space-y-4">
-              <button
-                onClick={() => camara.current?.click()}
-                className="w-full flex h-[68px] items-center justify-center gap-3 rounded-[20px] border border-borde bg-superficie text-[18px] font-bold text-tinta"
-              >
-                <Ico nombre="foto" tam={22} grosor={2.1} /> Añadir otra página
-              </button>
-              <button
+            <div className="mt-6 space-y-2.5">
+              <BotonPrincipal
                 onClick={continuarConPaginas}
-                disabled={preparando || paginas.length === 0}
-                className="w-full flex h-[68px] items-center justify-center rounded-[20px] bg-verde text-[19px] font-extrabold text-white disabled:opacity-40"
+                desactivado={preparando || paginas.length === 0}
+                porQue={paginas.length === 0 ? 'No queda ninguna página' : undefined}
+                icono="check"
               >
                 {preparando ? 'Preparando…' : 'Continuar'}
-              </button>
+              </BotonPrincipal>
+              <BotonSecundario onClick={() => camara.current?.click()} icono="foto">
+                Añadir otra página
+              </BotonSecundario>
             </div>
           </>
         )}
@@ -826,14 +1012,14 @@ export default function Formulario({
               <span aria-hidden className="orbita orbita-b" />
             </div>
 
-            <h1 className="mt-12 text-[24px] font-extrabold leading-tight text-tinta">
+            <h1 className="t-titulo mt-12">
               {ayuda ? 'Mirándolo con más detalle' : 'Leyendo el documento'}
             </h1>
 
             {/* Se dice por qué está tardando más. Una espera que cambia
                 de duración sin explicarse parece una avería. */}
             {ayuda && (
-              <p className="mt-3 max-w-xs text-[16.5px] font-medium leading-snug text-tinta-suave">
+              <p className="t-cuerpo mt-3 max-w-xs">
                 Este papel cuesta un poco más de leer. Un momento.
               </p>
             )}
@@ -849,7 +1035,10 @@ export default function Formulario({
             */}
             <div className="mt-6 h-2.5 w-56 overflow-hidden rounded-full bg-borde">
               <div
-                className="h-full rounded-full bg-verde transition-[width] duration-300"
+                /* La barra de avance iba de verde de ámbito. Está
+                   diciendo «esto va bien y va avanzando»: es el color
+                   de estado, no el de una sección. */
+                className="h-full rounded-full bg-[color:var(--t-bien)] transition-[width] duration-300"
                 style={{ width: `${Math.max(4, avance)}%` }}
               />
             </div>
@@ -873,15 +1062,17 @@ export default function Formulario({
                 <p className="text-lg leading-relaxed text-tinta-suave">
                   Está tardando más de lo normal.
                 </p>
-                <button
-                  onClick={() => {
-                    abandonado.current = true
-                    setPaso('categoria')
-                  }}
-                  className="mt-5 w-full flex h-[62px] items-center justify-center rounded-[18px] border border-borde bg-superficie text-[18px] font-bold text-tinta"
-                >
-                  Clasificarlo yo
-                </button>
+                <div className="mt-5 w-full">
+                  <BotonSecundario
+                    onClick={() => {
+                      abandonado.current = true
+                      setPaso('categoria')
+                    }}
+                    icono="carpeta"
+                  >
+                    Clasificarlo yo
+                  </BotonSecundario>
+                </div>
               </div>
             )}
           </div>
@@ -890,22 +1081,39 @@ export default function Formulario({
         {/* ══ 4 · LO ENCONTRADO ══ */}
         {paso === 'encontrado' && (
           <>
-            <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
-              Hemos encontrado esto
-            </h1>
+            <h1 className="t-titulo mt-8">Hemos encontrado esto</h1>
 
             {datos.confianza === 'baja' && (
-              <p className="mt-5 rounded-[16px] bg-coral-suave px-4 py-3.5 text-[16px] font-semibold leading-snug text-coral">
-                La foto no se lee del todo bien. Repasa los datos antes de guardar.
-              </p>
+              <div className="mt-5">
+                {/* Es una ADVERTENCIA, no un fallo: se ha leído, y lo
+                    que hay que hacer es repasarlo. Iba en coral, el
+                    color de las cosas rotas. */}
+                <Aviso
+                  tono="atencion"
+                  titulo="La foto no se lee del todo bien"
+                  explicacion="Repasa los datos antes de guardar."
+                />
+              </div>
             )}
 
-            <div className="mt-6 divide-y divide-borde rounded-[20px] border border-borde bg-superficie px-4">
+            {/* El `divide-y` se va: cada `Dato` ya trae su propia raya
+                debajo, y con los dos salían dobles. */}
+            <div className="mt-6 rounded-[20px] border border-borde bg-superficie px-4 py-1">
               <Dato etiqueta="Qué es" valor={datos.titulo} />
               <Dato etiqueta="Tipo" valor={datos.tipo} />
               <Dato etiqueta="Proveedor" valor={datos.proveedor} />
               <Dato etiqueta="Fecha" valor={enPalabras(datos.fecha)} />
               <Dato etiqueta="Importe" valor={datos.importe ? `${datos.importe.replace('.', ',')} €` : null} />
+              {/* El IGIC o el IVA, si el papel lo dice. Solo sale
+                  cuando se ha leído: una línea que pone «no lo has
+                  dicho» en todos los tickets del súper sería ruido en
+                  la pantalla que más se mira de HUBI. */}
+              {datos.impuestoTipo !== '' && (
+                <Dato
+                  etiqueta="IGIC / IVA"
+                  valor={`${datos.impuestoTipo.replace('.', ',')}%`}
+                />
+              )}
               <Dato etiqueta="Vencimiento" valor={enPalabras(datos.vencimiento)} />
               <Dato etiqueta="Se guardará en" valor={rutaElegida} />
               {estancia.huesped && <Dato etiqueta="Huésped" valor={estancia.huesped} />}
@@ -923,21 +1131,90 @@ export default function Formulario({
               {paginas.length > 1 && <Dato etiqueta="Páginas" valor={String(paginas.length)} />}
             </div>
 
+            {/*
+              ── CON QUÉ SE HA LEÍDO ──
+
+              Solo cuando ha leído el respaldo. Y hace falta decirlo:
+              el modelo y las reglas leen con calidad muy distinta, y
+              hasta ahora cuál de los dos había leído era invisible. Se
+              veían datos pobres —a veces bien, a veces mal, sin ningún
+              motivo aparente— y no había forma de saber si el papel
+              estaba mal fotografiado o si el lector bueno no había
+              podido esta vez.
+
+              Una diferencia de calidad que el usuario no puede ver la
+              vive como que la aplicación es caprichosa.
+            */}
+            {datos.comoSeLeyo === 'reglas' && (
+              <div className="mt-4">
+                {/*
+                  ── EN CRISTIANO, Y SEGÚN EL MOTIVO ──
+
+                  «Lector de respaldo» es una palabra nuestra, de la
+                  fontanería. A Juan Miguel no le dice absolutamente
+                  nada, y encima suena a avería.
+
+                  El caso del cupo agotado merece su propia frase
+                  porque NO es una avería y no hay nada que arreglar:
+                  se ha usado mucho hoy y mañana vuelve solo. Decirlo
+                  así evita que alguien se pase la tarde repitiendo la
+                  foto pensando que la culpa es suya.
+                */}
+                {/*
+                  Y esto tampoco es un error: HA LEÍDO. Peor, pero ha
+                  leído, y el papel se puede guardar igual. En coral se
+                  leía como que algo se había roto — y encima el caso
+                  del cupo agotado se arregla solo mañana.
+
+                  `atencion` es exactamente lo que es: repásalo.
+                */}
+                <Aviso
+                  tono="atencion"
+                  titulo={
+                    /cupo|quota|429|agotad/i.test(detalle ?? '')
+                      ? 'Hoy la lectura automática se ha agotado'
+                      : 'Esto lo he leído a mi manera torpe, sin ayuda'
+                  }
+                  explicacion={
+                    /cupo|quota|429|agotad/i.test(detalle ?? '')
+                      ? 'He leído el papel como he podido: repasa los datos antes de guardar. Mañana vuelve a leer bien sola.'
+                      : 'Repasa los datos antes de guardar.'
+                  }
+                  detalle={detalle}
+                />
+                {/*
+                  ── Y POR QUÉ ──
+
+                  Este motivo se calculaba y se TIRABA: solo se enseñaba
+                  cuando no se conseguía leer nada. Si el respaldo sí
+                  leía —peor, pero leía— el porqué se perdía, y desde
+                  fuera parecía que HUBI leía mal por capricho.
+
+                  Es lo mismo que nos pasó con el índice de los avisos:
+                  la respuesta exacta valía más que tres rondas de
+                  suposiciones.
+                */}
+              </div>
+            )}
+
             <LoQueHeLeido texto={datos.texto} />
 
-            <h2 className="mt-10 text-center text-[24px] font-extrabold text-tinta">¿Es correcto?</h2>
+            <h2 className="t-seccion mt-10 text-center">¿Es correcto?</h2>
 
-            <div className="mt-6 space-y-4">
-              <button
+            <div className="mt-6 space-y-2.5">
+              <BotonPrincipal
                 onClick={() => (enHelechos ? setPaso('estancia') : guardar())}
-                disabled={guardando || !datos.categoriaId}
-                className="w-full flex h-[64px] items-center justify-center rounded-[18px] bg-verde text-[19px] font-extrabold text-white disabled:opacity-40"
+                desactivado={guardando || !datos.categoriaId}
+                /* Un botón gris y mudo se lee como avería. Si falta la
+                   carpeta, se DICE que falta la carpeta. */
+                porQue={!datos.categoriaId ? 'Falta decir en qué carpeta va' : undefined}
+                icono="check"
               >
                 {guardando ? 'Guardando…' : enHelechos ? 'Continuar' : 'Guardar'}
-              </button>
-              <button onClick={() => setPaso('editar')} className="w-full flex h-[64px] items-center justify-center rounded-[18px] border border-borde bg-superficie text-[19px] font-bold text-tinta">
+              </BotonPrincipal>
+              <BotonSecundario onClick={() => setPaso('editar')} icono="lapiz">
                 Cambiar
-              </button>
+              </BotonSecundario>
             </div>
           </>
         )}
@@ -951,10 +1228,8 @@ export default function Formulario({
         */}
         {paso === 'estancia' && (
           <>
-            <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
-              Los Helechos
-            </h1>
-            <p className="mt-4 text-lg leading-relaxed text-tinta-suave">
+            <h1 className="t-titulo mt-8">Los Helechos</h1>
+            <p className="t-cuerpo mt-3">
               {esIngreso
                 ? 'Esto no viene en la pantalla de la reserva. Repásalo y lo guardo.'
                 : 'Si el gasto es de un apartamento en concreto, dilo aquí.'}
@@ -962,34 +1237,41 @@ export default function Formulario({
 
             <CamposEstancia valor={estancia} cambiar={setEstancia} conEstancia={esIngreso} />
 
-            <button
-              onClick={guardar}
-              disabled={guardando}
-              className="mt-10 w-full flex h-[64px] items-center justify-center rounded-[18px] bg-verde text-[19px] font-extrabold text-white disabled:opacity-40"
-            >
-              {guardando ? 'Guardando…' : 'Guardar'}
-            </button>
+            <div className="mt-8">
+              <BotonPrincipal onClick={guardar} desactivado={guardando} icono="check">
+                {guardando ? 'Guardando…' : 'Guardar'}
+              </BotonPrincipal>
+            </div>
           </>
         )}
 
         {/* ══ 5 · CORREGIR ══ */}
         {paso === 'editar' && (
           <>
-            <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">Corregir</h1>
+            <h1 className="t-titulo mt-8">Corregir</h1>
 
             <Campo etiqueta="¿Qué es?" valor={datos.titulo} onChange={(v) => setDatos((d) => ({ ...d, titulo: v }))} />
 
             <div className="mt-7">
-              <p className="text-[17px] font-bold text-tinta">Se guardará en</p>
+              <p className="rotulo mb-2">Se guardará en</p>
+              {/*
+                Era `text-verde` subrayado —el verde ya no es acento
+                sino ámbito—, y toda la fila medía 54 px. Ahora es una
+                fila de 64 con su flecha: se lee que lleva a otro sitio
+                sin necesidad de subrayar nada.
+              */}
               <button
                 onClick={() => {
                   setPadre(null)
                   setPaso('categoria')
                 }}
-                className="mt-3 flex w-full items-center justify-between rounded-[16px] border border-borde bg-superficie px-4 py-3.5 text-left text-[17px] font-semibold text-tinta"
+                className="r-campo flex min-h-[64px] w-full items-center justify-between gap-3 border border-borde bg-superficie px-4 py-3 text-left"
               >
-                <span>{rutaElegida ?? 'Elegir carpeta'}</span>
-                <span className="text-verde underline underline-offset-4">Cambiar</span>
+                <span className="t-cuerpo min-w-0 flex-1">
+                  {rutaElegida ?? 'Elegir carpeta'}
+                </span>
+                <span className="t-apoyo shrink-0">Cambiar</span>
+                <Ico nombre="flecha" tam={19} grosor={2.2} className="shrink-0" />
               </button>
             </div>
 
@@ -1002,34 +1284,52 @@ export default function Formulario({
               <CamposEstancia valor={estancia} cambiar={setEstancia} conEstancia={esIngreso} />
             )}
 
-            <button onClick={guardar} disabled={guardando || !datos.categoriaId} className="mt-10 w-full flex h-[64px] items-center justify-center rounded-[18px] bg-verde text-[19px] font-extrabold text-white disabled:opacity-40">
-              {guardando ? 'Guardando…' : 'Guardar'}
-            </button>
+            <div className="mt-8">
+              <BotonPrincipal
+                onClick={guardar}
+                desactivado={guardando || !datos.categoriaId}
+                porQue={!datos.categoriaId ? 'Falta decir en qué carpeta va' : undefined}
+                icono="check"
+              >
+                {guardando ? 'Guardando…' : 'Guardar'}
+              </BotonPrincipal>
+            </div>
           </>
         )}
 
         {/* ══ 6 · CARPETA ══ */}
         {paso === 'categoria' && (
           <>
-            <h1 className="mt-8 text-[28px] font-extrabold leading-tight tracking-tight text-tinta">
-              ¿Dónde lo guardamos?
-            </h1>
+            <h1 className="t-titulo mt-8">¿Dónde lo guardamos?</h1>
             {migas.length > 0 && (
-              <p className="mt-3 text-lg text-tenue">{migas.map((m) => m.nombre).join(' → ')}</p>
+              <p className="t-apoyo mt-2">{migas.map((m) => m.nombre).join(' → ')}</p>
             )}
             {migas.length === 0 && <LoQueHeLeido texto={datos.texto} />}
-            <div className="mt-8 space-y-3">
-              {(hijosDe.get(padre) ?? []).map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => elegirCategoria(c)}
-                  className="flex w-full items-center gap-4 rounded-[18px] border border-borde bg-superficie px-5 py-4 text-left text-[18px] font-bold text-tinta"
-                >
-                  {c.icono && <span className="text-2xl">{c.icono}</span>}
-                  <span className="flex-1">{c.nombre}</span>
-                  {(hijosDe.get(c.id) ?? []).length > 0 && <Ico nombre="flecha" tam={19} grosor={2.2} className="text-borde" />}
-                </button>
-              ))}
+
+            {/*
+              El icono ya no es el emoji guardado en la categoría: es el
+              de trazo que le corresponde a su carpeta de Drive, EL
+              MISMO con el que va a salir luego en Papeles. Que el sitio
+              donde lo guardas y el sitio donde lo encuentras se
+              parezcan es media pantalla de explicación ahorrada.
+            */}
+            <div className="mt-6 space-y-2.5">
+              {(hijosDe.get(padre) ?? []).map((c) => {
+                const pintada = seccionPintada(c.segmento_drive)
+                const tieneHijos = (hijosDe.get(c.id) ?? []).length > 0
+                return (
+                  <Fila
+                    key={c.id}
+                    onClick={() => elegirCategoria(c)}
+                    alto="alta"
+                    ambito={pintada.ambito}
+                  >
+                    <PastillaAmbito icono={pintada.icono} ambito={pintada.ambito} tam={48} />
+                    <span className="t-tarjeta min-w-0 flex-1">{c.nombre}</span>
+                    {tieneHijos && <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0" />}
+                  </Fila>
+                )
+              })}
             </div>
           </>
         )}
@@ -1040,19 +1340,12 @@ export default function Formulario({
         )}
 
         {aviso && (
-          <>
-            <p className="mt-6 rounded-[16px] bg-coral-suave px-4 py-3.5 text-[16px] font-semibold leading-snug text-coral">
-              {aviso}
-            </p>
-            {/* El motivo exacto que ha dado Google. Pequeño y aparte:
-                no es para Juan Miguel ni para Conchita, pero mientras
-                esto se monta ahorra tener que adivinar. */}
-            {detalle && (
-              <p className="mt-2 break-words rounded-[14px] bg-superficie px-4 py-3 text-[13px] font-medium leading-snug text-tenue">
-                {detalle}
-              </p>
-            )}
-          </>
+          <div className="mt-6">
+            {/* El motivo exacto que ha dado Google va en `detalle`: no
+                es para Juan Miguel ni para Conchita, pero mientras esto
+                se monta ahorra tener que adivinar. */}
+            <Aviso titulo="No se ha podido guardar" explicacion={aviso} detalle={detalle} />
+          </div>
         )}
       </div>
     </main>
@@ -1090,6 +1383,42 @@ export default function Formulario({
   Cerrado por defecto: quien no lo necesita no lo ve. Y sin él, cada
   "no reconoce nada" costaba dos rondas de arreglar lo que no era.
 */
+/*
+  Una opción de una pregunta.
+
+  Aquí había hasta CUATRO botones rellenos de verde en la misma
+  pantalla —«Un mes antes», «Una semana antes», «Un día antes»— y eso
+  no es un botón principal repetido cuatro veces: es una lista de
+  respuestas a una pregunta. El sistema tiene un botón principal por
+  pantalla; esto no es ninguno de ellos.
+
+  Se pintan todas igual porque valen lo mismo. `tenue` es solo para la
+  que significa «ninguna de las anteriores», que sí es distinta.
+*/
+function Opcion({
+  texto,
+  alPulsar,
+  desactivada = false,
+  tenue = false,
+}: {
+  texto: string
+  alPulsar: () => void
+  desactivada?: boolean
+  tenue?: boolean
+}) {
+  return (
+    <button
+      onClick={alPulsar}
+      disabled={desactivada}
+      className={`r-tarjeta flex h-[64px] w-full items-center justify-center border border-borde bg-superficie text-[18px] font-extrabold disabled:opacity-40 ${
+        tenue ? 'text-tenue' : 'text-tinta'
+      }`}
+    >
+      {texto}
+    </button>
+  )
+}
+
 function LoQueHeLeido({ texto }: { texto: string | null }) {
   if (!texto?.trim()) return null
 
@@ -1167,17 +1496,33 @@ function archivoSirve(f: File): boolean {
   return f.size > 0 && f.size <= MAXIMO && tipo !== null && TIPOS_BUENOS.includes(tipo)
 }
 
+/*
+  Un dato leído del papel.
+
+  Es el `Dato` del sistema con UNA diferencia, y la diferencia es el
+  motivo de que exista: el del sistema no pinta la fila si el valor
+  está vacío, porque en la ficha de un papel una etiqueta con un hueco
+  al lado parece que falta un dato.
+
+  Aquí es justo al revés. Esta es la pantalla donde hay que ver QUÉ NO
+  HA LEÍDO: si el importe no sale, esconder la línea deja creer que el
+  papel no llevaba importe. Se dice «No aparece» y se dice en tenue.
+*/
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
   return (
-    <div className="py-5">
-      <p className="text-[13px] font-extrabold tracking-widest text-tenue">{etiqueta}</p>
-      <p className={`mt-0.5 text-[18px] font-bold leading-snug ${valor ? 'text-tinta' : 'text-tenue'}`}>
-        {valor || 'No aparece'}
-      </p>
-    </div>
+    <DatoDS
+      etiqueta={etiqueta}
+      valor={valor || <span className="font-semibold text-tenue">No aparece</span>}
+    />
   )
 }
 
+/*
+  Y este era el `Campo` del sistema escrito otra vez: su propia altura
+  (58 en vez de la de `.entrada`), su propio radio, y `focus:border-verde`
+  —el verde que ya no es acento—. Ahora es el del sistema, con la
+  etiqueta apuntando a su campo.
+*/
 function Campo({
   etiqueta,
   valor,
@@ -1191,17 +1536,18 @@ function Campo({
   tipo?: string
   modo?: 'decimal'
 }) {
+  const id = 'c-' + etiqueta.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
   return (
-    <div className="mt-7">
-      <label className="block text-[17px] font-bold text-tinta">{etiqueta}</label>
+    <CampoDS etiqueta={etiqueta} htmlFor={id} className="mt-7">
       <input
+        id={id}
         type={tipo}
         inputMode={modo}
         value={valor}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-3 w-full h-[58px] rounded-[16px] border border-borde bg-superficie px-4 font-semibold text-tinta focus:border-verde focus:outline-none"
+        className="entrada"
       />
-    </div>
+    </CampoDS>
   )
 }
 

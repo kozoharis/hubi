@@ -4,8 +4,10 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { atrasado, hoyAqui, type Recordatorio } from '@/lib/tablon'
 import { Ico, pintaDe } from '../iconos'
+import { AMBITO, ambitoDeColor } from '@/lib/ambitos'
 import { citasDeLaFamilia, calendariosVisibles } from '@/lib/agenda-google'
 import Refrescar from './refrescar'
+import { BotonPrincipal, Pildora } from '../piezas'
 
 const MESES = [
   'enero','febrero','marzo','abril','mayo','junio',
@@ -159,20 +161,21 @@ export default async function Mes({
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {calendarios.length > 1 && (
               <>
-                <Filtro
-                  texto="Los dos"
+                <Pildora
                   href={`/agenda?vista=mes&mes=${anio}-${String(mesNum).padStart(2, '0')}`}
-                  puesto={!dueno}
-                  color="#0F172A"
-                />
+                  puesta={!dueno}
+                >
+                  Los dos
+                </Pildora>
                 {calendarios.map((c) => (
-                  <Filtro
+                  <Pildora
                     key={c.id}
-                    texto={c.nombre.split(' ')[0]}
                     href={`/agenda?vista=mes&mes=${anio}-${String(mesNum).padStart(2, '0')}&de=${c.id}`}
-                    puesto={dueno === c.id}
-                    color={c.color}
-                  />
+                    puesta={dueno === c.id}
+                    color={AMBITO[ambitoDeColor(c.color)]}
+                  >
+                    {c.nombre.split(' ')[0]}
+                  </Pildora>
                 ))}
               </>
             )}
@@ -198,10 +201,14 @@ export default async function Mes({
                 key={f}
                 href={`/agenda?vista=dia&dia=${f}${filtro}`}
                 className={`flex aspect-square flex-col items-center justify-center gap-[3px] rounded-[13px] text-[16px] ${
+                  /* Elegido = tinta (un estado). Hoy = el velo del
+                     color de acción, que es lo único que dice «estás
+                     aquí». Iban con `bg-boton` y `bg-verde-suave`, los
+                     dos colores de antes. */
                   f === diaElegido
-                    ? 'bg-boton font-extrabold text-boton-texto'
+                    ? 'bg-[color:var(--t-tinta)] font-extrabold text-[color:var(--t-fondo)]'
                     : f === hoyISO
-                      ? 'bg-verde-suave font-extrabold text-verde'
+                      ? 'font-extrabold text-[color:var(--color-accion)]'
                       : 'font-semibold text-tinta'
                 }`}
               >
@@ -213,7 +220,7 @@ export default async function Mes({
                       className="h-[5px] w-[5px] rounded-full"
                       style={{
                         background:
-                          f === diaElegido ? 'var(--t-boton-texto)' : colorDe(r),
+                          f === diaElegido ? 'var(--t-fondo)' : colorDe(r),
                       }}
                     />
                   ))}
@@ -225,7 +232,7 @@ export default async function Mes({
                       key={color}
                       className="h-[5px] w-[5px] rounded-full border"
                       style={{
-                        borderColor: f === diaElegido ? 'var(--t-boton-texto)' : color,
+                        borderColor: f === diaElegido ? 'var(--t-fondo)' : color,
                       }}
                     />
                   ))}
@@ -296,7 +303,10 @@ export default async function Mes({
                             href={`/tablon/${r.id}`}
                             hora={r.hora}
                             titulo={r.titulo}
-                            color={tarde ? '#FF6B6B' : pinta.color}
+                            /* Era `#FF6B6B`, un coral fuera de
+                               paleta. Algo con fecha pasada y sin hacer
+                               SÍ es una alerta: va con su token. */
+                            color={tarde ? 'var(--t-alerta)' : AMBITO[pinta.ambito]}
                             hecha={r.estado === 'hecho'}
                             pie={
                               tarde
@@ -332,13 +342,11 @@ export default async function Mes({
           )}
         </section>
 
-        <Link
-          href="/tablon/nuevo"
-          className="mt-5 flex h-[60px] items-center justify-center gap-2.5 rounded-[18px] bg-boton text-[18px] font-extrabold text-boton-texto"
-        >
-          <Ico nombre="mas" tam={22} grosor={2.3} />
-          Apuntar algo
-        </Link>
+        <div className="mt-5">
+          <BotonPrincipal href="/tablon/nuevo" icono="mas">
+            Apuntar algo
+          </BotonPrincipal>
+        </div>
 
         {/* Qué significa cada punto. Sin esto, el rojo asusta sin
             decir por qué, y el gris parece un fallo de la pantalla.
@@ -349,9 +357,10 @@ export default async function Mes({
             lo que los partía era un `pr-24` puesto para esquivar el
             botón de voz, que ya no pasa por ahí. */}
         <div className="mt-4 flex flex-wrap justify-center gap-x-3 gap-y-1.5">
-          <Leyenda color="#14B8A6" texto="Por hacer" />
-          <Leyenda color="#FF6B6B" texto="Sin hacer o vence" />
-          <Leyenda color="#94A3B8" texto="Hecho" />
+          <Leyenda color="var(--t-tenue)" texto="Por hacer" />
+          <Leyenda color="var(--t-alerta)" texto="Sin hacer" />
+          <Leyenda color="var(--t-atencion)" texto="Vence" />
+          <Leyenda color="var(--t-bien)" texto="Hecho" />
         </div>
     </>
   )
@@ -370,45 +379,20 @@ export default async function Mes({
   pasado que se cumplió no debe salir en rojo.
 */
 function colorDe(r: Recordatorio): string {
-  if (r.estado === 'hecho') return '#94A3B8'
-  if (atrasado(r)) return '#FF6B6B'
-  if (r.tipo === 'vencimiento') return '#FF6B6B'
-  return '#14B8A6'
+  /*
+    Los tres eran hexadecimales fuera de paleta. Y el de «por hacer»
+    era `#14B8A6`, el color de ACCIÓN: cada punto pendiente del mes
+    decía «púlsame».
+
+    Ahora son los tres estados, que es exactamente lo que significan:
+    hecho, atrasado, y lo normal — que no es un estado, es tinta.
+  */
+  if (r.estado === 'hecho') return 'var(--t-bien)'
+  if (atrasado(r)) return 'var(--t-alerta)'
+  if (r.tipo === 'vencimiento') return 'var(--t-atencion)'
+  return 'var(--t-tenue)'
 }
 
-function Filtro({
-  texto,
-  href,
-  puesto,
-  color,
-}: {
-  texto: string
-  href: string
-  puesto: boolean
-  color: string
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={puesto ? 'page' : undefined}
-      className="flex h-11 items-center gap-2 rounded-full px-4 text-[15px] font-extrabold"
-      style={
-        puesto
-          ? { background: color, color: '#FFFFFF' }
-          : {
-              background: 'var(--t-superficie)',
-              color: 'var(--t-tinta-suave)',
-              border: '1px solid var(--t-borde)',
-            }
-      }
-    >
-      {!puesto && (
-        <span className="h-[9px] w-[9px] rounded-full" style={{ background: color }} />
-      )}
-      {texto}
-    </Link>
-  )
-}
 
 function Leyenda({ color, texto }: { color: string; texto: string }) {
   return (

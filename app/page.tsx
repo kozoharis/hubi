@@ -8,18 +8,17 @@ import Arranque from './arranque'
 import Invitacion from './invitacion'
 import SinAvisos from './sin-avisos'
 import Cabecera from './cabecera'
-import { BotonAjustes, Ico, Logo, Pastilla, pintaDe } from './iconos'
+import { BotonAjustes, Ico, Logo, pintaDe } from './iconos'
 import Avatar from './avatar'
 import { cuando, type Recordatorio } from '@/lib/tablon'
 import { leerPerfil } from '@/lib/perfil'
 import { miHogar, mandaEnSuCasa, quienManda } from '@/lib/hogar'
 import { casasDe } from '@/lib/casas'
-import { cuantasNotas, paraMi, cuandoSePuso } from '@/lib/notas'
-import { gastadoEnCasa } from '@/lib/gastos-casa'
+import { paraMi, cuandoSePuso } from '@/lib/notas'
 import { queVeEnInicio } from '@/lib/roles'
-import { eurosRedondo } from '@/lib/periodos'
 import { loDeHoy } from '@/lib/rutinas'
-import { genteDeLaCasa, elAsesor } from '@/lib/gente'
+import { genteDeLaCasa } from '@/lib/gente'
+import { AMBITO, Aviso, BotonPrincipal, Fila, PastillaAmbito, Vacio } from './piezas'
 import Casas from './casas'
 import { type Deber } from './rutinas-hoy'
 
@@ -117,9 +116,6 @@ export default async function Inicio({
     { data: pendientes },
     { data: siguientes },
     { data: conexion },
-    { count: porComprar },
-    notasPuestas,
-    gastoCasa,
     { data: ultimoPapel, count: cuantosPapeles },
   ] =
     await Promise.all([
@@ -147,20 +143,6 @@ export default async function Inicio({
         ? admin.from('conexion_drive').select('estado').eq('hogar_id', hogarId).maybeSingle()
         : Promise.resolve({ data: null }),
 
-      /* Cuántas cosas faltan. Solo el número: la lista entera se ve
-         al entrar, y el inicio no es una lista. */
-      supabase
-        .from('compra')
-        .select('id', { count: 'exact', head: true })
-        .eq('comprado', false)
-        .is('archivado_en', null),
-
-      /* Las notas del corcho, y cuántas te están esperando a ti. */
-      cuantasNotas(supabase, user.id),
-
-      /* Lo que se va este trimestre fuera de las actividades, y en qué. */
-      gastadoEnCasa(supabase),
-
       /*
         Cuántos papeles hay guardados y cuándo fue el último.
 
@@ -178,21 +160,6 @@ export default async function Inicio({
         .order('creado_en', { ascending: false })
         .limit(1),
     ])
-
-  /* ¿Esta casa usa la lista de la compra? Envuelto: la columna es
-     nueva y, si el SQL 32 no se ha ejecutado, Postgres rechaza la
-     consulta entera en vez de decir «esa columna no existe». */
-  let usaCompra = true
-  try {
-    const { data: casa } = await supabase
-      .from('hogares')
-      .select('usa_compra')
-      .eq('id', hogarId)
-      .maybeSingle()
-    if (casa && casa.usa_compra === false) usaCompra = false
-  } catch {
-    /* Sin la columna todavía: se comporta como siempre. */
-  }
 
   const hoy = (pendientes ?? []) as Recordatorio[]
   const proximos = (siguientes ?? []) as Recordatorio[]
@@ -293,23 +260,6 @@ export default async function Inicio({
   const conectado = conexion?.estado === 'activa'
   const caducado = conexion?.estado === 'caducada'
 
-  /*
-    ── EL ASESOR ──
-
-    Si en esta casa hay un gestor, tiene su propio sitio en el Inicio.
-    No es una tarjeta más: es la única persona de fuera con la que hay
-    una conversación de ida y vuelta —«falta la factura de
-    septiembre», «te la he subido»— y sin un sitio propio eso acaba en
-    un WhatsApp que se pierde.
-
-    Lo que se cuenta en la tarjeta es lo que TE ESTÁ ESPERANDO: sus
-    avisos sin ver y las tareas que te ha puesto sin hacer. Un número
-    que no baja nunca deja de mirarse.
-
-    Y por el otro lado igual: cuando quien entra ES el asesor, la
-    tarjeta le lleva al mismo sitio con el nombre de la casa.
-  */
-  let deLaGestoria: { nombre: string; color: string; esperando: number } | null = null
   /* Quien ayuda en casa, para poner su nombre y su color en la tarjeta
      del día. Se saca de la misma lectura de gente: pedirla dos veces
      sería un viaje de más para pintar la misma pantalla. */
@@ -319,7 +269,6 @@ export default async function Inicio({
 
   try {
     const gente = await genteDeLaCasa(supabase, hogarId)
-    const yoSoy = gente.find((g) => g.id === user.id)
 
     const ayuda = gente.find((g) => g.rol === 'ayuda' && !g.pendiente)
     if (ayuda) deLaAyuda = { nombre: ayuda.nombre.split(' ')[0], color: ayuda.color }
@@ -344,48 +293,12 @@ export default async function Inicio({
           id: n.id,
           texto: n.texto,
           de: dequien?.nombre.split(' ')[0] ?? 'Alguien',
-          color: dequien?.color ?? '#64748B',
+          color: dequien?.color ?? AMBITO.pizarra,
           cuando: cuandoSePuso(n.creada_en),
         })
       }
     }
 
-    const conQuien =
-      yoSoy?.rol === 'asesor'
-        ? (gente.find((g) => g.id !== user.id && g.rol !== 'asesor') ?? null)
-        : elAsesor(gente)
-
-    if (conQuien) {
-      let esperando = 0
-
-      /* Sus avisos que todavía no has abierto. Envuelto aparte: sin la
-         tabla `notas` la tarjeta sale igual, con cero. */
-      try {
-        const { count } = await supabase
-          .from('notas')
-          .select('id', { count: 'exact', head: true })
-          .eq('escrita_por', conQuien.id)
-          .is('guardada_en', null)
-          .is('vista_en', null)
-        esperando += count ?? 0
-      } catch {
-        /* Sin notas: solo cuentan las tareas. */
-      }
-
-      const { count: suyas } = await supabase
-        .from('recordatorios')
-        .select('id', { count: 'exact', head: true })
-        .eq('creado_por', conQuien.id)
-        .eq('estado', 'pendiente')
-
-      esperando += suyas ?? 0
-
-      deLaGestoria = {
-        nombre: conQuien.nombre.split(' ')[0],
-        color: conQuien.color,
-        esperando,
-      }
-    }
   } catch {
     /* Sin la columna `rol` todavía, o sin gente. El Inicio sigue entero. */
   }
@@ -415,7 +328,8 @@ export default async function Inicio({
           /* De quién es el día. Con el color de esa persona, que es
              el mismo con el que sale en la agenda y en el corcho. */
           nombre: deLaAyuda?.nombre ?? null,
-          color: deLaAyuda?.color ?? '#0EA5E9',
+          /* Era `#0EA5E9`, el cian sin declarar. */
+          color: deLaAyuda?.color ?? AMBITO.azul,
         }
       : null
 
@@ -478,16 +392,19 @@ export default async function Inicio({
           {/*
             ── AJUSTES ──
 
-            Se lee como se leen las pestañas de abajo: el dibujo
-            arriba, la palabra debajo, sin caja. No es una decisión
-            estética suelta — toda la navegación de HUBI ya habla ese
-            idioma, y Ajustes ES lo mismo que ellas: un sitio al que
-            se va. Que se parezca es lo honesto.
+            Una píldora pequeña con relleno de velo, y dentro los
+            mandos y la palabra. Nada más: ni borde, ni degradado, ni
+            flecha — las tres cosas estuvieron y las tres se fueron.
 
-            Una píldora con el borde en degradado, del turquesa de la
-            H al morado, y dentro los mandos, la palabra y la flecha.
-            El dibujo del botón está en `iconos.tsx`, con el porqué de
-            cada pieza.
+            Tuvo el borde en degradado hasta la D8 (turquesa a morado:
+            colores que no son de HUBI, pegados al logotipo), y después
+            un borde de tarjeta que sobre el papel cálido de la Fase 3
+            da 1,13:1 y no se ve. Un botón sin caja visible pero con el
+            hueco de la caja es justo lo que se veía raro.
+
+            Ahora la caja es un relleno, que a igual contraste sí se
+            percibe porque ocupa área. El dibujo del botón está en
+            `iconos.tsx`, con los números de los dos modos.
           */}
           {/* El margen invisible arriba y abajo: la píldora se ve de 30
               px y se toca de 48. Ninguna pantalla de HUBI tiene algo
@@ -495,7 +412,7 @@ export default async function Inicio({
               ser la excepción por quedar más fino. Al bajar de 34 a 30
               el relleno sube de 7 a 9: lo que encoge es el dibujo, no
               la zona donde cae el dedo. */}
-          <Link href="/ajustes" className="-mr-1 shrink-0 py-[9px] pl-2">
+          <Link href="/ajustes" className="tocable -mr-1 shrink-0 py-[9px] pl-2">
             <BotonAjustes />
           </Link>
         </div>
@@ -556,44 +473,39 @@ export default async function Inicio({
         {conectado && <Invitacion />}
 
         {aviso && (
-          <p
-            className={`mt-5 rounded-2xl px-5 py-4 text-[17px] font-medium leading-snug ${
-              aviso.bien ? 'bg-verde-suave text-verde' : 'bg-coral-suave text-coral'
-            }`}
-          >
-            {aviso.texto}
-          </p>
+          <div className="mt-5">
+            <Aviso tono={aviso.bien ? 'bien' : 'alerta'} titulo={aviso.texto} />
+          </div>
         )}
 
         {/*
           ═══════════════════════════════════════════════════════
-          EL MOSAICO
+          EL INICIO DEJA DE SER UN MENÚ · Fase 2
           ═══════════════════════════════════════════════════════
 
-          Eran cuatro filas idénticas de 74 px. Se entendían —eso
-          nunca fue el problema— pero pesaban todas lo mismo, y en una
-          pantalla donde todo pesa igual no hay nada que mirar
-          primero: hay que leerse las cuatro.
+          Aquí había SEIS accesos —La compra, Notas, Menús, el asesor,
+          Cuentas de casa y La casa hoy— porque no había otro sitio
+          donde ponerlos: la barra tenía sus cinco huecos ocupados, dos
+          de ellos por las actividades.
 
-          Ahora la FORMA dice la importancia, que es lo que hace un
-          mosaico bien hecho:
+          Y el resultado era éste, medido de arriba abajo:
 
-            ancha    Guardar documento — el punto 6 la quiere sola
-            cuadrado La compra · Notas — dos cosas del día a día
-            ancha    Cuentas de casa — para que el número sea grande
+              saludo · invitación · guardar · notas para ti
+              compra · notas · menús · asesor · cuentas
+              → HOY, en la posición 9
 
-          ─────────────────────────────────────────────────────
-          Y LOS CUADRADOS SE TOCAN MEJOR, NO PEOR
+          O sea: para ver que a las diez hay médico había que pasar por
+          delante de seis botones. La pantalla que existe para decir
+          qué pasa hoy tenía «hoy» al final.
 
-          Es lo primero que preocupa al pensar en manos de 75 años, y
-          sale al revés: en una pantalla de móvil cada cuadrado mide
-          unos 170 × 150 px. Las filas de antes tenían 74 de alto. El
-          dedo tiene el doble de sitio donde caer, y encima ya no hay
-          que apuntar a una franja fina.
+          Los seis accesos se han ido a sus pestañas —Cuentas y El día
+          a día— y lo que queda aquí es SOLO lo que contesta «¿qué
+          pasa?»:
 
-          Se pasa de unos 340 px de alto a unos 270, y eso sube «Hoy»
-          hasta donde se ve sin arrastrar la pantalla — que era lo
-          único que de verdad se quedaba abajo.
+              saludo · hablar · guardar
+              HOY · lo que te han dejado · PRÓXIMAMENTE
+
+          Nada de esto es un menú. Todo es una respuesta.
         */}
 
         {/* AVISO DE QUE ALGO NO FUNCIONA, Y POR ESO VA EL PRIMERO.
@@ -608,37 +520,85 @@ export default async function Inicio({
 
         {/* ── La grande: hacer una foto ── */}
         {conectado && ve.guardarDocumento && (
-          <Link
-            href="/guardar"
-            className="mt-2.5 flex h-[76px] items-center gap-3.5 rounded-[22px] px-4"
-            style={{
-              background: 'color-mix(in srgb, #14B8A6 12%, transparent)',
-              border: '1px solid color-mix(in srgb, #14B8A6 30%, transparent)',
-            }}
-          >
-            <span className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[15px] bg-superficie text-verde">
-              <Ico nombre="foto" tam={25} grosor={2.1} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block whitespace-nowrap text-[19px] font-extrabold tracking-tight">
-                Guardar documento
-              </span>
-              {/* Lo que hay dentro, en una línea. Era la única tarjeta
-                  del Inicio que no decía nada de sí misma — y es donde
-                  más tranquiliza saberlo: quien guarda una factura y no
-                  vuelve a verla nunca acaba dudando de si se guardó. */}
-              <span className="block truncate text-[14.5px] font-bold text-verde">
-                {cuantosPapeles && cuantosPapeles > 0
-                  ? `${cuantosPapeles} guardados${
-                      desdeElUltimo(ultimoPapel?.[0]?.creado_en as string | undefined)
-                        ? ` · ${desdeElUltimo(ultimoPapel?.[0]?.creado_en as string | undefined)}`
-                        : ''
-                    }`
-                  : 'Haz una foto y yo lo archivo'}
-              </span>
-            </span>
-            <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-verde" />
-          </Link>
+          /*
+            FOTOGRAFIAR es una de las tres cosas que HUBI promete
+            —hablar, fotografiar, consultar— y en esta pantalla es LA
+            acción. Así que va con el botón de acción, no con una
+            tarjeta teñida de teal a mano.
+
+            El pie dice lo que hay dentro. Era la única tarjeta del
+            Inicio que no decía nada de sí misma, y es donde más
+            tranquiliza saberlo: quien guarda una factura y no vuelve a
+            verla nunca acaba dudando de si se guardó.
+          */
+          <div className="mt-2.5">
+            <BotonPrincipal href="/guardar" icono="foto">
+              Guardar documento
+            </BotonPrincipal>
+            <p className="t-apoyo mt-2 text-center">
+              {cuantosPapeles && cuantosPapeles > 0
+                ? `${cuantosPapeles} guardados${
+                    desdeElUltimo(ultimoPapel?.[0]?.creado_en as string | undefined)
+                      ? ` · ${desdeElUltimo(ultimoPapel?.[0]?.creado_en as string | undefined)}`
+                      : ''
+                  }`
+                : 'Haz una foto y yo lo archivo'}
+            </p>
+          </div>
+        )}
+
+        {/* ── Conectar Drive ── */}
+        {!conectado && manda && (
+          <div className="mt-6">
+            <BotonPrincipal href="/api/google/conectar" externo icono="escudo">
+              {caducado ? 'Volver a conectar Google Drive' : 'Conectar Google Drive'}
+            </BotonPrincipal>
+            <p className="t-cuerpo mt-4">
+              Google mostrará un aviso de aplicación no verificada. Es normal: pulsa{' '}
+              <strong>Configuración avanzada</strong> y después <strong>Ir a HUBI</strong>.
+              Solo ocurre esta vez.
+            </p>
+          </div>
+        )}
+
+        {!conectado && !manda && (
+          <div className="mt-6">
+            <Aviso
+              tono="atencion"
+              titulo="Todavía no se pueden guardar papeles"
+              explicacion={`${elJefe ?? 'Quien creó esta casa'} tiene que conectar su Google Drive.`}
+              detalle="Lo que ya está guardado se sigue viendo con normalidad."
+            />
+          </div>
+        )}
+
+        {rol === 'ayuda' && casaHoy && <TarjetaCasa {...casaHoy} mia />}
+
+        {/* ── Hoy ── */}
+        {ve.agenda && hoy.length > 0 && (
+          <section className="mt-6">
+            {/* «Hoy» es ahora lo PRIMERO que hay debajo de la acción,
+                no lo noveno. Se le sube el rótulo a título de sección:
+                es de lo que va la pantalla. */}
+            <h2 className="t-seccion">Hoy</h2>
+            <ul className="mt-2.5 space-y-2.5">
+              {hoy.map((r) => {
+                const p = pintaDe(r.titulo)
+                return (
+                  <li key={r.id}>
+                    <Fila href={`/tablon/${r.id}`} ambito={p.ambito}>
+                      <PastillaAmbito icono={p.icono} ambito={p.ambito} tam={44} />
+                      <span className="min-w-0 flex-1">
+                        <span className="t-cuerpo block">{r.titulo}</span>
+                        <span className="t-apoyo mt-0.5 block">{cuando(r.fecha, r.hora)}</span>
+                      </span>
+                      <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0" />
+                    </Fila>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
         )}
 
         {/*
@@ -709,237 +669,25 @@ export default async function Inicio({
           </section>
         )}
 
-        {/* ── Los dos cuadrados ── */}
-        {(usaCompra && ve.compra) || ve.notas ? (
-          <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-            {usaCompra && ve.compra && (
-              <Cuadro
-                href="/compra"
-                icono="bolsa"
-                color="#0EA5E9"
-                titulo="La compra"
-                /* Con cifra, el pie dice QUÉ son. Sin cifra, dice
-                   cómo está la lista. Poner «3» y debajo «Faltan 3
-                   cosas» sería decir lo mismo dos veces en un sitio
-                   donde no sobra ni una palabra. */
-                pie={
-                  !porComprar
-                    ? 'La lista está vacía'
-                    : porComprar === 1
-                      ? 'cosa por coger'
-                      : 'cosas por coger'
-                }
-                /* El número, grande, solo cuando hay algo que contar.
-                   Un «0» enorme en la pantalla de inicio es un
-                   reproche por algo que no has hecho mal. */
-                cifra={porComprar && porComprar > 0 ? String(porComprar) : null}
-              />
-            )}
-
-            {ve.notas && (
-              <Cuadro
-                href="/notas"
-                icono="chincheta"
-                color="#F59E0B"
-                titulo="Notas"
-                pie={
-                  notasPuestas.paraMi > 0
-                    ? notasPuestas.paraMi === 1
-                      ? 'una es para ti'
-                      : `${notasPuestas.paraMi} son para ti`
-                    : notasPuestas.puestas === 0
-                      ? 'Deja un recado'
-                      : notasPuestas.puestas === 1
-                        ? 'puesta en el corcho'
-                        : 'puestas en el corcho'
-                }
-                cifra={notasPuestas.puestas > 0 ? String(notasPuestas.puestas) : null}
-                /* Lo que es PARA TI se ve desde el otro lado de la
-                   habitación. Es lo único del Inicio que te está
-                   esperando a ti en concreto. */
-                avisa={notasPuestas.paraMi > 0}
-              />
-            )}
-          </div>
-        ) : null}
-
-        {/* ── El asesor, con su color ── */}
-        {deLaGestoria && (
-          <Link
-            href="/asesor"
-            className="mt-2.5 flex h-[76px] items-center gap-3.5 rounded-[22px] px-4"
-            style={{
-              background: `color-mix(in srgb, ${deLaGestoria.color} ${
-                deLaGestoria.esperando > 0 ? 18 : 11
-              }%, transparent)`,
-              border: `1px solid color-mix(in srgb, ${deLaGestoria.color} ${
-                deLaGestoria.esperando > 0 ? 50 : 28
-              }%, transparent)`,
-            }}
-          >
-            {/* Su inicial y su color, no un icono genérico: es una
-                persona, y aquí es la única tarjeta que lo es. */}
-            <span
-              className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[15px] text-[20px] font-extrabold text-white"
-              style={{ background: deLaGestoria.color }}
-            >
-              {deLaGestoria.nombre.charAt(0).toUpperCase()}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[19px] font-extrabold tracking-tight">
-                {deLaGestoria.nombre}
-              </span>
-              <span
-                className="block truncate text-[14.5px] font-bold"
-                style={{ color: deLaGestoria.color }}
-              >
-                {deLaGestoria.esperando === 0
-                  ? 'Nada nuevo por ahora'
-                  : deLaGestoria.esperando === 1
-                    ? 'Te ha dejado una cosa'
-                    : `Te ha dejado ${deLaGestoria.esperando} cosas`}
-              </span>
-            </span>
-            <span className="shrink-0" style={{ color: deLaGestoria.color }}>
-              <Ico nombre="flecha" tam={22} grosor={2.2} />
-            </span>
-          </Link>
-        )}
-
-        {/* ── Y las cuentas, anchas, con el número de protagonista ── */}
-        {ve.cuentasCasa && (
-          <Link
-            href="/gastos"
-            className="mt-2.5 flex h-[76px] items-center gap-3.5 rounded-[22px] px-4"
-            style={{
-              background: 'color-mix(in srgb, #8B5CF6 12%, transparent)',
-              border: '1px solid color-mix(in srgb, #8B5CF6 30%, transparent)',
-            }}
-          >
-            <span
-              className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[15px] bg-superficie"
-              style={{ color: '#8B5CF6' }}
-            >
-              <Ico nombre="euro" tam={25} grosor={2.1} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block whitespace-nowrap text-[15px] font-bold text-tenue">
-                Cuentas de casa
-              </span>
-              {gastoCasa.total > 0 ? (
-                <>
-                  <span className="block text-[24px] font-extrabold leading-tight tracking-tight">
-                    {eurosRedondo(gastoCasa.total)}
-                    <span className="ml-1.5 text-[14.5px] font-bold text-tenue">
-                      este trimestre
-                    </span>
-                  </span>
-                  {/* En qué se va más. «1.240 €» dice cuánto; esto dice
-                      si hay algo que mirar, que es lo que hace entrar. */}
-                  {gastoCasa.mayor && (
-                    <span
-                      className="mt-0.5 block truncate text-[13.5px] font-bold"
-                      style={{ color: '#8B5CF6' }}
-                    >
-                      Lo que más, {gastoCasa.mayor.toLowerCase()}
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className="block text-[18px] font-extrabold leading-snug tracking-tight">
-                  Todavía no hay nada apuntado
-                </span>
-              )}
-            </span>
-            <span className="shrink-0" style={{ color: '#8B5CF6' }}>
-              <Ico nombre="flecha" tam={22} grosor={2.2} />
-            </span>
-          </Link>
-        )}
-        {/* ── Conectar Drive ── */}
-        {!conectado && manda && (
-          <div className="mt-6">
-            <a
-              href="/api/google/conectar"
-              className="flex h-[60px] items-center justify-center rounded-[18px] bg-verde text-[18px] font-extrabold text-white"
-            >
-              {caducado ? 'Volver a conectar Google Drive' : 'Conectar Google Drive'}
-            </a>
-            <p className="mt-4 text-[16px] leading-relaxed text-tinta-suave">
-              Google mostrará un aviso de aplicación no verificada. Es normal: pulsa{' '}
-              <strong>Configuración avanzada</strong> y después <strong>Ir a HUBI</strong>.
-              Solo ocurre esta vez.
-            </p>
-          </div>
-        )}
-
-        {!conectado && !manda && (
-          <p className="mt-6 rounded-2xl bg-superficie px-5 py-4 text-[17px] leading-snug text-tinta-suave">
-            Guardar documentos estará disponible cuando{' '}
-            {elJefe ?? 'quien creó esta casa'} conecte su Google Drive.
-          </p>
-        )}
-
-        {rol === 'ayuda' && casaHoy && <TarjetaCasa {...casaHoy} mia />}
-
-        {/* ── Hoy ── */}
-        {ve.agenda && hoy.length > 0 && (
-          <section className="mt-6">
-            <h2 className="rotulo">Hoy</h2>
-            <ul className="mt-2.5 space-y-2.5">
-              {hoy.map((r) => {
-                const p = pintaDe(r.titulo)
-                return (
-                  <li key={r.id}>
-                    <Link
-                      href={`/tablon/${r.id}`}
-                      className="flex items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-3.5 py-3"
-                    >
-                      <Pastilla nombre={p.icono} color={p.color} fondo={p.fondo} tam={44} icono={22} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[17.5px] font-bold leading-snug">
-                          {r.titulo}
-                        </span>
-                        <span className="mt-0.5 block text-[15px] font-semibold text-tenue">
-                          {cuando(r.fecha, r.hora)}
-                        </span>
-                      </span>
-                      <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0 text-borde" />
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
-        )}
-
         {/* ── Próximamente ── */}
         {ve.agenda && proximos.length > 0 && (
           <section className="mt-6">
-            <h2 className="rotulo">Próximamente</h2>
-            <ul className="mt-1">
+            <h2 className="t-seccion">Próximamente</h2>
+            <ul className="mt-2.5 space-y-2">
               {proximos.map((r) => {
                 const p = pintaDe(r.titulo)
                 return (
                   <li key={r.id}>
-                    <Link href={`/tablon/${r.id}`} className="flex items-center gap-3.5 px-0.5 py-2.5">
-                      <Pastilla
-                        nombre={p.icono}
-                        color={p.color}
-                        fondo={p.fondo}
-                        tam={38}
-                        icono={20}
-                        redondez={12}
-                      />
-                      <span className="min-w-0 flex-1 truncate text-[17px] font-bold">
-                        {r.titulo}
-                      </span>
-                      <span
-                        className="shrink-0 text-[15px] font-bold"
-                        style={{ color: p.color }}
-                      >
-                        {enCuanto(r.fecha)}
-                      </span>
+                    {/* Iban en una fila de 44 px sin borde, y el «dentro
+                        de 8 días» del color del ámbito. Un plazo no es
+                        un ámbito: es tinta, como cualquier otro dato. */}
+                    <Link
+                      href={`/tablon/${r.id}`}
+                      className="flex min-h-[48px] items-center gap-3 px-0.5 py-1.5"
+                    >
+                      <PastillaAmbito icono={p.icono} ambito={p.ambito} tam={40} />
+                      <span className="t-cuerpo min-w-0 flex-1 truncate">{r.titulo}</span>
+                      <span className="t-apoyo shrink-0">{enCuanto(r.fecha)}</span>
                     </Link>
                   </li>
                 )
@@ -947,99 +695,43 @@ export default async function Inicio({
             </ul>
           </section>
         )}
-
-        {rol !== 'ayuda' && casaHoy && <TarjetaCasa {...casaHoy} />}
 
         {ve.agenda &&
           hoy.length === 0 &&
           proximos.length === 0 &&
           deberes.length === 0 &&
           conectado && (
-            <p className="mt-6 rounded-[20px] bg-superficie px-6 py-8 text-center text-[17px] font-medium text-tinta-suave">
-              Hoy no hay nada apuntado.
-            </p>
+            <div className="mt-6">
+              <Vacio
+                titulo="Hoy no hay nada apuntado"
+                explicacion="Lo que apuntes con la voz o desde la Agenda saldrá aquí."
+              />
+            </div>
           )}
       </div>
 
-      <Barra activa="inicio" voz={false} />
+      {/*
+        EL BOTÓN DE VOZ APARECE CUANDO LA INVITACIÓN NO ESTÁ.
+
+        Aquí ponía `voz={false}` a secas, y la razón era buena: arriba
+        está la invitación de HUBI con el mismo símbolo, y dos botones
+        para lo mismo en una pantalla es uno de más.
+
+        Lo que no se vio es que esa invitación SOLO SE PINTA SI DRIVE
+        ESTÁ CONECTADO. Así que una casa recién creada, o una a la que
+        se le ha caducado el permiso de Google, se quedaba con la
+        pantalla principal sin ninguna entrada al asistente — la
+        función que define el producto, apagada por una integración de
+        almacenamiento que no tiene nada que ver con ella.
+
+        La regla sigue siendo la misma —un solo botón— pero ahora se
+        cumple mirando si el otro existe.
+      */}
+      <Barra activa="inicio" voz={!conectado} />
     </main>
   )
 }
 
-/*
-  ═══════════════════════════════════════════════════════════════
-  UN CUADRADO DEL MOSAICO
-  ═══════════════════════════════════════════════════════════════
-
-  El icono arriba, la cifra en grande en medio, y abajo qué es y qué
-  hay. Es el orden en que se mira un mosaico: primero el color y la
-  forma, luego el número, y solo si hace falta se lee la letra.
-
-  ─────────────────────────────────────────────────────────────
-  LA CIFRA NO SALE SIEMPRE, Y ES LO IMPORTANTE
-
-  Un «0» enorme en la pantalla de inicio es un reproche por algo que
-  no has hecho mal. Cuando no hay nada, el cuadrado dice qué es y para
-  qué sirve —«Deja un recado»— y ya está: invita en vez de regañar.
-
-  Y el número es UN dato, no una tabla. «3» y debajo «Faltan 3 cosas»
-  sería decir lo mismo dos veces, así que el pie cambia: con cifra
-  dice lo que son, sin cifra dice para qué vale.
-*/
-function Cuadro({
-  href,
-  icono,
-  color,
-  titulo,
-  pie,
-  cifra,
-  avisa = false,
-}: {
-  href: string
-  icono: 'bolsa' | 'chincheta'
-  color: string
-  titulo: string
-  pie: string
-  /** El número, si hay algo que contar. */
-  cifra: string | null
-  /** Algo te está esperando a ti: se ve desde lejos. */
-  avisa?: boolean
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex min-h-[152px] flex-col justify-between rounded-[22px] p-4"
-      style={{
-        background: `color-mix(in srgb, ${color} ${avisa ? 20 : 12}%, transparent)`,
-        border: `1px solid color-mix(in srgb, ${color} ${avisa ? 55 : 30}%, transparent)`,
-      }}
-    >
-      <span
-        className="flex h-[44px] w-[44px] items-center justify-center rounded-[14px] bg-superficie"
-        style={{ color }}
-      >
-        <Ico nombre={icono} tam={23} grosor={2.1} />
-      </span>
-
-      <span className="mt-3 block">
-        {cifra && (
-          <span
-            className="block text-[34px] font-extrabold leading-none tracking-tight"
-            style={{ color }}
-          >
-            {cifra}
-          </span>
-        )}
-        <span className="mt-1.5 block text-[17.5px] font-extrabold leading-tight tracking-tight">
-          {titulo}
-        </span>
-        <span className="mt-0.5 block text-[14px] font-bold leading-snug" style={{ color }}>
-          {pie}
-        </span>
-      </span>
-    </Link>
-  )
-}
 
 /*
   «el último, hoy» · «hace 2 días» · «hace 3 semanas»

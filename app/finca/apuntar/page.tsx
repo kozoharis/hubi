@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Apuntar from './formulario'
+import { miHogar } from '@/lib/hogar'
+import { esImpuesto, type Impuesto } from '@/lib/impuesto'
 import type { Categoria } from '@/lib/rutas'
 
 export const dynamic = 'force-dynamic'
@@ -97,9 +99,27 @@ export default async function PaginaApuntar({
     return suRaiz.id === raiz?.id
   })
 
+  /* ¿Esta casa lleva IGIC o IVA? Envuelto: sin el SQL 46 se comporta
+     como siempre y el formulario no enseña nada nuevo. */
+  let impuesto: Impuesto = 'ninguno'
+  try {
+    const casa = await miHogar(supabase, user.id)
+    if (casa) {
+      const { data: fila } = await supabase
+        .from('hogares')
+        .select('impuesto')
+        .eq('id', casa)
+        .maybeSingle()
+      if (fila && esImpuesto(fila.impuesto)) impuesto = fila.impuesto
+    }
+  } catch {
+    /* Como siempre: sin impuesto. */
+  }
+
   return (
     <Apuntar
       categorias={opciones}
+      impuesto={impuesto}
       nombre={deCasa ? 'Casa' : (raiz?.nombre ?? 'Finca')}
       volver={deCasa ? '/gastos' : raiz ? `/seccion/${raiz.id}` : '/'}
       /* Si la sección se reparte en unidades —los apartamentos de Los
@@ -108,6 +128,9 @@ export default async function PaginaApuntar({
          solo Los Helechos lo hacían. Las cuentas de casa nunca: una
          casa no se divide en nada. */
       conApartamentos={!deCasa && raiz?.usa_unidades === true}
+      /* El mismo parámetro con el que se entró, para que «Apuntar otro»
+         vuelva a ESTA sección y no a una escrita a mano. */
+      seccion={seccion ?? null}
     />
   )
 }

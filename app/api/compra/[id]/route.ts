@@ -76,7 +76,7 @@ export async function DELETE(
     return NextResponse.json(
       {
         error: 'No se ha quitado nada. Falta el permiso de borrado en la base de datos.',
-        detalle: 'DELETE devolvió 0 filas (SQL 16).',
+        detalle: 'No se ha podido quitar: la base de datos no ha dejado.',
       },
       { status: 409 }
     )

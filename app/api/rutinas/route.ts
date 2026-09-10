@@ -96,7 +96,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: 'No se ha podido guardar el plan.',
-        detalle: alBorrar.message ?? 'Puede que falte ejecutar el SQL 38.',
+        detalle: alBorrar.message ?? 'Esto todavía no está disponible en esta casa.',
       },
       { status: 500 }
     )
@@ -126,7 +126,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: 'No se ha podido guardar el plan.',
-        detalle: error?.message ?? 'Puede que falte ejecutar el SQL 38.',
+        detalle: error?.message ?? 'Esto todavía no está disponible en esta casa.',
       },
       { status: 500 }
     )
@@ -206,7 +206,7 @@ export async function PATCH(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: 'No se ha podido marcar.',
-        detalle: error?.message ?? 'Puede que falte ejecutar el SQL 38.',
+        detalle: error?.message ?? 'Esto todavía no está disponible en esta casa.',
       },
       { status: 500 }
     )

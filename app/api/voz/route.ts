@@ -2,9 +2,38 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { escuchar } from '@/lib/voz'
-import { entenderFrase } from '@/lib/entender-voz'
+import { entenderFrase, seguroQueEsNota } from '@/lib/entender-voz'
 import { cadena, type Categoria } from '@/lib/rutas'
 import { ramaDe } from '@/lib/carpetas'
+
+/*
+  De la partida donde se apuntó algo, a la actividad a la que
+  pertenece. Se sube por `padre_id` hasta la raíz: así da igual
+  cuántos niveles tenga cada casa —Finca → Gastos → 2026 → T3 → Luz—
+  y funciona igual en una casa con dos actividades que en una con seis.
+
+  Si no hay categoría —o no se encuentra su raíz— no se devuelve nada,
+  y la pantalla enseña solo «Decir otra cosa». Un botón que lleva a un
+  sitio inventado es peor que no tener botón.
+*/
+function aDondeLleva(
+  todas: Categoria[],
+  categoria: Categoria | null
+): { ir_a?: string; ir_a_nombre?: string } {
+  if (!categoria) return {}
+
+  let actual = categoria
+  const vistas = new Set<string>()
+  while (actual.padre_id && !vistas.has(actual.id)) {
+    vistas.add(actual.id)
+    const padre = todas.find((c) => c.id === actual.padre_id)
+    if (!padre) break
+    actual = padre
+  }
+
+  return { ir_a: `/seccion/${actual.id}`, ir_a_nombre: actual.nombre }
+}
+
 import { citasDeLaFamilia } from '@/lib/agenda-google'
 import { calcular, euros } from '@/lib/periodos'
 import { hoyAqui } from '@/lib/tablon'
@@ -113,11 +142,64 @@ export async function POST(peticion: NextRequest) {
        aquí y volvía a adivinar lo mismo que ya había fallado. */
     const PISTAS = [
       'recordatorio', 'gasto', 'ingreso', 'buscar',
-      'consulta', 'compra', 'cambiar', 'borrar',
+      'consulta', 'compra', 'cambiar', 'borrar', 'nota',
     ] as const
     type Pista = (typeof PISTAS)[number]
 
     const laPista = PISTAS.includes(pista as Pista) ? (pista as Pista) : undefined
+
+    /*
+      ── LAS FRASES SIN DUDA NO SE INTERPRETAN ───────────────
+
+      «Ponle una nota a Julia. Los papeles están en la mesa.» Lleva la
+      palabra nota y no lleva ningún día. No hay dos lecturas.
+
+      Esto se resuelve con reglas, y hay que aplicarlo DOS VECES:
+
+      · Antes de Gemini, cuando el teléfono ya manda el texto
+        transcrito. Ahí nos ahorramos la llamada entera.
+
+      · Y DESPUÉS, sobre lo que Gemini transcribió. Porque el iPhone
+        no manda texto: manda el audio en un formulario, y hasta que
+        Gemini no contesta no hay ni una palabra que mirar. Era el
+        caso real, y por eso el atajo no llegaba a dispararse nunca
+        en el único teléfono donde importaba.
+    */
+    const comoNota = (frase: string) => {
+      const suya = entenderFrase({
+        frase,
+        pista: 'nota',
+        personas: perfiles ?? [],
+        categorias: conocidas,
+        hoy,
+      })
+
+      const aQuienNota = ((): string | null => {
+        if (!suya.para) return null
+        const dicho = sinTildes(suya.para)
+        const encontrada = (perfiles ?? []).find((p) => {
+          const nombre = sinTildes(p.nombre)
+          return dicho.includes(nombre.split(' ')[0]) || nombre.includes(dicho)
+        })
+        return encontrada?.id ?? null
+      })()
+
+      return NextResponse.json({
+        ...suya,
+        accion: 'nota',
+        transcripcion: frase,
+        confianza: 'alta',
+        para_id: aQuienNota,
+        para_nombre:
+          aQuienNota == null
+            ? 'La casa'
+            : ((perfiles ?? []).find((p) => p.id === aQuienNota)?.nombre ?? 'La casa'),
+      })
+    }
+
+    if (texto && (laPista === 'nota' || seguroQueEsNota(texto))) {
+      return comoNota(texto)
+    }
 
     /*
       Gemini primero; si no, HUBI se apaña.
@@ -159,6 +241,43 @@ export async function POST(peticion: NextRequest) {
 
       oido = entenderFrase({
         frase: texto,
+        pista: laPista,
+        personas: perfiles ?? [],
+        categorias: conocidas,
+        hoy,
+      })
+    }
+
+    /*
+      Y AHORA SÍ, SOBRE LO QUE SE HA TRANSCRITO.
+
+      Si la frase era una nota sin lugar a dudas y el modelo ha dicho
+      otra cosa, manda la regla. No es desconfianza general: es que en
+      este caso concreto no hay nada que interpretar, y quien acaba de
+      decir «ponle una nota a Julia» no merece encontrarse una tarea
+      en la Agenda.
+    */
+    const loQueSeDijo = texto || oido.transcripcion || ''
+    if (loQueSeDijo && oido.accion !== 'nota' && !laPista && seguroQueEsNota(loQueSeDijo)) {
+      return comoNota(loQueSeDijo)
+    }
+
+    /*
+      ── EL BOTÓN MANDA SOBRE EL MODELO ──────────────────────
+
+      Los botones de «¿qué quieres que haga con esto?» salen justo
+      cuando el modelo NO ha sabido. Si después de pulsarlos vuelve a
+      contestar otra cosa —o «nada» otra vez—, la pantalla enseña lo
+      mismo y parece que el botón no hace nada. Que es exactamente lo
+      que pasaba.
+
+      Habiendo pista, si el modelo no la respeta se usa el intérprete
+      de casa, que sí la obedece siempre. La persona ya ha dicho lo
+      que es: no se le vuelve a preguntar.
+    */
+    if (laPista && oido.accion !== laPista && loQueSeDijo) {
+      oido = entenderFrase({
+        frase: loQueSeDijo,
         pista: laPista,
         personas: perfiles ?? [],
         categorias: conocidas,
@@ -665,6 +784,26 @@ export async function POST(peticion: NextRequest) {
       para_dicho: Boolean(oido.para),
       categoria_nombre: categoria?.nombre ?? null,
       categoria_ruta: categoria ? rutaDe(categoria) : null,
+      /*
+        ── A DÓNDE LLEVA EL BOTÓN DESPUÉS DE GUARDAR ──
+
+        Y esto faltaba. La pantalla de «Guardado» ofrecía «Ver la
+        Finca» para CUALQUIER gasto o ingreso, con la dirección
+        `/finca` escrita a mano.
+
+        Dos cosas mal a la vez:
+
+        · Un gasto de luz de la CASA no es de la Finca. Se apuntaba
+          bien —en su partida— y el botón mandaba a otro sitio.
+
+        · «La Finca» es el nombre de UNA actividad de UNA casa. En
+          cualquier otra familia ese botón nombra algo que no existe,
+          y `/finca` es una dirección que no lleva a ninguna parte.
+
+        Se resuelve aquí, que es donde está el árbol: se sube desde la
+        partida hasta su raíz y se devuelve la actividad de verdad.
+      */
+      ...aDondeLleva(todas, categoria),
     })
   } catch (e) {
     const motivo = e instanceof Error ? e.message : ''

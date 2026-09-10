@@ -4,6 +4,7 @@ import { quien } from '@/lib/supabase/quien'
 import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
 import { Volver } from '../../../iconos'
+import { Aviso } from '../../../piezas'
 import type { Categoria } from '@/lib/carpetas'
 import Corregir, { type Papel } from './formulario'
 
@@ -32,11 +33,34 @@ export default async function EditarDocumento({
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
 
-  const { data, error } = await supabase
+  /*
+    DOS INTENTOS, Y NO ES DESCONFIANZA: ES EXPERIENCIA.
+
+    `se_renueva`, `preaviso_dias` y `avisar_con` son del SQL 43
+    (`fecha_vencimiento` ya existía). Si todavía no se ha ejecutado,
+    Postgres no falla solo por esas tres: rechaza la consulta entera, y esta pantalla —que sí mira el
+    error— enseñaría «no se ha podido abrir» sobre un papel que está
+    perfectamente. Ya nos ha pasado tres veces en este proyecto.
+
+    Sin las columnas se corrige todo lo demás igual que ayer, y el
+    bloque del vencimiento sale vacío.
+  */
+  const BASE =
+    'id, titulo, proveedor, fecha_documento, importe, categoria_id, fecha_vencimiento'
+
+  let { data, error } = await supabase
     .from('documentos')
-    .select('id, titulo, proveedor, fecha_documento, importe, categoria_id')
+    .select(`${BASE}, se_renueva, preaviso_dias, avisar_con`)
     .eq('id', id)
     .maybeSingle()
+
+  if (error) {
+    ;({ data, error } = await supabase
+      .from('documentos')
+      .select(BASE)
+      .eq('id', id)
+      .maybeSingle())
+  }
 
   if (error) {
     console.error('[HUBI] No se ha podido abrir para corregir:', error.message)
@@ -44,16 +68,15 @@ export default async function EditarDocumento({
       <main className="min-h-screen pb-40">
         <Cabecera>
           <Volver href={`/documentos/${id}`} />
+          <h1 className="t-titulo mt-2.5">No se ha podido abrir</h1>
         </Cabecera>
         <div className="mx-auto w-full max-w-md px-5">
-          <div className="rounded-[22px] border border-coral bg-coral-suave px-5 py-6">
-            <h1 className="text-[22px] font-extrabold text-coral">
-              No se ha podido abrir
-            </h1>
-            <p className="mt-2 break-words rounded-[14px] bg-superficie px-3 py-2.5 text-[14px] font-semibold text-tinta-suave">
-              {error.message}
-            </p>
-          </div>
+          {/* El motivo técnico va al registro del servidor, arriba.
+              Y faltaba la frase que sí importa: que no se ha perdido. */}
+          <Aviso
+            titulo="No se ha podido abrir este papel"
+            explicacion="Sigue guardado, no se ha perdido nada. Es un fallo al leerlo. Vuelve a intentarlo en un momento."
+          />
         </div>
         <Barra activa="documentos" />
       </main>
@@ -71,7 +94,7 @@ export default async function EditarDocumento({
     <main className="min-h-screen pb-40">
       <Cabecera>
         <Volver href={`/documentos/${id}`} />
-        <h1 className="text-[27px] font-extrabold tracking-tight">Corregir</h1>
+        <h1 className="t-titulo mt-2.5">Corregir</h1>
       </Cabecera>
 
       <div className="mx-auto w-full max-w-md px-5">

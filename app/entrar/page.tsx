@@ -169,10 +169,40 @@ export default function Entrar() {
       {/* El color que va a la deriva por detrás */}
       <ColorDeBarra color="#01071B" />
 
+      {/*
+        ═══════════════════════════════════════════════════════
+        LAS CUATRO MANCHAS · LA PUERTA TIENE QUE ANUNCIAR LA CASA
+        ═══════════════════════════════════════════════════════
+
+        Eran turquesa, NARANJA, ROSA y azul. Y durante mucho tiempo no
+        cantaba: HUBI era gris azulado por dentro y esto azul noche, así
+        que pegaban.
+
+        Al pasar el producto a papel cálido (Fase 3) se cambió la casa y
+        no la puerta. Y entonces el naranja `#F97316` y el rosa
+        `#EC486E` se quedaron anunciando algo que YA NO EXISTE: los dos
+        salieron de la paleta en la Fase 1 y no aparecen ni una sola vez
+        en el resto del producto.
+
+        Es lo primero que ve alguien. Prometía un producto —oscuro, con
+        naranjas y rosas— y al entrar se encontraba otro, crema y
+        apagado.
+
+        Ahora las cuatro existen dentro:
+
+            turquesa  el color de acción, y el del degradado de HUBI
+            azul      el otro extremo de ese mismo degradado
+            arena     el ámbito de la Casa — y lo que anuncia el papel
+                      cálido que hay al entrar
+            violeta   el ámbito de Vehículos
+
+        La composición no se toca: mismas posiciones, mismos tamaños,
+        misma deriva. Solo dejan de mentir sobre lo que hay dentro.
+      */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <span className="mancha deriva-1" style={{ width: 330, height: 330, left: -130, top: -100, background: 'rgba(20,184,166,.40)' }} />
-        <span className="mancha deriva-3" style={{ width: 320, height: 320, right: -135, top: 0, background: 'rgba(249,115,22,.34)' }} />
-        <span className="mancha deriva-2" style={{ width: 360, height: 360, right: -120, bottom: -130, background: 'rgba(236,72,110,.30)' }} />
+        <span className="mancha deriva-3" style={{ width: 320, height: 320, right: -135, top: 0, background: 'rgba(192,154,98,.30)' }} />
+        <span className="mancha deriva-2" style={{ width: 360, height: 360, right: -120, bottom: -130, background: 'rgba(148,130,217,.26)' }} />
         <span className="mancha deriva-4" style={{ width: 320, height: 320, left: -120, bottom: -110, background: 'rgba(59,130,246,.30)' }} />
         <span
           className="absolute inset-0"
@@ -222,7 +252,7 @@ export default function Entrar() {
               <button
                 type="submit"
                 disabled={ocupado || correo.length < 5}
-                className="mt-4 flex h-[62px] w-full items-center justify-center rounded-[16px] bg-verde text-[18px] font-extrabold text-white transition disabled:opacity-40"
+                className="mt-4 flex h-[62px] w-full items-center justify-center rounded-[16px] bg-accion text-[18px] font-extrabold text-accion-tinta tocable disabled:opacity-40"
               >
                 {ocupado ? 'Enviando…' : 'Continuar'}
               </button>
@@ -243,7 +273,7 @@ export default function Entrar() {
                   setAviso(null)
                   setPaso('codigo')
                 }}
-                className="mt-2 w-full py-3 text-[15px] font-bold text-apagado underline underline-offset-4"
+                className="mt-2 flex h-[48px] w-full items-center justify-center text-[15px] font-bold text-apagado underline underline-offset-4"
               >
                 Ya tengo un código
               </button>
@@ -254,7 +284,7 @@ export default function Entrar() {
                   setAviso(null)
                   setPaso('alta')
                 }}
-                className="mt-1 w-full py-3 text-[15px] font-bold text-apagado underline underline-offset-4"
+                className="mt-1 flex h-[48px] w-full items-center justify-center text-[15px] font-bold text-apagado underline underline-offset-4"
               >
                 Todavía no tengo cuenta
               </button>
@@ -303,7 +333,7 @@ export default function Entrar() {
               <button
                 type="submit"
                 disabled={ocupado || correo.trim().length < 5 || palabra.trim().length < 2}
-                className="mt-5 flex h-[62px] w-full items-center justify-center rounded-[16px] bg-verde text-[18px] font-extrabold text-white transition disabled:opacity-40"
+                className="mt-5 flex h-[62px] w-full items-center justify-center rounded-[16px] bg-accion text-[18px] font-extrabold text-accion-tinta tocable disabled:opacity-40"
               >
                 {ocupado ? 'Creando…' : 'Crear mi cuenta'}
               </button>
@@ -321,7 +351,7 @@ export default function Entrar() {
                   setPalabra('')
                   setPaso('correo')
                 }}
-                className="mt-2 w-full py-3 text-[15px] font-bold text-apagado underline underline-offset-4"
+                className="mt-2 flex h-[48px] w-full items-center justify-center text-[15px] font-bold text-apagado underline underline-offset-4"
               >
                 Ya tengo cuenta
               </button>
@@ -352,7 +382,7 @@ export default function Entrar() {
               <button
                 type="submit"
                 disabled={ocupado || codigo.length < 6}
-                className="mt-4 flex h-[62px] w-full items-center justify-center rounded-[16px] bg-verde text-[18px] font-extrabold text-white transition disabled:opacity-40"
+                className="mt-4 flex h-[62px] w-full items-center justify-center rounded-[16px] bg-accion text-[18px] font-extrabold text-accion-tinta tocable disabled:opacity-40"
               >
                 {ocupado ? 'Comprobando…' : 'Entrar'}
               </button>
@@ -366,7 +396,7 @@ export default function Entrar() {
                   setPalabra('')
                   setPaso('correo')
                 }}
-                className="mt-3 w-full py-3 text-[16px] font-bold text-apagado underline underline-offset-4 disabled:no-underline disabled:opacity-50"
+                className="mt-3 flex h-[48px] w-full items-center justify-center text-[16px] font-bold text-apagado underline underline-offset-4 disabled:no-underline disabled:opacity-50"
               >
                 {espera > 0
                   ? `Puedes pedir otro código en ${espera} s`

@@ -202,7 +202,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: error.message.includes('unidades')
-          ? 'Falta ejecutar sql/25-unidades.sql y sql/26-unidades-en-drive.sql.'
+          ? 'Repartir una sección en partes todavía no está disponible en esta casa.'
           : 'No se ha podido crear.',
         detalle: error.message,
       },

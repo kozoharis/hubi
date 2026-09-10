@@ -68,6 +68,9 @@ export default function Unidades({
   const [presupuesto, setPresupuesto] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
+  /* Cuál se está preguntando si se retira. Antes lo guardaba el
+     diálogo del navegador; ahora la pregunta vive en la pantalla. */
+  const [retirando, setRetirando] = useState<{ id: string; nombre: string } | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
   const [editando, setEditando] = useState<string | null>(null)
   const [nuevoNombre, setNuevoNombre] = useState('')
@@ -126,19 +129,15 @@ export default function Unidades({
     router.refresh()
   }
 
-  async function retirar(id: string, comoSeLlama: string) {
-    /*
-      Se pregunta, y la pregunta dice lo que va a pasar DE VERDAD.
+  /*
+    Se pregunta antes, y la pregunta dice lo que va a pasar DE VERDAD.
 
-      «¿Seguro?» no es una pregunta: no informa de nada. Aquí se dice
-      que lo apuntado no se pierde, porque ése es justo el miedo que
-      frena a alguien delante de este botón.
-    */
-    const seguro = window.confirm(
-      `¿Retirar «${comoSeLlama}»?\n\nDeja de salir al apuntar cosas nuevas. Lo que ya había apuntado NO se pierde y sus papeles siguen en Drive.`
-    )
-    if (!seguro) return
-
+    «¿Seguro?» no es una pregunta: no informa de nada. Aquí se dice que
+    lo apuntado no se pierde, porque ése es justo el miedo que frena a
+    alguien delante de este botón. Lo que ha cambiado es DÓNDE se
+    pregunta: dentro de la aplicación, no en el diálogo del navegador.
+  */
+  async function retirar(id: string) {
     setOcupado(true)
     const r = await fetch(`/api/unidades?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
     setOcupado(false)
@@ -148,6 +147,7 @@ export default function Unidades({
       setFallo(d.error ?? 'No se ha podido retirar.')
       return
     }
+    setRetirando(null)
     router.refresh()
   }
 
@@ -156,7 +156,7 @@ export default function Unidades({
       <p className="rotulo">{seccionNombre}</p>
 
       {unidades.length === 0 ? (
-        <p className="mt-2 text-[15.5px] font-semibold leading-snug text-tenue">
+        <p className="t-apoyo mt-2">
           Todavía no has creado {ninguna(articulo)} {sustantivo}.
         </p>
       ) : (
@@ -164,7 +164,7 @@ export default function Unidades({
           {unidades.map((u) => (
             <li
               key={u.id}
-              className="rounded-[18px] border border-borde bg-superficie px-4 py-3"
+              className="rounded-[20px] border border-borde bg-superficie px-4 py-3"
             >
               {editando === u.id ? (
                 <div>
@@ -179,48 +179,97 @@ export default function Unidades({
                     <button
                       onClick={() => renombrar(u.id)}
                       disabled={ocupado}
-                      className="h-12 flex-1 rounded-[14px] bg-boton text-[16px] font-extrabold text-boton-texto disabled:opacity-50"
+                      className="t-cuerpo h-[60px] flex-1 rounded-[16px] font-extrabold disabled:opacity-50"
+                      style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
                     >
                       Guardar
                     </button>
                     <button
                       onClick={() => setEditando(null)}
-                      className="h-12 flex-1 rounded-[14px] border border-borde text-[16px] font-extrabold text-tinta-suave"
+                      className="t-cuerpo h-[60px] flex-1 rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta"
                     >
                       Dejarlo
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-[17px] font-bold">{u.nombre}</p>
+                <>
+                <div className="flex min-h-[52px] items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="t-cuerpo truncate font-extrabold">{u.nombre}</p>
                     {u.presupuesto != null && (
-                      <p className="text-[14.5px] font-semibold text-tenue">
+                      <p className="t-apoyo">
                         Presupuesto: {u.presupuesto.toLocaleString('es-ES')} €
                       </p>
                     )}
                   </div>
-                  <div className="flex shrink-0 gap-1">
+                  {/* Los dos botones llevaban solo un dibujo, y el de
+                      retirar era un TRIÁNGULO DE AVISO haciendo de
+                      papelera. Ahora los dos llevan su palabra. */}
+                  <div className="flex shrink-0 gap-1.5">
                     <button
                       onClick={() => {
                         setEditando(u.id)
                         setNuevoNombre(u.nombre)
                       }}
-                      aria-label={`Cambiar el nombre de ${u.nombre}`}
-                      className="flex h-12 w-12 items-center justify-center rounded-[14px] text-tinta-suave"
+                      className="t-apoyo flex h-12 items-center gap-1.5 rounded-[16px] border border-borde bg-superficie px-3 font-extrabold text-tinta"
                     >
-                      <Ico nombre="lapiz" tam={19} grosor={2.2} />
+                      <Ico nombre="lapiz" tam={18} grosor={2.2} />
+                      Cambiar
                     </button>
                     <button
-                      onClick={() => retirar(u.id, u.nombre)}
-                      aria-label={`Retirar ${u.nombre}`}
-                      className="flex h-12 w-12 items-center justify-center rounded-[14px] text-tinta-suave"
+                      onClick={() => setRetirando({ id: u.id, nombre: u.nombre })}
+                      className="t-apoyo flex h-12 items-center rounded-[16px] border bg-superficie px-3 font-extrabold"
+                      style={{ borderColor: 'var(--t-borde)', color: 'var(--t-alerta)' }}
                     >
-                      <Ico nombre="aviso" tam={19} grosor={2.2} />
+                      Retirar
                     </button>
                   </div>
                 </div>
+
+                {/*
+                  Aquí había un `window.confirm()`. El diálogo gris del
+                  navegador, con los saltos de línea escritos a mano
+                  porque no admite otra cosa, justo en el momento de más
+                  riesgo. Ahora la pregunta se hace dentro y dice lo
+                  mismo: que lo apuntado no se pierde, que es el miedo
+                  que de verdad frena delante de este botón.
+                */}
+                {retirando?.id === u.id && (
+                  <div
+                    className="mt-3 rounded-[16px] border px-4 py-3.5"
+                    style={{
+                      background: 'var(--t-alerta-velo)',
+                      borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)',
+                    }}
+                  >
+                    <p className="t-cuerpo font-extrabold" style={{ color: 'var(--t-alerta)' }}>
+                      ¿Retirar «{u.nombre}»?
+                    </p>
+                    <p className="t-apoyo mt-1.5 text-tinta-suave">
+                      Deja de salir al apuntar cosas nuevas. Lo que ya había apuntado
+                      no se pierde y sus papeles siguen en Drive.
+                    </p>
+                    <div className="mt-3 space-y-2">
+                      <button
+                        onClick={() => retirar(u.id)}
+                        disabled={ocupado}
+                        className="t-cuerpo h-[60px] w-full rounded-[16px] border bg-superficie font-extrabold disabled:opacity-50"
+                        style={{ borderColor: 'var(--t-alerta)', color: 'var(--t-alerta)' }}
+                      >
+                        {ocupado ? 'Retirando…' : `Sí, retirar${articulo === 'el' ? 'lo' : 'la'}`}
+                      </button>
+                      <button
+                        onClick={() => setRetirando(null)}
+                        disabled={ocupado}
+                        className="t-cuerpo h-[60px] w-full rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta disabled:opacity-50"
+                      >
+                        Dejarlo como está
+                      </button>
+                    </div>
+                  </div>
+                )}
+                </>
               )}
             </li>
           ))}
@@ -229,8 +278,8 @@ export default function Unidades({
 
       {/* ── Crear ── */}
       {creando ? (
-        <div className="mt-3 rounded-[18px] border border-borde bg-superficie px-4 py-4">
-          <p className="text-[16px] font-extrabold">¿Cómo se llama?</p>
+        <div className="mt-3 rounded-[20px] border border-borde bg-superficie px-4 py-4">
+          <p className="t-tarjeta">¿Cómo se llama?</p>
           <input
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
@@ -262,7 +311,7 @@ export default function Unidades({
             <button
               onClick={crear}
               disabled={ocupado || nombre.trim().length < 2}
-              className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+              className="flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-accion text-[17px] font-extrabold text-accion-tinta disabled:opacity-50"
             >
               <Ico nombre="check" tam={19} grosor={2.3} />
               {ocupado ? 'Creando…' : 'Crear'}
@@ -273,7 +322,7 @@ export default function Unidades({
                 setFallo(null)
               }}
               disabled={ocupado}
-              className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+              className="h-[60px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
             >
               Ahora no
             </button>
@@ -285,7 +334,7 @@ export default function Unidades({
             setCreando(true)
             setAviso(null)
           }}
-          className="mt-3 flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
+          className="mt-3 flex h-[60px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
         >
           <Ico nombre="mas" tam={20} grosor={2.4} />
           {nueva} {sustantivo}
@@ -293,7 +342,8 @@ export default function Unidades({
       )}
 
       {fallo && (
-        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
+        <p className="mt-3 t-apoyo rounded-[16px] border px-4 py-3"
+          style={{ background: 'var(--t-alerta-velo)', borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)', color: 'var(--t-alerta)' }}>
           {fallo}
         </p>
       )}

@@ -25,6 +25,15 @@ const RUTAS_ABIERTAS = [
   '/api/push/diario',
 
   /*
+    QUÉ VERSIÓN ESTÁ PUBLICADA. Abierta a propósito: sirve para
+    comprobar desde fuera si lo último ha llegado, y si hiciera falta
+    entrar para verla no serviría para eso. Devuelve una fecha y siete
+    letras del commit — nada de la familia, nada que abra ninguna
+    puerta.
+  */
+  '/api/version',
+
+  /*
     ═══════════════════════════════════════════════════════════
     EL ALTA, POR DEFINICIÓN, LA PIDE ALGUIEN SIN SESIÓN
     ═══════════════════════════════════════════════════════════

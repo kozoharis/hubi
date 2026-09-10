@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { AMBITO } from '@/lib/ambitos'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
+import { Aviso } from '../piezas'
 import type { NotaVista } from '@/lib/notas'
 
 /*
@@ -92,7 +94,8 @@ export default function Notas({
   /* El color de quien la escribió. Con cuatro personas en la casa,
      saber de quién es cada nota obliga hoy a leerse la firma de cada
      una; una barra de color a la izquierda lo contesta de reojo. */
-  const colorDe = new Map(gente.map((g) => [g.id, g.color ?? '#64748B']))
+  /* Pizarra de la paleta, no el gris azulado de antes. */
+  const colorDe = new Map(gente.map((g) => [g.id, g.color ?? AMBITO.pizarra]))
 
   /*
     ═══════════════════════════════════════════════════════════
@@ -241,14 +244,14 @@ export default function Notas({
       {/* Quien solo mira no ve la caja de escribir. Se le dice por qué,
           una vez y sin dramatismo: no ha hecho nada mal. */}
       {!escribo && (
-        <p className="mt-4 rounded-[16px] border border-borde px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tenue">
+        <p className="t-apoyo mt-4 rounded-[16px] border border-borde px-4 py-3.5">
           Puedes leer las notas de la casa, pero no dejar ninguna.
         </p>
       )}
 
       {/* ── El corcho ── */}
       {visibles.length === 0 ? (
-        <p className="mt-4 rounded-[20px] bg-superficie px-6 py-10 text-center text-[17px] font-medium leading-snug text-tinta-suave">
+        <p className="t-cuerpo mt-4 rounded-[20px] border border-borde bg-superficie px-6 py-8 text-center text-tinta-suave">
           {viendoGuardadas
             ? 'No has guardado ninguna nota todavía.'
             : mirando === 'todas'
@@ -265,7 +268,7 @@ export default function Notas({
             const paraMi = n.para === yo
             const autor = nombreDe.get(n.escrita_por)?.split(' ')[0] ?? 'Alguien'
             const destino = n.para ? (nombreDe.get(n.para)?.split(' ')[0] ?? 'alguien') : null
-            const suColor = colorDe.get(n.escrita_por) ?? '#64748B'
+            const suColor = colorDe.get(n.escrita_por) ?? AMBITO.pizarra
 
             return (
               <li
@@ -299,7 +302,7 @@ export default function Notas({
                       onChange={(e) => setBorrador(e.target.value)}
                       rows={3}
                       maxLength={1200}
-                      className="w-full resize-y rounded-[16px] border border-borde bg-fondo px-4 py-3.5 text-[18px] font-semibold leading-snug text-tinta outline-none focus:border-verde"
+                      className="w-full resize-y rounded-[16px] border border-borde bg-superficie px-4 py-3.5 text-[19px] font-semibold leading-snug text-tinta outline-none focus:border-[color:var(--color-accion)]"
                       autoFocus
                     />
                     {/* PARA QUIÉN, TAMBIÉN AL CORREGIR.
@@ -326,14 +329,15 @@ export default function Notas({
                       <button
                         onClick={() => guardarCambio(n.id)}
                         disabled={ocupado || borrador.trim().length === 0}
-                        className="h-[52px] flex-1 rounded-[14px] bg-boton text-[16.5px] font-extrabold text-boton-texto disabled:opacity-50"
+                        className="t-cuerpo h-[60px] flex-1 rounded-[16px] font-extrabold disabled:opacity-50"
+                        style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
                       >
                         Guardar
                       </button>
                       <button
                         onClick={() => setEditando(null)}
                         disabled={ocupado}
-                        className="h-[52px] flex-1 rounded-[14px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
+                        className="t-cuerpo h-[60px] flex-1 rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta disabled:opacity-50"
                       >
                         Dejarlo
                       </button>
@@ -343,11 +347,11 @@ export default function Notas({
                   <>
                     {/* `whitespace-pre-wrap`: si alguien escribe la nota
                         en tres renglones, se lee en tres renglones. */}
-                    <p className="whitespace-pre-wrap text-[17.5px] font-semibold leading-snug">
+                    <p className="t-cuerpo whitespace-pre-wrap font-semibold">
                       {n.texto}
                     </p>
 
-                    <p className="mt-2 text-[14.5px] font-bold text-tenue">
+                    <p className="t-apoyo mt-2">
                       {[
                         mia ? 'Tú' : autor,
                         destino ? (paraMi ? '→ para ti' : `→ para ${destino}`) : null,
@@ -361,7 +365,10 @@ export default function Notas({
                     {/* «Visto», y quién lo ha visto. Es el punto 16: quien
                         deja el recado quiere saber que ha llegado. */}
                     {n.para && n.vista_en && (
-                      <p className="mt-1.5 flex items-center gap-1.5 text-[14.5px] font-extrabold text-verde">
+                      <p
+                        className="t-apoyo mt-1.5 flex items-center gap-1.5 font-extrabold"
+                        style={{ color: 'var(--t-bien)' }}
+                      >
                         <Ico nombre="check" tam={16} grosor={2.4} />
                         Visto
                       </p>
@@ -447,7 +454,7 @@ export default function Notas({
       {escribo && !viendoGuardadas && (
         escribiendo ? (
           <div className="mt-4 rounded-[20px] border border-borde bg-superficie px-4 py-4">
-            <label htmlFor="nota" className="block text-[17px] font-extrabold leading-snug">
+            <label htmlFor="nota" className="t-tarjeta block">
               Deja una nota
             </label>
             <textarea
@@ -458,12 +465,12 @@ export default function Notas({
               maxLength={1200}
               autoFocus
               placeholder="La llave del garaje está en el cajón de la entrada"
-              className="mt-2.5 w-full resize-y rounded-[16px] border border-borde bg-fondo px-4 py-3.5 text-[18px] font-semibold leading-snug text-tinta outline-none placeholder:font-semibold placeholder:text-tenue focus:border-verde"
+              className="mt-2.5 w-full resize-y rounded-[16px] border border-borde bg-superficie px-4 py-3.5 text-[19px] font-semibold leading-snug text-tinta outline-none placeholder:font-semibold placeholder:text-tenue focus:border-[color:var(--color-accion)]"
             />
 
             {otros.length > 0 && (
               <>
-                <p className="mt-4 text-[17px] font-extrabold leading-snug">¿Para quién?</p>
+                <p className="rotulo mt-4">¿Para quién?</p>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   {destinos.map((d) => (
                     <Pastilla
@@ -477,7 +484,7 @@ export default function Notas({
                 {/* Lo que va a pasar, dicho antes de pulsar. Los tres
                     destinos hacen tres cosas distintas y ninguna se
                     adivina mirando la pastilla. */}
-                <p className="mt-2.5 text-[14.5px] font-semibold leading-snug text-tenue">
+                <p className="t-apoyo mt-2.5">
                   {para === null
                     ? 'La verá todo el mundo en casa. No suena ningún teléfono.'
                     : para === yo
@@ -491,7 +498,8 @@ export default function Notas({
               <button
                 onClick={poner}
                 disabled={ocupado || texto.trim().length === 0}
-                className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+                className="t-cuerpo flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] font-extrabold disabled:opacity-50"
+                style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
               >
                 <Ico nombre="chincheta" tam={19} grosor={2.3} />
                 {ocupado ? 'Poniendo…' : 'Poner la nota'}
@@ -502,7 +510,7 @@ export default function Notas({
                   setFallo(null)
                 }}
                 disabled={ocupado}
-                className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+                className="t-cuerpo h-[60px] flex-1 rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta disabled:opacity-50"
               >
                 Ahora no
               </button>
@@ -511,7 +519,7 @@ export default function Notas({
         ) : (
           <button
             onClick={() => setEscribiendo(true)}
-            className="mt-4 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[18px] border border-borde bg-superficie text-[17.5px] font-extrabold text-tinta"
+            className="t-tarjeta mt-4 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[16px] border border-borde bg-superficie text-tinta"
           >
             <Ico nombre="mas" tam={21} grosor={2.4} />
             ¿Dejamos otra nota?
@@ -522,15 +530,15 @@ export default function Notas({
       {/* Se dice dónde va lo que se quita. «Quitar» a secas suena a
           borrar, y nadie pulsa un botón que suena a borrar. */}
       {!viendoGuardadas && notas.length > 0 && escribo && (
-        <p className="mt-3 text-center text-[14.5px] font-semibold text-tenue">
+        <p className="t-apoyo mt-3 text-center">
           Lo que quites no se borra: queda en Guardadas.
         </p>
       )}
 
       {fallo && (
-        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
-          {fallo}
-        </p>
+        <div className="mt-3">
+          <Aviso titulo="No se ha podido" explicacion={fallo} />
+        </div>
       )}
     </>
   )
@@ -541,10 +549,13 @@ function Pestana({ texto, href, puesta }: { texto: string; href: string; puesta:
     <Link
       href={href}
       aria-current={puesta ? 'page' : undefined}
-      className="flex h-11 flex-1 items-center justify-center rounded-full text-[15px] font-extrabold"
+      /* Eran 44 px y se rellenaban de naranja saturado. El naranja es
+         ahora el color de «atención», no el de una sección — y una
+         pestaña elegida no reclama nada, solo dice dónde estás. */
+      className="flex h-12 flex-1 items-center justify-center rounded-full text-[15px] font-extrabold"
       style={
         puesta
-          ? { background: '#F59E0B', color: '#0F172A' }
+          ? { background: 'var(--t-tinta)', color: 'var(--t-fondo)', border: '1px solid var(--t-tinta)' }
           : {
               background: 'var(--t-superficie)',
               color: 'var(--t-tinta-suave)',
@@ -570,18 +581,20 @@ function Pastilla({
     <button
       onClick={alPulsar}
       aria-pressed={puesta}
-      className="flex h-12 items-center rounded-full px-4 text-[15.5px] font-extrabold"
+      className="flex h-12 items-center rounded-full px-4 text-[15px] font-extrabold"
       style={
         puesta
-          ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
+          ? { background: 'var(--t-tinta)', color: 'var(--t-fondo)', border: '1px solid var(--t-tinta)' }
           : {
-              background: 'var(--t-fondo)',
+              background: 'var(--t-superficie)',
               color: 'var(--t-tinta-suave)',
               border: '1px solid var(--t-borde)',
             }
       }
     >
-      {puesta ? `✓ ${texto}` : texto}
+      {/* El «✓ » iba pegado al texto y la etiqueta se desplazaba dos
+          caracteres al elegirla: toda la fila bailaba. */}
+      {texto}
     </button>
   )
 }
@@ -609,10 +622,10 @@ function Monton({
     <button
       onClick={alPulsar}
       aria-pressed={puesta}
-      className="flex h-[52px] min-w-0 flex-1 flex-col items-center justify-center rounded-[14px] px-1"
+      className="flex h-[56px] min-w-0 flex-1 flex-col items-center justify-center rounded-[16px] px-1"
       style={
         puesta
-          ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
+          ? { background: 'var(--t-tinta)', color: 'var(--t-fondo)', border: '1px solid var(--t-tinta)' }
           : {
               background: 'var(--t-superficie)',
               color: 'var(--t-tinta-suave)',
@@ -651,13 +664,13 @@ function Boton({
     <button
       onClick={alPulsar}
       disabled={ocupado}
-      className="flex h-12 min-w-0 flex-1 items-center justify-center rounded-[14px] px-2 text-[15.5px] font-extrabold disabled:opacity-50"
+      className="flex h-12 min-w-0 flex-1 items-center justify-center rounded-[16px] px-2 text-[15px] font-extrabold disabled:opacity-50"
       style={
         fuerte
-          ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
+          ? { background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }
           : {
-              background: 'var(--t-fondo)',
-              color: 'var(--t-tinta-suave)',
+              background: 'var(--t-superficie)',
+              color: 'var(--t-tinta)',
               border: '1px solid var(--t-borde)',
             }
       }

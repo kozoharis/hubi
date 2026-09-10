@@ -90,7 +90,7 @@ export async function POST(peticion: NextRequest) {
         return NextResponse.json(
           {
             error: 'No se ha podido aceptar.',
-            detalle: error?.message ?? 'Puede que falte ejecutar el SQL 34.',
+            detalle: error?.message ?? 'Esto todavía no está disponible en esta casa.',
           },
           { status: 500 }
         )
@@ -121,7 +121,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: 'No se ha podido cambiar de casa.',
-        detalle: alMirar?.message ?? 'Puede que falte ejecutar el SQL 34.',
+        detalle: alMirar?.message ?? 'Esto todavía no está disponible en esta casa.',
       },
       { status: 500 }
     )

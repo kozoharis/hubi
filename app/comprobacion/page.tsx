@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Ico } from '../iconos'
+import { Aviso, BotonSecundario } from '../piezas'
 
 type Resultado = {
   variables: { url: boolean; publishable: boolean; secreta: boolean }
@@ -59,28 +61,22 @@ export default function Comprobacion() {
   }, [])
 
   return (
-    <main className="min-h-screen bg-[#F1F5F9] px-6 py-12 text-[#0F172A]">
+    <main className="min-h-screen bg-fondo px-6 py-12 text-tinta">
       <div className="mx-auto max-w-xl">
-        <p className="text-sm uppercase tracking-[0.2em] text-[#8A7F73]">
-          HUBI
-        </p>
-        <h1 className="mt-3 text-4xl font-semibold leading-tight">
-          Comprobación del sistema
-        </h1>
-        <p className="mt-3 text-lg text-[#6B6157]">
+        <p className="rotulo tracking-[0.2em]">HUBI</p>
+        <h1 className="t-titulo mt-3">Comprobación del sistema</h1>
+        <p className="t-cuerpo mt-3">
           Esta pantalla no forma parte de HUBI. Solo sirve para verificar
           que las piezas están realmente conectadas.
         </p>
 
         {fallo && (
-          <p className="mt-8 rounded-2xl bg-[#FFE7E7] p-5 text-lg">
-            No se ha podido consultar el servidor: {fallo}
-          </p>
+          <div className="mt-8">
+            <Aviso titulo="No se ha podido consultar el servidor" detalle={fallo} />
+          </div>
         )}
 
-        {!datos && !fallo && (
-          <p className="mt-8 text-lg text-[#6B6157]">Comprobando…</p>
-        )}
+        {!datos && !fallo && <p className="t-cuerpo mt-8 text-tenue">Comprobando…</p>}
 
         {datos && (
           <div className="mt-10 space-y-4">
@@ -100,7 +96,7 @@ export default function Comprobacion() {
                 }
               />
               {datos.servidor.error && (
-                <p className="mt-2 text-base text-[#9B4A3F]">{datos.servidor.error}</p>
+                <p className="mt-2 text-base text-[color:var(--t-alerta)]">{datos.servidor.error}</p>
               )}
             </Bloque>
 
@@ -114,7 +110,7 @@ export default function Comprobacion() {
                 }
               />
               {datos.seguridad.error && (
-                <p className="mt-2 text-base text-[#9B4A3F]">{datos.seguridad.error}</p>
+                <p className="mt-2 text-base text-[color:var(--t-alerta)]">{datos.seguridad.error}</p>
               )}
             </Bloque>
 
@@ -160,7 +156,7 @@ export default function Comprobacion() {
                 />
 
                 {!datos.hogar.ok && Object.values(datos.hogar.sinHogar).some((n) => n > 0) && (
-                  <ul className="mt-2 space-y-1 text-base text-[#6B7280]">
+                  <ul className="mt-2 space-y-1 text-base text-tenue">
                     {Object.entries(datos.hogar.sinHogar)
                       .filter(([, n]) => n > 0)
                       .map(([tabla, n]) => (
@@ -212,10 +208,10 @@ export default function Comprobacion() {
                 />
 
                 {datos.papeles.ultimos.length > 0 && (
-                  <ul className="mt-3 space-y-1.5 text-base text-[#6B7280]">
+                  <ul className="mt-3 space-y-1.5 text-base text-tenue">
                     {datos.papeles.ultimos.map((u, i) => (
                       <li key={i}>
-                        <span className="font-semibold text-[#0F172A]">{u.titulo}</span>
+                        <span className="font-semibold text-tinta">{u.titulo}</span>
                         {' · '}
                         {u.fecha}
                         {' · '}
@@ -258,10 +254,10 @@ export default function Comprobacion() {
 
                 {datos.papeles.porSeccion && datos.papeles.porSeccion.length > 0 && (
                   <div className="mt-3">
-                    <p className="text-base font-semibold text-[#0F172A]">
+                    <p className="text-base font-semibold text-tinta">
                       Lo que debería poner cada sección:
                     </p>
-                    <ul className="mt-1 space-y-1 text-base text-[#6B7280]">
+                    <ul className="mt-1 space-y-1 text-base text-tenue">
                       {datos.papeles.porSeccion.map((s) => (
                         <li key={s.nombre}>
                           {s.nombre}: {s.papeles === 0 ? 'vacía' : `${s.papeles} papeles`}
@@ -272,7 +268,7 @@ export default function Comprobacion() {
                 )}
 
                 {datos.papeles.error && (
-                  <p className="mt-2 text-base text-[#B91C1C]">{datos.papeles.error}</p>
+                  <p className="mt-2 text-base text-[color:var(--t-alerta)]">{datos.papeles.error}</p>
                 )}
               </Bloque>
             )}
@@ -330,36 +326,35 @@ export default function Comprobacion() {
                   }
                 />
                 {datos.lectura.diagnostico && (
-                  <p className="mt-2 text-base text-[#6B6157]">{datos.lectura.diagnostico}</p>
+                  <p className="mt-2 text-base text-tinta-suave">{datos.lectura.diagnostico}</p>
                 )}
               </Bloque>
             )}
 
             {/* Esta pantalla no tenía ninguna salida: se entraba y solo
                 se salía con el botón atrás del navegador. */}
-            <a
-              href="/ajustes"
-              className="mt-8 flex h-[60px] items-center justify-center rounded-[18px] border border-[#E5E0D8] bg-white text-[17px] font-bold text-[#3F3A34]"
-            >
-              Volver a Ajustes
-            </a>
+            <div className="mt-8">
+              <BotonSecundario href="/ajustes" icono="atras">
+                Volver a Ajustes
+              </BotonSecundario>
+            </div>
 
-            <div className="mt-8 rounded-3xl bg-white p-7 shadow-sm">
+            <div className="mt-8">
+              {/* El resumen dice si PASA o NO PASA: es exactamente lo
+                  que son los colores de estado. Antes era una tarjeta
+                  blanca con un ✓ de texto. */}
               {todoOk(datos) ? (
-                <>
-                  <p className="text-2xl font-semibold">✓ Base de datos validada</p>
-                  <p className="mt-2 text-lg text-[#6B6157]">
-                    Web, claves, base de datos y seguridad funcionan de verdad.
-                    Siguiente capa: la entrada de Juan Miguel y Conchita.
-                  </p>
-                </>
+                <Aviso
+                  tono="bien"
+                  titulo="Base de datos validada"
+                  explicacion="Web, claves, base de datos y seguridad funcionan de verdad."
+                />
               ) : (
-                <>
-                  <p className="text-2xl font-semibold">Todavía falta algo</p>
-                  <p className="mt-2 text-lg text-[#6B6157]">
-                    Revisa arriba qué línea no está en verde.
-                  </p>
-                </>
+                <Aviso
+                  tono="atencion"
+                  titulo="Todavía falta algo"
+                  explicacion="Revisa arriba qué línea no está en verde."
+                />
               )}
             </div>
           </div>
@@ -380,11 +375,11 @@ function todoOk(d: Resultado) {
 }
 
 function Bloque({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  /* Sin sombra: en HUBI la única pieza que flota es el botón del
+     asistente, y por eso significa algo. */
   return (
-    <section className="rounded-3xl bg-white p-7 shadow-sm">
-      <h2 className="text-sm font-medium uppercase tracking-[0.15em] text-[#8A7F73]">
-        {titulo}
-      </h2>
+    <section className="rounded-[20px] border border-borde bg-superficie p-5">
+      <h2 className="rotulo tracking-[0.15em]">{titulo}</h2>
       <div className="mt-4 space-y-3">{children}</div>
     </section>
   )
@@ -393,14 +388,20 @@ function Bloque({ titulo, children }: { titulo: string; children: React.ReactNod
 function Linea({ ok, texto }: { ok: boolean; texto: string }) {
   return (
     <div className="flex items-start gap-4">
+      {/* El tic iba del `#14B8A6` de acción y la cruz de un coral sin
+          declarar. Pasa o no pasa: son estados. Y el símbolo es un
+          icono de trazo, no un carácter de texto — un «×» tipográfico
+          se pinta distinto en cada teléfono. */}
       <span
-        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base font-bold text-white ${
-          ok ? 'bg-[#14B8A6]' : 'bg-[#FF6B6B]'
-        }`}
+        className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+        style={{
+          background: ok ? 'var(--t-bien)' : 'var(--t-alerta)',
+          color: 'var(--t-superficie)',
+        }}
       >
-        {ok ? '✓' : '×'}
+        <Ico nombre={ok ? 'check' : 'aviso'} tam={16} grosor={2.6} />
       </span>
-      <span className="text-lg leading-snug">{texto}</span>
+      <span className="t-cuerpo min-w-0 flex-1">{texto}</span>
     </div>
   )
 }

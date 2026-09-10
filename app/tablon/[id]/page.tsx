@@ -79,7 +79,13 @@ export default async function Detalle({
           {r.titulo}
         </h1>
 
-        <p className={`mt-3 text-xl ${tarde ? 'text-coral' : 'text-tinta-suave'}`}>
+        {/* Algo que tenía que estar hecho y no lo está SÍ es una
+            alerta: es de los pocos sitios donde el color dice lo que
+            pasa y no de qué es. */}
+        <p
+          className="mt-3 text-xl"
+          style={{ color: tarde ? 'var(--t-alerta)' : 'var(--t-tinta-suave)' }}
+        >
           {cuando(r.fecha, r.hora)}
           {tarde && ' · sin hacer'}
         </p>
@@ -107,8 +113,16 @@ export default async function Detalle({
           {hecho && r.hecho_por && (
             <Dato etiqueta="Lo marcó" valor={nombres[r.hecho_por] ?? ''} />
           )}
-          {r.tipo === 'vencimiento' && (
-            <Dato etiqueta="Aviso" valor={CUANTO_ANTES[r.aviso_previo ?? 'sin_aviso']} />
+          {/* Antes esto solo salía en los vencimientos, y el
+              vencimiento solo se conseguía escribiendo «vence» o
+              «caduca» en el título: el aviso era un dato que existía,
+              se guardaba y no se podía ni ver ni poner. Ahora se
+              enseña siempre que haya uno. */}
+          {r.aviso_previo && r.aviso_previo !== 'sin_aviso' && (
+            <Dato
+              etiqueta="Aviso"
+              valor={CUANTO_ANTES[r.aviso_previo] ?? 'Sin aviso'}
+            />
           )}
         </div>
 
@@ -142,6 +156,7 @@ export default async function Detalle({
               nota: r.nota,
               repite: r.repite,
               repite_hasta: r.repite_hasta,
+              aviso_previo: r.aviso_previo,
             }}
             personas={(perfiles ?? []) as { id: string; nombre: string }[]}
           />

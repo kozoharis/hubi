@@ -62,6 +62,8 @@ export default function Gente({
 
   const [repartiendo, setRepartiendo] = useState<string | null>(null)
   const [cambiando, setCambiando] = useState<string | null>(null)
+  /* A quién se está preguntando si se saca de la casa. */
+  const [sacando, setSacando] = useState<string | null>(null)
   const [programando, setProgramando] = useState<{ id: string; nombre: string } | null>(null)
   const [invitando, setInvitando] = useState(false)
   const [nombre, setNombre] = useState('')
@@ -203,15 +205,20 @@ export default function Gente({
     router.refresh()
   }
 
-  async function sacar(v: Vecino) {
-    if (
-      !window.confirm(
-        `¿Sacar a ${v.nombre} de esta casa?\n\nDejará de ver los papeles, las cuentas y la agenda. Lo que haya subido o apuntado NO se borra: es de la casa.\n\nSe le puede volver a invitar cuando quieras.`
-      )
-    ) {
-      return
-    }
+  /*
+    ═══════════════════════════════════════════════════════════
+    EL CUARTO `window.confirm()` DEL PROYECTO
+    ═══════════════════════════════════════════════════════════
 
+    Y el más delicado de los cuatro: sacar a una persona de la casa. La
+    pregunta decía lo correcto —que lo suyo no se borra, que se le
+    puede volver a invitar— pero salía en el diálogo gris del
+    navegador, con los saltos de línea escritos a mano.
+
+    Ahora se pregunta dentro de la tarjeta de esa persona, debajo de
+    su nombre, que es donde se está mirando al decidirlo.
+  */
+  async function sacar(v: Vecino) {
     setOcupado(true)
     setFallo(null)
 
@@ -224,6 +231,7 @@ export default function Gente({
       setFallo(d?.error ?? 'No se ha podido sacar a esa persona.')
       return
     }
+    setSacando(null)
     router.refresh()
   }
 
@@ -255,7 +263,7 @@ export default function Gente({
                 /* Su color, no uno según si manda o no. Es el mismo con
                    el que sale en la agenda y en el corcho: verlo aquí es
                    lo que enseña a leerlo allí. */
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
+                className="flex h-12 w-11 shrink-0 items-center justify-center rounded-full text-[18px] font-extrabold text-white"
                 style={{ background: v.color }}
               >
                 {v.nombre.charAt(0).toUpperCase()}
@@ -332,9 +340,46 @@ export default function Gente({
                   icono="aviso"
                   texto="Sacar"
                   peligro
+                  puesta={sacando === v.id}
                   ocupado={ocupado}
-                  alPulsar={() => sacar(v)}
+                  alPulsar={() => setSacando(sacando === v.id ? null : v.id)}
                 />
+              </div>
+            )}
+
+            {sacando === v.id && (
+              <div
+                className="mt-3 rounded-[16px] border px-4 py-3.5"
+                style={{
+                  background: 'var(--t-alerta-velo)',
+                  borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)',
+                }}
+              >
+                <p className="t-cuerpo font-extrabold" style={{ color: 'var(--t-alerta)' }}>
+                  ¿Sacar a {v.nombre.split(' ')[0]} de esta casa?
+                </p>
+                <p className="t-apoyo mt-1.5 text-tinta-suave">
+                  Dejará de ver los papeles, las cuentas y la agenda. Lo que haya
+                  subido o apuntado no se borra: es de la casa. Y se le puede volver
+                  a invitar cuando quieras.
+                </p>
+                <div className="mt-3 space-y-2">
+                  <button
+                    onClick={() => sacar(v)}
+                    disabled={ocupado}
+                    className="t-cuerpo h-[60px] w-full rounded-[16px] border bg-superficie font-extrabold disabled:opacity-50"
+                    style={{ borderColor: 'var(--t-alerta)', color: 'var(--t-alerta)' }}
+                  >
+                    {ocupado ? 'Sacando…' : `Sí, sacar a ${v.nombre.split(' ')[0]}`}
+                  </button>
+                  <button
+                    onClick={() => setSacando(null)}
+                    disabled={ocupado}
+                    className="t-cuerpo h-[60px] w-full rounded-[16px] border border-borde bg-superficie font-extrabold text-tinta disabled:opacity-50"
+                  >
+                    Dejarlo como está
+                  </button>
+                </div>
               </div>
             )}
           </li>
@@ -391,7 +436,7 @@ export default function Gente({
                     disabled={ocupado}
                     aria-pressed={v.color?.toUpperCase() === c.toUpperCase()}
                     aria-label={`Ponerle el color ${c}`}
-                    className="flex h-11 w-11 items-center justify-center rounded-full text-white disabled:opacity-50"
+                    className="flex h-12 w-11 items-center justify-center rounded-full text-white disabled:opacity-50"
                     style={{
                       background: c,
                       boxShadow:
@@ -410,7 +455,7 @@ export default function Gente({
               <button
                 onClick={() => setCambiando(null)}
                 disabled={ocupado}
-                className="mt-4 h-[52px] w-full rounded-[14px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
+                className="mt-4 h-[52px] w-full rounded-[16px] border border-borde text-[16.5px] font-extrabold text-tinta-suave disabled:opacity-50"
               >
                 Dejarlo como está
               </button>
@@ -515,7 +560,7 @@ export default function Gente({
               Se dice ANTES de escribir nada, no después: quien invita
               tiene que saber exactamente qué está dando.
             */}
-            <p className="mt-4 rounded-[14px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
+            <p className="mt-4 rounded-[16px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
               {ROLES.find((r) => r.valor === rol)?.detalle}
             </p>
 
@@ -554,7 +599,7 @@ export default function Gente({
               <button
                 onClick={invitar}
                 disabled={ocupado || correo.trim().length < 5 || nombre.trim().length < 2}
-                className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+                className="flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-accion text-[17px] font-extrabold text-accion-tinta disabled:opacity-50"
               >
                 <Ico nombre="check" tam={19} grosor={2.3} />
                 {ocupado ? 'Invitando…' : 'Invitar'}
@@ -562,7 +607,7 @@ export default function Gente({
               <button
                 onClick={cerrarInvitacion}
                 disabled={ocupado}
-                className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+                className="h-[60px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
               >
                 Ahora no
               </button>
@@ -574,7 +619,7 @@ export default function Gente({
               setInvitando(true)
               setHecho(null)
             }}
-            className="flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
+            className="flex h-[60px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
           >
             <Ico nombre="mas" tam={20} grosor={2.4} />
             Invitar a alguien
@@ -590,7 +635,8 @@ export default function Gente({
       )}
 
       {fallo && (
-        <p className="rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
+        <p className="t-apoyo rounded-[16px] border px-4 py-3"
+          style={{ background: 'var(--t-alerta-velo)', borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)', color: 'var(--t-alerta)' }}>
           {fallo}
         </p>
       )}
@@ -635,15 +681,16 @@ function Accion({
     <button
       onClick={alPulsar}
       disabled={ocupado}
-      aria-pressed={peligro ? undefined : puesta}
-      className={`flex min-h-[54px] flex-1 flex-col items-center justify-center gap-1 rounded-[14px] px-1 text-[12.5px] font-bold leading-none disabled:opacity-50 ${
-        peligro ? 'text-coral' : puesta ? 'text-verde' : 'text-tinta-suave'
-      }`}
-      style={
-        puesta && !peligro
-          ? { background: 'var(--t-verde-suave)' }
-          : undefined
-      }
+      aria-pressed={puesta}
+      className="flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-[16px] px-1 text-[12.5px] font-extrabold leading-none disabled:opacity-50"
+      style={{
+        color: peligro ? 'var(--t-alerta)' : puesta ? 'var(--t-tinta)' : 'var(--t-tinta-suave)',
+        background: puesta
+          ? peligro
+            ? 'var(--t-alerta-velo)'
+            : 'var(--t-bien-velo)'
+          : undefined,
+      }}
     >
       <Ico nombre={icono} tam={19} grosor={2.2} />
       <span className="truncate">{texto}</span>

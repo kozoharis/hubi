@@ -123,7 +123,7 @@ export default function NuevaActividad() {
     return (
       <button
         onClick={() => setAbierto(true)}
-        className="flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
+        className="flex h-[60px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
       >
         <Ico nombre="mas" tam={20} grosor={2.4} />
         Nueva actividad
@@ -156,7 +156,7 @@ export default function NuevaActividad() {
                     {t.pie}
                   </span>
                 </span>
-                <Ico nombre="flecha" tam={19} grosor={2.2} className="shrink-0 text-borde" />
+                <Ico nombre="flecha" tam={19} grosor={2.2} className="shrink-0 text-apagado" />
               </button>
             ))}
           </div>
@@ -187,7 +187,7 @@ export default function NuevaActividad() {
             <button
               onClick={crear}
               disabled={ocupado || nombre.trim().length < 2}
-              className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+              className="flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-accion text-[17px] font-extrabold text-accion-tinta disabled:opacity-50"
             >
               <Ico nombre="check" tam={19} grosor={2.3} />
               {ocupado ? 'Creando…' : 'Crear'}
@@ -195,7 +195,7 @@ export default function NuevaActividad() {
             <button
               onClick={() => setTipo(null)}
               disabled={ocupado}
-              className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+              className="h-[60px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
             >
               Volver
             </button>
@@ -204,7 +204,8 @@ export default function NuevaActividad() {
       )}
 
       {fallo && (
-        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
+        <p className="mt-3 t-apoyo rounded-[16px] border px-4 py-3"
+          style={{ background: 'var(--t-alerta-velo)', borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)', color: 'var(--t-alerta)' }}>
           {fallo}
         </p>
       )}

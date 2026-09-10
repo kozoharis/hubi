@@ -192,7 +192,7 @@ export default function Semana({
 
       <ul className="mt-3 space-y-2">
         {trabajos.map((t, i) => (
-          <li key={`${t.que}-${i}`} className="rounded-[14px] border border-borde px-3 py-2.5">
+          <li key={`${t.que}-${i}`} className="rounded-[16px] border border-borde px-3 py-2.5">
             <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate text-[16px] font-bold">{t.que}</span>
               <button
@@ -215,7 +215,7 @@ export default function Semana({
                     className="h-10 flex-1 rounded-[11px] text-[14.5px] font-extrabold"
                     style={
                       puesto
-                        ? { background: '#0EA5E9', color: '#FFFFFF' }
+                        ? { background: 'var(--t-tinta)', color: 'var(--t-fondo)' }
                         : {
                             background: 'var(--t-fondo)',
                             color: 'var(--t-tenue)',
@@ -258,7 +258,7 @@ export default function Semana({
         <button
           onClick={guardar}
           disabled={ocupado}
-          className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-boton text-[17px] font-extrabold text-boton-texto disabled:opacity-50"
+          className="flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-accion text-[17px] font-extrabold text-accion-tinta disabled:opacity-50"
         >
           <Ico nombre="check" tam={19} grosor={2.3} />
           {ocupado ? 'Guardando…' : `Guardar · ${cuantas}`}
@@ -266,14 +266,15 @@ export default function Semana({
         <button
           onClick={alCerrar}
           disabled={ocupado}
-          className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+          className="h-[60px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
         >
           Dejarlo
         </button>
       </div>
 
       {fallo && (
-        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
+        <p className="mt-3 t-apoyo rounded-[16px] border px-4 py-3"
+          style={{ background: 'var(--t-alerta-velo)', borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)', color: 'var(--t-alerta)' }}>
           {fallo}
         </p>
       )}

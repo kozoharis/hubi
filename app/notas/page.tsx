@@ -70,9 +70,9 @@ export default async function PaginaNotas({
   return (
     <main className="min-h-screen pb-40">
       <Cabecera>
-        <Volver href="/" />
+        <Volver href="/dia" />
         <div className="flex h-12 items-center">
-          <h1 className="text-[27px] font-extrabold tracking-tight">Notas</h1>
+          <h1 className="t-titulo">Notas</h1>
         </div>
       </Cabecera>
 
@@ -86,7 +86,7 @@ export default async function PaginaNotas({
         />
       </div>
 
-      <Barra activa={null} />
+      <Barra activa="dia" />
     </main>
   )
 }

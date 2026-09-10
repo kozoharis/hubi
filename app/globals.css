@@ -43,22 +43,162 @@
 
   --font-titulo: var(--fuente), "Segoe UI", system-ui, sans-serif;
   --font-texto:  var(--fuente), "Segoe UI", system-ui, sans-serif;
+
+  /*
+    ═════════════════════════════════════════════════════════
+    HUBI DESIGN SYSTEM v1
+    ═════════════════════════════════════════════════════════
+
+    Se AÑADE a lo de arriba, no lo sustituye. Las 44 pantallas
+    siguen usando `bg-superficie`, `text-tinta` y los cinco
+    colores de sección, y siguen funcionando exactamente igual.
+    Lo nuevo entra pantalla a pantalla.
+
+    LA REGLA QUE ORDENA TODO EL COLOR:
+
+      lo saturado reclama atención · lo apagado solo identifica
+
+    De ahí salen las cuatro familias.
+
+    ── A · MARCA ────────────────────────────────────────────
+    Un solo degradado, el de la voz, y significa una cosa:
+    HUBI está escuchando, entendiendo o respondiendo. No es
+    decoración: donde aparece, hay inteligencia.
+
+    ── B · ACCIÓN ───────────────────────────────────────────
+    El teal, sólido, IGUAL EN CLARO Y EN OSCURO. Antes el botón
+    principal era marino de día y verde de noche, y encima media
+    aplicación se lo saltaba con `bg-verde`: el mismo «Guardar»
+    tenía dos colores en dos pantallas seguidas.
+
+    El texto va en tinta oscura, no en blanco: blanco sobre este
+    teal no llega al contraste mínimo para leerse bien.
+
+    ── C · ESTADO ───────────────────────────────────────────
+    Semántico, y solo cuando comunica algo que ha pasado o va a
+    pasar. Vivos, porque son los únicos que pueden reclamar.
+
+    Los valores cambian entre claro y oscuro a propósito: el
+    coral #FF6B6B sobre blanco no da contraste suficiente para
+    texto, y sobre fondo oscuro un coral apagado se apaga del
+    todo. Mismo papel, dos valores.
+
+    ── D · ÁMBITO ───────────────────────────────────────────
+    Identifican de qué es algo. Apagados, para que jamás
+    compitan con un estado. Aparecen en la pastilla del icono,
+    en una marca de 3 px al borde de una fila, y en la cabecera
+    de su sección. Nunca en un botón, nunca en una cifra.
+  */
+
+  /* B · Acción */
+  --color-accion:        #14B8A6;
+  --color-accion-tinta:  #04211D;
+
+  /* C · Estado */
+  --color-bien:          var(--t-bien);
+  --color-atencion:      var(--t-atencion);
+  --color-alerta:        var(--t-alerta);
+  --color-bien-velo:     var(--t-bien-velo);
+  --color-atencion-velo: var(--t-atencion-velo);
+  --color-alerta-velo:   var(--t-alerta-velo);
+
+  /* D · Ámbito — apagados, los seis */
+  --color-ambito-azul:    #6B93D6;
+  --color-ambito-violeta: #9482D9;
+  --color-ambito-rosa:    #D07E97;
+  --color-ambito-verde:   #6FA88A;
+  --color-ambito-arena:   #C09A62;
+  --color-ambito-pizarra: #7A8899;
 }
 
-/* ── Modo claro ────────────────────────────────────────── */
+/*
+  ═══════════════════════════════════════════════════════════════
+  MODO CLARO · el papel cálido (decisión D9) · Fase 3
+  ═══════════════════════════════════════════════════════════════
+
+  La paleta clara era Slate: un gris con AZUL dentro. Correcta, y de
+  las que trae puesta cualquier herramienta — que es justo el problema.
+  El planteamiento pide otra cosa:
+
+      «Fondos claros y ligeramente cálidos.»
+      «Debe sentirse ordenado, sereno, seguro, personal, fácil.»
+      «No quiero un dashboard SaaS genérico.»
+
+  ─────────────────────────────────────────────────────────────
+  CÓMO SE HIZO, QUE ES LO IMPORTANTE
+
+  No a ojo. Cada token conserva su LUMINANCIA y solo se le gira el
+  tono hacia el ámbar. Y eso no es una elegancia: significa que todos
+  los contrastes medidos en la Fase 1 siguen valiendo POR
+  CONSTRUCCIÓN, no por suerte.
+
+      tinta sobre el fondo       16,30 → 16,39
+      tinta sobre una tarjeta    17,85 → 17,85
+      tenue sobre una tarjeta     4,76 →  4,74
+      tenue sobre el fondo         4,34 →  4,36
+
+  ─────────────────────────────────────────────────────────────
+  Y LAS TARJETAS SE QUEDAN BLANCAS
+
+  Se probó a darles crema también, y desaparecían: la separación entre
+  tarjeta y fondo es de 1,09 y con las dos del mismo tono se pierde.
+  Blanco sobre crema es papel sobre mesa — se ve qué es una tarjeta sin
+  necesidad de subir el borde.
+*/
 :root {
-  --t-fondo:        #F1F5F9;
+  --t-fondo:        #F7F5F1;
   --t-superficie:   #FFFFFF;
-  --t-borde:        #E2E8F0;
-  --t-tinta:        #0F172A;
-  --t-tinta-suave:  #334155;
-  --t-tenue:        #64748B;
-  --t-apagado:      #94A3B8;
-  --t-boton:        #0F172A;
+  --t-borde:        #EAE7E3;
+  --t-tinta:        #1A1714;
+  --t-tinta-suave:  #453F39;
+  --t-tenue:        #7D7166;
+  --t-apagado:      #AAA096;
+  --t-boton:        #1A1714;
   --t-boton-texto:  #FFFFFF;
-  --t-verde-suave:  #DFF7F3;
-  --t-coral-suave:  #FFE7E7;
-  --t-velo:         rgba(15, 23, 42, 0.04);
+  --t-verde-suave:  #E1F8E7;
+  --t-coral-suave:  #FFE7E5;
+  /* El velo también lleva el negro cálido: con el azulado dentro, un
+     gris del 4 % sobre crema tira a violeta. */
+  --t-velo:         rgba(26, 23, 20, 0.04);
+
+  /*
+    Estado, en claro.
+
+    ─────────────────────────────────────────────────────────
+    CORREGIDO: LOS TRES SE QUEDABAN CORTOS COMO TEXTO.
+
+    Los puse «oscurecidos para que el texto se lea» y no los medí.
+    Medidos, en claro daban esto:
+
+        bien      3,42:1 sobre blanco   ·  3,05:1 sobre su velo
+        atención  3,38:1                ·  3,02:1
+        alerta    4,12:1                ·  3,51:1
+
+    El mínimo para texto normal es 4,5:1. O sea que TODOS los avisos
+    de error de la aplicación —los trece recuadros que convertí a
+    estos colores— se leían por debajo del mínimo, y justo en el modo
+    claro, que es la expresión principal de la identidad.
+
+    Bajados hasta que los tres pasan de 4,5 en los DOS fondos donde se
+    usan: sobre superficie blanca y sobre su propio velo. Mismo tono y
+    misma saturación; solo cambia la luminosidad, así que siguen
+    siendo el mismo verde, el mismo ámbar y el mismo rojo.
+
+        bien      5,09:1  ·  4,54:1
+        atención  5,04:1  ·  4,51:1
+        alerta    5,32:1  ·  4,53:1
+
+    En oscuro ya iban de 6,0 a 8,7 y no se tocan.
+  */
+  --t-bien:          #0B7C6F;
+  --t-atencion:      #9E6104;
+  --t-alerta:        #CE2821;
+  /* Los velos, girados hacia el cálido por el mismo método: mismo
+     brillo, tono un poco más templado. El de «bien» era un menta frío
+     que sobre crema parecía de otro material. */
+  --t-bien-velo:     #E1F8E7;
+  --t-atencion-velo: #FDF1DD;
+  --t-alerta-velo:   #FDE8E5;
 }
 
 /* ── Modo oscuro ───────────────────────────────────────── */
@@ -78,6 +218,14 @@
     --t-verde-suave:  #10322F;
     --t-coral-suave:  #3A1D22;
     --t-velo:         rgba(255, 255, 255, 0.06);
+
+    /* Estado, en oscuro: aclarados. Mismo papel, otro valor. */
+    --t-bien:          #2DD4BF;
+    --t-atencion:      #F0B440;
+    --t-alerta:        #FF7B75;
+    --t-bien-velo:     #10322F;
+    --t-atencion-velo: #33270F;
+    --t-alerta-velo:   #3A1D22;
   }
 }
 
@@ -94,6 +242,13 @@
   --t-verde-suave:  #10322F;
   --t-coral-suave:  #3A1D22;
   --t-velo:         rgba(255, 255, 255, 0.06);
+
+  --t-bien:          #2DD4BF;
+  --t-atencion:      #F0B440;
+  --t-alerta:        #FF7B75;
+  --t-bien-velo:     #10322F;
+  --t-atencion-velo: #33270F;
+  --t-alerta-velo:   #3A1D22;
 }
 
 /*
@@ -262,6 +417,24 @@ input, textarea, select {
   pointer-events: none;
 }
 
+/* ── Chip de velo ──────────────────────────────────────────
+   El relleno del botón de Ajustes. Dos declaraciones a propósito:
+
+   La primera es la de siempre —4% en claro, 6% en oscuro— y la
+   entiende cualquier navegador. La segunda sube a un 8% de tinta y
+   solo la aplican los que saben `color-mix`; los que no, se quedan en
+   la primera, que se ve algo menos pero se ve.
+
+   El 8% da 1,18:1 en claro y 1,20:1 en oscuro contra su fondo. Es
+   poco, y aun así se percibe, porque lo que decide si un contraste
+   tan bajo se lee es el ÁREA: 30 px de alto sí, una raya de 1 px no.
+   Es exactamente por lo que las tarjetas blancas sobre el papel crema
+   (1,09:1) se leen sin problema. */
+.velo-chip {
+  background: var(--t-velo);
+  background: color-mix(in srgb, var(--t-tinta) 8%, transparent);
+}
+
 /* ── Etiqueta de sección ───────────────────────────────── */
 .rotulo {
   font-size: 0.78rem;
@@ -343,6 +516,161 @@ input, textarea, select {
 @media (prefers-reduced-motion: reduce) {
   .mancha, .brillo, .pulso {
     animation: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   «TE HE OÍDO» · la respuesta al dedo
+   ═══════════════════════════════════════════════════════════
+
+   Hasta hoy, en toda la aplicación, había UNA línea que respondía al
+   tacto: el `active:scale` del botón principal. Las tarjetas, las
+   filas, las pestañas de abajo, las píldoras y las personas no se
+   enteraban de que las tocabas.
+
+   Con todas las pantallas en `force-dynamic`, entre el dedo y la
+   pantalla nueva hay un viaje al servidor. En un móvil con cobertura
+   regular eso es medio segundo largo en el que HUBI no decía
+   absolutamente nada. Y quien no recibe respuesta vuelve a pulsar —
+   que es exactamente el comportamiento que hay que evitar en dos
+   personas mayores que además desconfían de haberlo hecho mal.
+
+   ── POR QUÉ ESCALA Y OPACIDAD, Y NO UN COLOR ──
+
+   Un color de pulsado habría que declararlo dos veces (claro y
+   oscuro) y afinarlo pieza a pieza: sobre papel blanco, sobre un
+   tinte del 5%, sobre el teal del botón, sobre los velos de estado.
+   Cinco fondos distintos y cinco afinados.
+
+   La opacidad no: deja pasar el fondo que haya detrás, sea el que
+   sea, y por eso se lee igual de bien en los dos modos y encima de
+   cualquiera de las cinco superficies, sin una sola excepción.
+
+   Y la escala hace el trabajo que la opacidad no puede hacer sola:
+   en una tarjeta de 76 px el 1,5% se percibe claramente; en un chip
+   de 30 px no se vería. Juntas cubren todos los tamaños.
+
+   ── 120 ms ──
+
+   Lo bastante corto para que se lea como respuesta al dedo y no como
+   una animación. Por encima de 150 ms se empieza a notar el retardo;
+   por debajo de 80 no se llega a percibir.
+
+   La vuelta es más lenta que la ida a propósito (180 vs 120): el
+   dedo se levanta antes de que el ojo lo confirme, y una vuelta seca
+   se lee como un parpadeo. */
+.tocable {
+  transition: transform 180ms ease-out, opacity 180ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+.tocable:active {
+  transition-duration: 120ms;
+  transform: scale(0.985);
+  opacity: 0.92;
+}
+
+/* Quien haya pedido menos movimiento sigue necesitando SABER que le
+   han oído — más aún, porque suele ser quien peor lleva el
+   movimiento. Así que no se le quita la respuesta: se le quita el
+   viaje. La opacidad cambia de golpe y la escala no se toca. */
+@media (prefers-reduced-motion: reduce) {
+  .tocable {
+    transition: none;
+  }
+  .tocable:active {
+    transform: none;
+    opacity: 0.88;
+  }
+}
+
+/* El velo de «voy en camino». Aparece con un pequeño retardo por el
+   mismo motivo que el armazón: en una navegación de 150 ms saldría y
+   se iría dentro de un suspiro, y un destello que nadie llega a leer
+   solo se percibe como torpeza. Pasados 140 ms ya no es un destello:
+   es una espera, y entonces sí hay algo que contar. */
+.en-camino {
+  background: var(--t-velo);
+  animation: asomar 160ms ease-out 140ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .en-camino {
+    animation-duration: 1ms;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   «ESTO HA CAMBIADO» · lo hecho, lo que llega
+   ═══════════════════════════════════════════════════════════
+
+   El tercer motivo por el que HUBI se mueve. Los otros dos confirman
+   que te ha oído; éste cuenta QUÉ ha pasado.
+
+   ── EL CÍRCULO, Y NO EL TEXTO ──
+
+   Al tachar algo de la compra cambian tres cosas a la vez: el círculo
+   se llena, el tic aparece y la palabra se tacha. Si las tres saltan
+   de golpe, el ojo no sabe dónde mirar y lo que queda es un
+   parpadeo.
+
+   Así que se ordena en torno a dónde está el dedo. El dedo está en el
+   círculo, o sea que la confirmación se pinta ahí: se rellena de
+   verde y el tic entra creciendo. Lo demás —el tachado, la fila
+   entera atenuándose— se limita a acompañar, más lento y más suave.
+
+   ── EL TACHADO SE PINTA, NO APARECE ──
+
+   `text-decoration-line` no se puede animar, pero
+   `text-decoration-color` sí. Así que la raya está SIEMPRE puesta y
+   lo que cambia es que se vuelve visible. Suena a truco y es lo
+   contrario: es lo único que funciona bien cuando el nombre de algo
+   ocupa dos renglones, porque la raya la coloca el navegador en cada
+   uno. Pintar una línea a mano —un degradado de fondo, que es lo
+   habitual— habría cruzado la primera línea y dejado la segunda sin
+   tachar. */
+.tachable {
+  text-decoration-line: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 240ms ease-out, color 240ms ease-out;
+}
+.tachable-puesto {
+  text-decoration-color: currentColor;
+}
+
+/* El círculo que se llena. */
+.casilla {
+  transition: background-color 180ms ease-out, border-color 180ms ease-out;
+}
+
+/* El tic entra creciendo, con un punto de rebote muy corto: es lo que
+   hace que se lea como «hecho» y no como «ha aparecido un símbolo».
+   Nada más — un rebote más largo empieza a ser un juguete. */
+.tic {
+  animation: tic 240ms cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+@keyframes tic {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Lo que acaba de llegar a una lista. Corto y sin desplazamiento
+   lateral: en una lista de la compra con quince cosas, quince
+   entradas deslizándose serían un mareo. Solo aparece. */
+.llega {
+  animation: llega 200ms ease-out both;
+}
+@keyframes llega {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tachable, .casilla {
+    transition: none;
+  }
+  .tic, .llega {
+    animation: none;
   }
 }
 
@@ -540,3 +868,45 @@ input[type='datetime-local'] {
   background: var(--t-superficie);
   pointer-events: none;
 }
+
+
+/*
+  ═══════════════════════════════════════════════════════════
+  LA ESCALA TIPOGRÁFICA · HUBI DESIGN SYSTEM v1
+  ═══════════════════════════════════════════════════════════
+
+  Ocho papeles y DOS PESOS. Antes había diecisiete tamaños solo en
+  Inicio y prácticamente todo estaba en negrita — que es la razón de
+  que nada destacara: cuando todo grita igual, no se oye nada.
+
+  600 es el peso de leer. 800 es «esto es un título o una cifra».
+  El 700 desaparece.
+
+  Se ofrecen como clases sueltas y no como componentes obligatorios
+  para que una pantalla pueda adoptarlas de una en una, sin
+  reescribirse entera.
+*/
+
+.t-titulo   { font-size: 27px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.15; }
+.t-seccion  { font-size: 21px; font-weight: 800; letter-spacing: -0.02em;  line-height: 1.2; }
+.t-tarjeta  { font-size: 19px; font-weight: 800; letter-spacing: -0.012em; line-height: 1.25; }
+.t-cuerpo   { font-size: 17px; font-weight: 600; line-height: 1.45; }
+.t-apoyo    { font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--t-tenue); }
+
+/* Las cifras, siempre tabulares: sin esto una columna de importes
+   baila de renglón en renglón y deja de poder compararse de un
+   vistazo, que es justo para lo que se mira. */
+.t-cifra    { font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.t-cifra-2  { font-size: 23px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+
+/* `.rotulo` ya existía y es el octavo papel: 13 px, mayúsculas. */
+
+
+/*
+  ── LOS TRES RADIOS ────────────────────────────────────────
+  De once a tres. La pastilla del icono usa el de campo: es un
+  cuadrado pequeño, no una tarjeta.
+*/
+.r-tarjeta { border-radius: 20px; }
+.r-campo   { border-radius: 16px; }
+.r-pildora { border-radius: 9999px; }

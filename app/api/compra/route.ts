@@ -211,7 +211,7 @@ export async function POST(peticion: NextRequest) {
        peor que apuntar las cinco. */
     descartadas,
     aviso: faltaElSql
-      ? 'Apuntado, pero sin lista: falta ejecutar sql/23-listas-compra.sql.'
+      ? 'Apuntado, pero sin lista: las listas todavía no están disponibles en esta casa.'
       : null,
   })
 }

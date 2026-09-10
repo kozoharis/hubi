@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { iconoDeEmoji } from '../../iconos'
+import { ambitoDe } from '../../piezas'
 import Cuentas from '../../cuentas'
 
 export const dynamic = 'force-dynamic'
@@ -77,10 +78,18 @@ export default async function Seccion({
         raiz: fila.segmento_drive as string,
         nombre: fila.nombre as string,
         icono: iconoDeEmoji(fila.icono as string | null),
-        /* Sin color se pinta en gris. Es más honesto que inventarle
-           uno que luego no case con nada del resto. */
-        color: (fila.color as string) || '#64748B',
-        fondo: (fila.fondo as string) || '#EEF2F7',
+        /*
+          El color sale ahora de la paleta apagada de ámbito, a partir
+          del nombre de la carpeta en Drive: las ocho conocidas tienen
+          el suyo en la tabla y las que cree cada familia reciben uno
+          de la rueda, siempre el mismo.
+
+          Antes venía el hexadecimal guardado en la base de datos —uno
+          de los cinco saturados del manual antiguo— y con él se
+          pintaba también el relleno de las píldoras del periodo. Un
+          color no puede identificar y llamar a la vez.
+        */
+        ambito: ambitoDe(fila.segmento_drive as string),
         ruta: `/seccion/${id}`,
         pestana: id,
         /* Ya no hace falta el respaldo de los tres apartamentos: si

@@ -29,6 +29,9 @@ type Oido = {
     | 'consulta' | 'cambiar' | 'borrar' | 'compra' | 'nota' | 'nada'
   papel_id?: string | null
   ir_a?: string | null
+  /* Cómo se llama el sitio al que lleva `ir_a`. Sale de la casa, no
+     está escrito aquí: «la Finca» no existe en la casa de al lado. */
+  ir_a_nombre?: string | null
   compra?: { que: string; cantidad: string | null }[]
   compra_seccion?: string | null
   compra_seccion_nombre?: string | null
@@ -88,6 +91,22 @@ export default function Grabar({
      la elige la persona. Nunca se aplica nada sin que esté puesta. */
   const [elegida, setElegida] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  /*
+    LO ESCRITO, QUE HASTA AHORA NO EXISTÍA.
+
+    Esta pantalla solo funcionaba con el micrófono. Si el navegador no
+    dejaba grabar, si había ruido, o si sencillamente uno prefería
+    escribirlo, el único mensaje era «este navegador no puede grabar» y
+    ahí se acababa el camino.
+
+    Y no hacía falta nada nuevo por debajo: `interpretar(texto)` ya
+    existía —la usa el atajo de Siri— y entiende exactamente lo mismo.
+    Solo faltaba una caja donde escribir.
+
+    HUBI no es un micrófono. La voz es la forma preferida de hablarle,
+    no la única.
+  */
+  const [escrito, setEscrito] = useState('')
   const [, setDetalle] = useState<string | null>(null)
   const [creado, setCreado] = useState<string | null>(null)
 
@@ -140,11 +159,23 @@ export default function Grabar({
     setEnPausa(false)
 
     if (!sePuedeGrabar()) {
-      setAviso('Este navegador no puede grabar. Prueba con Chrome o con Safari.')
+      setAviso('Este navegador no puede grabar. Escríbelo aquí abajo y te entiendo igual.')
       return
     }
 
-    const g = await grabarVoz({
+    /*
+      SI ABRIR EL MICRÓFONO FALLA, SE DICE.
+
+      Antes esto iba suelto. Si `grabarVoz` lanzaba —y lanza, por
+      ejemplo cuando el teléfono ya no deja abrir más audio—, el fallo
+      salía por arriba sin que nadie lo recogiera: el botón se pulsaba
+      y NO PASABA NADA. Ni error, ni aviso, ni aros girando. Una
+      pantalla que no responde y no explica por qué es lo peor que
+      puede hacer HUBI.
+    */
+    let g: Grabando | null = null
+    try {
+      g = await grabarVoz({
       alNivel: setNivel,
       alPausar: () => setEnPausa(true),
       alSeguir: () => setEnPausa(false),
@@ -170,11 +201,18 @@ export default function Grabar({
           motivo === 'sin-permiso'
             ? 'HUBI necesita el micrófono para escucharte. Dale permiso cuando el teléfono lo pida.'
             : motivo === 'sin-micro'
-              ? 'Este navegador no puede grabar. Prueba con Chrome o con Safari.'
+              ? 'Este navegador no puede grabar. Escríbelo aquí abajo y te entiendo igual.'
               : 'No he oído nada. Prueba a acercarte un poco al teléfono.'
         )
       },
-    })
+      })
+    } catch {
+      setEstado('listo')
+      setAviso(
+        'No he podido abrir el micrófono. Cierra HUBI del todo y vuelve a abrirla.'
+      )
+      return
+    }
 
     if (!g) return
 
@@ -285,10 +323,28 @@ export default function Grabar({
     como "nada", que sí tiene su pantalla: enseña lo que se ha dicho y
     pregunta para qué era. Un "no te he entendido" con salida es
     infinitamente mejor que una pantalla muda.
+
+    ─────────────────────────────────────────────────────────────
+    Y AQUÍ ESTABA EL FALLO DE LAS NOTAS. TRES SESIONES BUSCÁNDOLO.
+
+    Faltaba «nota» en esta lista. La nota se entendía perfectamente
+    —el servidor la devolvía entera, con su texto y su destinatario—,
+    llegaba a esta línea, no estaba en la lista… y se convertía en
+    «nada». Volvía a salir la pantalla de «¿qué quieres que haga con
+    esto?», que es exactamente lo que se veía: se tocaba «Dejar una
+    nota en el corcho» y reaparecía la misma pantalla, sin error, sin
+    nada. Parecía que la voz no entendía las notas. Las entendía; era
+    esta línea la que las tiraba.
+
+    Esta red de seguridad se escribió para que ninguna acción nueva
+    dejara una pantalla en blanco. Tiene un precio que hay que conocer:
+    cuando se añade una acción CON pantalla, si no se apunta aquí, la
+    red la caza a ella. Añadir la pantalla y olvidar la lista es
+    silencioso — no falla nada, simplemente no ocurre.
   */
   const ENSEÑABLES = [
     'recordatorio', 'gasto', 'ingreso', 'consulta',
-    'cambiar', 'borrar', 'compra', 'nada',
+    'cambiar', 'borrar', 'compra', 'nota', 'nada',
   ]
 
   function loQueSePuedaEnsenar(datos: Oido): Oido {
@@ -691,10 +747,13 @@ export default function Grabar({
                   <span
                     className="relative flex h-32 w-32 items-center justify-center rounded-full text-white"
                     style={{
-                      background:
-                        estado === 'grabando'
-                          ? 'linear-gradient(140deg,#2DD4BF,#14B8A6 40%,#8B5CF6)'
-                          : 'linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)',
+                      /* Mientras graba tiraba al morado `#8B5CF6`,
+                         que salió de la paleta. Ahora el degradado es
+                         SIEMPRE el de HUBI y lo que cambia es el
+                         icono: la onda en vez del micrófono. Que algo
+                         cambie de color al pulsarlo no dice qué está
+                         pasando; que cambie de dibujo, sí. */
+                      background: 'linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)',
                       boxShadow: '0 14px 44px rgba(20,184,166,.42)',
                     }}
                   >
@@ -777,8 +836,40 @@ export default function Grabar({
                   pantalla no es qué frase exacta decir, sino QUÉ SE
                   PUEDE PEDIR. La frase es el ejemplo, no la orden.
                 */}
+                {/* ── O escríbelo ── */}
                 {estado === 'listo' && (
-                  <ul className="mt-11 w-full space-y-2.5 text-left">
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      const t = escrito.trim()
+                      if (!t) return
+                      setEscrito('')
+                      interpretar(t)
+                    }}
+                    className="mt-8 flex w-full items-center gap-2 rounded-[18px] border border-white/20 bg-white/[.07] pl-4 pr-2"
+                  >
+                    <input
+                      value={escrito}
+                      onChange={(e) => setEscrito(e.target.value)}
+                      placeholder="O escríbelo aquí"
+                      aria-label="Escribe lo que necesitas"
+                      enterKeyHint="send"
+                      className="h-[58px] min-w-0 flex-1 bg-transparent text-[17px] font-semibold text-white placeholder:font-medium placeholder:text-slate-400 focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      disabled={escrito.trim().length === 0}
+                      aria-label="Enviar"
+                      className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[13px] text-white disabled:opacity-30"
+                      style={{ background: 'linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)' }}
+                    >
+                      <Ico nombre="flecha" tam={22} grosor={2.4} />
+                    </button>
+                  </form>
+                )}
+
+                {estado === 'listo' && (
+                  <ul className="mt-8 w-full space-y-2.5 text-left">
                     <Ejemplo
                       que="Apuntar"
                       frase={
@@ -840,22 +931,23 @@ export default function Grabar({
                       a alguien qué hay en la compra y mandarle luego a
                       la Finca es hacerle buscar lo que acaba de
                       encontrar. */}
-                  <Link
-                    href={
-                      oido.papel_id
-                        ? `/documentos/${oido.papel_id}`
-                        : (oido.ir_a ?? '/finca')
-                    }
-                    className="block flex h-[62px] items-center justify-center rounded-[16px] bg-verde text-[18px] font-extrabold text-white"
-                  >
-                    {oido.papel_id
-                      ? 'Ver el papel'
-                      : oido.ir_a === '/compra'
-                        ? 'Ver la compra'
-                        : oido.ir_a === '/agenda'
-                          ? 'Ver la Agenda'
-                          : 'Ver la Finca'}
-                  </Link>
+                  {/* Si no se sabe a dónde llevar, no se ofrece
+                      ningún botón. Antes caía en `/finca`, que en
+                      cualquier otra casa no lleva a ninguna parte. */}
+                  {(oido.papel_id || oido.ir_a) && (
+                    <Link
+                      href={oido.papel_id ? `/documentos/${oido.papel_id}` : oido.ir_a!}
+                      className="block flex h-[62px] items-center justify-center rounded-[16px] bg-accion text-[18px] font-extrabold text-accion-tinta"
+                    >
+                      {oido.papel_id
+                        ? 'Ver el papel'
+                        : oido.ir_a === '/compra'
+                          ? 'Ver la compra'
+                          : oido.ir_a === '/agenda'
+                            ? 'Ver la Agenda'
+                            : `Ver ${oido.ir_a_nombre ?? 'dónde está'}`}
+                    </Link>
+                  )}
                   <button onClick={() => setEstado('listo')} className="w-full flex h-[62px] items-center justify-center rounded-[16px] border border-white/20 text-[18px] font-bold text-slate-200">
                     Preguntar otra cosa
                   </button>
@@ -1065,6 +1157,12 @@ export default function Grabar({
                   <div className="mt-8 space-y-3">
                     <Opcion texto="Apuntar una tarea o un aviso" icono="check"
                       onClick={() => interpretar(oido.transcripcion!, 'recordatorio')} />
+                    {/* FALTABA, y era el fallo entero: quien quería
+                        dejar una nota tenía ocho opciones y ninguna
+                        era la suya, así que pulsaba la de al lado y
+                        acababa con un recordatorio. */}
+                    <Opcion texto="Dejar una nota en el corcho" icono="chincheta"
+                      onClick={() => interpretar(oido.transcripcion!, 'nota')} />
                     <Opcion texto="Apuntar un gasto" icono="euro"
                       onClick={() => interpretar(oido.transcripcion!, 'gasto')} />
                     <Opcion texto="Apuntar un ingreso" icono="euro"
@@ -1235,24 +1333,49 @@ export default function Grabar({
             </p>
 
             <div className="mt-12 w-full space-y-4">
-              <a
-                href={
+              {/*
+                ── AQUÍ PONÍA «VER LA FINCA» PARA TODO ──
+
+                Cualquier gasto o ingreso, fuera de donde fuera,
+                ofrecía «Ver la Finca» y llevaba a `/finca` escrito a
+                mano. Un gasto de luz de la CASA se apuntaba bien —en
+                su partida— y el botón te mandaba a otro sitio. Y en
+                cualquier otra familia «la Finca» nombra algo que no
+                existe.
+
+                Ahora el sitio y su nombre los pone el servidor, que es
+                quien conoce el árbol de esa casa. Si no lo sabe, no
+                hay botón: uno que lleva a un sitio inventado es peor
+                que ninguno.
+              */}
+              {(() => {
+                const donde =
                   oido.accion === 'compra'
                     ? '/compra'
-                    : oido.accion === 'recordatorio' && creado
-                    ? `/tablon/${creado}`
                     : oido.accion === 'recordatorio'
-                      ? '/tablon'
-                      : '/finca'
-                }
-                className="block flex h-[62px] items-center justify-center rounded-[16px] bg-verde text-[18px] font-extrabold text-white"
-              >
-                {oido.accion === 'compra'
-                  ? 'Ver la compra'
-                  : oido.accion === 'recordatorio'
-                    ? 'Ver lo apuntado'
-                    : 'Ver la Finca'}
-              </a>
+                      ? creado
+                        ? `/tablon/${creado}`
+                        : '/tablon'
+                      : (oido.ir_a ?? null)
+
+                if (!donde) return null
+
+                const texto =
+                  oido.accion === 'compra'
+                    ? 'Ver la compra'
+                    : oido.accion === 'recordatorio'
+                      ? 'Ver lo apuntado'
+                      : `Ver ${oido.ir_a_nombre ?? 'dónde está'}`
+
+                return (
+                  <a
+                    href={donde}
+                    className="block flex h-[62px] items-center justify-center rounded-[16px] bg-accion text-[18px] font-extrabold text-accion-tinta"
+                  >
+                    {texto}
+                  </a>
+                )
+              })()}
               <button
                 onClick={() => {
                   setOido(null)
@@ -1307,15 +1430,60 @@ function enPalabras(iso: string): string {
  * cuarta parte. Con datos móviles se nota.
  */
 async function aWav(grabacion: Blob): Promise<Blob> {
-  const contexto = new AudioContext()
-  const decodificado = await contexto.decodeAudioData(await grabacion.arrayBuffer())
+  const decodificado = await descodificar(await grabacion.arrayBuffer())
 
   const canal = decodificado.getChannelData(0)
   const destino = 16_000
   const muestras = remuestrear(canal, decodificado.sampleRate, destino)
 
-  await contexto.close()
   return escribirWav(muestras, destino)
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  POR QUÉ EL MICRÓFONO DEJABA DE FUNCIONAR DEL TODO
+  ═══════════════════════════════════════════════════════════════
+
+  Aquí se abría un `AudioContext` nuevo en CADA grabación para
+  descodificar el audio, y se cerraba en la última línea. Si algo
+  fallaba antes de esa línea —un audio que no se puede descodificar,
+  que pasa— el contexto se quedaba abierto para siempre.
+
+  Un iPhone permite cuatro contextos de audio a la vez. Al quinto, el
+  navegador se niega. Y como el que se abre para GRABAR es de los
+  mismos, a la quinta vez el micrófono simplemente ya no abría: el
+  botón se pulsaba y no pasaba nada. No era el micrófono ni el permiso
+  ni Safari. Éramos nosotros, gastándolos de cuatro en cuatro.
+
+  Se arregla de dos maneras a la vez:
+
+  1 · Se descodifica en un contexto QUE NO SUENA (`OfflineAudioContext`).
+      No toca el altavoz ni el micrófono, no consume de esa cuenta, y
+      además descodifica directamente a 16 kHz, con lo que remuestrear
+      luego no tiene ni trabajo.
+
+  2 · Es uno solo para toda la sesión, no uno por grabación. Lo que no
+      se abre no hace falta acordarse de cerrarlo.
+
+  Y si un navegador viejo no sabe descodificar así, se cae al de
+  siempre — pero ese sí se cierra pase lo que pase.
+*/
+let cocina: OfflineAudioContext | null = null
+
+async function descodificar(bytes: ArrayBuffer): Promise<AudioBuffer> {
+  try {
+    if (!cocina) cocina = new OfflineAudioContext(1, 1, 16_000)
+    /* `decodeAudioData` se queda con los bytes que le das —los deja
+       vacíos—, así que cada intento necesita su propia copia. */
+    return await cocina.decodeAudioData(bytes.slice(0))
+  } catch {
+    const suelto = new AudioContext()
+    try {
+      return await suelto.decodeAudioData(bytes.slice(0))
+    } finally {
+      suelto.close().catch(() => {})
+    }
+  }
 }
 
 function remuestrear(datos: Float32Array, origen: number, destino: number): Float32Array {

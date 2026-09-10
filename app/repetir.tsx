@@ -1,6 +1,7 @@
 'use client'
 
 import { Ico } from './iconos'
+import { Aviso } from './piezas'
 
 /*
   ¿Se repite? ¿Y hasta cuándo?
@@ -88,9 +89,13 @@ export default function Repetir({
           />
 
           {hasta && desde && hasta < desde && (
-            <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[16px] font-semibold leading-snug text-coral">
-              Esa fecha es anterior al día de la tarea. Así no se repetiría nunca.
-            </p>
+            <div className="mt-3">
+              <Aviso
+                tono="atencion"
+                titulo="Esa fecha es anterior al día de la tarea"
+                explicacion="Así no se repetiría nunca."
+              />
+            </div>
           )}
 
           {hasta && desde && hasta >= desde && (

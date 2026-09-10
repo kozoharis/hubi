@@ -3,7 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
-import { Pastilla } from '../iconos'
+import { Aviso, PastillaAmbito } from '../piezas'
 import Pantalla, { type Cerrada, type ListaCompra } from './lista'
 
 export const dynamic = 'force-dynamic'
@@ -200,6 +200,9 @@ export default async function Compra() {
 
     data = segunda.data as Fila[] | null
     falloCompra = segunda.error
+    if (falloCompra) {
+      console.error('[HUBI] La compra tampoco ha cargado sin lista_id:', falloCompra.message)
+    }
   }
 
   /*
@@ -233,26 +236,41 @@ export default async function Compra() {
     <main className="min-h-screen pb-40">
       <Cabecera>
         <div className="flex h-14 items-center gap-3">
-          <Pastilla nombre="bolsa" color="#0EA5E9" fondo="#E0F2FE" tam={44} icono={23} />
-          <h1 className="text-[27px] font-extrabold tracking-tight">La compra</h1>
+          {/* Era `#0EA5E9`, el cian que no está declarado en la
+              paleta. La compra es de la casa, y la casa lleva arena. */}
+          <PastillaAmbito icono="bolsa" ambito="arena" tam={44} />
+          <h1 className="t-titulo">La compra</h1>
         </div>
       </Cabecera>
 
       <div className="mx-auto w-full max-w-md px-5 pt-1">
+        {/*
+          ── AQUÍ NO VA LA CAJA DE HUBI, Y ES A PROPÓSITO ──
+
+          Se puso, y al probarla salió el motivo para quitarla: esta
+          pantalla YA tiene su campo —«Leche, pan, huevos…»— y es mejor
+          que HUBI para lo que se hace aquí. Apuntas tres cosas
+          seguidas sin salir, sin esperar y sin confirmar nada.
+
+          Poner encima la caja de HUBI sería volver a tener dos cajas
+          haciendo la misma pregunta con dos motores distintos — que es
+          exactamente lo que se acaba de quitar de Papeles. Una
+          pantalla que ya resuelve lo suyo no necesita un asistente
+          delante.
+
+          HUBI sigue estando: el botón de voz de la barra de abajo.
+        */}
         {/* Si ni siquiera así se pueden leer, SE DICE. Un "no hay
             nada" cuando lo que pasa es que no se ha podido leer es
             mentirle a alguien sobre sus propias cosas. */}
+        {/* El motivo técnico va al registro del servidor, no a la
+            pantalla: aquí solo hace ruido y asusta. */}
         {falloCompra && (
-          <div className="mb-4 rounded-[20px] border border-coral bg-coral-suave px-4 py-4">
-            <p className="text-[17px] font-extrabold text-coral">
-              La compra no se ha podido leer
-            </p>
-            <p className="mt-1.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
-              Lo apuntado sigue guardado. Esto es un fallo al leerlo.
-            </p>
-            <p className="mt-2 break-words rounded-[14px] bg-superficie px-3 py-2 text-[14px] font-semibold text-tinta-suave">
-              {falloCompra.message}
-            </p>
+          <div className="mb-4">
+            <Aviso
+              titulo="La compra no se ha podido leer"
+              explicacion="Lo apuntado sigue guardado. Esto es un fallo al leerlo, no una pérdida."
+            />
           </div>
         )}
 
@@ -272,7 +290,7 @@ export default async function Compra() {
         />
       </div>
 
-      <Barra activa={null} />
+      <Barra activa="dia" />
     </main>
   )
 }

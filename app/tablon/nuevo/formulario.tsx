@@ -1,19 +1,74 @@
 'use client'
 
-import Link from 'next/link'
 import { useState } from 'react'
 import Repetir, { type Repeticion } from '../../repetir'
-import { Volver } from '../../iconos'
+import { Ico, Volver } from '../../iconos'
+import { hoyAqui } from '@/lib/tablon'
+import {
+  Aviso,
+  BotonPrincipal,
+  BotonSecundario,
+  BotonTerciario,
+  Campo,
+  Hecho,
+} from '../../piezas'
 
 type Perfil = { id: string; nombre: string }
 
-const HOY = () => new Date().toISOString().slice(0, 10)
+/*
+  ═══════════════════════════════════════════════════════════════
+  «HOY» ERA AYER ENTRE MEDIANOCHE Y LA UNA, EN VERANO
+  ═══════════════════════════════════════════════════════════════
+
+  Esto usaba `new Date().toISOString()`, que da la fecha en UTC.
+  Canarias va a UTC+0 en invierno pero a UTC+1 en verano, así que entre
+  las 00:00 y la 01:00 de una noche de verano allí ya es un día y en
+  UTC todavía es el anterior.
+
+  Consecuencia real: quien apuntaba algo «para hoy» a las doce y media
+  de la noche se lo encontraba puesto para AYER — es decir, vencido
+  desde el primer momento, en rojo, en la pestaña de atrasados.
+
+  Comprobado: el 1 de julio de 2026 a las 00:30 en Canarias,
+  `toISOString()` devuelve 2026-06-30 y `hoyAqui()` devuelve
+  2026-07-01.
+
+  El resto de la aplicación ya lo hacía bien con `hoyAqui()`, que
+  pregunta la fecha en la zona de la familia. Aquí se había quedado sin
+  arreglar.
+
+  Y `enDias` se calcula sobre las DOCE DEL MEDIODÍA de ese día. Sumar
+  días a medianoche se rompe la noche que cambia la hora: 24 horas
+  después de las 00:00 pueden ser las 23:00 del mismo día. A mediodía
+  hay doce horas de margen por cada lado y no falla nunca.
+*/
+const HOY = () => hoyAqui()
 
 function enDias(n: number): string {
-  const d = new Date()
+  const d = new Date(`${hoyAqui()}T12:00:00`)
   d.setDate(d.getDate() + n)
-  return d.toISOString().slice(0, 10)
+  const dos = (x: number) => String(x).padStart(2, '0')
+  return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`
 }
+
+/*
+  ¿CON CUÁNTA ANTELACIÓN AVISAMOS?
+
+  Este campo existía en la base de datos, se enseñaba en la ficha… y no
+  había manera de ponerlo desde ningún sitio. Estaba escrito en el
+  planteamiento —«¿quieres que te avisemos? un mes / una semana / un
+  día antes»— y era, literalmente, un dato de solo lectura.
+
+  «30 minutos antes» solo aparece si hay hora: media hora antes de un
+  día entero no quiere decir nada.
+*/
+const AVISOS: { valor: string; texto: string; necesitaHora?: boolean }[] = [
+  { valor: 'sin_aviso', texto: 'Sin aviso' },
+  { valor: '30_min', texto: '30 minutos antes', necesitaHora: true },
+  { valor: '1_dia', texto: 'Un día antes' },
+  { valor: '1_semana', texto: 'Una semana antes' },
+  { valor: '1_mes', texto: 'Un mes antes' },
+]
 
 export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string }) {
   const [titulo, setTitulo] = useState('')
@@ -23,6 +78,7 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
   const [nota, setNota] = useState('')
   const [repite, setRepite] = useState<Repeticion>(null)
   const [hasta, setHasta] = useState('')
+  const [avisoPrevio, setAvisoPrevio] = useState('sin_aviso')
   const [verMas, setVerMas] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
@@ -45,6 +101,9 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
           nota,
           repite,
           repite_hasta: hasta || null,
+          /* Sin día no hay desde cuándo contar la antelación, así que
+             tampoco hay aviso que dar. */
+          aviso_previo: fecha ? avisoPrevio : 'sin_aviso',
         }),
       })
       const datos = await r.json()
@@ -62,22 +121,15 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
 
   if (hecho) {
     return (
-      <main className="flex min-h-screen flex-col justify-center px-6 py-16">
-        <div className="mx-auto w-full max-w-md text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-verde text-4xl text-white">
-            ✓
-          </div>
-          <h1 className="mt-8 font-titulo text-4xl leading-tight text-tinta">Apuntado</h1>
-          <p className="mt-4 text-lg text-tinta-suave">{titulo}</p>
-
-          <div className="mt-12 space-y-4">
-            <Link href="/tablon" className="block rounded-2xl bg-verde px-6 py-5 text-xl font-semibold text-white">
-              Ver el tablón
-            </Link>
-            <Link href="/tablon/nuevo" className="block rounded-2xl border-2 border-borde px-6 py-5 text-xl font-medium text-tinta-suave">
-              Apuntar otra cosa
-            </Link>
-          </div>
+      <main className="flex min-h-screen flex-col justify-center px-5 py-16">
+        <div className="mx-auto w-full max-w-md">
+          <Hecho titulo="Apuntado" explicacion={titulo}>
+            {/* Decía «Ver el tablón» y llevaba a una pantalla titulada
+                «Agenda»: el tablón dejó de existir hace tiempo y el
+                botón se quedó con su nombre. */}
+            <BotonPrincipal href="/agenda">Ver la Agenda</BotonPrincipal>
+            <BotonSecundario href="/tablon/nuevo">Apuntar otra cosa</BotonSecundario>
+          </Hecho>
         </div>
       </main>
     )
@@ -86,24 +138,27 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
   return (
     <main className="techo-holgado min-h-screen px-5 pb-10">
       <div className="mx-auto w-full max-w-md">
-        <Volver href="/tablon" />
+        <Volver href="/agenda" />
 
-        <h1 className="mt-8 font-titulo text-[2.5rem] leading-tight text-tinta">
-          Apuntar algo
-        </h1>
+        {/* Era `font-titulo text-[2.5rem]` — 40 px, y la única
+            pantalla del producto que usaba esa familia. El título de
+            pantalla es 27 en todas partes. */}
+        <h1 className="t-titulo mt-6">Apuntar algo</h1>
 
-        <label htmlFor="titulo" className="mt-10 block text-xl font-medium text-tinta">
-          ¿Qué hay que recordar?
-        </label>
-        <textarea
-          id="titulo"
-          rows={2}
-          autoFocus
-          value={titulo}
-          onChange={(e) => setTitulo(e.target.value)}
-          placeholder="Recoger la medicación en la farmacia"
-          className="mt-3 w-full resize-none rounded-2xl border-2 border-borde bg-fondo px-5 py-4 text-xl leading-snug text-tinta placeholder:text-tenue focus:border-verde focus:outline-none"
-        />
+        <div className="mt-8">
+          <Campo etiqueta="¿Qué hay que recordar?">
+            <textarea
+              id="titulo"
+              rows={2}
+              autoFocus
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              placeholder="Recoger la medicación en la farmacia"
+              className="entrada resize-none py-4 leading-snug"
+              style={{ height: 'auto', minHeight: 92 }}
+            />
+          </Campo>
+        </div>
 
         {/*
           ═══════════════════════════════════════════════════════
@@ -123,8 +178,8 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
         */}
         {otros.length > 0 && (
           <>
-            <p className="mt-8 text-xl font-medium text-tinta">¿Para quién?</p>
-            <div className="mt-3 space-y-3">
+            <p className="rotulo mt-7">¿Para quién?</p>
+            <div className="mt-2.5 space-y-2.5">
               <Opcion activa={para === yo} onClick={() => setPara(yo)} texto="Para mí" />
               {otros.map((p) => (
                 <Opcion
@@ -145,8 +200,8 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
           </>
         )}
 
-        <p className="mt-8 text-xl font-medium text-tinta">¿Cuándo?</p>
-        <div className="mt-3 space-y-3">
+        <p className="rotulo mt-7">¿Cuándo?</p>
+        <div className="mt-2.5 space-y-2.5">
           <Opcion activa={fecha === HOY()} onClick={() => setFecha(HOY())} texto="Hoy" />
           <Opcion activa={fecha === enDias(1)} onClick={() => setFecha(enDias(1))} texto="Mañana" />
           <Opcion
@@ -157,48 +212,67 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
         </div>
 
         <div className="mt-4">
-          <label htmlFor="fecha" className="block text-lg text-tinta-suave">
-            O elige un día
-          </label>
-          <input
-            id="fecha"
-            type="date"
-            value={fecha ?? ''}
-            onChange={(e) => setFecha(e.target.value || null)}
-            className="mt-2 w-full rounded-2xl border-2 border-borde bg-fondo px-5 py-4 text-tinta focus:border-verde focus:outline-none"
-          />
+          <Campo etiqueta="O elige un día">
+            <input
+              id="fecha"
+              type="date"
+              value={fecha ?? ''}
+              onChange={(e) => setFecha(e.target.value || null)}
+              className="entrada"
+            />
+          </Campo>
         </div>
 
         {!verMas ? (
-          <button
-            onClick={() => setVerMas(true)}
-            className="mt-8 w-full py-3 text-lg font-medium text-tinta-suave underline underline-offset-4"
-          >
-            Añadir hora, nota o repetirlo
-          </button>
+          <div className="mt-6">
+            <BotonTerciario onClick={() => setVerMas(true)} icono="mas">
+              Añadir hora, aviso, nota o repetirlo
+            </BotonTerciario>
+          </div>
         ) : (
           <>
-            <label htmlFor="hora" className="mt-8 block text-xl font-medium text-tinta">
-              ¿A qué hora? <span className="font-normal text-tenue">(opcional)</span>
-            </label>
-            <input
-              id="hora"
-              type="time"
-              value={hora}
-              onChange={(e) => setHora(e.target.value)}
-              className="mt-3 w-full rounded-2xl border-2 border-borde bg-fondo px-5 py-4 text-tinta focus:border-verde focus:outline-none"
-            />
+            <div className="mt-7">
+              <Campo etiqueta="¿A qué hora?" ayuda="Opcional.">
+                <input
+                  id="hora"
+                  type="time"
+                  value={hora}
+                  onChange={(e) => setHora(e.target.value)}
+                  className="entrada"
+                />
+              </Campo>
+            </div>
 
-            <label htmlFor="nota" className="mt-8 block text-xl font-medium text-tinta">
-              Nota <span className="font-normal text-tenue">(opcional)</span>
-            </label>
-            <textarea
-              id="nota"
-              rows={2}
-              value={nota}
-              onChange={(e) => setNota(e.target.value)}
-              className="mt-3 w-full resize-none rounded-2xl border-2 border-borde bg-fondo px-5 py-4 text-tinta focus:border-verde focus:outline-none"
-            />
+            {/* Avisar solo tiene sentido si hay día: sin fecha no hay
+                desde cuándo contar la antelación. */}
+            {fecha && (
+              <>
+                <p className="rotulo mt-7">¿Os avisamos antes?</p>
+                <div className="mt-2.5 space-y-2.5">
+                  {AVISOS.filter((a) => !a.necesitaHora || hora).map((a) => (
+                    <Opcion
+                      key={a.valor}
+                      activa={avisoPrevio === a.valor}
+                      onClick={() => setAvisoPrevio(a.valor)}
+                      texto={a.texto}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            <div className="mt-7">
+              <Campo etiqueta="Nota" ayuda="Opcional.">
+                <textarea
+                  id="nota"
+                  rows={2}
+                  value={nota}
+                  onChange={(e) => setNota(e.target.value)}
+                  className="entrada resize-none py-4 leading-snug"
+                  style={{ height: 'auto', minHeight: 92 }}
+                />
+              </Campo>
+            </div>
 
             {/* Repetir solo tiene sentido si la tarea tiene día: algo
                 "cuando se pueda" no puede repetirse cada semana. */}
@@ -216,18 +290,29 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
           </>
         )}
 
-        <button
-          onClick={guardar}
-          disabled={guardando || titulo.trim().length === 0}
-          className="mt-10 w-full rounded-2xl bg-verde px-6 py-6 text-2xl font-semibold text-white disabled:opacity-40"
-        >
-          {guardando ? 'Guardando…' : 'Apuntar'}
-        </button>
+        {/*
+          Era `bg-verde` a 24 px de letra y con relleno de 24 px arriba
+          y abajo — el botón más grande del producto, en una pantalla
+          que no es más importante que las demás. Y apagarse al 40 % de
+          opacidad sin decir nada es lo que hace pensar que la
+          aplicación está rota: ahora dice qué falta.
+        */}
+        <div className="mt-9">
+          <BotonPrincipal
+            onClick={guardar}
+            desactivado={guardando || titulo.trim().length === 0}
+            porQue={
+              titulo.trim().length === 0 ? 'Escribe primero qué hay que recordar.' : undefined
+            }
+          >
+            {guardando ? 'Guardando…' : 'Apuntar'}
+          </BotonPrincipal>
+        </div>
 
         {aviso && (
-          <p className="mt-6 rounded-2xl bg-terracota-suave px-5 py-4 text-lg leading-snug text-terracota">
-            {aviso}
-          </p>
+          <div className="mt-5">
+            <Aviso titulo="No se ha podido apuntar" explicacion={aviso} />
+          </div>
         )}
       </div>
     </main>
@@ -243,15 +328,37 @@ function Opcion({
   onClick: () => void
   texto: string
 }) {
+  /*
+    El «✓ » iba pegado al texto, así que la etiqueta se desplazaba dos
+    caracteres al elegirla y toda la lista bailaba. Ahora la marca
+    ocupa su sitio siempre, elegida o no.
+
+    Y el borde de 2 px pasa a 1: dos píxeles de borde en una lista de
+    cinco opciones es mucha línea para lo poco que separa.
+  */
   return (
     <button
       onClick={onClick}
-      className={`w-full rounded-[20px] border-2 px-6 py-5 text-left text-xl font-medium ${
-        activa ? 'border-verde bg-verde-suave text-verde' : 'border-borde bg-superficie text-tinta'
-      }`}
+      aria-pressed={activa}
+      className="flex min-h-[60px] w-full items-center gap-2.5 rounded-[16px] border px-4 py-3 text-left"
+      style={{
+        borderColor: activa ? 'var(--color-accion)' : 'var(--t-borde)',
+        background: activa ? 'var(--t-bien-velo)' : 'var(--t-superficie)',
+        color: 'var(--t-tinta)',
+      }}
     >
-      {activa ? '✓ ' : ''}
-      {texto}
+      <span
+        aria-hidden
+        className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full"
+        style={{
+          border: activa ? 'none' : '2px solid var(--t-borde)',
+          background: activa ? 'var(--color-accion)' : 'transparent',
+          color: 'var(--color-accion-tinta)',
+        }}
+      >
+        {activa && <Ico nombre="check" tam={14} grosor={3} />}
+      </span>
+      <span className="t-cuerpo font-extrabold">{texto}</span>
     </button>
   )
 }

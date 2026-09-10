@@ -1,5 +1,4 @@
-import Link from 'next/link'
-import { Ico } from '../iconos'
+import { BotonSecundario } from '../piezas'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -35,12 +34,13 @@ export default function Anadir({
   texto?: string
 }) {
   return (
-    <Link
-      href={carpetaId ? `/guardar?en=${encodeURIComponent(carpetaId)}` : '/guardar'}
-      className="mt-5 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[18px] border border-borde bg-superficie text-[17.5px] font-extrabold text-tinta-suave"
-    >
-      <Ico nombre="mas" tam={21} grosor={2.4} />
-      {texto}
-    </Link>
+    <div className="mt-5">
+      <BotonSecundario
+        href={carpetaId ? `/guardar?en=${encodeURIComponent(carpetaId)}` : '/guardar'}
+        icono="mas"
+      >
+        {texto}
+      </BotonSecundario>
+    </div>
   )
 }

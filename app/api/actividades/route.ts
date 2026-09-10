@@ -140,8 +140,11 @@ const PLANTILLAS: Record<
 > = {
   finca: {
     icono: '🌿',
-    color: '#14B8A6',
-    fondo: '#DFF7F3',
+    /* Era `#14B8A6`, que es el color de ACCIÓN. Cada actividad que se
+       creaba nacía marcada con el color de «pulsa esto». Los cuatro
+       pasan a la paleta apagada, que es la que identifica. */
+    color: '#6FA88A',
+    fondo: '#E9F2ED',
     divide: false,
     palabra: null,
     reparte: false,
@@ -153,8 +156,8 @@ const PLANTILLAS: Record<
        lee como una caja; el casco se reconoce de un vistazo y dice
        «obra» sin que nadie tenga que interpretarlo. */
     icono: '👷',
-    color: '#F59E0B',
-    fondo: '#FEF1DC',
+    color: '#C09A62',
+    fondo: '#F5EDE0',
     divide: true,
     palabra: 'la obra',
     reparte: false,
@@ -171,8 +174,8 @@ const PLANTILLAS: Record<
   },
   alquileres: {
     icono: '🔑',
-    color: '#8B5CF6',
-    fondo: '#EEE8FE',
+    color: '#9AA85E',
+    fondo: '#EFF1E3',
     divide: true,
     palabra: 'el piso',
     /* Lo común se reparte solo aquí: pisos parecidos, luz partida a
@@ -183,8 +186,8 @@ const PLANTILLAS: Record<
   },
   otra: {
     icono: '📁',
-    color: '#3B82F6',
-    fondo: '#E4EEFE',
+    color: '#6B93D6',
+    fondo: '#E7EDF8',
     divide: false,
     palabra: null,
     reparte: false,
@@ -652,7 +655,7 @@ export async function PATCH(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: error?.message?.includes('usa_unidades')
-          ? 'Falta ejecutar sql/25 y sql/26 en la base de datos.'
+          ? 'Las actividades todavía no están disponibles en esta casa.'
           : 'No se ha podido guardar.',
         detalle: error?.message,
       },

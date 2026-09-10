@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { miHogar, SIN_CASA } from '@/lib/hogar'
+import { esImpuesto } from '@/lib/impuesto'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,7 +72,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: faltaLaFuncion
-          ? 'HUBI todavía no sabe crear casas nuevas. No es cosa tuya: avisa a quien lo mantiene (falta ejecutar el SQL 30).'
+          ? 'HUBI todavía no sabe crear casas nuevas. No es cosa tuya: avisa a quien lo mantiene.'
           : 'No se ha podido crear tu casa. Inténtalo en un minuto.',
       },
       { status: 500 }
@@ -100,15 +101,28 @@ export async function PATCH(peticion: NextRequest) {
   const hogarId = await miHogar(supabase, user.id)
   if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 403 })
 
-  let cuerpo: { usa_compra?: boolean; nombre?: string }
+  let cuerpo: { usa_compra?: boolean; nombre?: string; impuesto?: string }
   try {
-    cuerpo = (await peticion.json()) as { usa_compra?: boolean; nombre?: string }
+    cuerpo = (await peticion.json()) as {
+      usa_compra?: boolean
+      nombre?: string
+      impuesto?: string
+    }
   } catch {
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
   }
 
   const cambios: Record<string, unknown> = {}
   if (typeof cuerpo.usa_compra === 'boolean') cambios.usa_compra = cuerpo.usa_compra
+
+  /* El impuesto de la casa. Solo tres valores, y se comprueban aquí
+     además de en la base de datos: un aviso claro vale más que un 500. */
+  if (cuerpo.impuesto !== undefined) {
+    if (!esImpuesto(cuerpo.impuesto)) {
+      return NextResponse.json({ error: 'Ese impuesto no existe.' }, { status: 400 })
+    }
+    cambios.impuesto = cuerpo.impuesto
+  }
   if (cuerpo.nombre !== undefined) {
     const nombre = String(cuerpo.nombre).trim().slice(0, 60)
     if (nombre.length < 2) {
@@ -136,7 +150,7 @@ export async function PATCH(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: 'No se ha podido guardar el cambio.',
-        detalle: error?.message ?? 'La base de datos no ha dejado (falta ejecutar el SQL 32).',
+        detalle: error?.message ?? 'Esto todavía no está disponible en esta casa.',
       },
       { status: error ? 500 : 409 }
     )

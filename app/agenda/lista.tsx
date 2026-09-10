@@ -4,8 +4,11 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Tarjeta from '../tablon/tarjeta'
 import { Ico, Volver, pintaDe } from '../iconos'
+import { AMBITO, ambitoDeColor } from '@/lib/ambitos'
+import { Aviso, BotonPrincipal, BotonSecundario, Pildora } from '../piezas'
 import { atrasado, hoyAqui, type Recordatorio } from '@/lib/tablon'
 import { citasDeLaFamilia, calendariosVisibles, type CitaDeAlguien } from '@/lib/agenda-google'
+import { enlaceAgenda } from '@/lib/agenda-enlace'
 import Refrescar from './refrescar'
 
 /*
@@ -61,9 +64,7 @@ export default async function Lista({
   semana?: string
   de?: string
 }) {
-  const viendoHechas = ver === 'hechas'
   const viendoAdelante = ver === 'adelante'
-  const viendoVencidas = ver === 'vencidas'
 
   const supabase = await clienteSesion()
   const user = await quien(supabase)
@@ -83,7 +84,6 @@ export default async function Lista({
 
   const todos = (data ?? []) as Recordatorio[]
   const pendientes = todos.filter((r) => r.estado === 'pendiente')
-  const hechos = todos.filter((r) => r.estado === 'hecho').slice(0, 20)
 
   /* La fecha de hoy DONDE VIVEN ELLOS, no donde está el servidor.
      El porqué está en `lib/tablon.ts`. */
@@ -102,17 +102,32 @@ export default async function Lista({
 
   const enEstaSemana = desde === iso(lunesEstaSemana)
 
-  // Lo que se pasó de fecha y sigue sin hacerse. Tiene pestaña propia.
+  /*
+    ── LO VENCIDO YA NO ES UNA PESTAÑA ──
+
+    Lo era, y ése era el problema: algo que se pasó de fecha y sigue
+    sin hacerse solo se veía SI ALGUIEN PULSABA esa pestaña. Lo más
+    urgente de la Agenda estaba escondido detrás de un botón que hay
+    que saber que existe.
+
+    Ahora sube arriba del todo, siempre que haya algo. Si no hay nada
+    vencido, no aparece: un recuadro vacío diciendo «no hay nada
+    vencido» es ruido en la pantalla que más se mira.
+  */
   const tarde = pendientes.filter(atrasado)
 
-  /* Y lo que queda por hacer sin haberse pasado. La pestaña «Por
-     hacer» cuenta ESTO y no todos los pendientes: si contara los
-     vencidos también, los mismos seis estarían contados en dos
-     pestañas y los números no cuadrarían con lo que se ve. */
-  const enPlazo = pendientes.filter((r) => !atrasado(r))
+  /*
+    ── Y LO HECHO SE VE EN SU DÍA, TACHADO ──
 
-  // Los siete días. Lo atrasado ya está arriba, así que no se repite.
-  const deLaSemana = pendientes.filter(
+    También era pestaña, y también estaba mal: lo hecho no es una
+    categoría hermana de lo pendiente, es LO MISMO un rato después.
+    Sacarlo de su día para meterlo en una lista aparte hacía que el
+    martes dijera «una cosa» cuando en realidad hubo dos y una se hizo.
+
+    Con los dos juntos, el martes cuenta lo que de verdad pasó el
+    martes. Y lo hecho se distingue sin leer: tachado y atenuado.
+  */
+  const deLaSemana = todos.filter(
     (r) => r.fecha && r.fecha >= desde && r.fecha <= hasta && !atrasado(r)
   )
 
@@ -159,117 +174,68 @@ export default async function Lista({
     <>
       {/*
         ═══════════════════════════════════════════════════════
-        POR HACER · VENCIDAS · HECHAS, EN UNA SOLA LÍNEA
+        AQUÍ HABÍA TRES PESTAÑAS Y AHORA NO HAY NINGUNA
         ═══════════════════════════════════════════════════════
 
-        Lo vencido estaba metido dentro de «Por hacer», en un bloque
-        rojo clavado arriba. Funcionaba, pero tenía dos problemas: se
-        comía la parte de arriba de la pantalla todos los días, y no
-        se podía mirar solo eso — que es justo lo que se quiere hacer
-        cuando te sientas a ponerte al día.
+        «Por hacer · Vencidas · Hechas». Entre ésas, la escala, el
+        filtro de personas, la semana y la tira, había CINCO filas de
+        controles antes de que apareciera una sola cosa que hacer —
+        más de media pantalla en un móvil de 360.
 
-        Ahora es su propia pestaña, y SOLO SALE SI HAY ALGO. Una
-        pestaña «Vencidas · 0» permanente sería un reproche fijo por
-        algo que no has hecho mal.
+        Las tres se van, y cada una por su motivo:
 
-        Las tres caben en una línea porque son cortas y el número va
-        pegado. Con dos filas de pestañas, la tira de la semana bajaba
-        tanto que había que deslizar para ver el lunes.
+        · VENCIDAS era lo más urgente de HUBI escondido detrás de un
+          botón que hay que saber que existe. Ahora sube arriba del
+          todo, y solo cuando hay algo.
+
+        · HECHAS no es una categoría hermana de lo pendiente: es lo
+          mismo un rato después. Vuelve a su día, tachado.
+
+        · POR HACER, sin las otras dos, no distinguía nada: era la
+          única pestaña. Una pestaña sola no es una pestaña.
       */}
-      <div className="mt-1 flex gap-1.5">
-        <Pestana
-          texto="Por hacer"
-          cuantas={enPlazo.length}
-          href="/agenda"
-          puesta={!viendoHechas && !viendoVencidas}
-          color="#F59E0B"
-        />
-        {tarde.length > 0 && (
-          <Pestana
-            texto="Vencidas"
-            cuantas={tarde.length}
-            href="/agenda?ver=vencidas"
-            puesta={viendoVencidas}
-            color="#FF6B6B"
-          />
-        )}
-        <Pestana
-          texto="Hechas"
-          cuantas={null}
-          href="/agenda?ver=hechas"
-          puesta={viendoHechas}
-          color="#F59E0B"
-        />
-      </div>
-
-      {viendoHechas ? (
-        // ── HECHAS ────────────────────────────────────────────
-        hechos.length === 0 ? (
-          <Vacio texto="Todavía no hay nada marcado como hecho." />
-        ) : (
-          <ul className="mt-4 space-y-2.5">
-            {hechos.map((r) => (
-              <Tarjeta key={r.id} r={r} nombres={nombres} yo={user.id} />
-            ))}
-          </ul>
-        )
-      ) : viendoVencidas ? (
-        // ── VENCIDAS ──────────────────────────────────────────
-        /* Sin agrupar por día ni por semana: lo vencido no se mira
-           por fechas, se mira para ir tachando. */
-        tarde.length === 0 ? (
-          <Vacio texto="No hay nada vencido. Todo al día." />
-        ) : (
-          <>
-            <p className="mt-4 text-[15px] font-semibold leading-snug text-tenue">
-              Se pasó la fecha y sigue sin hacerse.
-            </p>
-            <ul className="mt-2.5 space-y-2.5">
-              {tarde.map((r) => (
-                <Tarjeta key={r.id} r={r} nombres={nombres} yo={user.id} />
-              ))}
-            </ul>
-          </>
-        )
-      ) : viendoAdelante ? (
+      {viendoAdelante ? (
         // ── MÁS ADELANTE ──────────────────────────────────────
         <MasAdelante
           adelante={adelante}
           sinFecha={sinFecha}
           nombres={nombres}
           yo={user.id}
+          volver={enlaceAgenda({ semana, de })}
         />
       ) : (
         // ── LA SEMANA ─────────────────────────────────────────
         <>
           {/*
-            DE QUIÉN SON LAS CITAS DE GOOGLE.
+            ═══════════════════════════════════════════════════
+            LO VENCIDO, ARRIBA DEL TODO Y SIN PEDIRLO
+            ═══════════════════════════════════════════════════
 
-            Solo aparece cuando hay más de un calendario: con uno solo,
-            unos botones para elegir "el de Juan Miguel" cuando no hay
-            otro es una decisión inventada.
+            Era una pestaña. Y una pestaña es un sitio donde hay que
+            entrar: quien no la pulsara —o no supiera que estaba— no
+            se enteraba nunca de que la ITV se pasó hace tres días.
+
+            Lo urgente no se guarda detrás de un botón. Sube aquí, con
+            su color de alerta, y **solo cuando hay algo**: un recuadro
+            permanente diciendo «no hay nada vencido» sería ruido en la
+            pantalla que más se mira.
           */}
-          {calendarios.length > 0 && (
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              {calendarios.length > 1 && (
-                <>
-                  <Filtro texto="Los dos" href={paraSemana(desde)} puesto={!dueno} color="#0F172A" />
-                  {calendarios.map((c) => (
-                    <Filtro
-                      key={c.id}
-                      texto={c.nombre.split(' ')[0]}
-                      href={`${paraSemana(desde)}&de=${c.id}`}
-                      puesto={dueno === c.id}
-                      color={c.color}
-                    />
-                  ))}
-                </>
-              )}
-              {/* Con un solo calendario no hay filtro, pero el botón de
-                  actualizar sigue haciendo falta: es lo que se pulsa
-                  cuando acabas de apuntar algo en el móvil. */}
-              <Refrescar cuantasHabia={suyas.length} />
-            </div>
+          {tarde.length > 0 && (
+            <section className="mt-4">
+              <Aviso
+                titulo={
+                  tarde.length === 1
+                    ? 'Una cosa se pasó de fecha'
+                    : `${tarde.length} cosas se pasaron de fecha`
+                }
+                explicacion="Sigue sin hacerse. Tócala para marcarla o cambiarle el día."
+              />
+              <ul className="mt-2.5 space-y-2.5">
+                {tarde.map((r) => (
+                  <Tarjeta key={r.id} r={r} nombres={nombres} yo={user.id} />
+                ))}
+              </ul>
+            </section>
           )}
 
           {/* ── De qué semana estamos hablando ── */}
@@ -280,7 +246,7 @@ export default async function Lista({
               <span className="h-12 w-12 shrink-0" aria-hidden />
             ) : (
               <Link
-                href={paraSemana(iso(sumar(lunes, -7)))}
+                href={enlaceAgenda({ ver, de }, { semana: iso(sumar(lunes, -7)) })}
                 aria-label="Semana anterior"
                 className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-tinta"
               >
@@ -298,7 +264,7 @@ export default async function Lista({
             </p>
 
             <Link
-              href={paraSemana(iso(sumar(lunes, 7)))}
+              href={enlaceAgenda({ ver, de }, { semana: iso(sumar(lunes, 7)) })}
               aria-label="Semana siguiente"
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-tinta"
             >
@@ -341,9 +307,15 @@ export default async function Lista({
                     href={`/agenda?vista=dia&dia=${d.fecha}${dueno ? `&de=${dueno}` : ''}`}
                     className="flex items-baseline justify-between gap-3"
                   >
+                    {/* Hoy en el color de acción. Iba en
+                        `--color-verde`, que ahora es el ámbito de la
+                        Finca: el día de hoy salía pintado del color de
+                        una sección concreta. */}
                     <h2
                       className="rotulo"
-                      style={d.fecha === hoyISO ? { color: 'var(--color-verde)' } : undefined}
+                      style={
+                        d.fecha === hoyISO ? { color: 'var(--color-accion)' } : undefined
+                      }
                     >
                       {diaEnPalabras(d.fecha, hoyISO)}
                     </h2>
@@ -360,7 +332,8 @@ export default async function Lista({
                           href={`/tablon/${r.id}`}
                           hora={r.hora}
                           titulo={r.titulo}
-                          color={pintaDe(r.titulo).color}
+                          color={AMBITO[pintaDe(r.titulo).ambito]}
+                          hecha={r.estado === 'hecho'}
                           pie={
                             r.asignado_a
                               ? (nombres[r.asignado_a] ?? '').split(' ')[0]
@@ -390,73 +363,72 @@ export default async function Lista({
             </div>
           )}
 
+          {/*
+            ── DE QUIÉN SON LAS CITAS, Y ACTUALIZAR ──
+
+            Esto estaba ARRIBA, en la cuarta fila de controles, y no
+            pinta nada ahí: filtrar por persona es algo que se hace de
+            vez en cuando, no todos los días. Baja al final de la
+            semana, que es donde se mira cuando de verdad hace falta.
+
+            Y solo si hay más de un calendario: unos botones para
+            elegir «el de Juan Miguel» cuando no hay otro es una
+            decisión inventada.
+          */}
+          {calendarios.length > 0 && (
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              {calendarios.length > 1 && (
+                <>
+                  <Pildora
+                    href={enlaceAgenda({ ver, semana: desde }, { de: null })}
+                    puesta={!dueno}
+                  >
+                    Los dos
+                  </Pildora>
+                  {calendarios.map((c) => (
+                    <Pildora
+                      key={c.id}
+                      href={enlaceAgenda({ ver, semana: desde }, { de: c.id })}
+                      puesta={dueno === c.id}
+                      color={AMBITO[ambitoDeColor(c.color)]}
+                    >
+                      {c.nombre.split(' ')[0]}
+                    </Pildora>
+                  ))}
+                </>
+              )}
+              {/* Con un solo calendario no hay filtro, pero actualizar
+                  sigue haciendo falta: es lo que se pulsa cuando
+                  acabas de apuntar algo en el móvil. */}
+              <Refrescar cuantasHabia={suyas.length} />
+            </div>
+          )}
+
           {/* Lo que queda más allá NO se esconde: se dice cuánto hay. */}
           {masAlla > 0 && (
-            <Link
-              href="/agenda?ver=adelante"
-              className="mt-5 flex h-[56px] items-center justify-center gap-2 rounded-[18px] border border-borde bg-superficie text-[16.5px] font-extrabold text-tinta"
-            >
-              Más adelante · {masAlla}
-              <Ico nombre="flecha" tam={19} grosor={2.3} className="text-borde" />
-            </Link>
+            <div className="mt-4">
+              <BotonSecundario
+                href={enlaceAgenda({ de }, { ver: 'adelante' })}
+                icono="flecha"
+              >
+                Más adelante · {masAlla}
+              </BotonSecundario>
+            </div>
           )}
         </>
       )}
 
-      <Link
-        href="/tablon/nuevo"
-        className="mt-3 flex h-[60px] items-center justify-center gap-2.5 rounded-[18px] bg-boton text-[18px] font-extrabold text-boton-texto"
-      >
-        <Ico nombre="mas" tam={22} grosor={2.3} />
-        Apuntar algo
-      </Link>
+      {/* Apuntar algo ES la acción de la Agenda. Iba con `bg-boton`,
+          que era el color de antes. */}
+      <div className="mt-3">
+        <BotonPrincipal href="/tablon/nuevo" icono="mas">
+          Apuntar algo
+        </BotonPrincipal>
+      </div>
     </>
   )
 }
 
-/*
-  Una de las tres pestañas de arriba.
-
-  El número va DENTRO de la pestaña y no al lado: «Por hacer · 6» es
-  una sola cosa que se lee de una vez. Y «Hechas» no lleva número a
-  propósito — cuántas cosas has terminado no es algo que haya que
-  vigilar, y un contador ahí compite con los dos que sí importan.
-*/
-function Pestana({
-  texto,
-  cuantas,
-  href,
-  puesta,
-  color,
-}: {
-  texto: string
-  cuantas: number | null
-  href: string
-  puesta: boolean
-  color: string
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={puesta ? 'page' : undefined}
-      className="flex h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-full px-2 text-[14.5px] font-extrabold"
-      style={
-        puesta
-          ? { background: color, color: '#0F172A' }
-          : {
-              background: 'var(--t-superficie)',
-              color: 'var(--t-tinta-suave)',
-              border: '1px solid var(--t-borde)',
-            }
-      }
-    >
-      <span className="truncate">{texto}</span>
-      {cuantas != null && cuantas > 0 && (
-        <span className="shrink-0 tabular-nums opacity-80">· {cuantas}</span>
-      )}
-    </Link>
-  )
-}
 
 /*
   Una cosa de la semana, en un renglón.
@@ -475,15 +447,32 @@ function Renglon({
   titulo,
   color,
   pie,
+  hecha = false,
 }: {
   href: string | null
   hora: string | null
   titulo: string
   color: string
   pie: string | null
+  /*
+    ── LO HECHO SE QUEDA EN SU DÍA ──
+
+    Antes se lo llevaba una pestaña aparte, y con eso el martes decía
+    «una cosa» cuando en realidad hubo dos y una se hizo. Aquí se
+    queda, tachado y atenuado: se distingue sin leer y el día cuenta
+    lo que de verdad pasó.
+
+    Y con el tic además del tachado: en una pantalla pequeña, a
+    contraluz, una línea fina encima de una palabra se pierde.
+  */
+  hecha?: boolean
 }) {
   const dentro = (
-    <span className="flex items-center gap-2.5 rounded-[14px] border border-borde bg-superficie px-3 py-2.5">
+    <span
+      className={`flex items-center gap-2.5 rounded-[14px] border border-borde bg-superficie px-3 py-2.5 ${
+        hecha ? 'opacity-55' : ''
+      }`}
+    >
       <span
         className="w-[40px] shrink-0 text-[12.5px] font-extrabold tabular-nums"
         style={{ color: hora ? color : 'var(--t-apagado)' }}
@@ -492,15 +481,25 @@ function Renglon({
       </span>
       <span
         className="h-[26px] w-[3px] shrink-0 rounded-full"
-        style={{ background: color }}
+        style={{ background: hecha ? 'var(--t-bien)' : color }}
         aria-hidden
       />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[16px] font-bold leading-snug">{titulo}</span>
+        <span
+          className="block truncate text-[16px] font-bold leading-snug"
+          style={hecha ? { textDecorationLine: 'line-through' } : undefined}
+        >
+          {titulo}
+        </span>
         {pie && (
           <span className="block truncate text-[13px] font-bold text-tenue">{pie}</span>
         )}
       </span>
+      {hecha && (
+        <span className="shrink-0" style={{ color: 'var(--t-bien)' }}>
+          <Ico nombre="check" tam={17} grosor={2.6} />
+        </span>
+      )}
     </span>
   )
 
@@ -573,8 +572,11 @@ function Tira({
             }`}
             className="flex h-[62px] min-w-0 flex-1 flex-col items-center justify-center gap-[3px] rounded-[14px]"
             style={
+              /* El día elegido se rellena de TINTA, como la píldora
+                 del sistema: estar en un día es un estado. Iba con
+                 `--t-boton`, el color de antes. */
               puesto
-                ? { background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }
+                ? { background: 'var(--t-tinta)', color: 'var(--t-fondo)' }
                 : {
                     background: 'var(--t-superficie)',
                     color: 'var(--t-tinta-suave)',
@@ -590,7 +592,12 @@ function Tira({
               /* Hoy va subrayado por debajo del número, no de otro
                  color: el color ya lo usa el día elegido y dos cosas
                  distintas del mismo color no se distinguen. */
-              style={esHoy ? undefined : undefined}
+              style={
+                /* Hoy va en el color de acción, que es lo único de la
+                   tira que dice «estás aquí». Cuando además está
+                   elegido, la tinta del relleno manda. */
+                esHoy && !puesto ? { color: 'var(--color-accion)' } : undefined
+              }
             >
               {numero}
             </span>
@@ -605,7 +612,10 @@ function Tira({
                   className="h-[5px] rounded-full"
                   style={{
                     width: k === 2 && cuantos > 3 ? 11 : 5,
-                    background: puesto ? 'var(--t-boton-texto)' : '#F59E0B',
+                    /* Era `#F59E0B`, un ámbar fuera de paleta. Un
+                       punto no dice de qué va la cosa, solo que hay
+                       algo: pizarra. */
+                    background: puesto ? 'var(--t-fondo)' : 'var(--t-tenue)',
                     opacity: puesto ? 0.75 : 1,
                   }}
                 />
@@ -630,11 +640,16 @@ function MasAdelante({
   sinFecha,
   nombres,
   yo,
+  /* A dónde se vuelve: la semana y el filtro desde los que se entró.
+     Antes era `/agenda` a secas y salir de aquí te dejaba en la
+     semana de hoy, sin el calendario que tenías puesto. */
+  volver,
 }: {
   adelante: Recordatorio[]
   sinFecha: Recordatorio[]
   nombres: Record<string, string>
   yo: string
+  volver: string
 }) {
   const meses = new Map<string, Recordatorio[]>()
   for (const r of adelante) {
@@ -645,7 +660,7 @@ function MasAdelante({
   return (
     <>
       <div className="mt-4">
-        <Volver href="/agenda" />
+        <Volver href={volver} />
       </div>
 
       {meses.size === 0 && sinFecha.length === 0 && (
@@ -678,40 +693,6 @@ function MasAdelante({
 }
 
 
-function Filtro({
-  texto,
-  href,
-  puesto,
-  color,
-}: {
-  texto: string
-  href: string
-  puesto: boolean
-  color: string
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={puesto ? 'page' : undefined}
-      className="flex h-11 items-center gap-2 rounded-full px-4 text-[15px] font-extrabold"
-      style={
-        puesto
-          ? { background: color, color: '#FFFFFF' }
-          : {
-              background: 'var(--t-superficie)',
-              color: 'var(--t-tinta-suave)',
-              border: '1px solid var(--t-borde)',
-            }
-      }
-    >
-      {!puesto && (
-        <span className="h-[9px] w-[9px] rounded-full" style={{ background: color }} />
-      )}
-      {texto}
-    </Link>
-  )
-}
-
 function Vacio({ texto }: { texto: string }) {
   return (
     <p className="mt-5 rounded-[20px] bg-superficie px-6 py-10 text-center text-[17px] font-medium text-tinta-suave">
@@ -741,10 +722,6 @@ function sumar(f: Date, dias: number): Date {
 /** El lunes de la semana de esa fecha. En España la semana empieza en lunes. */
 function lunesDe(f: Date): Date {
   return sumar(f, -((f.getDay() + 6) % 7))
-}
-
-function paraSemana(lunesISO: string): string {
-  return `/agenda?semana=${lunesISO}`
 }
 
 /** "24 – 30 de agosto" · "31 de agosto – 6 de septiembre" */

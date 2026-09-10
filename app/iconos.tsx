@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Ambito } from '@/lib/ambitos'
 /*
   Los iconos de HUBI.
 
@@ -14,6 +15,7 @@ export type Icono =
   | 'pastilla' | 'reloj' | 'euro' | 'mas' | 'chincheta'
   | 'ojo' | 'lapiz' | 'gente' | 'candado' | 'bolsa' | 'aviso' | 'llave'
   | 'refrescar' | 'casco' | 'maleta' | 'herramienta' | 'barco' | 'mascota'
+  | 'taza' | 'mandos'
   | 'sol' | 'luna' | 'contraste'
 
 const TRAZOS: Record<Icono, string> = {
@@ -75,6 +77,37 @@ const TRAZOS: Record<Icono, string> = {
   bolsa:     'M5 8h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8zM8.6 8V6.4a3.4 3.4 0 0 1 6.8 0V8',
   aviso:     'M12 3.6 21.4 20H2.6zM12 10v4.4M12 17.2v.1',
   refrescar: 'M20.5 12a8.5 8.5 0 1 1-2.5-6M20.5 4.5V10h-5.5',
+  /*
+    ── EL ICONO DE «EL DÍA A DÍA» ──
+
+    Una taza con su vapor. Se buscó entre los que ya había y ninguno
+    servía: la bolsa ES La compra, la chincheta ES las Notas y la casa
+    ES el Inicio — usar cualquiera de los tres para el cajón que los
+    contiene es decir que el cajón es una de las cosas de dentro.
+
+    Y el sol, que sería lo literal para «el día», ya significa «modo
+    claro» en Ajustes.
+
+    Una taza no es ninguna de las cosas de dentro y sin embargo son
+    todas: es la mesa de la cocina, que es donde se hablan la compra,
+    la cena y los recados.
+  */
+  taza:      'M4.5 9.5h11.5v6a4 4 0 0 1-4 4h-3.5a4 4 0 0 1-4-4zM16 11h1.6a2.5 2.5 0 0 1 0 5H16M8.5 3v2.4M12 3v2.4',
+
+  /*
+    ── LOS MANDOS ──
+
+    El dibujo de Ajustes, ahora trazado aquí. Tres carriles y tres
+    mandos a distinta altura: exactamente el dibujo que mandó Haris,
+    porque la idea es suya y es la correcta —en Ajustes no se engrasa
+    una máquina, se abren y se cierran cosas—.
+
+    Lo que cambia es de dónde sale. Venía de un PNG en cian eléctrico
+    y ahora se traza como los otros treinta y tantos iconos: hereda la
+    tinta del tema, se ve nítido a cualquier tamaño y funciona igual en
+    claro que en oscuro sin un segundo archivo.
+  */
+  mandos:    'M4 7h9M17.5 7H20M4 12h3.5M12 12h8M4 17h9M17.5 17H20M15 4.6v4.8M9.5 9.6v4.8M15 14.6v4.8',
 }
 
 export function Ico({
@@ -107,53 +140,14 @@ export function Ico({
 }
 
 /*
-  El icono dentro de su cuadrado de color.
+  ── AQUÍ ESTABA `Pastilla` ──
 
-  El fondo NO se pasa: se calcula del propio color del icono con un
-  15% de opacidad. Así el mismo componente vale en claro y en oscuro
-  sin dos juegos de tintes, y el icono conserva su color de marca en
-  los dos modos. El parámetro `fondo` se mantiene solo para no tener
-  que tocar todas las llamadas; sirve de red si el navegador fuese
-  tan viejo que no entendiera color-mix.
+  La sustituye `PastillaAmbito` en `piezas.tsx`: la misma pieza, pero
+  pidiendo un ÁMBITO por su nombre en vez de dos hexadecimales
+  sueltos. Mientras las dos convivieron, cada pantalla elegía —y por
+  ahí se colaban colores fuera de paleta uno detrás de otro.
 */
-export function Pastilla({
-  nombre,
-  color,
-  fondo,
-  tam = 44,
-  icono,
-  redondez = 14,
-}: {
-  nombre: Icono
-  color: string
-  fondo?: string
-  tam?: number
-  icono?: number
-  redondez?: number
-}) {
-  return (
-    <span
-      className="flex shrink-0 items-center justify-center"
-      style={{
-        width: tam,
-        height: tam,
-        background: fondo ?? 'transparent',
-        color,
-        borderRadius: redondez,
-      }}
-    >
-      <span
-        className="flex h-full w-full items-center justify-center"
-        style={{
-          background: `color-mix(in srgb, ${color} 15%, transparent)`,
-          borderRadius: redondez,
-        }}
-      >
-        <Ico nombre={nombre} tam={icono ?? Math.round(tam * 0.5)} />
-      </span>
-    </span>
-  )
-}
+
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -166,7 +160,7 @@ export function Pastilla({
   ─────────────────────────────────────────────────────────────
   PEQUEÑO DE VER, GRANDE DE TOCAR
 
-  La píldora mide 34 px de alto. Lo que responde al dedo son 48: el
+  La píldora mide 30 px de alto. Lo que responde al dedo son 48: el
   enlace que la envuelve lleva un margen invisible arriba y abajo.
 
   No es un truco — es la única manera de tener las dos cosas. Un botón
@@ -174,35 +168,32 @@ export function Pastilla({
   pantalla de HUBI puede tener algo pulsable por debajo de 48 px.
 
   ─────────────────────────────────────────────────────────────
-  EL ICONO SALE DE SU PROPIO ARCHIVO
+  EL DIBUJO ES SUYO · EL ARCHIVO YA NO
 
-  `public/ajustes-mando.png` es el archivo que mandó él, con su propia
-  transparencia. No se ha recortado de ningún fondo ni reconstruido:
-  se ha ajustado al dibujo y se ha bajado de tamaño, nada más.
+  Los mandos los diseñó él y se quedan tal cual: tres carriles, tres
+  mandos a distinta altura. Lo que ya no se usa es su PNG.
 
-  Antes se intentó sacarlo del PNG de la píldora restándole el fondo
-  punto a punto, y salieron los dos fallos típicos de esos recortes:
-  el círculo del mando de abajo quedaba cortado —plano en vez de
-  redondo— y el resplandor interior dejaba un velo que sobre otro
-  fondo se veía como una caja sucia detrás del icono.
+  `public/ajustes-mando.png` está hecho de cian eléctrico —#00D8F0,
+  #00C0F0, #00F0F0— derivando a violeta #7848F0. Son los MISMOS
+  colores del degradado que quitamos del borde justamente por no ser
+  de HUBI. Quitamos el degradado y dejamos el icono hecho de él, así
+  que el cian se quedó igual, y con la cabecera vacía que dejó la
+  Fase 2 pasó a ser lo único con color de toda la pantalla, a un
+  centímetro del logotipo.
 
-  Ninguna de las dos cosas se nota a 18 px, que es exactamente cómo
-  acaban colándose. El archivo suyo no tiene ni una ni otra.
-
-  ─────────────────────────────────────────────────────────────
-  EL BORDE SÍ SE DIBUJA, Y NO ES CAPRICHO
-
-  También mandó el botón entero como imagen. No se usa, y el motivo es
-  que una imagen no se estira: el ancho de esta píldora lo decide la
-  palabra que lleva dentro, y en cuanto se estirase un PNG los extremos
-  redondeados se deformarían. Dibujado, se adapta y se ve nítido en
-  cualquier pantalla.
+  Ahora el dibujo se traza en código (`mandos`, arriba, con los otros
+  treinta y tantos). Hereda la tinta del tema, se ve nítido a
+  cualquier tamaño y no necesita una segunda versión para el modo
+  oscuro. El archivo se queda en `public/` sin usar, por si algún día
+  hace falta el original.
 
   ─────────────────────────────────────────────────────────────
-  Y LOS COLORES DEL BORDE ESTÁN MEDIDOS, NO ELEGIDOS
+  Y EL BOTÓN ENTERO TAMBIÉN LLEGÓ COMO IMAGEN
 
-  #00F4FC en el extremo izquierdo, #628BFC arriba a la derecha,
-  #AE62F7 en el derecho. Son los píxeles de su archivo.
+  No se usa, y el motivo es que una imagen no se estira: el ancho de
+  esta píldora lo decide la palabra que lleva dentro, y en cuanto se
+  estirase un PNG los extremos redondeados se deformarían. Dibujado,
+  se adapta y se ve nítido en cualquier pantalla.
 
   ─────────────────────────────────────────────────────────────
   SIN RESPLANDOR, Y SIN FLECHA
@@ -222,7 +213,8 @@ export function Pastilla({
   ella baja a 30 y se queda donde le toca —arriba a la derecha, a
   mano, sin competir con nada.
 
-  Queda solo la línea del degradado, que es lo que él pidió.
+  Se fueron las dos, y detrás se fue también la línea del degradado.
+  Lo que queda es el chip de velo, el dibujo y la palabra.
 
   ─────────────────────────────────────────────────────────────
   POR QUÉ MANDOS Y NO UNA RUEDA
@@ -235,24 +227,16 @@ export function Pastilla({
   que HUBI hace solo.
 
   ─────────────────────────────────────────────────────────────
-  EL BORDE EN DEGRADADO, Y EL RELLENO VACÍO DE VERDAD
+  DE UN BORDE QUE NO SE VEÍA A UN RELLENO QUE SÍ
 
-  Aquí había un apaño. El truco habitual —dos capas y
-  `background-clip`— exige que el relleno sea OPACO, así que se puso
-  el degradado de fondo y encima otra capa con el color del tema a un
-  80% y desenfoque por detrás. Funcionaba, pero el relleno seguía
-  estando: sobre las manchas de color del Inicio se notaba como una
-  pastilla velada, y encima el desenfoque cuesta caro en un Android
-  normal.
+  Hubo un apaño largo aquí: degradado de fondo, una máscara para
+  recortarle el centro y dejar solo la línea, desenfoque por detrás.
+  Todo eso se fue con el degradado, y detrás quedó el borde de las
+  tarjetas, que sobre el papel cálido no se ve (1,13:1).
 
-  Ahora el relleno no existe. El degradado se pinta en una capa
-  aparte, por detrás del texto, y se le recorta el centro con una
-  máscara: queda LA LÍNEA Y NADA MÁS, y por dentro se ve lo que haya
-  detrás, moviéndose incluido.
-
-  La máscara va en esa capa suelta y no en el botón entero a
-  propósito: una máscara se aplica también a los hijos, y puesta
-  arriba se comería el icono y la palabra.
+  Lo que hay ahora es lo contrario de lo que hubo: nada de línea y un
+  relleno de verdad, 8% de tinta. El porqué —y los números en los dos
+  modos— está justo debajo, dentro del propio botón.
 
   ─────────────────────────────────────────────────────────────
   Y LA PALABRA, MÁS FINA
@@ -265,40 +249,49 @@ export function Pastilla({
 */
 export function BotonAjustes() {
   return (
-    <span className="relative flex h-[30px] items-center gap-1.5 rounded-full px-2.5">
+    <span className="velo-chip relative flex h-[30px] items-center gap-1.5 rounded-full px-2.5">
       {/*
-        Solo la línea. `border` transparente + el degradado pintado
-        contra el borde, y la máscara quita el centro:
+        ═══════════════════════════════════════════════════════
+        AQUÍ HUBO UN DEGRADADO, Y DESPUÉS UNA RAYA INVISIBLE
+        ═══════════════════════════════════════════════════════
 
-          padding-box  ·  lo de dentro del borde
-          la otra      ·  el botón entero
-          exclude      ·  lo que queda es el marco
+        El degradado era `#00F4FC → #628BFC → #AE62F7`: un cian
+        eléctrico que pasaba a violeta. Tres colores que NO APARECÍAN
+        EN NINGUNA OTRA PARTE del producto — ni en la paleta declarada,
+        ni en el logo, ni en el aro del micrófono. Y estaba en el peor
+        sitio posible para un color ajeno a la marca: la esquina
+        superior derecha del Inicio, pegado al logotipo. Quien miraba
+        esa pantalla veía dos identidades a la vez.
 
-        Sin `pointer-events` propios: es un adorno, y el que se toca
-        es el enlace de fuera.
+        Se quitó, y en su sitio quedó el borde de siempre —el de las
+        tarjetas—. Ahí empezó el segundo problema.
+
+        Con el papel cálido de la Fase 3 ese borde es `#EAE7E3` sobre
+        `#F7F5F1`: 1,13:1. El mínimo para que se vea una caja son 3:1.
+        La píldora dejó de existir literalmente, pero su hueco no —los
+        30 px de alto y el aire de los lados seguían ahí—, así que lo
+        que se veía era una palabra y un dibujo flotando con espacio
+        raro alrededor. «Bastante raro» fue exactamente el diagnóstico.
+
+        ── LO QUE HAY AHORA ──
+
+        Relleno en vez de raya. Un campo de 8% de tinta da 1,18:1 en
+        claro y 1,20:1 en oscuro contra su fondo: un número parecido al
+        de la raya, y sin embargo se ve, porque lo que decide si algo
+        de tan poco contraste se percibe es el ÁREA. Una superficie de
+        30 px de alto se lee; una línea de 1 px, no. Es el mismo motivo
+        por el que las tarjetas blancas sobre crema (1,09:1) se leen
+        perfectamente.
+
+        Y el chip no es lo que identifica el botón —eso lo hace la
+        palabra «Ajustes», a 13,9:1 encima de él—, así que no le
+        corresponde el listón de 3:1: refuerza, no informa.
+
+        El relleno se declara en `globals.css` (`.velo-chip`) y no
+        aquí, porque lleva dos valores: `--t-velo` para quien no
+        entienda `color-mix`, y el 8% para todos los demás.
       */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-full"
-        style={{
-          border: '1px solid transparent',
-          background:
-            'linear-gradient(102deg, #00F4FC 0%, #628BFC 55%, #AE62F7 100%) border-box',
-          WebkitMask:
-            'linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0)',
-          WebkitMaskComposite: 'xor',
-          mask: 'linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0)',
-          maskComposite: 'exclude',
-        }}
-      />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/ajustes-mando.png"
-        alt=""
-        width={16}
-        height={16}
-        style={{ width: 16, height: 16, display: 'block' }}
-      />
+      <Ico nombre="mandos" tam={16} grosor={2} className="shrink-0 text-tinta-suave" />
       <span className="text-[13.5px] font-medium tracking-tight text-tinta">Ajustes</span>
     </span>
   )
@@ -324,47 +317,64 @@ export function Logo({ tam = 30, oscuro = false }: { tam?: number; oscuro?: bool
 /* ── El icono de una tarea, deducido de lo que se escribió ──
    Nadie tiene que elegir categoría al apuntar algo: eso sería
    exactamente la complejidad que no queremos trasladarles. */
-const PISTAS: [RegExp, Icono, string, string][] = [
-  [/farmac|medicaci|medicament|receta|pastill/i, 'pastilla', '#FF6B6B', '#FFE7E7'],
-  [/m[eé]dic|doctor|consulta|an[aá]lisis|hospital|dentista|revisi[oó]n/i, 'corazon', '#FF6B6B', '#FFE7E7'],
-  [/coche|taller|itv|gasolin|mec[aá]nic|neum[aá]tic/i, 'coche', '#8B5CF6', '#EEE8FE'],
-  [/papel|documento|contrato|p[oó]liza|seguro|banco|gestor|notar/i, 'papel', '#3B82F6', '#E4EEFE'],
-  [/vence|caduca|renov/i, 'reloj', '#FF6B6B', '#FFE7E7'],
-  [/compr|super|mercad|tienda|traer|llevar|recoger|dejar/i, 'bolsa', '#F59E0B', '#FEF1DC'],
-  [/cita|llamar|tel[eé]fono/i, 'reloj', '#F59E0B', '#FEF1DC'],
+/*
+  ── Y AQUÍ SE PINTABAN DE COLORES VIVOS ──
+
+  El médico y la farmacia iban en `#FF6B6B`, un coral que en la
+  paleta significa ALERTA. O sea: cada cita médica de la agenda salía
+  del color de las cosas que van mal — y una revisión rutinaria del
+  dentista no va mal, es un martes a las diez.
+
+  El resto era igual: naranja para la compra, morado para el taller,
+  ninguno de la paleta. Y lo que hacen estos colores es IDENTIFICAR de
+  qué va cada cosa, que es exactamente el trabajo de los apagados.
+
+  Ahora cada pista devuelve su ámbito, el mismo con el que esa sección
+  sale en Papeles: la farmacia rosa como Salud, el taller violeta como
+  Vehículos, los papeles azul como Seguros.
+*/
+const PISTAS: [RegExp, Icono, Ambito][] = [
+  [/farmac|medicaci|medicament|receta|pastill/i, 'pastilla', 'rosa'],
+  [/m[eé]dic|doctor|consulta|an[aá]lisis|hospital|dentista|revisi[oó]n/i, 'corazon', 'rosa'],
+  [/coche|taller|itv|gasolin|mec[aá]nic|neum[aá]tic/i, 'coche', 'violeta'],
+  [/papel|documento|contrato|p[oó]liza|seguro|banco|gestor|notar/i, 'papel', 'azul'],
+  [/vence|caduca|renov/i, 'reloj', 'arena'],
+  [/compr|super|mercad|tienda|traer|llevar|recoger|dejar/i, 'bolsa', 'arena'],
+  [/cita|llamar|tel[eé]fono/i, 'reloj', 'ciruela'],
 ]
 
-export function pintaDe(titulo: string): { icono: Icono; color: string; fondo: string } {
-  for (const [patron, icono, color, fondo] of PISTAS) {
-    if (patron.test(titulo)) return { icono, color, fondo }
+/**
+ * El icono y el ámbito de una tarea, deducidos de lo que se escribió.
+ *
+ * Lo que NO se reconoce cae en pizarra con un tic: es el gris de «una
+ * cosa que hay que hacer», sin más. Antes caía en el turquesa, que
+ * ahora es el color de acción.
+ */
+export function pintaDe(titulo: string): { icono: Icono; ambito: Ambito } {
+  for (const [patron, icono, ambito] of PISTAS) {
+    if (patron.test(titulo)) return { icono, ambito }
   }
-  return { icono: 'check', color: '#14B8A6', fondo: '#DFF7F3' }
+  return { icono: 'check', ambito: 'pizarra' }
 }
 
 
-/* ── Los colores de cada sección ─────────────────────────
-   La categoría se reconoce por el nombre de su carpeta en Drive,
-   que es lo único estable: los nombres visibles se pueden cambiar. */
-export const SECCIONES: Record<string, { icono: Icono; color: string; fondo: string }> = {
-  FINCA:       { icono: 'hoja',    color: '#14B8A6', fondo: '#DFF7F3' },
-  SEGUROS:     { icono: 'escudo',  color: '#3B82F6', fondo: '#E4EEFE' },
-  SALUD:       { icono: 'corazon', color: '#FF6B6B', fondo: '#FFE7E7' },
-  CASA:        { icono: 'casa',    color: '#F59E0B', fondo: '#FEF1DC' },
-  VEHICULOS:   { icono: 'coche',   color: '#8B5CF6', fondo: '#EEE8FE' },
-  PERSONAL:    { icono: 'gente',   color: '#EC4899', fondo: '#FCE7F3' },
-  /* Los Helechos llevaba desde que se creó saliendo con la tarjeta
-     gris de "documentos", porque nadie le puso color aquí. */
-  HELECHOS:    { icono: 'llave',   color: '#F59E0B', fondo: '#FEF1DC' },
-  DOCUMENTOS:  { icono: 'papel',   color: '#64748B', fondo: '#EEF2F7' },
-}
+/*
+  ── AQUÍ HABÍA UNA SEGUNDA PALETA, Y SE HA IDO ──
 
-export function seccionDe(segmento: string | null | undefined) {
-  const clave = (segmento ?? '').toUpperCase()
-  for (const nombre of Object.keys(SECCIONES)) {
-    if (clave.startsWith(nombre)) return SECCIONES[nombre]
-  }
-  return SECCIONES.DOCUMENTOS
-}
+  `SECCIONES` y `seccionDe()` daban el icono y el color de cada sección
+  con hexadecimales de la paleta vieja: la Finca en `#14B8A6` —el
+  turquesa que ahora significa ACCIÓN—, Salud en el coral de alerta,
+  Personal en rosa fuerte.
+
+  Eran dos tablas leyendo el mismo `segmento_drive` y había que
+  mantener las dos. Desde hoy solo queda `seccionPintada()` en
+  `piezas.tsx`, que devuelve icono y ÁMBITO.
+
+  (Se dio por borrada en la Fase 2 y no lo estaba: el borrado no llegó
+  a aplicarse y el comentario de `piezas.tsx` afirmaba algo que no era
+  verdad. Ahora sí.)
+*/
+
 
 /* ── Qué color de texto va encima de un color ────────────
    Los colores de la paleta son de tono medio: el blanco encima de
@@ -378,11 +388,14 @@ export function tintaSobre(color: string): string {
     return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
   }
   const luz = 0.2126 * canal(0) + 0.7152 * canal(2) + 0.0722 * canal(4)
-  return luz > 0.28 ? '#0F172A' : '#FFFFFF'
+  /* El negro cálido, no el azulado: encima de un color de ámbito
+     sobre fondo crema, el azul-negro se nota. */
+  return luz > 0.28 ? '#1A1714' : '#FFFFFF'
 }
 
-/** El morado del manual es demasiado oscuro para llevar texto encima. */
-export const MORADO_CLARO = '#A78BFA'
+/* Aquí estaba `MORADO_CLARO = '#A78BFA'`, del manual antiguo. No lo
+   usaba ya nadie y el morado no existe en la paleta: los ámbitos
+   tienen su violeta apagado en `lib/ambitos.ts`. */
 
 /* ── El botón de volver ──────────────────────────────────
    Un chip con borde y con la palabra al lado de la flecha. Una

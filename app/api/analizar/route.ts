@@ -116,6 +116,24 @@ export async function POST(peticion: NextRequest) {
       entrenar, y por eso deja de ser la principal.
     */
     let lectura
+    /*
+      CON QUÉ SE HA LEÍDO. Se devuelve, y no es un dato técnico: el
+      modelo y las reglas leen con calidad muy distinta, y hasta ahora
+      cuál de los dos había leído era invisible. Alguien veía datos
+      pobres y no tenía forma de saber si el papel estaba mal
+      fotografiado o si el lector bueno no había podido. Ahora se dice.
+    */
+    let comoSeLeyo: 'modelo' | 'reglas' = 'reglas'
+    /*
+      Y POR QUÉ NO PUDO EL MODELO.
+
+      Esto se quedaba en el registro del servidor, que es donde no lo ve
+      nadie. El teléfono enseñaba «he usado el lector de respaldo» sin
+      poder decir la razón — y la razón es justo lo único que hace falta
+      para arreglarlo: sin cupo, sin clave, demasiado lento, la foto
+      rechazada. Cada una se arregla de una manera distinta.
+    */
+    let porQueReglas: string | null = null
 
     /*
       ── AQUÍ ESTABA EL FALLO QUE LO ROMPÍA TODO ──
@@ -183,7 +201,38 @@ export async function POST(peticion: NextRequest) {
           })
       }
 
-      lectura = entenderPapel(texto, [...cuenta.values()])
+      /*
+        ── QUIÉN ENTIENDE ESTE TEXTO ──
+
+        Antes: siempre las reglas. Y de ahí salía lo de «a veces lee
+        rapidísimo y no registra bien»: el papel con MEJOR texto de
+        todos —un PDF que llega por correo— era el peor entendido,
+        porque llegaba como texto y el texto no pasaba por el modelo.
+
+        Ahora el modelo lo intenta también con texto, que además es más
+        rápido y más barato que con una foto. Las reglas se quedan
+        DEBAJO, de respaldo, que es para lo que se escribieron: sin
+        cupo, sin conexión o sin clave, HUBI sigue leyendo.
+      */
+      const conocidos = [...cuenta.values()]
+
+      if (process.env.GEMINI_API_KEY) {
+        try {
+          lectura = await leerDocumento({ texto, categorias: hojas, rutaDe })
+          comoSeLeyo = 'modelo'
+        } catch (e) {
+          porQueReglas = e instanceof Error ? e.message : 'El modelo no ha respondido.'
+          console.warn('[HUBI] El modelo no ha podido con el texto, van las reglas:', e)
+        }
+      }
+
+      if (!lectura) {
+        lectura = entenderPapel(texto, conocidos)
+        comoSeLeyo = 'reglas'
+        if (!porQueReglas && !process.env.GEMINI_API_KEY) {
+          porQueReglas = 'No hay clave del modelo configurada en el servidor.'
+        }
+      }
     } else if (archivo && process.env.GEMINI_API_KEY) {
       // La foto, al modelo. Es el camino de las fotos, no la excepción.
       lectura = await leerDocumento({
@@ -192,6 +241,7 @@ export async function POST(peticion: NextRequest) {
         categorias: hojas,
         rutaDe,
       })
+      comoSeLeyo = 'modelo'
     } else {
       return NextResponse.json(
         { error: 'Este documento no se ha podido leer solo. Clasifícalo a mano.' },
@@ -204,6 +254,8 @@ export async function POST(peticion: NextRequest) {
 
     return NextResponse.json({
       ...lectura,
+      como_se_leyo: comoSeLeyo,
+      por_que_reglas: porQueReglas,
       categoria_id: sugerida?.id ?? null,
       categoria_ruta: sugerida ? rutaDe(sugerida) : null,
       categoria_nombre: sugerida?.nombre ?? null,

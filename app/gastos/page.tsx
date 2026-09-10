@@ -49,16 +49,20 @@ export default async function Gastos({
         raiz: null,
         nombre: 'Cuentas de casa',
         icono: 'casa',
-        /* Azul, el mismo de La compra: es el color con el que ya
-           asocian «lo del día a día». El verde es de la Finca y el
-           morado de los alquileres — dárselo a esto sería decir que
-           son la misma cosa. */
-        color: '#0EA5E9',
-        fondo: '#DCF0FB',
+        /*
+          Arena, que es el ámbito de la Casa.
+
+          Antes era `#0EA5E9`, un cian que NO ESTABA DECLARADO en la
+          paleta y que se había convertido por acumulación en el color
+          de «lo del día a día» — el mismo de La compra. Ahora la Casa
+          tiene su color en la tabla como cualquier otra sección.
+        */
+        ambito: 'arena',
         ruta: '/gastos',
-        /* Ninguna pestaña de abajo se enciende: no es ninguna de
-           ellas. Marcar «Inicio» sería mentir sobre dónde estás. */
-        pestana: 'gastos',
+        /* Desde Fase 2 esto vive dentro de Cuentas, así que la
+           pestaña que se enciende es ésa. Antes no se encendía
+           ninguna porque ninguna lo contenía. */
+        pestana: 'cuentas',
         apartamentos: false,
       }}
       searchParams={searchParams}

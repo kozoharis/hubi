@@ -452,7 +452,7 @@ export async function PATCH(peticion: NextRequest) {
       return NextResponse.json(
         {
           error: 'No se ha podido cambiar el rol.',
-          detalle: error.message ?? 'Puede que falte ejecutar el SQL 37.',
+          detalle: error.message ?? 'Esto todavía no está disponible en esta casa.',
         },
         { status: 500 }
       )
@@ -486,7 +486,7 @@ export async function PATCH(peticion: NextRequest) {
       return NextResponse.json(
         {
           error: 'No se ha podido cambiar el color.',
-          detalle: error.message ?? 'Puede que falte ejecutar el SQL 39.',
+          detalle: error.message ?? 'Esto todavía no está disponible en esta casa.',
         },
         { status: 500 }
       )
@@ -521,7 +521,7 @@ export async function PATCH(peticion: NextRequest) {
       return NextResponse.json(
         {
           error: 'No se ha podido cambiar la fecha.',
-          detalle: error?.message ?? 'Puede que falte ejecutar el SQL 37.',
+          detalle: error?.message ?? 'Esto todavía no está disponible en esta casa.',
         },
         { status: 500 }
       )

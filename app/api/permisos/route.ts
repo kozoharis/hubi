@@ -129,7 +129,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: 'No se han podido guardar los permisos.',
-        detalle: alMarcar?.message ?? 'Puede que falte ejecutar el SQL 33.',
+        detalle: alMarcar?.message ?? 'Esto todavía no está disponible en esta casa.',
       },
       { status: 500 }
     )

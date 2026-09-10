@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Ico } from '../../../iconos'
+import { BotonDestructivo } from '../../../piezas'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -85,12 +85,9 @@ export default function Quitar({
   if (!abierto) {
     return (
       <div className="mt-8">
-        <button
-          onClick={() => setAbierto(true)}
-          className="h-[52px] w-full rounded-[16px] border border-borde text-[16.5px] font-extrabold text-coral"
-        >
+        <BotonDestructivo onClick={() => setAbierto(true)}>
           Quitar «{nombre}»
-        </button>
+        </BotonDestructivo>
       </div>
     )
   }
@@ -122,27 +119,38 @@ export default function Quitar({
         )}
       </p>
 
-      <div className="mt-3.5 flex gap-2">
+      <div className="mt-3.5 space-y-2">
+        {/*
+          Iba relleno de `#E11D48`, un rojo que NO EXISTE en la paleta
+          de HUBI — ni como color de marca ni como color de estado. Y
+          un botón rojo grande invita a pulsarlo tanto como cualquier
+          otro botón grande: lo que hace falta es que se distinga y que
+          cueste un poco más, no que grite.
+
+          Ahora es el destructivo del sistema —borde y texto de
+          alerta, sin relleno— y el de quedarse como está va debajo,
+          entero, que es el que se pulsa nueve de cada diez veces.
+        */}
         <button
           onClick={quitar}
           disabled={ocupado}
-          className="flex h-[56px] flex-1 items-center justify-center gap-2 rounded-[16px] text-[17px] font-extrabold text-white disabled:opacity-50"
-          style={{ background: '#E11D48' }}
+          className="h-[60px] w-full rounded-[16px] border bg-superficie text-[17px] font-extrabold disabled:opacity-50"
+          style={{ borderColor: 'var(--t-alerta)', color: 'var(--t-alerta)' }}
         >
-          <Ico nombre="check" tam={19} grosor={2.3} />
-          {ocupado ? 'Un momento…' : vacia ? 'Borrar' : 'Retirar'}
+          {ocupado ? 'Un momento…' : vacia ? 'Sí, borrarla' : 'Sí, retirarla'}
         </button>
         <button
           onClick={() => setAbierto(false)}
           disabled={ocupado}
-          className="h-[56px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+          className="h-[60px] w-full rounded-[16px] border border-borde bg-superficie text-[17px] font-extrabold text-tinta disabled:opacity-50"
         >
-          Dejarlo
+          Dejarlo como está
         </button>
       </div>
 
       {fallo && (
-        <p className="mt-3 rounded-[16px] bg-coral-suave px-4 py-3 text-[15.5px] font-semibold text-coral">
+        <p className="mt-3 t-apoyo rounded-[16px] border px-4 py-3"
+          style={{ background: 'var(--t-alerta-velo)', borderColor: 'color-mix(in srgb, var(--t-alerta) 45%, transparent)', color: 'var(--t-alerta)' }}>
           {fallo}
         </p>
       )}
