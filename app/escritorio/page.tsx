@@ -59,11 +59,24 @@ export default async function Escritorio() {
   const { titulo } = calcular('trimestre', hoyAqui())
 
   /*
-    Con una sola casa esto no tiene nada que decir: sería una tabla de
-    una fila con lo que ya está en el Inicio. Se vuelve, sin explicar
-    nada — nadie llega aquí a propósito con una casa.
+    ── CON UNA SOLA CASA, SE ABRE IGUAL ──
+
+    Aquí había un `redirect('/')`: con una casa esto sería una tabla de
+    una fila con lo que ya está en el Inicio, así que se devolvía al
+    Inicio sin explicar nada.
+
+    Y era una pantalla que NO SE PODÍA VER. Ni por el enlace —que
+    tampoco sale con una casa— ni escribiendo la dirección. Una función
+    a la que no hay forma de llegar es una función que no se puede
+    probar, ni enseñar, ni enseñarle a nadie lo que hace.
+
+    Ahora se abre siempre. Lo que cambia con una sola casa es que se
+    dice, arriba, que esto crece cuando hay más. Los ENLACES siguen sin
+    salir: quien tiene una casa no tiene por qué encontrarse una puerta
+    a una tabla de una fila, pero quien escribe la dirección —o le pasan
+    el enlace— llega.
   */
-  if (casas && casas.length <= 1) redirect('/')
+  const unaSola = casas !== null && casas.length <= 1
 
   return (
     <main className="min-h-screen pb-24">
@@ -78,8 +91,11 @@ export default async function Escritorio() {
 
       <div className="mx-auto w-full max-w-5xl px-5 pt-1">
         <p className="t-apoyo">
-          Tus casas, de una vez. Las cuentas son de {titulo.toLowerCase()}, y solo de
-          las actividades — la compra de casa no sale aquí.
+          {unaSola
+            ? 'Aquí saldrán todas tus casas juntas. Ahora mismo tienes una.'
+            : 'Tus casas, de una vez.'}{' '}
+          Las cuentas son de {titulo.toLowerCase()}, y solo de las actividades — la
+          compra de casa no sale aquí.
         </p>
 
         {casas === null ? (
