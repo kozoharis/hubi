@@ -131,11 +131,14 @@ export async function POST(peticion: NextRequest) {
     )
   }
 
+  const espacio = await elEspacioO(supabase)
+
   const { data, error } = await supabase
     .from('compra')
     .insert(
       nuevas.map((n) => ({
         ...n,
+        hogar_id: espacio,
         lista_id: a,
         anadido_por: user.id,
         comprado: false,

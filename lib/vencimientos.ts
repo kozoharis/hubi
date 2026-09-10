@@ -185,7 +185,10 @@ export async function rehacerAvisos(
   const nuevos = avisosDe(datos, titulo, hoy)
   if (nuevos.length === 0) return { puestos: 0, fallo: null }
 
+  const espacio = await elEspacioO(supabase)
+
   const filas = nuevos.map((a) => ({
+    hogar_id: espacio,
     titulo: a.titulo,
     tipo: 'vencimiento',
     fecha: a.fecha,

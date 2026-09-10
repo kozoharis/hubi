@@ -5,7 +5,7 @@ import { deducirTipo, cuando } from '@/lib/tablon'
 import { avisarA } from '@/lib/push'
 import { ponerCita } from '@/lib/google/calendario'
 import { clienteServidor } from '@/lib/supabase/servidor'
-import { elEspacio } from '@/lib/espacio'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,6 +71,8 @@ export async function POST(peticion: NextRequest) {
     `para` sigue mandando `asignado_a`, que es lo que hacen las
     pantallas viejas y lo que significa «de la casa» cuando va nulo.
   */
+  const espacio = await elEspacioO(supabase)
+
   const filas = entradas
     .flatMap((e) => {
       const titulo = (e.titulo ?? '').trim()
@@ -87,6 +89,7 @@ export async function POST(peticion: NextRequest) {
         dichas.length > 0 ? dichas : [e.asignado_a || null]
 
       return dueños.map((dueño) => ({
+        hogar_id: espacio,
         titulo,
         tipo: e.tipo === 'vencimiento' ? 'vencimiento' : deducirTipo(titulo),
         asignado_a: dueño,

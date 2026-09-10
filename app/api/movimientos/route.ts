@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { desgloseQueToca } from '@/lib/impuesto'
-import { elEspacio } from '@/lib/espacio'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,6 +82,7 @@ export async function POST(peticion: NextRequest) {
   })
 
   const elApunte: Record<string, unknown> = {
+      hogar_id: await elEspacioO(supabase),
       tipo,
       concepto,
       importe,

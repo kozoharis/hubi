@@ -196,6 +196,7 @@ export async function POST(peticion: NextRequest) {
   const { data: documento, error } = await supabase
     .from('documentos')
     .insert({
+      hogar_id: await elEspacioO(supabase),
       titulo: titulo || camino[camino.length - 1].nombre,
       categoria_id: categoriaId,
       /* La ruta escrita: "Finca Gastos Luz".
@@ -297,6 +298,7 @@ export async function POST(peticion: NextRequest) {
     })
 
     const elApunte: Record<string, unknown> = {
+      hogar_id: await elEspacioO(supabase),
       tipo: hoja.naturaleza,
       /* En una reserva el nombre de quien viene identifica mucho mejor
          que "Airbnb", que se repite en todas. */

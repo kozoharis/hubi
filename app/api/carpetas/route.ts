@@ -194,6 +194,7 @@ export async function POST(peticion: NextRequest) {
   const { data: creada, error } = await supabase
     .from('categorias')
     .insert({
+      hogar_id: await elEspacioO(supabase),
       nombre,
       segmento_drive: segmento,
       icono: ICONOS.includes(String(cuerpo.icono ?? '')) ? String(cuerpo.icono) : '📁',

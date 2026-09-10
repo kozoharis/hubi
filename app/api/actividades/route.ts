@@ -282,13 +282,22 @@ export async function POST(peticion: NextRequest) {
   const orden = ((ultimas?.[0]?.orden as number | null) ?? 0) + 1
 
   /*
-    `hogar_id` NO se manda: la columna tiene `default mi_hogar()` y la
-    política de creación exige `hogar_id = mi_hogar()`. Mandarlo a mano
-    desde el navegador sería justo la puerta que esa política cierra.
+    EL ESPACIO SE MANDA, Y SE MANDA DESDE AQUÍ.
+
+    Antes no se mandaba: la columna tenía `default mi_hogar()` y la
+    política exigía `hogar_id = mi_hogar()`, así que dejarlo en blanco
+    era más seguro que aceptarlo del navegador.
+
+    Las dos mitades de ese razonamiento se han caído. La política pasa
+    a preguntar `soy_de(hogar_id)` —«¿eres miembro de ESE espacio?»—,
+    que a quien tiene dos les dice que sí a los dos; y el valor por
+    defecto ya no está, precisamente para que nadie lo herede sin
+    querer. Y el espacio no viene del navegador: lo pone el servidor.
   */
   const { data: creada, error } = await supabase
     .from('categorias')
     .insert({
+      hogar_id: await elEspacioO(supabase),
       nombre,
       segmento_drive: segmento,
       icono: plantilla.icono,
@@ -316,6 +325,10 @@ export async function POST(peticion: NextRequest) {
 
   const raiz = creada.id as string
 
+  /* El espacio, una vez, para todo lo que cuelga de la actividad
+     recién creada. Es el mismo en el que se acaba de crear ella. */
+  const espacioActividad = await elEspacioO(supabase)
+
   /*
     Y lo de dentro. Si algo de esto falla, la actividad YA existe y se
     ve: lo que faltará son partidas, y ésas se añaden desde su propia
@@ -327,6 +340,7 @@ export async function POST(peticion: NextRequest) {
       .from('categorias')
       .insert([
         {
+          hogar_id: espacioActividad,
           padre_id: raiz,
           nombre: 'Gastos',
           segmento_drive: 'GASTOS',
@@ -375,6 +389,7 @@ export async function POST(peticion: NextRequest) {
       const { data: creado } = await supabase
         .from('categorias')
         .insert({
+          hogar_id: espacioActividad,
           padre_id: raiz,
           nombre: 'Documentos',
           segmento_drive: 'DOCUMENTOS',
@@ -421,7 +436,11 @@ export async function POST(peticion: NextRequest) {
         : []),
     ]
 
-    if (partidas.length > 0) await supabase.from('categorias').insert(partidas)
+    if (partidas.length > 0) {
+      await supabase
+        .from('categorias')
+        .insert(partidas.map((x) => ({ ...x, hogar_id: espacioActividad })))
+    }
   } catch (e) {
     console.error('[HUBI] Actividad creada, partidas a medias:', e)
   }

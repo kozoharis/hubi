@@ -191,6 +191,7 @@ export async function POST(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('unidades')
     .insert({
+      hogar_id: await elEspacioO(supabase),
       seccion_id: seccionId,
       nombre,
       referencia: cuerpo.referencia?.toString().trim() || null,

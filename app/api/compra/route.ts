@@ -90,6 +90,7 @@ export async function POST(peticion: NextRequest) {
         const { data: nueva, error: falloCreando } = await supabase
           .from('listas_compra')
           .insert({
+            hogar_id: await elEspacioO(supabase),
             nombre: 'La compra',
             seccion_id: cuerpo.seccion_id || null,
             creada_por: user.id,
@@ -103,7 +104,11 @@ export async function POST(peticion: NextRequest) {
     }
   }
 
+  /* El espacio, una vez para toda la tanda. */
+  const espacio = await elEspacioO(supabase)
+
   const cosas: {
+    hogar_id: string
     que: string
     cantidad: string | null
     seccion_id: string | null
@@ -111,6 +116,7 @@ export async function POST(peticion: NextRequest) {
     lista_id?: string | null
   }[] = brutas
     .map((c) => ({
+      hogar_id: espacio,
       que: (c.que ?? '').trim().slice(0, 120),
       cantidad: (c.cantidad ?? '')?.trim().slice(0, 40) || null,
       seccion_id: cuerpo.seccion_id || null,
@@ -322,6 +328,7 @@ export async function PATCH(peticion: NextRequest) {
           const { data: siguiente } = await supabase
             .from('listas_compra')
             .insert({
+              hogar_id: await elEspacioO(supabase),
               nombre: laLista.nombre,
               seccion_id: laLista.seccion_id,
               creada_por: user.id,

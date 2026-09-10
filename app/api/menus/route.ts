@@ -110,6 +110,7 @@ export async function PUT(peticion: NextRequest) {
     .maybeSingle()
 
   const campos = {
+    hogar_id: await elEspacioO(supabase),
     fecha,
     momento,
     que,
@@ -176,6 +177,7 @@ export async function POST(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('recetas')
     .insert({
+      hogar_id: await elEspacioO(supabase),
       titulo,
       url: url || null,
       nota: String(cuerpo.nota ?? '').trim().slice(0, 500) || null,

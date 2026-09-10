@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -67,7 +67,15 @@ function archivos(dir, sacos = []) {
     if (e === 'node_modules' || e === '.next' || e.startsWith('.')) continue
     const p = join(dir, e)
     if (statSync(p).isDirectory()) archivos(p, sacos)
-    else if (/\.tsx?$/.test(e)) sacos.push(p)
+    /* Con barras normales SIEMPRE. En Windows `join` las escribe al
+       revés —`lib\\hogar.ts`— y entonces `archivo === 'lib/hogar.ts'`
+       no casa con nada: el guardián se acusaba a sí mismo de preguntar
+       el espacio por su cuenta, en las dos únicas funciones que tienen
+       que hacerlo.
+
+       Un guardián que falla en la máquina donde de verdad se ejecuta
+       es un guardián que se aprende a ignorar. */
+    else if (/\.tsx?$/.test(e)) sacos.push(p.split(sep).join('/'))
   }
   return sacos
 }
@@ -128,44 +136,63 @@ function sinComentarios(texto) {
   un guardián. Un falso aviso se mira; una consulta que se escapa, no.
 */
 function laConsulta(lineas, desde) {
+  /*
+    Se sigue mientras haya paréntesis o llaves SIN CERRAR, y después,
+    mientras el renglón siguiente siga encadenando con un punto.
+
+    Contar es lo que hace falta. Antes se miraba solo con qué empieza
+    cada renglón, y eso se partía en cuanto un argumento no empezaba
+    por un signo:
+
+        .insert(
+          filas.map((r, i) => ({
+            hogar_id: hogarId,      ← nunca llegaba a ver esto
+
+    La consulta SÍ decía su espacio y el guardián avisaba igual. Un
+    aviso falso cuesta un minuto; muchos avisos falsos cuestan que se
+    deje de mirar la lista.
+  */
   let texto = lineas[desde]
-  for (let i = desde + 1; i < Math.min(desde + 18, lineas.length); i++) {
+  let hondo = hondura(lineas[desde])
+
+  for (let i = desde + 1; i < Math.min(desde + 40, lineas.length); i++) {
     const l = lineas[i].trim()
-    const sigue =
-      l.startsWith('.') || l.startsWith(')') || l.startsWith('}') ||
-      l.startsWith("'") || l.startsWith('`') || l.startsWith('{') ||
-      /^[\w'"]+:/.test(l) || l === '' ||
-      /* Un comentario dentro del argumento tampoco corta la consulta.
-         En HUBI eso pasa a menudo: la mitad de los `.select()` largos
-         llevan escrito al lado por qué piden lo que piden. */
-      l.startsWith('/*') || l.startsWith('*') || l.startsWith('//')
 
-    if (!sigue) break
-    texto += '\n' + lineas[i]
-
-    /*
-      El paréntesis que cierra un argumento NO cierra la consulta.
-
-          .select(
-            'id, titulo, …'
-          )                       ← aquí se paraba
-          .eq('hogar_id', …)      ← y esto no lo veía
-
-      Cortar ahí daba por «sin espacio» consultas que sí lo decían: un
-      falso aviso. Un falso aviso se mira y se descarta —cuesta un
-      minuto—, pero si son muchos se acaba mirando la lista por encima,
-      y ése es el día en que se pasa por alto uno de verdad.
-
-      Así que al ver un `)` se mira el siguiente renglón con algo
-      escrito: si sigue encadenando, la consulta sigue.
-    */
-    if (l.startsWith(')') && !l.startsWith(').')) {
-      let j = i + 1
-      while (j < lineas.length && lineas[j].trim() === '') j++
-      if (!lineas[j]?.trim().startsWith('.')) break
+    if (hondo <= 0) {
+      const encadena =
+        l.startsWith('.') || l === '' ||
+        l.startsWith(')') || l.startsWith('}')
+      if (!encadena) break
+      if (l.startsWith(')') && !l.startsWith(').')) {
+        let j = i + 1
+        while (j < lineas.length && lineas[j].trim() === '') j++
+        if (!lineas[j]?.trim().startsWith('.')) { texto += '\n' + lineas[i]; break }
+      }
     }
+
+    texto += '\n' + lineas[i]
+    hondo += hondura(lineas[i])
   }
   return texto
+}
+
+/* Cuánto abre y cuánto cierra un renglón, sin contar lo que va dentro
+   de un texto entrecomillado. */
+function hondura(linea) {
+  let n = 0
+  let comilla = null
+  for (let i = 0; i < linea.length; i++) {
+    const c = linea[i]
+    if (comilla) {
+      if (c === '\\') { i++; continue }
+      if (c === comilla) comilla = null
+      continue
+    }
+    if (c === "'" || c === '"' || c === '`') { comilla = c; continue }
+    if (c === '(' || c === '{' || c === '[') n++
+    if (c === ')' || c === '}' || c === ']') n--
+  }
+  return n
 }
 
 const avisos = []
@@ -182,10 +209,69 @@ for (const archivo of [...archivos('app'), ...archivos('lib')]) {
     miradas++
     const consulta = laConsulta(lineas, i)
 
-    /* Una inserción lleva el espacio DENTRO de la fila, no en un
-       `.eq`. Y ya lo llevan las diecisiete que hay. */
+    /*
+      Una inserción lleva el espacio DENTRO de la fila, no en un `.eq`.
+      Pero lo lleva IGUAL: aquí se mira lo mismo.
+
+      Al principio esto daba por buena cualquier inserción. Estaba mal.
+      Doce tablas tienen `hogar_id ... default mi_hogar()`, y una
+      inserción que se deja el espacio lo recibe del estado global.
+
+      Hoy eso acierta por casualidad. Con las políticas nuevas
+      —`soy_de(hogar_id)`, que dice «eres miembro de ESE espacio» y no
+      «CUÁL es tu espacio»— acertaría igual de callada y se equivocaría
+      igual de callada: el papel se archivaría en el espacio donde
+      estuviste la última vez.
+
+      Había una que se apoyaba en el defecto a propósito, con el motivo
+      escrito al lado: mandar el espacio desde el navegador sería la
+      puerta que la política cierra. Cierto entonces. Ahora el espacio
+      no viene del navegador: lo pone el servidor con `elEspacio()`.
+    */
     const esInsercion = /\.(insert|upsert)\(/.test(consulta)
-    const dice = /hogar_id/.test(consulta)
+    let dice = /hogar_id/.test(consulta)
+
+    /*
+      Cuando la fila se construye en otro sitio.
+
+          const filas = entradas.map(...)   ← el espacio está aquí
+          ...
+          .insert(filas)                    ← y aquí no se ve
+
+      Se busca dónde nace esa variable y se mira allí. Sin esto habría
+      que marcar a mano media docena de sitios que SÍ están bien, y
+      una marca puesta para callar un aviso es una marca que un día
+      tapa uno de verdad.
+    */
+    if (!dice && esInsercion) {
+      /* Y hasta dos saltos, porque una fila suele pasar por dos manos:
+
+             const cosas   = brutas.map(...)      ← el espacio, aquí
+             const sinLista = cosas.map(...)      ← y se inserta ésta
+
+         O por un índice, que es lo mismo:
+
+             const filas = nuevos.map(...)
+             const fila  = filas[i]
+
+         Dos y no más. Una búsqueda que salta indefinidamente acaba
+         encontrando la palabra en cualquier sitio y dando por buena
+         una consulta que no lo está. */
+      let buscando = consulta
+      for (let salto = 0; salto < 2 && !dice; salto++) {
+        const nombre = salto === 0
+          ? buscando.match(/\.(?:insert|upsert)\(\s*\{?\s*(?:\.\.\.)?([A-Za-z_$][\w$]*)/)?.[1]
+          : buscando.match(/=\s*([A-Za-z_$][\w$]*)\s*[.[]/)?.[1]
+        if (!nombre) break
+
+        const nace = lineas.findIndex((l) =>
+          new RegExp(`\\b(?:const|let|var)\\s+${nombre}\\b`).test(l))
+        if (nace < 0) break
+
+        buscando = lineas.slice(nace, nace + 40).join('\n')
+        if (/hogar_id/.test(buscando)) dice = true
+      }
+    }
 
     /*
       LAS QUE CRUZAN A PROPÓSITO.
@@ -208,10 +294,11 @@ for (const archivo of [...archivos('app'), ...archivos('lib')]) {
     const aProposito = /espacio: a propósito/.test(encima)
     if (aProposito) { permitidas++; continue }
 
-    if (!dice && !esInsercion) {
+    if (!dice) {
       avisos.push({
         archivo, linea: i + 1, tabla: m[1],
-        consulta: consulta.split('\n').slice(0, 3).map((x) => x.trim()).join(' '),
+        consulta: (esInsercion ? '[insertar] ' : '') +
+          consulta.split('\n').slice(0, 3).map((x) => x.trim()).join(' '),
       })
     }
   }

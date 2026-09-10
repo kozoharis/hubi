@@ -60,6 +60,7 @@ export async function POST(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('listas_compra')
     .insert({
+      hogar_id: await elEspacioO(supabase),
       nombre,
       seccion_id: cuerpo.seccion_id || null,
       creada_por: user.id,
@@ -268,7 +269,7 @@ export async function PATCH(peticion: NextRequest) {
     if (!recordatorioId) {
       const { data: creada, error: alCrear } = await supabase
         .from('recordatorios')
-        .insert({ ...laTarea, creado_por: user.id })
+        .insert({ ...laTarea, hogar_id: await elEspacioO(supabase), creado_por: user.id })
         .select('id')
         .maybeSingle()
 

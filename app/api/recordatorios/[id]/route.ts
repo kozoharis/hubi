@@ -87,6 +87,7 @@ export async function PATCH(
       const { data: nueva } = await supabase
         .from('recordatorios')
         .insert({
+          hogar_id: await elEspacioO(supabase),
           titulo: data.titulo,
           tipo: data.tipo,
           asignado_a: data.asignado_a,

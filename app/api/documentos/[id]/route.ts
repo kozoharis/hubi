@@ -371,6 +371,7 @@ export async function PATCH(
       balance igual de mal que estaba.
     */
     const nuevoApunte: Record<string, unknown> = {
+      hogar_id: await elEspacioO(supabase),
       tipo: hoja.naturaleza,
       concepto: proveedor || titulo || hoja.nombre,
       importe,

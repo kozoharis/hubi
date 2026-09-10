@@ -98,6 +98,7 @@ async function grupoDe(
   const { data, error } = await supabase
     .from('categorias')
     .insert({
+      hogar_id: await elEspacioO(supabase),
       padre_id: seccionId,
       nombre,
       segmento_drive: segmento,
@@ -226,6 +227,7 @@ export async function POST(peticion: NextRequest) {
   const { data, error } = await supabase
     .from('categorias')
     .insert({
+      hogar_id: await elEspacioO(supabase),
       padre_id: grupo.id,
       nombre,
       /* El nombre de su carpeta en Drive. Sin tildes ni signos, en
