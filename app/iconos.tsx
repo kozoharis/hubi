@@ -298,9 +298,17 @@ export function BotonAjustes() {
 }
 
 /* ── El logotipo ─────────────────────────────────────────
-   Es el archivo de verdad, con su degradado y su onda. Sobre fondo
-   oscuro hay que usar la variante clara: en la otra, el trazo derecho
-   termina en azul marino y se perdería. */
+   Es el archivo de verdad: la H con el degradado de HUBI —turquesa,
+   verde azulado y azul— y nada más.
+
+   El anterior llevaba dentro rojo, naranja y rosa, tres de las siete
+   familias que la Fase 1 retiró de la paleta. O sea que el símbolo
+   anunciaba unos colores que dentro no existían.
+
+   `oscuro` pide la variante crema. Hace falta menos que antes —el
+   degradado nuevo acaba en azul vivo y aguanta sobre el marino—, pero
+   sobre la puerta, que ya lleva manchas turquesa y azules por detrás,
+   dos degradados se pelean y el crema queda limpio. */
 export function Logo({ tam = 30, oscuro = false }: { tam?: number; oscuro?: boolean }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element

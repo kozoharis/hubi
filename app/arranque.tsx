@@ -1,56 +1,111 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Logo } from './iconos'
-import ColorDeBarra from './color-barra'
+import { useCallback, useEffect, useState } from 'react'
 
 /*
-  La pantalla de arranque.
+  ═══════════════════════════════════════════════════════════════
+  LA PANTALLA DE ARRANQUE
+  ═══════════════════════════════════════════════════════════════
 
-  Solo el logotipo sobre el azul marino, con las manchas de color yendo
-  a la deriva por detrás. Aparece al abrir la aplicación y se va sola.
+  El símbolo entra, se traza la raya, aparece la palabra y se va.
+  Dos segundos y medio en total.
 
-  Vive solo en la pantalla de Inicio. Estaba en el layout y salía al
-  entrar en cualquier sitio —al abrir un documento, al cambiar de
-  pestaña—, y eso convertía la bienvenida en un peaje.
+  ─────────────────────────────────────────────────────────────
+  POR QUÉ YA NO ES AZUL MARINO
+
+  Era el logotipo sobre `#01071B` con cuatro manchas de color yendo a
+  la deriva por detrás, y estuvo bien mientras HUBI fue oscuro. Pero
+  HUBI es de papel crema desde la Fase 1, y un arranque oscuro delante
+  de una aplicación clara produce un fogonazo justo en el momento en
+  que se entra: cuatro segundos de noche y de golpe el día.
+
+  El fondo del arranque es ahora `--t-fondo`, el mismo papel exacto de
+  la pantalla que hay debajo. Cuando el fundido termina no cambia
+  nada: solo desaparece lo que estaba encima. Y en modo oscuro pasa lo
+  mismo, porque el token va con el modo.
+
+  ─────────────────────────────────────────────────────────────
+  Y LA RAYA ES EL ÚNICO SITIO CON DEGRADADO
+
+  A propósito, y es la regla que más fácil sería romper. Si el
+  degradado está además en el fondo, o en la palabra, o detrás del
+  símbolo, deja de significar «aquí hay inteligencia» y pasa a ser
+  decoración. Va en la raya y en ningún otro sitio de esta pantalla.
+
+  ─────────────────────────────────────────────────────────────
+  SALE UNA VEZ
+
+  Con `sessionStorage`, al abrir la aplicación y no más. Antes cada
+  llegada a Inicio la volvía a poner, porque cada toque en el menú
+  recargaba HUBI entera; ahora que la navegación es instantánea, esos
+  segundos serían un peaje por volver a casa.
+
+  Y un toque la salta en cualquier momento.
 */
 
-const VISIBLE = 4000
-const DESVANECE = 600
+const VISIBLE = 2400
+const DESVANECE = 620
 const YAVISTA = 'hubi-arranque'
 
+/*
+  En qué modo está la casa. Se mira una vez, al montar, y no en el
+  servidor —que no sabe en qué modo está el teléfono—: en el servidor
+  devuelve `false` y da igual, porque en ese primer dibujado el
+  arranque todavía está fuera y no se pinta ninguna imagen.
+*/
+function esDeNoche() {
+  try {
+    const puesto = document.documentElement.dataset.tema
+    if (puesto === 'oscuro') return true
+    if (puesto === 'claro') return false
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  } catch {
+    return false
+  }
+}
+
 export default function Arranque() {
-  /*
-    Empieza fuera y solo se enciende si toca.
-
-    Antes cada llegada a Inicio la volvía a poner, porque cada toque en
-    el menú recargaba la aplicación entera. Ahora que la navegación es
-    instantánea, esos cuatro segundos serían un peaje por volver a
-    casa: la bienvenida se convertiría en lo más lento de HUBI.
-
-    Con `sessionStorage`, sale una vez al abrir la aplicación y no
-    vuelve hasta que se cierra del todo. Que es lo que uno espera de
-    una pantalla de bienvenida.
-  */
   const [fase, setFase] = useState<'puesta' | 'yendose' | 'fuera'>('fuera')
+  /* Sobre papel crema va el símbolo a color; sobre el azul de la
+     noche iría en azul marino y se perdería, así que ahí va el crema. */
+  const [oscuro] = useState(esDeNoche)
 
   useEffect(() => {
-    let yaVista = false
-    try {
-      yaVista = sessionStorage.getItem(YAVISTA) === '1'
-      sessionStorage.setItem(YAVISTA, '1')
-    } catch {
-      // Navegador con el almacenamiento capado: que salga, no pasa nada.
-    }
-    if (yaVista) return
+    let vivo = true
+    let a: ReturnType<typeof setTimeout>
+    let b: ReturnType<typeof setTimeout>
 
-    setFase('puesta')
-    const a = setTimeout(() => setFase('yendose'), VISIBLE)
-    const b = setTimeout(() => setFase('fuera'), VISIBLE + DESVANECE)
+    /* El encendido va en un microtask y no aquí mismo porque cambiar
+       el estado dentro del efecto encadena dos dibujados —React avisa
+       de ello— y esto pasa en Inicio, la pantalla que más se abre. */
+    queueMicrotask(() => {
+      if (!vivo) return
+      let yaVista = false
+      try {
+        yaVista = sessionStorage.getItem(YAVISTA) === '1'
+        sessionStorage.setItem(YAVISTA, '1')
+      } catch {
+        /* Navegador con el almacenamiento capado: que salga, no pasa nada. */
+      }
+      if (yaVista) return
+
+      setFase('puesta')
+      a = setTimeout(() => setFase('yendose'), VISIBLE)
+      b = setTimeout(() => setFase('fuera'), VISIBLE + DESVANECE)
+    })
+
     return () => {
+      vivo = false
       clearTimeout(a)
       clearTimeout(b)
     }
+  }, [])
+
+  /* El toque no acorta el fundido: lo adelanta. Cortar en seco una
+     pantalla que se está yendo se ve como un error de la aplicación. */
+  const saltar = useCallback(() => {
+    setFase((f) => (f === 'puesta' ? 'yendose' : f))
+    setTimeout(() => setFase('fuera'), DESVANECE)
   }, [])
 
   if (fase === 'fuera') return null
@@ -58,73 +113,36 @@ export default function Arranque() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden"
+      onClick={saltar}
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center"
       style={{
-        background: '#01071B',
+        background: 'var(--t-fondo)',
         opacity: fase === 'yendose' ? 0 : 1,
-        transition: `opacity ${DESVANECE}ms ease-out`,
+        transition: `opacity ${DESVANECE}ms cubic-bezier(.22,.61,.36,1)`,
       }}
     >
-      {/* El color, moviéndose despacio */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <span className="mancha deriva-1" style={{ width: 330, height: 330, left: -130, top: -100, background: 'rgba(20,184,166,.40)' }} />
-        {/* Eran naranja y rosa, los dos de la paleta que salió en la
-            Fase 1. Ahora arena y violeta, que sí existen dentro — las
-            mismas cuatro que en `entrar`, para que la carga y la
-            puerta sean la misma escena. */}
-        <span className="mancha deriva-3" style={{ width: 320, height: 320, right: -135, top: 0, background: 'rgba(192,154,98,.30)' }} />
-        <span className="mancha deriva-2" style={{ width: 360, height: 360, right: -120, bottom: -130, background: 'rgba(148,130,217,.26)' }} />
-        <span className="mancha deriva-4" style={{ width: 320, height: 320, left: -120, bottom: -110, background: 'rgba(59,130,246,.30)' }} />
-        <span
-          className="brillo absolute"
-          style={{
-            inset: '-20%',
-            background:
-              'linear-gradient(115deg,transparent 38%,rgba(255,255,255,.05) 50%,transparent 62%)',
-          }}
-        />
-        <span
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(74% 46% at 50% 40%, rgba(1,7,27,.94) 0%, rgba(1,7,27,.55) 55%, transparent 100%)',
-          }}
-        />
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={oscuro ? '/logo-hubi-oscuro.png' : '/logo-hubi.png'}
+        alt=""
+        className="hubi-marca block"
+        style={{ width: 104, height: 'auto' }}
+      />
 
-      <ColorDeBarra color="#01071B" />
+      <span
+        className="hubi-linea mt-[26px] block h-[2px] w-[148px] rounded-sm"
+        style={{
+          transformOrigin: 'center',
+          background: 'linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)',
+        }}
+      />
 
-      <div className="relative flex flex-col items-center">
-        <Logo tam={172} oscuro />
-        <p className="mt-6 text-[44px] font-extrabold tracking-[0.25em] text-white">
-          <span className="ml-[0.25em]">HUBI</span>
-        </p>
-        {/*
-          ── LA RAYA DEL LOGOTIPO ──
-
-          Era un arcoíris de CINCO colores: turquesa, azul, morado,
-          coral y ámbar. Y los tres últimos salieron de la paleta en la
-          Fase 1: no aparecen en ninguna pantalla del producto.
-
-          O sea que lo PRIMERO que ve alguien al abrir HUBI anunciaba
-          cinco colores, y dentro no había ninguno de tres de ellos.
-
-          Ahora es el degradado de HUBI, el mismo del botón de voz y de
-          la caja. Que es lo que esa raya debería haber sido siempre:
-          la firma, no una paleta.
-        */}
-        <span
-          className="mt-4 block h-[3px] w-[132px] rounded-sm"
-          style={{
-            background: 'linear-gradient(90deg,#2DD4BF,#14B8A6 45%,#3B82F6)',
-          }}
-        />
-        <p className="mt-6 text-center text-[18px] font-semibold leading-relaxed text-slate-300">
-          Todo lo importante,
-          <br />
-          en un mismo lugar.
-        </p>
-      </div>
+      <span
+        className="hubi-palabra mt-[26px] block text-[15px] font-extrabold text-tinta"
+        style={{ letterSpacing: '0.3em', paddingLeft: '0.3em' }}
+      >
+        HUBI
+      </span>
     </div>
   )
 }

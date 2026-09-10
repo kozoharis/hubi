@@ -910,3 +910,30 @@ input[type='datetime-local'] {
 .r-tarjeta { border-radius: 20px; }
 .r-campo   { border-radius: 16px; }
 .r-pildora { border-radius: 9999px; }
+
+
+/*
+  ── EL ARRANQUE ────────────────────────────────────────────
+  Tres movimientos y un fundido. Nada más.
+
+  Era el logotipo sobre azul marino con cuatro manchas de color a la
+  deriva, y el problema no era que estuviera mal hecho: era que la
+  aplicación es de papel crema y el arranque era una noche. Al
+  terminar el fundido había un fogonazo, cuatro segundos de espera
+  para llegar a una casa que no se parecía a lo que acababas de ver.
+
+  Ahora arranca en el mismo papel en el que vas a estar. La única
+  vez que sale el degradado es en la raya, que es la firma.
+*/
+.hubi-marca   { animation: hubi-marca   620ms cubic-bezier(.22,.61,.36,1)  180ms both; }
+.hubi-linea   { animation: hubi-linea   680ms cubic-bezier(.22,.61,.36,1)  620ms both; }
+.hubi-palabra { animation: hubi-palabra 520ms cubic-bezier(.22,.61,.36,1) 1080ms both; }
+
+@keyframes hubi-marca   { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
+@keyframes hubi-linea   { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+@keyframes hubi-palabra { from { opacity: 0 } to { opacity: 1 } }
+
+/* Movimiento reducido: no se quita la respuesta, se quita el viaje. */
+@media (prefers-reduced-motion: reduce) {
+  .hubi-marca, .hubi-linea, .hubi-palabra { animation-duration: 0.01ms !important; }
+}
