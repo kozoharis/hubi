@@ -52,6 +52,8 @@ next-env.d.ts
 *.patch
 *.zip
 /*.html
+/*.mp4
+/*.bat
 /web/
 /Claude outputs/
 comprobar.mjs

@@ -21,6 +21,7 @@ import Compra from './compra'
 import ImpuestoDeLaCasa from './impuesto'
 import { esImpuesto, type Impuesto } from '@/lib/impuesto'
 import MiCalendario from './mi-calendario'
+import { casasDe } from '@/lib/casas'
 
 export const dynamic = 'force-dynamic'
 
@@ -124,6 +125,13 @@ export default async function Ajustes({
     .neq('id', user.id)
     .limit(1)
   const elOtro = otros?.[0]?.nombre?.split(' ')[0] ?? null
+
+  /* ¿Tiene más de una casa? Decide si «El escritorio» existe para
+     esta persona: con una sola, esa pantalla no tiene nada que decir
+     y enseñar la puerta sería prometer algo que al abrirlo está
+     vacío. */
+  const susCasas = await casasDe(supabase, user.id)
+  const conVarias = susCasas.filter((c) => !c.pendiente).length > 1
 
   /*
     ── Las carpetas raíz de la casa, leídas UNA vez ──
@@ -523,6 +531,29 @@ export default async function Ajustes({
           </span>
           <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0" />
         </Link>
+
+        {/*
+          ── EL ESCRITORIO ──
+
+          Solo si tiene más de una casa. Es la única pantalla de HUBI
+          pensada para un ordenador o una tableta, y la única que sale
+          o no según lo que tengas — no según quién seas.
+        */}
+        {conVarias && (
+          <Link
+            href="/escritorio"
+            className="tocable mt-2.5 flex items-center gap-3 rounded-[20px] border border-borde bg-superficie px-3.5 py-3"
+          >
+            <PastillaAmbito icono="casa" ambito="pizarra" tam={44} />
+            <span className="min-w-0 flex-1">
+              <span className="t-tarjeta block truncate">El escritorio</span>
+              <span className="t-apoyo mt-0.5 block">
+                Tus {susCasas.filter((c) => !c.pendiente).length} casas de una vez
+              </span>
+            </span>
+            <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0" />
+          </Link>
+        )}
 
         {/* ── Cómo se ve ── */}
         <h2 className="rotulo mt-5">Cómo se ve</h2>

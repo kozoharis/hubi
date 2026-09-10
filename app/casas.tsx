@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from './iconos'
@@ -128,6 +129,30 @@ export default function Casas({ casas }: { casas: Casa[] }) {
 
           {abierto && (
             <ul className="space-y-2">
+              {/*
+                ── Y LA PUERTA DEL ESCRITORIO ──
+
+                Aquí y no en el menú, porque aquí es donde alguien va
+                CUANDO PIENSA en sus otras casas. Un enlace en Ajustes
+                lo encuentra quien lo busca; éste lo encuentra quien lo
+                necesita.
+
+                Va primero, encima de la lista, porque con quince casas
+                mirarlas todas juntas es más frecuente que ir a una
+                concreta — y con dos no estorba, es un renglón.
+              */}
+              <li>
+                <Link
+                  href="/escritorio"
+                  className="tocable r-campo flex min-h-[56px] w-full items-center gap-2.5 border border-borde bg-superficie px-4 text-left"
+                >
+                  <Ico nombre="ojo" tam={19} grosor={2.2} className="shrink-0 text-tenue" />
+                  <span className="t-cuerpo min-w-0 flex-1 truncate font-extrabold">
+                    Verlas todas juntas
+                  </span>
+                  <Ico nombre="flecha" tam={18} grosor={2.2} className="shrink-0 text-borde" />
+                </Link>
+              </li>
               {dentro.map((c) => (
                 <li key={c.id}>
                   <button
