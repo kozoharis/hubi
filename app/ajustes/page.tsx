@@ -528,6 +528,35 @@ export default async function Ajustes({
           />
         </div>
 
+        {/*
+          ── CÓMO SE HACE ──
+
+          En «Tú» y no en «La casa». Estuvo un rato fuera de las dos
+          pestañas, abajo del todo, con el razonamiento de que no
+          configura nada — y era verdad, pero era el razonamiento
+          equivocado.
+
+          Aprender a usar HUBI es algo TUYO: no cambia nada de la
+          casa, no lo ve nadie más y no depende de quién seas en ella.
+          Está al lado de tu nombre, tu tema y tus avisos, que es
+          exactamente la misma clase de cosa.
+
+          Y aquí lo encuentra todo el mundo. «La casa» solo la abre
+          quien configura algo; «Tú» es la pestaña que sale al entrar.
+
+          Justo encima de «Salir» porque es donde se busca la ayuda en
+          casi cualquier aplicación: al final de lo personal.
+        */}
+        <div className="mt-8 border-t border-borde pt-6">
+          <Opcion
+            href="/como-se-hace"
+            icono="ojo"
+            ambito="azul"
+            titulo="Cómo se hace"
+            pie="Vídeos cortos de cada cosa que sabe hacer HUBI"
+          />
+        </div>
+
         <div className="mt-5">
           <BotonSalir />
         </div>
@@ -644,7 +673,7 @@ export default async function Ajustes({
           </>
         )}
 
-        <p className="mt-5 text-center text-[14.5px] font-semibold text-tenue">
+        <p className="mt-6 text-center text-[14.5px] font-semibold text-tenue">
           <Link href="/privacidad">Privacidad</Link>
           {' · '}
           <Link href="/terminos">Términos</Link>

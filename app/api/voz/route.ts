@@ -136,6 +136,28 @@ export async function POST(peticion: NextRequest) {
      apuntaba la tarea para HOY. El porqué, en `lib/tablon.ts`. */
   const hoy = hoyAqui()
 
+  /*
+    ── QUEDA CONSTANCIA DE QUE HA HABLADO ──
+
+    Es el único de los cuatro primeros pasos que no deja rastro en
+    ninguna parte: una consulta por voz no escribe nada, y un
+    recordatorio dictado es idéntico a uno escrito a mano. Sin esto,
+    la tarjeta del Inicio le diría a alguien que no ha hablado con
+    HUBI después de haberlo hecho diez veces.
+
+    Va sin `await` a propósito y con el fallo tragado: apuntar un
+    paso jamás puede retrasar ni tumbar lo que la persona ha pedido.
+    Si se pierde, la tarjeta tarda un poco más en tacharse — y eso no
+    es nada comparado con una respuesta que no llega.
+  */
+  supabase
+    .from('pasos_dados')
+    .upsert({ perfil_id: user.id, paso: 'hablar' }, { onConflict: 'perfil_id,paso' })
+    .then(
+      () => {},
+      () => {}
+    )
+
   try {
     /* Las pistas son los botones de "¿qué quieres que haga con esto?".
        Faltaban las tres últimas: al pulsarlas, la pista se descartaba

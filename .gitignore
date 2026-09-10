@@ -41,6 +41,14 @@ yarn-error.log*
 next-env.d.ts
 
 # ── Lo que no es el producto ──
+# Entregas, demos, capturas y zips: material de trabajo nuestro,
+# no código de HUBI. Fuera del repositorio.
+#
+# Este bloque VIVE AQUÍ, en el repositorio, y no solo en la máquina de
+# Haris. Estuvo solo en la suya y duró un día: cada zip que se le
+# entrega trae este fichero dentro y se lo sobrescribía, así que las
+# exclusiones se deshacían solas y los zips volvían a colarse en el
+# siguiente commit.
 *.patch
 *.zip
 /*.html

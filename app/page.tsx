@@ -7,6 +7,9 @@ import Barra from './barra'
 import Arranque from './arranque'
 import Invitacion from './invitacion'
 import SinAvisos from './sin-avisos'
+import PrimerosPasos from './primeros-pasos'
+import { accionesDe, primerosPasos, type Papel } from '@/lib/guia'
+import { pasosHechos } from '@/lib/pasos'
 import Cabecera from './cabecera'
 import { BotonAjustes, Ico, Logo, pintaDe } from './iconos'
 import Avatar from './avatar'
@@ -196,6 +199,21 @@ export default async function Inicio({
     /* Sin la columna: se comporta como antes. */
   }
   const ve = queVeEnInicio(rol)
+
+  /*
+    ── LOS PRIMEROS PASOS ──
+
+    Se piden AQUÍ, después del rol, porque cada papel tiene los
+    suyos: a quien ayuda en casa no se le propone guardar papeles.
+
+    Y se preguntan a lo que ya hay —¿tienes algún documento?, ¿alguna
+    nota?— en vez de guardar una marca al hacer cada cosa. Preguntando
+    por los datos, la lista no puede mentir; con marcas, un fallo al
+    escribir una dejaría a alguien con la tarjeta puesta para siempre.
+  */
+  const papel = ((rol as Papel | null) ?? 'familia') as Papel
+  const pasos = primerosPasos(papel)
+  const hechos = pasos.length > 0 ? await pasosHechos(supabase, user.id) : new Set<string>()
 
   /*
     ── LO DE HOY: EL PLAN DE LA SEMANA ──
@@ -517,6 +535,25 @@ export default async function Inicio({
             Se pinta solo cuando hace falta —y en el ordenador nunca—,
             así que en un teléfono bien puesto esta línea no existe. */}
         <SinAvisos />
+
+        {/*
+          ── PRIMEROS PASOS ──
+
+          Debajo del aviso de que algo no funciona y ENCIMA de todo
+          lo demás. El orden importa: un fallo se dice antes que una
+          bienvenida, pero una bienvenida que hay que ir a buscar no
+          la lee nadie.
+
+          Desaparece sola cuando las cuatro cosas están hechas. A
+          partir de ahí, la guía vive en Ajustes y nada más.
+        */}
+        {pasos.length > 0 && (
+          <PrimerosPasos
+            pasos={pasos}
+            hechos={[...hechos]}
+            cuantasMas={accionesDe(papel).length - pasos.length}
+          />
+        )}
 
         {/* ── La grande: hacer una foto ── */}
         {conectado && ve.guardarDocumento && (
