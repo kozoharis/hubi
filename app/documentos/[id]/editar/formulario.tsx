@@ -7,6 +7,7 @@ import { Aviso, BotonPrincipal, BotonSecundario, BotonDestructivo } from '../../
 import type { Categoria } from '@/lib/carpetas'
 import { avisosDe, enPalabras, esAviso, type Vencimiento } from '@/lib/vencimientos'
 import { hoyAqui } from '@/lib/tablon'
+import { api } from '@/lib/api'
 
 /*
   Corregir un papel.
@@ -146,7 +147,7 @@ export default function Corregir({
     setAviso(null)
     setGuardando(true)
 
-    const r = await fetch(`/api/documentos/${papel.id}`, {
+    const r = await fetch(api(`/api/documentos/${papel.id}`), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -195,7 +196,7 @@ export default function Corregir({
     setAviso(null)
     setBorrando(true)
 
-    const r = await fetch(`/api/documentos/${papel.id}`, { method: 'DELETE' })
+    const r = await fetch(api(`/api/documentos/${papel.id}`), { method: 'DELETE' })
 
     if (!r.ok) {
       const d = (await r.json().catch(() => ({}))) as { error?: string }

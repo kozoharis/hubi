@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import { headers } from 'next/headers'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { miHogar } from './hogar'
 
@@ -36,18 +37,17 @@ import { miHogar } from './hogar'
   cincuenta y cinco archivos. Llamando a `elEspacio()` hay que tocar
   UNO: éste.
 
-  Hoy contesta lo mismo que siempre. Es un cambio sin efecto —a
-  propósito—: lo que instala es la costura por donde entrará la ruta.
+  Y así fue: cuando llegó la ruta se cambió UN archivo, éste.
 
   ─────────────────────────────────────────────────────────────
-  CÓMO ENTRARÁ LA RUTA, PARA QUE CONSTE
+  CÓMO ENTRA LA RUTA
 
   No por parámetro. Si `elEspacio()` recibiera el espacio, habría que
   pasárselo desde cada pantalla hasta cada función de `lib/`, y eso son
   otra vez cincuenta y cinco archivos.
 
-  Entrará por una cabecera que pondrá `proxy.ts` leyendo la propia
-  dirección. Con dos cautelas escritas desde ya:
+  Entra por una cabecera que pone `proxy.ts` leyendo la propia
+  dirección. Con dos cautelas:
 
     · La cabecera que venga de fuera SE TIRA. La pone el proxy a
       partir de la URL, nunca el navegador. Si no se tirara, cualquiera
@@ -75,7 +75,42 @@ async function averiguar(supabase: Cliente): Promise<string | null> {
     const user = data?.user
     if (!user) return null
 
-    /* Aquí entrará la ruta. Mientras no exista, la casa de siempre. */
+    /*
+      ── PRIMERO, LA RUTA ──
+
+      La cabecera la pone `proxy.ts` leyendo la dirección, y borra
+      cualquiera que venga de fuera. Aquí solo puede llegar la suya.
+
+      Pero SE COMPRUEBA IGUAL. No por desconfiar del proxy: porque si
+      un día alguien cambia el `matcher` y alguna ruta deja de pasar
+      por él, el fallo no puede ser «entras donde no debes». Con la
+      comprobación, lo peor que pasa es que no entres.
+
+      Y `aceptado_en` importa: que te ofrezcan una casa no te mete
+      dentro.
+    */
+    const puesto = (await headers()).get('x-espacio')
+
+    if (puesto) {
+      const { data: dentro } = await supabase
+        .from('miembros')
+        .select('hogar_id')
+        .eq('perfil_id', user.id)
+        .eq('hogar_id', puesto)
+        .not('aceptado_en', 'is', null)
+        .maybeSingle()
+
+      /*
+        Si la dirección nombra un espacio que no es tuyo, esto devuelve
+        `null` y la pantalla te manda a empezar. NO se cae de vuelta a
+        `casa_activa`: enseñarte tu casa cuando has pedido otra sería
+        justo la confusión que estamos quitando.
+      */
+      return (dentro?.hogar_id as string | null) ?? null
+    }
+
+    /* Sin espacio en la dirección: la casa de siempre. Es lo que hace
+       que todas las direcciones de hoy sigan funcionando igual. */
     return await miHogar(supabase, user.id)
   } catch {
     return null

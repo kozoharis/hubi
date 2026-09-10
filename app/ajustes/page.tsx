@@ -22,7 +22,7 @@ import ImpuestoDeLaCasa from './impuesto'
 import { esImpuesto, type Impuesto } from '@/lib/impuesto'
 import MiCalendario from './mi-calendario'
 import { casasDe } from '@/lib/casas'
-import { elEspacio, elEspacioO } from '@/lib/espacio'
+import { elEspacio, elEspacioO, NINGUNO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
@@ -470,7 +470,7 @@ export default async function Ajustes({
     `planDeLaCasa` ya viene envuelto: sin las tablas del SQL 38
     devuelve una lista vacía y nadie se queda sin Ajustes por eso.
   */
-  const plan: Rutina[] = manda ? await planDeLaCasa(supabase) : []
+  const plan: Rutina[] = manda ? await planDeLaCasa(supabase, hogarId ?? NINGUNO) : []
 
 
   return (

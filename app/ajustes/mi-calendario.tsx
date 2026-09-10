@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import { PastillaAmbito } from '../piezas'
+import { api } from '@/lib/api'
 
 /*
   Conectar tu calendario de Google.
@@ -41,7 +42,7 @@ export default function MiCalendario({
     setBien(null)
     setOcupado(true)
 
-    const r = await fetch('/api/calendario/ical', {
+    const r = await fetch(api('/api/calendario/ical'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: url.trim() }),
@@ -71,7 +72,7 @@ export default function MiCalendario({
   async function cambiarComparte(valor: boolean) {
     setComparte(valor)          // se ve al momento
     setOcupado(true)
-    const r = await fetch('/api/calendario/ical', {
+    const r = await fetch(api('/api/calendario/ical'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ compartido: valor }),
@@ -87,7 +88,7 @@ export default function MiCalendario({
 
   async function desconectar() {
     setOcupado(true)
-    await fetch('/api/calendario/ical', { method: 'DELETE' })
+    await fetch(api('/api/calendario/ical'), { method: 'DELETE' })
     setBien(null)
     setOcupado(false)
     router.refresh()

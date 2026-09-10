@@ -42,7 +42,6 @@
   una aplicación para siempre.
 */
 
-import { elEspacioO } from './espacio'
 
 export type Vencimiento = {
   /** El día que caduca. Sin esto no hay nada que avisar. */
@@ -149,6 +148,7 @@ export async function rehacerAvisos(
   supabase: any,
   datos: {
     documentoId: string
+    espacio: string
     titulo: string
     creadoPor: string
     hoy: string
@@ -160,7 +160,7 @@ export async function rehacerAvisos(
   /** Entró uno y el otro no. El aviso existe, pero falta la mitad. */
   aMedias?: string | null
 }> {
-  const { documentoId, titulo, creadoPor, hoy } = datos
+  const { documentoId, espacio, titulo, creadoPor, hoy } = datos
 
   /*
     Fuera los de antes. Solo los que puso HUBI (`motivo`) y solo los que
@@ -172,7 +172,7 @@ export async function rehacerAvisos(
     await supabase
       .from('recordatorios')
       .delete()
-      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('hogar_id', espacio)
       .eq('documento_origen_id', documentoId)
       .not('motivo', 'is', null)
       .eq('estado', 'pendiente')
@@ -184,8 +184,6 @@ export async function rehacerAvisos(
 
   const nuevos = avisosDe(datos, titulo, hoy)
   if (nuevos.length === 0) return { puestos: 0, fallo: null }
-
-  const espacio = await elEspacioO(supabase)
 
   const filas = nuevos.map((a) => ({
     hogar_id: espacio,

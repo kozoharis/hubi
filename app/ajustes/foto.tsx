@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Avatar from '../avatar'
 import { Ico } from '../iconos'
+import { api } from '@/lib/api'
 
 /*
   Quién eres: tu foto y tu nombre.
@@ -61,7 +62,7 @@ export default function TuPerfil({
   }
 
   async function mandarFoto(dato: string | null) {
-    const r = await fetch('/api/perfil/foto', {
+    const r = await fetch(api('/api/perfil/foto'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ foto: dato }),
@@ -95,7 +96,7 @@ export default function TuPerfil({
     setAviso(null)
     setOcupado(true)
 
-    const r = await fetch('/api/perfil/nombre', {
+    const r = await fetch(api('/api/perfil/nombre'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre: limpio }),

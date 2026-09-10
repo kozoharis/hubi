@@ -8,6 +8,7 @@ import Semana from './semana'
 import { ROLES, nombreDelRol, type Rol } from '@/lib/roles'
 import { COLORES } from '@/lib/gente'
 import type { Rutina } from '@/lib/rutinas'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -88,7 +89,7 @@ export default function Gente({
     setHecho(null)
     setOcupado(true)
 
-    const r = await fetch('/api/miembros', {
+    const r = await fetch(api('/api/miembros'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -144,7 +145,7 @@ export default function Gente({
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch('/api/miembros', {
+    const r = await fetch(api('/api/miembros'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, rol: nuevo }),
@@ -177,7 +178,7 @@ export default function Gente({
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch('/api/miembros', {
+    const r = await fetch(api('/api/miembros'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, color }),
@@ -222,7 +223,7 @@ export default function Gente({
     setOcupado(true)
     setFallo(null)
 
-    const r = await fetch(`/api/miembros?id=${encodeURIComponent(v.id)}`, { method: 'DELETE' })
+    const r = await fetch(api(`/api/miembros?id=${encodeURIComponent(v.id)}`), { method: 'DELETE' })
     const d = (await r.json().catch(() => null)) as { bien?: boolean; error?: string } | null
 
     setOcupado(false)

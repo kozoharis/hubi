@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import { Aviso } from '../piezas'
 import type { NotaVista } from '@/lib/notas'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -152,7 +153,7 @@ export default function Notas({
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch('/api/notas', {
+    const r = await fetch(api('/api/notas'), {
       method: metodo,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(cuerpo),

@@ -5,6 +5,7 @@ import Barra from '../barra'
 import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
 import { Aviso, BotonPrincipal, BotonSecundario, PastillaAmbito } from '../piezas'
+import { api } from '@/lib/api'
 
 type Estado = 'mirando' | 'instalar' | 'apagados' | 'encendidos' | 'bloqueados' | 'imposible'
 
@@ -81,7 +82,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
         applicationServerKey: aBytes(clavePublica),
       })
 
-      const r = await fetch('/api/push/suscribir', {
+      const r = await fetch(api('/api/push/suscribir'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -111,7 +112,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
       const registro = await navigator.serviceWorker.getRegistration()
       const sub = await registro?.pushManager.getSubscription()
       if (sub) {
-        await fetch('/api/push/suscribir', {
+        await fetch(api('/api/push/suscribir'), {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ endpoint: sub.endpoint }),
@@ -131,7 +132,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
     setBien(null)
     setOcupado(true)
 
-    const r = await fetch('/api/push/probar', { method: 'POST' })
+    const r = await fetch(api('/api/push/probar'), { method: 'POST' })
     const datos = (await r.json().catch(() => ({}))) as { error?: string }
 
     /* El motivo técnico va al registro, no a la pantalla: aquí solo

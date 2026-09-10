@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Aviso, BotonPrincipal, BotonSecundario, Vacio } from '../piezas'
 import { CADAS, comoSeDice, type Cada, type PagoFijo } from '@/lib/pagos-fijos'
 import { TIPOS, comoSeLlama, tipoHabitual, desglose, type Impuesto } from '@/lib/impuesto'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -70,7 +71,7 @@ export default function Fijos({
 
   async function traer() {
     try {
-      const r = await fetch('/api/pagos-fijos')
+      const r = await fetch(api('/api/pagos-fijos'))
       const d = (await r.json()) as {
         pagos?: PagoFijo[]
         faltan?: Falta[]
@@ -106,7 +107,7 @@ export default function Fijos({
     setPoniendo(true)
     setAviso(null)
 
-    const r = await fetch('/api/pagos-fijos', {
+    const r = await fetch(api('/api/pagos-fijos'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -138,7 +139,7 @@ export default function Fijos({
   }
 
   async function responder(id: string, pagado: boolean) {
-    await fetch('/api/pagos-fijos/confirmar', {
+    await fetch(api('/api/pagos-fijos/confirmar'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, pagado }),
@@ -151,7 +152,7 @@ export default function Fijos({
   }
 
   async function quitar(id: string) {
-    await fetch(`/api/pagos-fijos?id=${id}`, { method: 'DELETE' })
+    await fetch(api(`/api/pagos-fijos?id=${id}`), { method: 'DELETE' })
     traer()
   }
 

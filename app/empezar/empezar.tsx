@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico, Logo } from '../iconos'
+import { api } from '@/lib/api'
 import {
   type Ambito,
   Aviso,
@@ -105,7 +106,7 @@ export default function Empezar({ nombre }: { nombre: string }) {
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch('/api/casa', {
+    const r = await fetch(api('/api/casa'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

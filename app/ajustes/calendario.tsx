@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Ico } from '../iconos'
 import { PastillaAmbito } from '../piezas'
+import { api } from '@/lib/api'
 
 /*
   Poner en marcha el calendario de Google.
@@ -42,7 +43,7 @@ export default function PrepararCalendario({
     setOcupado(true)
     setResultado(null)
     try {
-      const r = await fetch('/api/calendario/preparar', { method: 'POST' })
+      const r = await fetch(api('/api/calendario/preparar'), { method: 'POST' })
       setResultado((await r.json()) as Resultado)
     } catch {
       setResultado({ error: 'No se ha podido hablar con Google. Inténtalo otra vez.' })

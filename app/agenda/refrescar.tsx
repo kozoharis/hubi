@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
+import { api } from '@/lib/api'
 
 /*
   El botón de traer las citas de Google otra vez.
@@ -32,7 +33,7 @@ export default function Refrescar({ cuantasHabia }: { cuantasHabia: number }) {
     setYendo(true)
 
     try {
-      const r = await fetch('/api/calendario/refrescar', { method: 'POST' })
+      const r = await fetch(api('/api/calendario/refrescar'), { method: 'POST' })
       const d = (await r.json().catch(() => ({}))) as { error?: string; citas?: number }
 
       if (!r.ok) {

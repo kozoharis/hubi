@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { api } from '@/lib/api'
 import {
   ambitoDeColor,
   AMBITO,
@@ -84,7 +85,7 @@ export default function Hilo({
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch('/api/notas', {
+    const r = await fetch(api('/api/notas'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ texto: limpio, para: paraQuien }),

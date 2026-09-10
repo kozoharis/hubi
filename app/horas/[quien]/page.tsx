@@ -9,7 +9,7 @@ import Cabecera from '../../cabecera'
 import { Ico, Volver } from '../../iconos'
 import { ambitoDeColor, BotonSecundario, Cifra, Fila, Tarjeta, Vacio } from '../../piezas'
 import { genteDeLaCasa } from '@/lib/gente'
-import { elEspacio } from '@/lib/espacio'
+import { elEspacio, NINGUNO } from '@/lib/espacio'
 export const dynamic = 'force-dynamic'
 
 /*
@@ -82,7 +82,7 @@ export default async function HorasDeAlguien({
     cuatro filas al mes, filtrar aquí no cuesta nada y no arriesga
     nada — que es exactamente el trato que conviene.
   */
-  const todos = await partesDe(supabase, aQuien, anclado)
+  const todos = await partesDe(supabase, hogarId ?? NINGUNO, aQuien, anclado)
   const delMes = todos.filter((p) => p.fecha < finDeMes && Number(p.extra ?? 0) > 0)
 
   const total = delMes.reduce((n, p) => n + Number(p.extra ?? 0), 0)

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -84,7 +85,7 @@ export default function NuevaActividad() {
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch('/api/actividades', {
+    const r = await fetch(api('/api/actividades'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre: nombre.trim(), tipo }),

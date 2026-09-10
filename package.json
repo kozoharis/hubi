@@ -9,6 +9,7 @@
     "lint": "eslint",
     "probar-voz": "tsx pruebas/voz.ts",
     "probar-espacio": "node pruebas/espacio.mjs",
+    "probar-ruta": "tsx pruebas/ruta.ts",
     "postinstall": "node scripts/copiar-worker.mjs"
   },
   "dependencies": {

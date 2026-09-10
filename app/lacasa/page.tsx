@@ -69,7 +69,7 @@ export default async function LaCasaHoy({
   /* Quien ayuda en casa ve lo suyo; la familia ve todo lo del día. Es
      la misma regla del Inicio, y la de verdad la aplican las políticas
      de la base de datos: aquí solo se decide qué se pide. */
-  const filas = await loDeHoy(supabase, soyLaAyuda ? user.id : null, fecha)
+  const filas = await loDeHoy(supabase, hogarId, soyLaAyuda ? user.id : null, fecha)
 
   const nombreDe = new Map(gente.map((g) => [g.id, g.nombre.split(' ')[0]]))
 
@@ -98,7 +98,7 @@ export default async function LaCasaHoy({
   /* Las horas de MÁS que lleva del mes. El horario de siempre no se
      apunta: lo que hay que cuadrar a fin de mes es lo que se salió de
      lo acordado. */
-  const delMes = laAyuda ? await partesDe(supabase, laAyuda.id, primeroDelMes(fecha)) : []
+  const delMes = laAyuda ? await partesDe(supabase, hogarId, laAyuda.id, primeroDelMes(fecha)) : []
   const extraDelMes = delMes.reduce((n, p) => n + Number(p.extra ?? 0), 0)
 
   const hechas = deberes.filter((d) => d.hecha).length

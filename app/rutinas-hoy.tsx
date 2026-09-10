@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from './iconos'
 import { Aviso } from './piezas'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -68,7 +69,7 @@ export default function RutinasHoy({
     setEstado((e) => ({ ...e, [r.id]: nueva }))
     setFallo(null)
 
-    const p = await fetch('/api/rutinas', {
+    const p = await fetch(api('/api/rutinas'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: r.id, hecha: nueva }),

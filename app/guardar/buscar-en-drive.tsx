@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Aviso, BotonSecundario } from '../piezas'
+import { api } from '@/lib/api'
 
 /*
   Buscar un papel que ya está en el Drive.
@@ -65,7 +66,7 @@ export default function BuscarEnDrive({
 
     try {
       // 1 · El pase temporal, que da el servidor y solo a Juan Miguel.
-      const r = await fetch('/api/google/permiso-picker')
+      const r = await fetch(api('/api/google/permiso-picker'))
       const datos = await r.json()
       if (!r.ok || !datos.acceso) {
         /* El motivo al registro, no a la pantalla: aquí solo asusta. */

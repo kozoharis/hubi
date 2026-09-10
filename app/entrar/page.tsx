@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { clienteNavegador } from '@/lib/supabase/navegador'
 import { Ico, Logo } from '../iconos'
 import ColorDeBarra from '../color-barra'
+import { api } from '@/lib/api'
 
 /*
   Tres pasos, no dos.
@@ -81,7 +82,7 @@ export default function Entrar() {
 
     const email = correo.trim().toLowerCase()
 
-    const r = await fetch('/api/alta', {
+    const r = await fetch(api('/api/alta'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ correo: email, palabra }),

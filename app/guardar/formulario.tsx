@@ -21,6 +21,7 @@ import { leerPdf, primeraPagina } from './leer-pdf'
 import { esPdf, tipoDe, conSuTipo, TIPOS_BUENOS } from '@/lib/archivos'
 import CamposEstancia, { ESTANCIA_VACIA, type Estancia } from '../estancia'
 import type { Reserva } from '@/lib/reservas'
+import { api } from '@/lib/api'
 
 type Paso =
   | 'archivo'
@@ -500,7 +501,7 @@ export default function Formulario({
         try {
           const cuerpo = new FormData()
           cuerpo.append('archivo', paraElModelo)
-          const conFoto = await fetch('/api/analizar', { method: 'POST', body: cuerpo })
+          const conFoto = await fetch(api('/api/analizar'), { method: 'POST', body: cuerpo })
           if (abandonado.current) return
 
           const respuesta = await conFoto.json()
@@ -545,7 +546,7 @@ export default function Formulario({
         if (abandonado.current) return
 
         if (textoDelMovil.trim()) {
-          const r = await fetch('/api/analizar', {
+          const r = await fetch(api('/api/analizar'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ texto: textoDelMovil }),
@@ -677,7 +678,7 @@ export default function Formulario({
     }
 
     try {
-      const r = await fetch('/api/documentos', { method: 'POST', body: cuerpo })
+      const r = await fetch(api('/api/documentos'), { method: 'POST', body: cuerpo })
       const respuesta = await r.json()
 
       if (!r.ok) {
@@ -709,7 +710,7 @@ export default function Formulario({
         que un extra tumbe el guardado.
       */
       if (paraLista && respuesta.id) {
-        fetch('/api/compra/listas', {
+        fetch(api('/api/compra/listas'), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: paraLista, ticket_id: respuesta.id }),
@@ -740,7 +741,7 @@ export default function Formulario({
     if (!resultado?.vencimiento) return
     setCreandoAviso(true)
     try {
-      await fetch(`/api/documentos/${resultado.id}`, {
+      await fetch(api(`/api/documentos/${resultado.id}`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -237,7 +237,7 @@ export default async function Inicio({
 
   try {
     const mias = rol === 'ayuda'
-    const filas = await loDeHoy(supabase, mias ? user.id : null)
+    const filas = await loDeHoy(supabase, espacio, mias ? user.id : null)
 
     if (filas.length > 0) {
       /* Los nombres, de una vez. Un viaje por cada rutina para poner

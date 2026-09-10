@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { api } from '@/lib/api'
 
 export default function AccionHecho({
   id,
@@ -15,7 +16,7 @@ export default function AccionHecho({
 
   async function cambiar() {
     setCambiando(true)
-    await fetch(`/api/recordatorios/${id}`, {
+    await fetch(api(`/api/recordatorios/${id}`), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estado: hecho ? 'pendiente' : 'hecho' }),

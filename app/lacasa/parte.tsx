@@ -15,6 +15,7 @@ import {
   Tarjeta,
 } from '../piezas'
 import { enHoras } from '@/lib/dia'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -102,7 +103,7 @@ export default function Parte({
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch('/api/dia', {
+    const r = await fetch(api('/api/dia'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fecha, extra, nota: nota.trim() || null }),

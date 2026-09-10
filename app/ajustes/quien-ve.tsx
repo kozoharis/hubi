@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -83,7 +84,7 @@ export default function QuienVe({
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch('/api/permisos', {
+    const r = await fetch(api('/api/permisos'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

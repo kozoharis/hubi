@@ -1,6 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { hoyAqui } from './tablon'
-import { elEspacioO } from './espacio'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -74,15 +73,28 @@ function comoParte(f: Fila): Parte {
   }
 }
 
+/*
+  ─────────────────────────────────────────────────────────────
+  EL ESPACIO LLEGA DE FUERA, Y NO ES CAPRICHO
+
+  Este módulo lo importan también componentes del NAVEGADOR —para los
+  cálculos y las constantes, no para las consultas—. Y un módulo que
+  viaja al navegador no puede tocar `next/headers`, que es de donde
+  `elEspacio()` saca la ruta.
+
+  Así que aquí el espacio viene por parámetro. Quien llama es una
+  pantalla o una ruta del servidor, y ahí sí está a mano.
+*/
+
 /** El parte de una persona en un día. */
 export async function parteDe(
   supabase: Cliente,
+  espacio: string,
   quien: string,
   fecha?: string
 ): Promise<Parte | null> {
   try {
     const dia = fecha ?? hoyAqui()
-    const espacio = await elEspacioO(supabase)
 
     /* Dos intentos: `horas_extra` es del SQL 41 y, si no está,
        Postgres rechaza la consulta ENTERA en vez de decir «esa columna
@@ -109,11 +121,11 @@ export async function parteDe(
 /** Los últimos partes de una persona, para cuadrar el mes. */
 export async function partesDe(
   supabase: Cliente,
+  espacio: string,
   quien: string,
   desde: string
 ): Promise<Parte[]> {
   try {
-    const espacio = await elEspacioO(supabase)
     const pedir = (campos: string) =>
       supabase
         .from('dias_en_casa')

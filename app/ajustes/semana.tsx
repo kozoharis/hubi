@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import { DIAS, DE_SIEMPRE, type Rutina } from '@/lib/rutinas'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -120,7 +121,7 @@ export default function Semana({
       t.dias.filter((d) => viene.includes(d)).map((d) => ({ que: t.que, dia: d }))
     )
 
-    const r = await fetch('/api/rutinas', {
+    const r = await fetch(api('/api/rutinas'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ para, rutinas }),

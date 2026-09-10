@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { api } from '@/lib/api'
 
 /*
   ¿Esta casa usa la lista de la compra?
@@ -23,7 +24,7 @@ export default function Compra({ puesta }: { puesta: boolean }) {
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch('/api/casa', {
+    const r = await fetch(api('/api/casa'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ usa_compra: !puesta }),

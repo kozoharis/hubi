@@ -13,6 +13,7 @@ import {
 } from '../../piezas'
 import CamposEstancia, { ESTANCIA_VACIA, type Estancia } from '../../estancia'
 import { TIPOS, desglose, comoSeLlama, tipoHabitual, type Impuesto } from '@/lib/impuesto'
+import { api } from '@/lib/api'
 
 type Paso = 'tipo' | 'datos' | 'hecho'
 
@@ -90,7 +91,7 @@ export default function Apuntar({
     setGuardando(true)
 
     try {
-      const r = await fetch('/api/movimientos', {
+      const r = await fetch(api('/api/movimientos'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

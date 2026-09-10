@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Ico } from '../iconos'
 import { Aviso, BotonSecundario } from '../piezas'
+import { api } from '@/lib/api'
 
 type Resultado = {
   variables: { url: boolean; publishable: boolean; secreta: boolean }
@@ -54,7 +55,7 @@ export default function Comprobacion() {
   const [fallo, setFallo] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/comprobacion')
+    fetch(api('/api/comprobacion'))
       .then((r) => r.json())
       .then(setDatos)
       .catch((e) => setFallo(String(e)))

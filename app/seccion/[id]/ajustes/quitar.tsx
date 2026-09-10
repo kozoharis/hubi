@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BotonDestructivo } from '../../../piezas'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -53,7 +54,7 @@ export default function Quitar({
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch(`/api/actividades?id=${encodeURIComponent(seccionId)}`, {
+    const r = await fetch(api(`/api/actividades?id=${encodeURIComponent(seccionId)}`), {
       method: 'DELETE',
     })
 

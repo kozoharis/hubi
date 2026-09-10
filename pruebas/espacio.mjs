@@ -324,6 +324,27 @@ for (const archivo of [...archivos('app'), ...archivos('lib')]) {
   })
 }
 
+/*
+  ─────────────────────────────────────────────────────────────
+  Y LA TERCERA: LLAMAR AL API SIN SALIRSE DEL ESPACIO
+
+  Desde que el espacio vive en la dirección, un `fetch('/api/...')`
+  escrito a pelo pierde el espacio por el camino: la pantalla enseña lo
+  del cliente y el botón de guardar archiva en tu casa.
+
+  Se escribe `fetch(api('/api/...'))`. `api()` mira la barra de
+  direcciones, que es donde está la verdad de en qué espacio cree estar
+  la persona.
+*/
+const pelados = []
+for (const archivo of [...archivos('app'), ...archivos('lib')]) {
+  if (archivo === 'lib/api.ts') continue
+  const lineas = sinComentarios(readFileSync(archivo, 'utf8'))
+  lineas.forEach((l, i) => {
+    if (/fetch\(\s*['"`]\/api\//.test(l)) pelados.push(`${archivo}:${i + 1}`)
+  })
+}
+
 console.log(
   `\n${miradas} consultas a tablas de un espacio · ${avisos.length} sin decir de cuál` +
   `${permitidas > 0 ? ` · ${permitidas} cruzan a propósito` : ''}\n`
@@ -369,6 +390,19 @@ if (sueltos.length > 0) {
   process.exitCode = 1
 }
 
-if (avisos.length === 0 && sueltos.length === 0) {
-  console.log('Todas dicen de qué espacio son, y todas lo preguntan al mismo sitio.\n')
+if (pelados.length > 0) {
+  console.log(
+    `\n${pelados.length} llamadas al API se saltan \`api()\`:\n` +
+    pelados.map((s) => '  ' + s).join('\n') +
+    `\n\nSe escribe \`fetch(api('/api/...'))\`. Si no, la pantalla enseña un\n` +
+    `espacio y el botón de guardar archiva en otro.\n`
+  )
+  process.exitCode = 1
+}
+
+if (avisos.length === 0 && sueltos.length === 0 && pelados.length === 0) {
+  console.log(
+    'Todas dicen de qué espacio son, todas lo preguntan al mismo sitio,\n' +
+    'y ninguna llamada al API se sale de él.\n'
+  )
 }

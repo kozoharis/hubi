@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { cuando, atrasado, type Recordatorio } from '@/lib/tablon'
 import { Ico, pintaDe } from '../iconos'
 import { PastillaAmbito } from '../piezas'
+import { api } from '@/lib/api'
 
 export default function Tarjeta({
   r,
@@ -29,7 +30,7 @@ export default function Tarjeta({
 
   async function cambiar() {
     setCambiando(true)
-    await fetch(`/api/recordatorios/${r.id}`, {
+    await fetch(api(`/api/recordatorios/${r.id}`), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estado: hecho ? 'pendiente' : 'hecho' }),

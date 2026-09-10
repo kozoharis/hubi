@@ -6,6 +6,7 @@ import { Ico, Volver } from '../iconos'
 import ColorDeBarra from '../color-barra'
 import { grabarVoz, sePuedeGrabar, type Grabando } from './grabadora'
 import { decir, callar } from './decir'
+import { api } from '@/lib/api'
 
 type Estado = 'listo' | 'grabando' | 'pensando' | 'buscando' | 'entendido' | 'guardando' | 'hecho'
 
@@ -244,7 +245,7 @@ export default function Grabar({
     setEstado('pensando')
 
     try {
-      const r = await fetch('/api/voz', {
+      const r = await fetch(api('/api/voz'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ texto, pista }),
@@ -286,7 +287,7 @@ export default function Grabar({
       const cuerpo = new FormData()
       cuerpo.append('audio', new File([wav], 'voz.wav', { type: 'audio/wav' }))
 
-      const r = await fetch('/api/voz', { method: 'POST', body: cuerpo })
+      const r = await fetch(api('/api/voz'), { method: 'POST', body: cuerpo })
       const datos = (await r.json()) as Oido & { error?: string; detalle?: string }
 
       if (!r.ok) {
@@ -412,7 +413,7 @@ export default function Grabar({
       if (oido.accion === 'borrar' || oido.accion === 'cambiar') {
         if (!elegida) throw new Error('Elige primero cuál.')
 
-        const r = await fetch(`/api/recordatorios/${elegida}`, {
+        const r = await fetch(api(`/api/recordatorios/${elegida}`), {
           method: oido.accion === 'borrar' ? 'DELETE' : 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: oido.accion === 'borrar' ? undefined : JSON.stringify(oido.cambios ?? {}),
@@ -439,7 +440,7 @@ export default function Grabar({
 
         if (!listaId && oido.compra_lista_nueva && oido.compra_lista_nombre) {
           try {
-            const nueva = await fetch('/api/compra/listas', {
+            const nueva = await fetch(api('/api/compra/listas'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -455,7 +456,7 @@ export default function Grabar({
           }
         }
 
-        const r = await fetch('/api/compra', {
+        const r = await fetch(api('/api/compra'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -526,7 +527,7 @@ export default function Grabar({
               propia compra Y la tarea en la Agenda, que la crea esa
               misma ruta. Una sola verdad en dos sitios.
             */
-            const f = await fetch('/api/compra/listas', {
+            const f = await fetch(api('/api/compra/listas'), {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -563,7 +564,7 @@ export default function Grabar({
         guardar, manda lo corregido.
       */
       if (oido.accion === 'nota') {
-        const r = await fetch('/api/notas', {
+        const r = await fetch(api('/api/notas'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -583,7 +584,7 @@ export default function Grabar({
         /* Todas de una vez. El servidor las mete juntas: o entran
            todas o no entra ninguna. Guardar dos de tres y no decirlo
            sería peor que no guardar nada. */
-        const r = await fetch('/api/recordatorios', {
+        const r = await fetch(api('/api/recordatorios'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -618,7 +619,7 @@ export default function Grabar({
         }
         setCreado(respuesta.id ?? null)
       } else {
-        const r = await fetch('/api/movimientos', {
+        const r = await fetch(api('/api/movimientos'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

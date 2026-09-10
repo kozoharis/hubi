@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import { Aviso } from '../piezas'
 import { hoyAqui } from '@/lib/tablon'
+import { api } from '@/lib/api'
 
 /*
   PONERLE DÍA A UNA COMPRA.
@@ -77,7 +78,7 @@ export default function Programar({
 
     // Si esta categoría todavía no tiene lista, se crea al vuelo.
     if (!id) {
-      const c = await fetch('/api/compra/listas', {
+      const c = await fetch(api('/api/compra/listas'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre: 'La compra', seccion_id: seccionId }),
@@ -91,7 +92,7 @@ export default function Programar({
       id = ((await c.json()) as { lista?: { id: string } }).lista?.id ?? null
     }
 
-    const r = await fetch('/api/compra/listas', {
+    const r = await fetch(api('/api/compra/listas'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

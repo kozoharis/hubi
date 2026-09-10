@@ -93,7 +93,7 @@ export default async function DiaADia() {
 
     cuantasNotas(supabase, user.id),
 
-    loDeHoy(supabase, soyLaAyuda ? user.id : null, hoyAqui()),
+    loDeHoy(supabase, hogarId, soyLaAyuda ? user.id : null, hoyAqui()),
 
     /* Cuántas cosas ha dejado el asesor sin ver. Envuelto por lo
        mismo de siempre: si falta la tabla, la pantalla entera no

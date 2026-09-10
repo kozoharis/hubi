@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Ico } from './iconos'
 import { Aviso, BotonPrincipal, BotonSecundario, Tarjeta } from './piezas'
 import type { Casa } from '@/lib/casas'
+import { api, laPuertaDe } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -48,7 +49,7 @@ export default function Casas({ casas }: { casas: Casa[] }) {
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch('/api/casas', {
+    const r = await fetch(api('/api/casas'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ casa, que }),
@@ -72,9 +73,25 @@ export default function Casas({ casas }: { casas: Casa[] }) {
     }
 
     setAbierto(false)
-    /* `refresh` y no `push`: se recarga la pantalla donde está, ya con
-       la casa nueva. Mandarle al inicio sería sacarle de donde estaba
-       por un cambio que él ha pedido. */
+
+    /*
+      ANTES SE QUEDABA DONDE ESTABA. AHORA VA A LA PUERTA DEL ESPACIO.
+
+      Se recargaba la pantalla en la que estuvieras, con la idea de no
+      sacarte de donde estabas por un cambio que tú habías pedido. Y
+      era buena idea mientras el espacio no estaba en la dirección.
+
+      Ya lo está. Y además aquella idea tenía un agujero: media
+      aplicación tiene direcciones con un identificador dentro
+      —`/documentos/3f2a…`— que es del espacio del que vienes. Quedarse
+      ahí enseñaba un «esto ya no está» justo después de un cambio que
+      sí había funcionado.
+    */
+    if (que === 'mirar' || que === 'aceptar') {
+      router.push(laPuertaDe(casa))
+      return
+    }
+
     router.refresh()
   }
 

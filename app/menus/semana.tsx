@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Ico } from '../iconos'
 import { Aviso, BotonPrincipal, BotonSecundario, Vacio } from '../piezas'
+import { api } from '@/lib/api'
 import {
   comoSeLlamaElDia,
   comoSeLlamaLaSemana,
@@ -46,7 +47,7 @@ export default function Semana() {
 
   async function traer(cual?: string) {
     try {
-      const r = await fetch(`/api/menus${cual ? `?lunes=${cual}` : ''}`)
+      const r = await fetch(api(`/api/menus${cual ? `?lunes=${cual}` : ''}`))
       const d = (await r.json()) as {
         lunes?: string
         dias?: string[]
@@ -107,7 +108,7 @@ export default function Semana() {
       ]
     })
 
-    const r = await fetch('/api/menus', {
+    const r = await fetch(api('/api/menus'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -130,7 +131,7 @@ export default function Semana() {
     setGuardando(true)
     setAviso(null)
 
-    const r = await fetch('/api/menus', {
+    const r = await fetch(api('/api/menus'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ titulo: titulo.trim(), url: url.trim() }),
@@ -155,7 +156,7 @@ export default function Semana() {
 
   async function quitarIdea(id: string) {
     setRecetas((x) => x.filter((r) => r.id !== id))
-    await fetch(`/api/menus?receta=${id}`, { method: 'DELETE' })
+    await fetch(api(`/api/menus?receta=${id}`), { method: 'DELETE' })
   }
 
   return (

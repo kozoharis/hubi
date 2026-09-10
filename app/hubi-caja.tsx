@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import HubiInput, { type EstadoHubi } from './hubi-input'
 import { esUnaOrden } from '@/lib/entender-voz'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -138,7 +139,7 @@ export default function HubiCaja({
     // ── Una pregunta. Se contesta aquí. ──
     setEstado('pensando')
     try {
-      const r = await fetch('/api/voz', {
+      const r = await fetch(api('/api/voz'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ texto: t, pista: 'consulta' }),

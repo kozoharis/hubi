@@ -1,6 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { hoyAqui } from './tablon'
-import { elEspacioO } from './espacio'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -71,12 +70,12 @@ export function diaDe(iso: string): number {
 }
 
 /** Todo el plan de la casa. Para la pantalla que lo monta. */
-export async function planDeLaCasa(supabase: Cliente): Promise<Rutina[]> {
+export async function planDeLaCasa(supabase: Cliente, espacio: string): Promise<Rutina[]> {
   try {
     const { data, error } = await supabase
       .from('rutinas')
       .select('id, que, dia, hora, para, activa, orden')
-      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('hogar_id', espacio)
       .order('dia')
       .order('orden')
       .order('hora', { ascending: true, nullsFirst: true })
@@ -97,6 +96,7 @@ export async function planDeLaCasa(supabase: Cliente): Promise<Rutina[]> {
  */
 export async function loDeHoy(
   supabase: Cliente,
+  espacio: string,
   deQuien?: string | null,
   fecha?: string
 ): Promise<RutinaHoy[]> {
@@ -106,7 +106,7 @@ export async function loDeHoy(
     let q = supabase
       .from('rutinas')
       .select('id, que, dia, hora, para, activa, orden')
-      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('hogar_id', espacio)
       .eq('dia', diaDe(dia))
       .eq('activa', true)
       .order('orden')
@@ -126,7 +126,7 @@ export async function loDeHoy(
     const { data: hechas } = await supabase
       .from('rutinas_hechas')
       .select('rutina_id, quien')
-      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('hogar_id', espacio)
       .eq('fecha', dia)
       .in('rutina_id', ids)
 

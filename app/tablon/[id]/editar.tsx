@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Aviso, BotonDestructivo, BotonSecundario } from '../../piezas'
+import { api } from '@/lib/api'
 
 /*
   Cambiar o borrar una tarea que ya existe.
@@ -87,7 +88,7 @@ export default function Editar({
     setAviso(null)
 
     try {
-      const r = await fetch(`/api/recordatorios/${id}`, {
+      const r = await fetch(api(`/api/recordatorios/${id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -115,7 +116,7 @@ export default function Editar({
   async function borrar() {
     setBorrando(true)
     try {
-      const r = await fetch(`/api/recordatorios/${id}`, { method: 'DELETE' })
+      const r = await fetch(api(`/api/recordatorios/${id}`), { method: 'DELETE' })
       if (!r.ok) throw new Error((await r.json()).error)
       router.push('/agenda')
       router.refresh()

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../../../iconos'
 import { Aviso } from '../../../piezas'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -147,7 +148,7 @@ function Lista({
     setAviso(null)
     setOcupado(true)
 
-    const r = await fetch('/api/categorias', {
+    const r = await fetch(api('/api/categorias'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ seccion_id: seccionId, nombre: nombre.trim(), naturaleza }),
@@ -172,7 +173,7 @@ function Lista({
     setOcupado(true)
     setFallo(null)
 
-    const r = await fetch('/api/categorias', {
+    const r = await fetch(api('/api/categorias'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, nombre: nuevoNombre.trim() }),
@@ -218,7 +219,7 @@ function Lista({
 
   async function retirar(p: Partida) {
     setOcupado(true)
-    const r = await fetch(`/api/categorias?id=${encodeURIComponent(p.id)}`, { method: 'DELETE' })
+    const r = await fetch(api(`/api/categorias?id=${encodeURIComponent(p.id)}`), { method: 'DELETE' })
     setOcupado(false)
 
     if (!r.ok) {

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { comoSeLlama, tipoHabitual, type Impuesto } from '@/lib/impuesto'
+import { api } from '@/lib/api'
 
 /*
   ¿Esta casa lleva IGIC o IVA?
@@ -36,7 +37,7 @@ export default function ImpuestoDeLaCasa({ puesto }: { puesto: Impuesto }) {
     setFallo(null)
     setOcupado(cual)
 
-    const r = await fetch('/api/casa', {
+    const r = await fetch(api('/api/casa'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ impuesto: cual }),

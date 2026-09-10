@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -59,7 +60,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
     setAviso(null)
     setOcupado(c.id)
 
-    const r = await fetch('/api/carpetas', {
+    const r = await fetch(api('/api/carpetas'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: c.id, activa: !c.activa }),
@@ -80,7 +81,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
     setAviso(null)
     setOcupado('nueva')
 
-    const r = await fetch('/api/carpetas', {
+    const r = await fetch(api('/api/carpetas'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre: nombre.trim(), icono }),
@@ -119,7 +120,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
     setFallo(null)
     setOcupado(id)
 
-    const r = await fetch('/api/carpetas', {
+    const r = await fetch(api('/api/carpetas'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, icono: nuevo }),

@@ -7,6 +7,7 @@ import { pasilloDe, PASILLOS } from '@/lib/comprables'
 import { Ico } from '../iconos'
 import { Aviso } from '../piezas'
 import Programar from './programar'
+import { api } from '@/lib/api'
 
 type Cosa = {
   id: string
@@ -264,7 +265,7 @@ export default function Pantalla({
     }
     setAviso(null)
 
-    const r = await fetch('/api/compra/listas', {
+    const r = await fetch(api('/api/compra/listas'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       /* `solo_nombre` es lo que evita que renombrar le quite el día a
@@ -285,7 +286,7 @@ export default function Pantalla({
     if (!laLista) return
     setAviso(null)
 
-    const r = await fetch(`/api/compra/listas?id=${laLista.id}`, { method: 'DELETE' })
+    const r = await fetch(api(`/api/compra/listas?id=${laLista.id}`), { method: 'DELETE' })
     if (!r.ok) {
       const d = (await r.json().catch(() => ({}))) as { error?: string; detalle?: string }
       setAviso(d.detalle ?? d.error ?? 'No se ha podido quitar.')
@@ -312,7 +313,7 @@ export default function Pantalla({
     if (nombre.length < 2) return
 
     setAviso(null)
-    const r = await fetch('/api/compra/listas', {
+    const r = await fetch(api('/api/compra/listas'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre, seccion_id: destino }),
@@ -356,7 +357,7 @@ export default function Pantalla({
     setCosas((c) => [...c, provisional])
 
     try {
-      const r = await fetch('/api/compra', {
+      const r = await fetch(api('/api/compra'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ que: limpio, seccion_id: destino, lista_id: listaId }),
@@ -400,7 +401,7 @@ export default function Pantalla({
     setCosas((c) => c.map((x) => (x.id === cosa.id ? { ...x, comprado: !antes } : x)))
 
     try {
-      const r = await fetch(`/api/compra/${cosa.id}`, {
+      const r = await fetch(api(`/api/compra/${cosa.id}`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comprado: !antes }),
@@ -422,7 +423,7 @@ export default function Pantalla({
     setCosas((c) => c.filter((x) => x.id !== cosa.id))
 
     try {
-      const r = await fetch(`/api/compra/${cosa.id}`, { method: 'DELETE' })
+      const r = await fetch(api(`/api/compra/${cosa.id}`), { method: 'DELETE' })
       if (!r.ok) throw new Error((await r.json()).error)
       ultimaHuella.current = ''
       empezar(() => router.refresh())
@@ -446,7 +447,7 @@ export default function Pantalla({
     setCerrando(true)
     setAviso(null)
     try {
-      const r = await fetch('/api/compra', {
+      const r = await fetch(api('/api/compra'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lista_id: listaId }),
@@ -478,7 +479,7 @@ export default function Pantalla({
     setRecuperando(deLista.id)
     setAviso(null)
     try {
-      const r = await fetch('/api/compra/recuperar', {
+      const r = await fetch(api('/api/compra/recuperar'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ de: deLista.id, a: listaId }),

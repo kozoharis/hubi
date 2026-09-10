@@ -406,6 +406,7 @@ export async function PATCH(
   if (tocaVencimiento) {
     const { fallo, sinMarca, aMedias } = await rehacerAvisos(supabase, {
       documentoId: id,
+      espacio: hogarId,
       titulo,
       creadoPor: user.id,
       hoy: hoyAqui(),

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Repetir, { type Repeticion } from '../../repetir'
 import { Ico, Volver } from '../../iconos'
 import { hoyAqui } from '@/lib/tablon'
+import { api } from '@/lib/api'
 import {
   Aviso,
   BotonPrincipal,
@@ -105,7 +106,7 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
 
     setGuardando(true)
     try {
-      const r = await fetch('/api/recordatorios', {
+      const r = await fetch(api('/api/recordatorios'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -7,6 +7,7 @@ import { Aviso } from '../piezas'
 import { euros } from '@/lib/periodos'
 import { nombreDelRol } from '@/lib/roles'
 import { haceCuanto, type CasaEnLaMesa } from '@/lib/escritorio'
+import { api, laPuertaDe } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -60,7 +61,7 @@ export default function Mesa({ casas, hoy }: { casas: CasaEnLaMesa[]; hoy: strin
     setFallo(null)
     setYendo(casa)
 
-    const r = await fetch('/api/casas', {
+    const r = await fetch(api('/api/casas'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ casa, que: 'mirar' }),
@@ -77,7 +78,14 @@ export default function Mesa({ casas, hoy }: { casas: CasaEnLaMesa[]; hoy: strin
       return
     }
 
-    router.push('/')
+    /*
+      A la dirección del espacio, no a `/` a secas.
+
+      Ésta es la diferencia de todo el paso 3: la pestaña se queda
+      apuntando a ESTE cliente. Puedes abrir otro en otra pestaña y no
+      se pisan — antes mandaba el último que hubieras tocado.
+    */
+    router.push(laPuertaDe(casa))
   }
 
   return (

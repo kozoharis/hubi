@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../../../iconos'
 import { Aviso } from '../../../piezas'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -68,7 +69,7 @@ export default function Dividir({
     setFallo(null)
     setOcupado(true)
 
-    const r = await fetch('/api/actividades', {
+    const r = await fetch(api('/api/actividades'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: seccionId, ...cambios }),

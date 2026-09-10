@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { elTrozoDelEspacio } from '@/lib/api'
 
 /**
  * Se ejecuta antes de cada página.
@@ -57,8 +58,55 @@ const RUTAS_ABIERTAS = [
   '/api/alta',
 ]
 
+/*
+  ═══════════════════════════════════════════════════════════════
+  EL ESPACIO, EN LA DIRECCIÓN
+  ═══════════════════════════════════════════════════════════════
+
+      /e/2f1c…/papeles   →   por dentro, /papeles
+                             y una cabecera que dice el espacio
+
+  La dirección de la barra NO cambia —esto reescribe por dentro, no
+  redirige—, así que la persona ve en todo momento en qué espacio está,
+  y dos pestañas con dos espacios distintos ya no pueden pisarse: cada
+  petición lleva el suyo escrito.
+
+  ─────────────────────────────────────────────────────────────
+  LA CABECERA QUE VIENE DE FUERA SE TIRA. SIEMPRE.
+
+  `x-espacio` la pone ESTE archivo leyendo la dirección, y nadie más.
+  Sin la línea que la borra, cualquiera podría mandarla a mano desde
+  el navegador y elegir espacio por su cuenta.
+
+  Se borra antes de mirar la dirección y se borra también cuando la
+  dirección no lleva espacio, que es el caso que se olvida.
+
+  ─────────────────────────────────────────────────────────────
+  Y AUNQUE SE COLARA, NO ABRE NADA
+
+  Las políticas preguntan `soy_de(<ese espacio>)`. La cabecera elige
+  entre TUS espacios; no te mete en uno ajeno. Esto es una comodidad
+  para que cada pestaña sepa dónde está, no una llave.
+*/
 export async function proxy(peticion: NextRequest) {
-  let respuesta = NextResponse.next({ request: peticion })
+  const cabeceras = new Headers(peticion.headers)
+  cabeceras.delete('x-espacio')
+
+  /* La misma función que usa el navegador para poner el espacio en las
+     llamadas al API. Dos copias de esta regla acabarían diciendo cosas
+     distintas el día que alguien cambiara una. */
+  const trozo = elTrozoDelEspacio(peticion.nextUrl.pathname)
+  const espacio = trozo ? trozo.slice(3) : null
+  if (espacio) cabeceras.set('x-espacio', espacio)
+
+  /* Lo que la aplicación cree que le han pedido: la dirección sin el
+     trozo del espacio. Es lo que se compara con las rutas abiertas y lo
+     que se reescribe al final. */
+  const dentro = trozo
+    ? peticion.nextUrl.pathname.slice(trozo.length) || '/'
+    : peticion.nextUrl.pathname
+
+  let respuesta = NextResponse.next({ request: { headers: cabeceras } })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
@@ -70,7 +118,7 @@ export async function proxy(peticion: NextRequest) {
         },
         setAll(lista) {
           lista.forEach(({ name, value }) => peticion.cookies.set(name, value))
-          respuesta = NextResponse.next({ request: peticion })
+          respuesta = NextResponse.next({ request: { headers: cabeceras } })
           lista.forEach(({ name, value, options }) =>
             respuesta.cookies.set(name, value, options)
           )
@@ -95,8 +143,9 @@ export async function proxy(peticion: NextRequest) {
   const { data: credencial } = await supabase.auth.getClaims()
   const user = credencial?.claims?.sub ? credencial.claims : null
 
-  const ruta = peticion.nextUrl.pathname
-  const esAbierta = RUTAS_ABIERTAS.some((r) => ruta.startsWith(r))
+  /* Se mira la ruta DE DENTRO. Si no, `/e/<espacio>/entrar` no sería
+     una ruta abierta y quien no ha entrado se quedaría dando vueltas. */
+  const esAbierta = RUTAS_ABIERTAS.some((r) => dentro.startsWith(r))
 
   if (!user && !esAbierta) {
     const destino = peticion.nextUrl.clone()
@@ -104,13 +153,32 @@ export async function proxy(peticion: NextRequest) {
     return NextResponse.redirect(destino)
   }
 
-  if (user && ruta.startsWith('/entrar')) {
+  if (user && dentro.startsWith('/entrar')) {
     const destino = peticion.nextUrl.clone()
     destino.pathname = '/'
     return NextResponse.redirect(destino)
   }
 
-  return respuesta
+  if (!espacio) return respuesta
+
+  /*
+    Y la reescritura.
+
+    Las galletas de la sesión las ha ido dejando Supabase en
+    `respuesta` mientras se renovaba el testigo. Si se devolviera una
+    respuesta nueva sin copiarlas, la sesión se perdería cada vez que
+    tocara renovarla — y eso son unas horas, así que parecería que HUBI
+    echa a la gente sola de vez en cuando.
+  */
+  const destino = peticion.nextUrl.clone()
+  destino.pathname = dentro
+
+  const reescrita = NextResponse.rewrite(destino, {
+    request: { headers: cabeceras },
+  })
+  for (const galleta of respuesta.cookies.getAll()) reescrita.cookies.set(galleta)
+
+  return reescrita
 }
 
 export const config = {

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
+import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -82,7 +83,7 @@ export default function Unidades({
     setAviso(null)
     setOcupado(true)
 
-    const r = await fetch('/api/unidades', {
+    const r = await fetch(api('/api/unidades'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -112,7 +113,7 @@ export default function Unidades({
     setOcupado(true)
     setFallo(null)
 
-    const r = await fetch('/api/unidades', {
+    const r = await fetch(api('/api/unidades'), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, nombre: nuevoNombre.trim() }),
@@ -139,7 +140,7 @@ export default function Unidades({
   */
   async function retirar(id: string) {
     setOcupado(true)
-    const r = await fetch(`/api/unidades?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+    const r = await fetch(api(`/api/unidades?id=${encodeURIComponent(id)}`), { method: 'DELETE' })
     setOcupado(false)
 
     if (!r.ok) {

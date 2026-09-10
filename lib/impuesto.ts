@@ -43,7 +43,6 @@
   está de paso.
 */
 
-import { elEspacioO } from './espacio'
 
 export type Impuesto = 'ninguno' | 'igic' | 'iva'
 
@@ -264,7 +263,10 @@ export async function desgloseQueToca(
       const { data: cat } = await supabase
         .from('categorias')
         .select('impuesto_tipo')
-        .eq('hogar_id', await elEspacioO(supabase))
+        /* El espacio ya venía en `datos.hogarId`, dos renglones más
+           arriba: llamar aparte a `elEspacio()` era pedirlo dos veces y
+           abrir la puerta a que un día no coincidieran. */
+        .eq('hogar_id', datos.hogarId)
         .eq('id', datos.categoriaId)
         .maybeSingle()
       if (cat && cat.impuesto_tipo != null) deLaPartida = Number(cat.impuesto_tipo)
