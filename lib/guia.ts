@@ -7,7 +7,7 @@ import type { Ambito } from '@/lib/ambitos'
   ═══════════════════════════════════════════════════════════════
 
   Una sola lista, y de ella salen las dos pantallas: la tarjeta de
-  «Primeros pasos» del Inicio y la de «Cómo se hace» de Ajustes.
+  «Primeros pasos» del Inicio y la de «Cómo se usa HUBI» de Ajustes.
   Estaban destinadas a divergir en la segunda semana si cada una
   tenía la suya.
 
@@ -37,7 +37,7 @@ export type Accion = {
   para?: Papel[]
   /*
     Los que salen en la tarjeta del Inicio, en este orden. Los demás
-    están en «Cómo se hace» desde el primer día, pero no se ponen
+    están en «Cómo se usa HUBI» desde el primer día, pero no se ponen
     delante de nadie: cuatro cosas por hacer se leen, nueve se
     ignoran.
   */

@@ -13,18 +13,23 @@ export const dynamic = 'force-dynamic'
 
 /*
   ═══════════════════════════════════════════════════════════════
-  CÓMO SE HACE
+  CÓMO SE USA HUBI
   ═══════════════════════════════════════════════════════════════
 
-  La guía de dentro de HUBI. Vive en Ajustes y se llega también
-  desde la nota de «Primeros pasos» del Inicio.
+  La guía de dentro de HUBI. Es lo primero de «Tú» en Ajustes, y se
+  llega también desde la nota de «Primeros pasos» del Inicio.
 
   ─────────────────────────────────────────────────────────────
-  POR QUÉ NO SE LLAMA «AYUDA»
+  SE LLAMABA «CÓMO SE HACE», Y NO SE ENTENDÍA
 
-  Porque «ayuda» suena a que algo va mal, y aquí no va mal nada:
-  alguien está aprendiendo a usar su casa. «Cómo se hace» es lo que
-  diría una persona.
+  Porque no dice de QUÉ. «Cómo se hace» ¿el qué? Puesto en una lista
+  de ajustes, al lado de «Avisos en el móvil» y «Tu calendario», lo
+  más razonable es leerlo como una instrucción para algo de ahí
+  mismo, no como la guía entera de la aplicación.
+
+  Con el objeto puesto no hay duda, y sigue sin llamarse «Ayuda»:
+  «ayuda» suena a que algo va mal, y aquí no va mal nada — alguien
+  está aprendiendo a usar su casa.
 
   ─────────────────────────────────────────────────────────────
   Y NO ES LA GUÍA ESCRITA
@@ -63,7 +68,7 @@ export default async function ComoSeHace({
         <Volver href="/ajustes" />
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono="ojo" ambito="azul" tam={44} />
-          <h1 className="t-titulo">Cómo se hace</h1>
+          <h1 className="t-titulo">Cómo se usa HUBI</h1>
         </div>
       </Cabecera>
 

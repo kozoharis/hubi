@@ -6,8 +6,8 @@ import { clienteServidor } from '@/lib/supabase/servidor'
 import BotonSalir from '../boton-salir'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
-import { Ico, Volver, type Icono } from '../iconos'
-import { ambitoDe, type Ambito, PastillaAmbito, Pildora } from '../piezas'
+import { Ico, Logo, Volver, type Icono } from '../iconos'
+import { ambitoDe, AMBITO, type Ambito, PastillaAmbito, Pildora } from '../piezas'
 import SelectorTema from '../tema'
 import { leerPerfil } from '@/lib/perfil'
 import { miHogar, mandaEnSuCasa } from '@/lib/hogar'
@@ -482,6 +482,48 @@ export default async function Ajustes({
           <TuPerfil nombre={nombre} foto={perfil.foto} />
         </div>
 
+        {/*
+          ── CÓMO SE USA HUBI ──
+
+          Estaba abajo del todo, encima de «Salir», con el
+          razonamiento de que es donde se busca la ayuda en casi
+          cualquier aplicación. Y es verdad —para quien la BUSCA.
+
+          El problema es el otro: quien no sabe que existe. Ése no
+          baja hasta el final de una pantalla de ajustes, porque no
+          sabe que hay nada que encontrar. Y es exactamente la persona
+          para la que se hizo.
+
+          Se llamaba «Cómo se hace», que no dice de qué. Ahora lleva
+          el objeto puesto y se ve: es lo primero de «Tú» después de
+          tu nombre, con el símbolo delante y en su propio color, no
+          una fila más entre las filas.
+
+          Y sin el vídeo dentro, a propósito. Un vídeo de treinta
+          segundos moviéndose en la pantalla de ajustes es algo que
+          quien ya sabe usar HUBI se traga cada vez que entra a
+          cambiar el tema.
+        */}
+        <Link
+          href="/como-se-hace"
+          className="tocable mt-4 flex items-center gap-3.5 rounded-[20px] border px-4 py-4"
+          style={{
+            borderColor: `${AMBITO.azul}59`,
+            background: `${AMBITO.azul}14`,
+          }}
+        >
+          <Logo tam={40} />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[19px] font-extrabold leading-snug tracking-tight">
+              Cómo se usa HUBI
+            </span>
+            <span className="t-apoyo mt-1 block">
+              Un vídeo corto de cada cosa que sabe hacer
+            </span>
+          </span>
+          <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0" />
+        </Link>
+
         {/* ── Cómo se ve ── */}
         <h2 className="rotulo mt-5">Cómo se ve</h2>
         <div className="mt-2.5">
@@ -528,36 +570,8 @@ export default async function Ajustes({
           />
         </div>
 
-        {/*
-          ── CÓMO SE HACE ──
-
-          En «Tú» y no en «La casa». Estuvo un rato fuera de las dos
-          pestañas, abajo del todo, con el razonamiento de que no
-          configura nada — y era verdad, pero era el razonamiento
-          equivocado.
-
-          Aprender a usar HUBI es algo TUYO: no cambia nada de la
-          casa, no lo ve nadie más y no depende de quién seas en ella.
-          Está al lado de tu nombre, tu tema y tus avisos, que es
-          exactamente la misma clase de cosa.
-
-          Y aquí lo encuentra todo el mundo. «La casa» solo la abre
-          quien configura algo; «Tú» es la pestaña que sale al entrar.
-
-          Justo encima de «Salir» porque es donde se busca la ayuda en
-          casi cualquier aplicación: al final de lo personal.
-        */}
+        {/* ── Y la puerta de salida, al final de lo tuyo ── */}
         <div className="mt-8 border-t border-borde pt-6">
-          <Opcion
-            href="/como-se-hace"
-            icono="ojo"
-            ambito="azul"
-            titulo="Cómo se hace"
-            pie="Vídeos cortos de cada cosa que sabe hacer HUBI"
-          />
-        </div>
-
-        <div className="mt-5">
           <BotonSalir />
         </div>
           </>
