@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/app/enlace'
 import type { ReactNode } from 'react'
 import { Ico, type Icono } from './iconos'
 import { AMBITO, ambitoDeColor, type Ambito } from '@/lib/ambitos'

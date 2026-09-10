@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/app/enlace'
 export const metadata = {
   title: 'Privacidad · HUBI',
 }

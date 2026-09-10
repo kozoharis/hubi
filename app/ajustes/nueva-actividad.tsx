@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useIr } from '@/app/enlace'
 import { Ico } from '../iconos'
 import { api } from '@/lib/api'
 
@@ -55,7 +55,7 @@ const TIPOS: { id: Tipo; emoji: string; titulo: string; pie: string; ejemplo: st
 ]
 
 export default function NuevaActividad() {
-  const router = useRouter()
+  const router = useIr()
 
   const [abierto, setAbierto] = useState(false)
   const [tipo, setTipo] = useState<Tipo | null>(null)

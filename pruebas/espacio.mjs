@@ -345,6 +345,62 @@ for (const archivo of [...archivos('app'), ...archivos('lib')]) {
   })
 }
 
+/*
+  ─────────────────────────────────────────────────────────────
+  Y LA CUARTA: NAVEGAR SIN SALIRSE DEL ESPACIO
+
+  `next/link` no sabe nada de espacios: `<Link href="/agenda">` desde
+  `/e/<cliente>/papeles` te deja en `/agenda`, sin espacio, y ahí
+  vuelve a mandar `casa_activa`.
+
+  Se importa de `@/app/enlace`, que es el mismo Link con el espacio
+  puesto. Y para saltar desde el código, `useIr()` en vez de
+  `useRouter()`.
+
+  El único que puede importar `next/link` es `app/enlace.tsx`, que es
+  quien lo envuelve.
+*/
+const FUERA = ['/entrar', '/empezar', '/escritorio', '/privacidad', '/terminos', '/api']
+const sueltosDeNavegar = []
+for (const archivo of archivos('app')) {
+  if (archivo === 'app/enlace.tsx') continue
+  const crudoNav = readFileSync(archivo, 'utf8')
+  const lineas = sinComentarios(crudoNav)
+  const conLineas = crudoNav.split('\n')
+
+  /* Si el archivo ya usa el nuestro, su `router` es el bueno. */
+  const yaEsElNuestro = /useIr\s*\}?\s*from '@\/app\/enlace'/.test(crudoNav)
+
+  lineas.forEach((l, i) => {
+    /* Solo el Link, no las otras cosas que viven en `next/link`
+       —`useLinkStatus`, por ejemplo, que no navega a ninguna parte. */
+    /* `import Link from 'next/link'` y también
+       `import Link, { useLinkStatus } from 'next/link'`, que es como
+       estaba escrita la barra de navegación — la pantalla con más
+       enlaces de HUBI— y se coló por no contemplar la coma. */
+    if (/^import\s+Link\s*[,]?.*from 'next\/link'/.test(l.trim())) {
+      sueltosDeNavegar.push(`${archivo}:${i + 1}  Link de next`)
+    }
+    /*
+      `useRouter` a secas NO se marca: media aplicación lo usa solo
+      para `refresh()`, que no navega a ninguna parte. Marcarlo sería
+      pedir que cambien veinte archivos donde no hay nada que arreglar,
+      y una regla que grita sin motivo se acaba apagando.
+
+      Lo que se marca es el salto a un camino escrito a mano.
+    */
+    const salto = l.match(/router\.(push|replace)\(\s*[`'"](\/[^`'"]*)/)
+    const encima = conLineas.slice(Math.max(0, i - 6), i).join('\n')
+    if (
+      salto && !yaEsElNuestro &&
+      !/espacio: a propósito/.test(encima) &&
+      !FUERA.some((f) => salto[2] === f || salto[2].startsWith(f + '/'))
+    ) {
+      sueltosDeNavegar.push(`${archivo}:${i + 1}  router.${salto[1]}('${salto[2]}…')`)
+    }
+  })
+}
+
 console.log(
   `\n${miradas} consultas a tablas de un espacio · ${avisos.length} sin decir de cuál` +
   `${permitidas > 0 ? ` · ${permitidas} cruzan a propósito` : ''}\n`
@@ -400,9 +456,23 @@ if (pelados.length > 0) {
   process.exitCode = 1
 }
 
-if (avisos.length === 0 && sueltos.length === 0 && pelados.length === 0) {
+if (sueltosDeNavegar.length > 0) {
   console.log(
-    'Todas dicen de qué espacio son, todas lo preguntan al mismo sitio,\n' +
-    'y ninguna llamada al API se sale de él.\n'
+    `\n${sueltosDeNavegar.length} sitios navegan por su cuenta:\n` +
+    sueltosDeNavegar.map((s) => '  ' + s).join('\n') +
+    `\n\nEl Link sale de \`@/app/enlace\` y los saltos de \`useIr()\`. Con los de\n` +
+    `Next, pulsar un enlace te saca del espacio y vuelve a mandar el dato\n` +
+    `global.\n`
+  )
+  process.exitCode = 1
+}
+
+if (
+  avisos.length === 0 && sueltos.length === 0 &&
+  pelados.length === 0 && sueltosDeNavegar.length === 0
+) {
+  console.log(
+    'Todas dicen de qué espacio son y lo preguntan al mismo sitio.\n' +
+    'Ni las llamadas al API ni los enlaces se salen de él.\n'
   )
 }

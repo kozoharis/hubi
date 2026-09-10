@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useIr } from '@/app/enlace'
 import { Aviso, BotonDestructivo, BotonSecundario } from '../../piezas'
 import { api } from '@/lib/api'
 
@@ -62,7 +62,7 @@ export default function Editar({
   }
   personas: Persona[]
 }) {
-  const router = useRouter()
+  const router = useIr()
 
   const [abierto, setAbierto] = useState(false)
   const [guardando, setGuardando] = useState(false)

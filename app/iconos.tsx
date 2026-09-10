@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/app/enlace'
 import type { Ambito } from '@/lib/ambitos'
 /*
   Los iconos de HUBI.

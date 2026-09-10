@@ -1,6 +1,7 @@
 'use client'
 
-import Link, { useLinkStatus } from 'next/link'
+import { useLinkStatus } from 'next/link'
+import Link from '@/app/enlace'
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { Ico, type Icono } from './iconos'
 import { useCasa } from './actividades-contexto'

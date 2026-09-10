@@ -9,6 +9,7 @@ import { elEspacio } from '@/lib/espacio'
 import { genteDeLaCasa, elAsesor, type Quien } from '@/lib/gente'
 import { cuandoSePuso } from '@/lib/notas'
 import Hilo, { type Cosa } from './hilo'
+import { aqui } from '@/lib/enlaces'
 
 export const dynamic = 'force-dynamic'
 
@@ -89,7 +90,7 @@ export default async function DelAsesor() {
 
   /* Sin la otra parte no hay conversación. Se vuelve al Inicio en vez
      de enseñar una pantalla vacía que no explica nada. */
-  if (!elOtro) redirect('/')
+  if (!elOtro) redirect(await aqui('/'))
 
   const suyo = elOtro
 

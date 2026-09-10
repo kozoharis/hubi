@@ -126,6 +126,9 @@ export default function Empezar({ nombre }: { nombre: string }) {
        tiene que volver a leer que ahora sí hay casa. Sin esto se
        entraría a un HUBI que todavía cree que no existe. */
     router.refresh()
+    /* espacio: a propósito — al entrar todavía no hay espacio elegido.
+       Va al Inicio a secas, y allí `casa_activa` decide cuál se enseña
+       la primera vez. Desde ahí ya se navega dentro de él. */
     router.push('/')
   }
 

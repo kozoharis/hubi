@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { AMBITO } from '@/lib/ambitos'
-import Link from 'next/link'
+import Link from '@/app/enlace'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import { Aviso } from '../piezas'

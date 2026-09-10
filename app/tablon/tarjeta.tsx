@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/app/enlace'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { cuando, atrasado, type Recordatorio } from '@/lib/tablon'

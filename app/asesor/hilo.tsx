@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import Link from '@/app/enlace'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useIr } from '@/app/enlace'
 import { BotonDestructivo } from '../../../piezas'
 import { api } from '@/lib/api'
 
@@ -42,7 +42,7 @@ export default function Quitar({
   apuntes: number
   papeles: number
 }) {
-  const router = useRouter()
+  const router = useIr()
 
   const [abierto, setAbierto] = useState(false)
   const [ocupado, setOcupado] = useState(false)

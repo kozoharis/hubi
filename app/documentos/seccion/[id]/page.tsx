@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import Link from '@/app/enlace'
 import { redirect, notFound } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'

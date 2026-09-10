@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { aqui } from '@/lib/enlaces'
 
 /*
   El Tablón vive ahora dentro de la Agenda.
@@ -14,6 +15,6 @@ import { redirect } from 'next/navigation'
   pestaña propia, se ve tachado en su día— así que ahora todo va a la
   Agenda a secas, que es donde está lo que se buscaba.
 */
-export default function Tablon() {
-  redirect('/agenda')
+export default async function Tablon() {
+  redirect(await aqui('/agenda'))
 }

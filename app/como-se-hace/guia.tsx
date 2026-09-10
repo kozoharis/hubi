@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/app/enlace'
 import { useEffect, useRef, useState } from 'react'
 import { Ico } from '../iconos'
 import { BotonPrincipal, BotonSecundario, Fila, PastillaAmbito } from '../piezas'

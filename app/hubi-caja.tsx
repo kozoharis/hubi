@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useIr } from '@/app/enlace'
+import Link from '@/app/enlace'
 import HubiInput, { type EstadoHubi } from './hubi-input'
 import { esUnaOrden } from '@/lib/entender-voz'
 import { api } from '@/lib/api'
@@ -93,7 +93,7 @@ export default function HubiCaja({
   */
   rotando?: string[]
 }) {
-  const router = useRouter()
+  const router = useIr()
   const [texto, setTexto] = useState(valor)
   const [estado, setEstado] = useState<EstadoHubi>('reposo')
   const [cual, setCual] = useState(0)

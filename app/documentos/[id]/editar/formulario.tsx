@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useIr } from '@/app/enlace'
 import { Ico, Volver } from '../../../iconos'
 import { Aviso, BotonPrincipal, BotonSecundario, BotonDestructivo } from '../../../piezas'
 import type { Categoria } from '@/lib/carpetas'
@@ -46,7 +46,7 @@ export default function Corregir({
   papel: Papel
   categorias: Categoria[]
 }) {
-  const router = useRouter()
+  const router = useIr()
 
   const [titulo, setTitulo] = useState(papel.titulo)
   const [proveedor, setProveedor] = useState(papel.proveedor ?? '')

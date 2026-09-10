@@ -1,5 +1,5 @@
 import { redirect, notFound } from 'next/navigation'
-import Link from 'next/link'
+import Link from '@/app/enlace'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien as quienEs } from '@/lib/supabase/quien'
 import { partesDe, enHoras, primeroDelMes } from '@/lib/dia'

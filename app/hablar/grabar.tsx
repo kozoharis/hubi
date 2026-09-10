@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/app/enlace'
 import { useEffect, useRef, useState } from 'react'
 import { Ico, Volver } from '../iconos'
 import ColorDeBarra from '../color-barra'
