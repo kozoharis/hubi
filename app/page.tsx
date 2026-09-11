@@ -13,7 +13,8 @@ import { pasosHechos } from '@/lib/pasos'
 import Cabecera from './cabecera'
 import { BotonAjustes, Ico, Logo, pintaDe } from './iconos'
 import Avatar from './avatar'
-import { cuando, type Recordatorio } from '@/lib/tablon'
+import { cuando, hoyAqui, type Recordatorio } from '@/lib/tablon'
+import MesPequeno from './mes-pequeno'
 import { leerPerfil } from '@/lib/perfil'
 import { mandaEnSuCasa, quienManda } from '@/lib/hogar'
 import { casasDe } from '@/lib/casas'
@@ -86,6 +87,24 @@ export default async function Inicio({
   const dentroDe60 = new Date()
   dentroDe60.setDate(dentroDe60.getDate() + 60)
 
+  /*
+    ── EL MES, PARA EL CALENDARIO CHICO ──
+
+    Y este día sale de `hoyAqui()`, no del reloj del servidor. El
+    servidor va en hora de Londres: a las once y media de la noche en
+    Canarias ya es mañana en Londres, y el calendario marcaría el día
+    equivocado como «hoy».
+
+    (`hoyISO` de arriba sigue con el reloj del servidor, que es como
+    lleva funcionando desde el principio. Cambiarlo mueve lo que sale
+    en HOY y lo que sale en PRÓXIMAMENTE, y eso es otro arreglo con su
+    propia prueba, no un efecto secundario de poner un calendario.)
+  */
+  const diaDeAqui = hoyAqui()
+  const [anioAqui, mesAqui] = diaDeAqui.split('-').map(Number)
+  const mesISO = `${anioAqui}-${String(mesAqui).padStart(2, '0')}`
+  const finDeMes = `${mesISO}-${String(new Date(anioAqui, mesAqui, 0).getDate())}`
+
   const admin = clienteServidor()
 
   /*
@@ -137,6 +156,7 @@ export default async function Inicio({
     { data: conexion },
     { data: ultimoPapel, count: cuantosPapeles },
     mesa,
+    { data: delMes },
   ] =
     await Promise.all([
       leerPerfil(supabase, user.id, user.email),
@@ -209,6 +229,26 @@ export default async function Inicio({
         Inicio por una fila de cifras.
       */
       laMesa(supabase).catch(() => null),
+
+      /*
+        QUÉ DÍAS DEL MES TIENEN ALGO.
+
+        Solo la columna `fecha`: el calendario chico no enseña qué
+        hay, únicamente si hay. Traerse el título y la hora de
+        cuarenta recordatorios para pintar cuarenta puntos sería
+        traerse la Agenda entera para no enseñarla.
+
+        Y va en el mismo `Promise.all` que las demás: es una consulta
+        más, no una espera más.
+      */
+      supabase
+        .from('recordatorios')
+        .select('fecha')
+        .eq('hogar_id', espacio)
+        .eq('estado', 'pendiente')
+        .gte('fecha', `${mesISO}-01`)
+        .lte('fecha', finDeMes)
+        .limit(200),
     ])
 
   /* La fila de esta casa dentro de la mesa. Con una sola casa es la
@@ -225,6 +265,15 @@ export default async function Inicio({
 
   const hoy = (pendientes ?? []) as Recordatorio[]
   const proximos = (siguientes ?? []) as Recordatorio[]
+
+  /* Los días marcados. Un conjunto y no una lista: el calendario
+     pregunta treinta veces «¿tiene este día algo?», y preguntárselo a
+     una lista es recorrerla entera cada vez. */
+  const ocupados = new Set(
+    ((delMes ?? []) as { fecha: string | null }[])
+      .map((r) => Number(r.fecha?.slice(8, 10)))
+      .filter((n) => Number.isFinite(n) && n > 0)
+  )
 
   const nombre = perfil.nombre
 
@@ -922,6 +971,20 @@ export default async function Inicio({
           </div>
 
           <div>
+        {/*
+          ── EL MES DE UN VISTAZO ──
+
+          Encima de «Próximamente» y no debajo, porque se mira antes:
+          primero la forma del mes, después los tres nombres. Al revés
+          habría que pasar por delante de la lista para llegar a la
+          foto de conjunto.
+
+          Solo a quien tiene agenda —a quien ayuda en casa se le
+          enseña lo suyo de hoy, no el mes de la familia— y solo en
+          pantalla grande; el propio componente se esconde en el móvil.
+        */}
+        {ve.agenda && <MesPequeno hoyISO={diaDeAqui} ocupados={ocupados} />}
+
         {/* ── Próximamente ── */}
         {ve.agenda && proximos.length > 0 && (
           <section className="mt-6">

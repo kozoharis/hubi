@@ -109,14 +109,34 @@ export default function Rail() {
         Al pie del rail es donde se buscan en todo lo demás que se use
         en un ordenador, y de paso queda separado de las cinco
         secciones por una línea: no es una sexta pestaña, es otra cosa.
+
+        ── Y SE VE, QUE ES LO QUE FALLABA ──
+
+        Estaba en gris suave y sin fondo, colgando debajo de una línea
+        y a un palmo de la última pestaña. Parecía apagado: no un
+        botón, sino el rastro de uno.
+
+        Y en el Inicio era peor que en el resto, porque el Inicio es la
+        única pantalla que en grande no tiene cabecera —el logo y la
+        rueda de arriba se esconden para no salir dos veces—, así que
+        éste era el ÚNICO Ajustes que quedaba en toda la pantalla.
+
+        Ahora es una pieza con su fondo, su borde y la tinta entera. Lo
+        de arriba son las secciones de la casa; esto es la casa por
+        dentro. Que se distinga está bien; que se apague, no.
       */}
-      <Link
-        href="/ajustes"
-        className="tocable mt-2 flex items-center gap-3 rounded-[14px] border-t border-borde px-3 pb-1 pt-4 text-[16px] font-extrabold text-tinta-suave hover:text-tinta"
-      >
-        <Ico nombre="mandos" tam={21} />
-        <span>Ajustes</span>
-      </Link>
+      <div className="mt-3 border-t border-borde pt-3">
+        <Link
+          href="/ajustes"
+          aria-current={ruta.replace(/^\/e\/[0-9a-fA-F-]{36}/, '').startsWith('/ajustes')
+            ? 'page'
+            : undefined}
+          className="tocable flex items-center gap-3 rounded-[14px] border border-borde bg-fondo px-3 py-2.5 text-[16px] font-extrabold text-tinta hover:velo-chip"
+        >
+          <Ico nombre="mandos" tam={21} />
+          <span>Ajustes</span>
+        </Link>
+      </div>
     </nav>
   )
 }
