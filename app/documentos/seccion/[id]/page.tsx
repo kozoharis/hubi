@@ -24,6 +24,7 @@ import {
 import { fechaBreve } from '@/lib/carpetas'
 import { euros } from '@/lib/periodos'
 import { elEspacioO } from '@/lib/espacio'
+import { entrarEn, confirmarVisto } from '@/lib/novedades'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,7 +63,7 @@ export default async function Seccion({
         .eq('activa', true),
       supabase
         .from('documentos')
-        .select('id, categoria_id, titulo, fecha_documento, anio, trimestre, importe')
+        .select('id, categoria_id, titulo, fecha_documento, anio, trimestre, importe, creado_en, subido_por')
         .eq('hogar_id', espacio)
         .limit(5000),
     ])
@@ -74,8 +75,30 @@ export default async function Seccion({
   const seccion = todas.find((c) => c.id === id)
   if (!seccion) notFound()
 
+  /*
+    ── ENTRAR AQUÍ ES LO QUE MARCA ──
+
+    `entrarEn` NO escribe: devuelve desde cuándo contar lo nuevo y un
+    sello. El sello se confirma al final de esta función, cuando ya se
+    sabe que los papeles se han leído bien. Si la consulta de arriba
+    hubiera fallado, no se confirma y las novedades siguen ahí la
+    próxima vez.
+
+    El ámbito se saca de la propia sección: lo pone HUBI al crear la
+    estructura y es la clave canónica del paso 60. Nulo se lee como
+    «otros», que también es un ámbito de carpeta y por tanto lleva su
+    marca igual.
+  */
+  const ambito = (seccion as Categoria & { ambito?: string | null }).ambito ?? 'otros'
+  const { desde, sello } = await entrarEn(supabase, espacio, ambito, seccion.id)
+
   const dentro = ramaDe(todas, seccion.id)
-  type Papel = Documento & { titulo: string; importe: number | null }
+  type Papel = Documento & {
+    titulo: string
+    importe: number | null
+    creado_en?: string | null
+    subido_por?: string | null
+  }
   const papeles = ((docs ?? []) as Papel[])
     .filter((d) => dentro.has(d.categoria_id))
     .sort((a, b) => b.fecha_documento.localeCompare(a.fecha_documento))
@@ -94,6 +117,25 @@ export default async function Seccion({
   const cuantos = contar(todas, filtrados)
   const s = seccionPintada(seccion.segmento_drive)
 
+  /*
+    Cuántos nuevos hay en cada carpeta de dentro, con la MISMA regla que
+    la pantalla anterior: llegó después de mi marca y no lo guardé yo.
+    Sin marca —primera visita— no sale nada como nuevo.
+  */
+  const nuevosPorCarpeta = new Map<string, number>()
+  if (desde) {
+    for (const c of todas) {
+      const rama = ramaDe(todas, c.id)
+      let n = 0
+      for (const d of papeles) {
+        if (!d.creado_en || d.subido_por === user.id) continue
+        if (!rama.has(d.categoria_id)) continue
+        if (d.creado_en >= desde) n++
+      }
+      if (n > 0) nuevosPorCarpeta.set(c.id, n)
+    }
+  }
+
   // ── Los grupos que se enseñan ──
   const hijas = hijosDe(todas, seccion.id)
   const grupos: { titulo: string | null; carpetas: Categoria[] }[] = []
@@ -107,6 +149,15 @@ export default async function Seccion({
   if (sueltas.length > 0) grupos.unshift({ titulo: null, carpetas: sueltas })
 
   const mayor = Math.max(1, ...grupos.flatMap((g) => g.carpetas.map((c) => cuantos.get(c.id) ?? 0)))
+
+  /*
+    ── Y AHORA SÍ SE MARCA ──
+
+    Aquí abajo, cuando los papeles ya están leídos y contados. Si algo
+    de lo de arriba hubiera fallado, esta línea no se alcanza y las
+    novedades siguen ahí la próxima vez, que es justo lo que se quería.
+  */
+  await confirmarVisto(supabase, espacio, ambito, sello, seccion.id)
 
   const base = `/documentos/seccion/${seccion.id}`
   const conFiltro = (a: number | null, t: number | null) => {
@@ -197,6 +248,16 @@ export default async function Seccion({
                           <p className="t-tarjeta truncate">{c.nombre}</p>
                           <p className="t-apoyo">
                             {n === 0 ? 'vacía' : `${n} ${n === 1 ? 'papel' : 'papeles'}`}
+                            {/* Y lo que ha llegado desde la última vez.
+                                En la misma línea: es un matiz del
+                                recuento, no otro dato. */}
+                            {(nuevosPorCarpeta.get(c.id) ?? 0) > 0 && (
+                              <span className="font-extrabold text-verde">
+                                {' · '}
+                                {nuevosPorCarpeta.get(c.id)} nuevo
+                                {nuevosPorCarpeta.get(c.id) === 1 ? '' : 's'}
+                              </span>
+                            )}
                           </p>
                         </div>
                         {dineros > 0 && (

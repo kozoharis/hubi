@@ -10,6 +10,7 @@ import { Ico } from '../iconos'
 import { Fila, Vacio, Aviso, PastillaAmbito, seccionPintada } from '../piezas'
 import HubiCaja from '../hubi-caja'
 import { elEspacioO } from '@/lib/espacio'
+import { misMarcas, nuevosPorRaiz } from '@/lib/novedades'
 import {
   contar,
   hijosDe,
@@ -246,7 +247,10 @@ export default async function Documentos({
         .eq('activa', true),
       supabase
         .from('documentos')
-        .select('id, categoria_id, titulo, fecha_documento, anio, trimestre')
+        /* `creado_en` y `subido_por` son para el rótulo de «nuevo»: cuándo
+           llegó el papel —que no es lo mismo que la fecha que pone el
+           papel— y quién lo guardó. */
+        .select('id, categoria_id, titulo, fecha_documento, anio, trimestre, creado_en, subido_por')
         .eq('hogar_id', espacio)
         .order('fecha_documento', { ascending: false })
         .limit(5000),
@@ -256,11 +260,40 @@ export default async function Documentos({
   if (averia) console.error('[HUBI] Documentos no ha podido cargar:', averia)
 
   const todas = (cats ?? []) as Categoria[]
-  const papeles = (docs ?? []) as (Documento & { titulo: string })[]
+  const papeles = (docs ?? []) as (Documento & {
+    titulo: string
+    creado_en?: string | null
+    subido_por?: string | null
+  })[]
 
   const secciones = hijosDe(todas, null)
   const cuantos = contar(todas, papeles)
   const ultimas = ultima(todas, papeles)
+
+  /*
+    ── LO NUEVO ──
+
+    Esta pantalla PINTA las novedades; no las marca como vistas. Sellar
+    aquí sería dar por leído todo lo que uno no ha llegado a abrir. La
+    marca se pone al entrar en la sección, que es donde uno mira de
+    verdad.
+  */
+  const marcas = await misMarcas(supabase, espacio)
+
+  /* De cada papel a su carpeta raíz. Se calcula una vez y se consulta
+     muchas: recorrer el árbol por cada papel sería subir el mismo camino
+     cinco mil veces. */
+  const raizPorCategoria = new Map<string, string>()
+  for (const s of secciones) {
+    for (const id of ramaDe(todas, s.id)) raizPorCategoria.set(id, s.id)
+  }
+
+  const nuevos = nuevosPorRaiz(
+    papeles,
+    (catId) => raizPorCategoria.get(catId),
+    marcas,
+    user.id
+  )
 
   const nombrePorId = new Map(todas.map((c) => [c.id, c.nombre]))
   const segmentoPorId = new Map(todas.map((c) => [c.id, c.segmento_drive]))
@@ -410,6 +443,16 @@ export default async function Documentos({
                         ? 'Todavía vacía'
                         : `${n} ${n === 1 ? 'papel' : 'papeles'}${u ? ` · ${fechaBreve(u)}` : ''}`}
                     </span>
+                    {/* Lo nuevo, en su propia línea y con el verde de la
+                        casa. Es lo único de esta pantalla que cambia
+                        solo, así que se gana el color. */}
+                    {(nuevos.get(c.id) ?? 0) > 0 && (
+                      <span className="t-apoyo mt-0.5 block font-extrabold text-verde">
+                        {nuevos.get(c.id) === 1
+                          ? '1 papel nuevo'
+                          : `${nuevos.get(c.id)} papeles nuevos`}
+                      </span>
+                    )}
                   </span>
                   <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-apagado" />
                 </Fila>
