@@ -295,6 +295,10 @@ export async function POST(peticion: NextRequest) {
   let repartido = true
   try {
     const { error: alRepartir } = await supabase.rpc('poner_rol', {
+      /* La casa va por delante y sale de la ruta. Antes la adivinaba
+         `mi_hogar()`, y desde que el espacio vive en la dirección eso
+         podía repartir el rol en la casa equivocada. */
+      casa_dicha: hogarId,
       a_quien: id,
       el_rol: rol,
     })
@@ -446,7 +450,11 @@ export async function PATCH(peticion: NextRequest) {
       return NextResponse.json({ error: 'Ese rol no existe.' }, { status: 400 })
     }
 
-    const { error } = await supabase.rpc('poner_rol', { a_quien: id, el_rol: cuerpo.rol })
+    const { error } = await supabase.rpc('poner_rol', {
+      casa_dicha: hogarId,
+      a_quien: id,
+      el_rol: cuerpo.rol,
+    })
 
     if (error) {
       console.error('[HUBI] No se ha podido cambiar el rol:', error)
@@ -478,6 +486,7 @@ export async function PATCH(peticion: NextRequest) {
     }
 
     const { error } = await supabase.rpc('poner_color', {
+      casa_dicha: hogarId,
       a_quien: id,
       el_color: String(cuerpo.color),
     })

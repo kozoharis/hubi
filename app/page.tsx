@@ -25,6 +25,7 @@ import { AMBITO, Aviso, BotonPrincipal, Fila, PastillaAmbito, Vacio } from './pi
 import Casas from './casas'
 import { type Deber } from './rutinas-hoy'
 import { elEspacio, elEspacioO } from '@/lib/espacio'
+import { laPuertaQueFalta } from '@/lib/enlaces'
 
 export const dynamic = 'force-dynamic'
 
@@ -98,6 +99,16 @@ export default async function Inicio({
   */
   const hogarId = await elEspacio(supabase)
   if (!hogarId) redirect('/empezar')
+
+  /*
+    Y si se ha llegado aquí sin espacio en la dirección —que es lo que
+    pasa al abrir HUBI—, se entra por la puerta.
+
+    A partir de este momento la pestaña sabe en qué casa está y ya no
+    se la pisa nadie. Es la última vez que `casa_activa` decide algo.
+  */
+  const puerta = await laPuertaQueFalta(hogarId)
+  if (puerta) redirect(puerta)
 
   /* En cuántas casas está, y si le han invitado a alguna. Con una sola
      —o sea, casi siempre— esto no pinta nada en la pantalla. */

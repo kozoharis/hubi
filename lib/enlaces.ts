@@ -24,3 +24,28 @@ import { conElEspacio } from './enlaces-comunes'
 export async function aqui(camino: string): Promise<string> {
   return conElEspacio((await headers()).get('x-espacio'), camino)
 }
+
+/**
+ * Si esta pantalla se ha pedido SIN espacio en la dirección, dice a
+ * cuál habría que mandarla. Si ya lo lleva, dice `null`.
+ *
+ * ─────────────────────────────────────────────────────────────
+ * POR QUÉ HACE FALTA
+ *
+ * A la casa propia no se entra nunca por la puerta: al abrir HUBI se
+ * aterriza en `/` a secas y `casa_activa` decide cuál se enseña. Sin
+ * espacio en la barra no hay espacio que conservar, así que los
+ * enlaces siguen sin él y esa pestaña vuelve a obedecer al dato
+ * global — el que la otra pestaña acaba de cambiar.
+ *
+ * O sea: el espacio mandaba en las casas en las que entrabas a
+ * propósito, y no mandaba en la tuya.
+ *
+ * Con esto, `casa_activa` se usa UNA VEZ —para decidir dónde
+ * aterrizas— y a partir de ahí no vuelve a mandar en nada.
+ */
+export async function laPuertaQueFalta(espacio: string | null): Promise<string | null> {
+  if (!espacio) return null
+  if ((await headers()).get('x-espacio')) return null
+  return `/e/${espacio}`
+}

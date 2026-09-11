@@ -362,6 +362,27 @@ for (const archivo of [...archivos('app'), ...archivos('lib')]) {
 */
 const FUERA = ['/entrar', '/empezar', '/escritorio', '/privacidad', '/terminos', '/api']
 const sueltosDeNavegar = []
+
+/*
+  ─────────────────────────────────────────────────────────────
+  Y LAS ÓRDENES QUE REPARTEN PERMISOS
+
+  `poner_rol` y `poner_color` cambian lo que otra persona puede hacer.
+  Reciben la casa por delante desde el SQL 58; llamarlas sin ella es
+  pedirle a la base de datos que la adivine, y adivinar aquí significa
+  repartirle el rol a alguien de otra casa.
+*/
+const sinCasa = []
+for (const archivo of [...archivos('app'), ...archivos('lib')]) {
+  const lineas = sinComentarios(readFileSync(archivo, 'utf8'))
+  lineas.forEach((l, i) => {
+    if (!/\.rpc\(\s*'(poner_rol|poner_color)'/.test(l)) return
+    const trozo = lineas.slice(i, i + 8).join('\n')
+    if (!/casa_dicha/.test(trozo)) {
+      sinCasa.push(`${archivo}:${i + 1}`)
+    }
+  })
+}
 for (const archivo of archivos('app')) {
   if (archivo === 'app/enlace.tsx') continue
   const crudoNav = readFileSync(archivo, 'utf8')
@@ -467,9 +488,19 @@ if (sueltosDeNavegar.length > 0) {
   process.exitCode = 1
 }
 
+if (sinCasa.length > 0) {
+  console.log(
+    `\n${sinCasa.length} órdenes reparten permisos sin decir en qué casa:\n` +
+    sinCasa.map((s) => '  ' + s).join('\n') +
+    `\n\nLleva \`casa_dicha\` delante. Si no, la base de datos la adivina con\n` +
+    `el dato global y el rol acaba puesto en otra casa.\n`
+  )
+  process.exitCode = 1
+}
+
 if (
-  avisos.length === 0 && sueltos.length === 0 &&
-  pelados.length === 0 && sueltosDeNavegar.length === 0
+  avisos.length === 0 && sueltos.length === 0 && pelados.length === 0 &&
+  sueltosDeNavegar.length === 0 && sinCasa.length === 0
 ) {
   console.log(
     'Todas dicen de qué espacio son y lo preguntan al mismo sitio.\n' +
