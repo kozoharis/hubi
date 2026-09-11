@@ -49,6 +49,7 @@ export default function Notas({
   yo,
   escribo,
   viendoGuardadas,
+  hayPantalla,
 }: {
   notas: NotaVista[]
   gente: Quien[]
@@ -56,6 +57,14 @@ export default function Notas({
   /** Falso para quien solo puede mirar. */
   escribo: boolean
   viendoGuardadas: boolean
+  /*
+    ¿Tiene esta casa una pantalla común encendida?
+
+    Si no la tiene, el botón de la cocina no se pinta: sería una
+    decisión más sobre un aparato que no existe. El día que se encienda
+    una tablet aparece solo, sin tocar nada.
+  */
+  hayPantalla: boolean
 }) {
   const router = useRouter()
 
@@ -397,7 +406,7 @@ export default function Notas({
                         botones. Los dibujos se van —«Visto», «Cambiar»
                         y «Quitar» no se confunden escritos— y el ancho
                         lo reparte la fila. */}
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       {paraMi && !n.vista_en && escribo && (
                         <Boton
                           texto="Visto"
@@ -434,6 +443,25 @@ export default function Notas({
                             alPulsar={() => pedir({ id: n.id, que: 'guardar' }, 'PATCH')}
                           />
                         ))}
+
+                      {/* Y si hay pantalla en la casa, si esta nota sale
+                          ahí. Se decide MIRANDO la nota, que es cuando
+                          se puede decidir bien. */}
+                      {hayPantalla && (mia || paraMi) && escribo && !viendoGuardadas && (
+                        <Boton
+                          texto={n.visible_en_casa ? 'Fuera de la cocina' : 'En la cocina'}
+                          ocupado={ocupado}
+                          alPulsar={() =>
+                            pedir(
+                              {
+                                id: n.id,
+                                que: n.visible_en_casa ? 'fuera-de-la-cocina' : 'en-la-cocina',
+                              },
+                              'PATCH'
+                            )
+                          }
+                        />
+                      )}
                     </div>
                   </>
                 )}

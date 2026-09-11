@@ -35,6 +35,11 @@ export type Nota = {
   cambiada_en: string | null
   vista_en: string | null
   guardada_en: string | null
+  /*
+    ¿Puede salir en la pantalla común de la casa? Nulo es «no se ha
+    decidido», y se lee como que NO sale. Llega del SQL 63.
+  */
+  visible_en_casa?: boolean | null
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,7 +56,7 @@ export async function notasDe(
   try {
     const q = supabase
       .from('notas')
-      .select('id, texto, para, escrita_por, creada_en, cambiada_en, vista_en, guardada_en')
+      .select('id, texto, para, escrita_por, creada_en, cambiada_en, vista_en, guardada_en, visible_en_casa')
       .eq('hogar_id', await elEspacioO(supabase))
       .order('creada_en', { ascending: false })
       .limit(guardadas ? 60 : 100)
@@ -60,7 +65,29 @@ export async function notasDe(
       ? await q.not('guardada_en', 'is', null)
       : await q.is('guardada_en', null)
 
-    if (error || !data) return []
+    /*
+      Y si `visible_en_casa` no estuviera —el SQL 63 sin ejecutar—, la
+      consulta entera falla y la pantalla de notas se queda vacía. Así
+      que se reintenta sin ella: se pierde el interruptor, no las notas.
+      Es la regla de la casa: una columna nueva nunca puede romper lo
+      que ya funcionaba.
+    */
+    if (error) {
+      const sinLoNuevo = supabase
+        .from('notas')
+        .select('id, texto, para, escrita_por, creada_en, cambiada_en, vista_en, guardada_en')
+        .eq('hogar_id', await elEspacioO(supabase))
+        .order('creada_en', { ascending: false })
+        .limit(guardadas ? 60 : 100)
+
+      const reintento = guardadas
+        ? await sinLoNuevo.not('guardada_en', 'is', null)
+        : await sinLoNuevo.is('guardada_en', null)
+
+      return (reintento.data ?? []) as Nota[]
+    }
+
+    if (!data) return []
     return data as Nota[]
   } catch {
     return []

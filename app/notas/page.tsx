@@ -40,10 +40,31 @@ export default async function PaginaNotas({
 
   const hogarId = await elEspacio(supabase)
 
-  const [notas, escribo] = await Promise.all([
+  const [notas, escribo, pantallas] = await Promise.all([
     notasDe(supabase, viendoGuardadas),
     puedeEscribir(supabase, user.id, hogarId),
+    /*
+      ¿Hay una pantalla común en esta casa?
+
+      De eso depende que se pinte el botón de «En la cocina». Si no hay
+      ninguna tablet encendida, es una decisión de más sobre un aparato
+      que no existe. Envuelto porque `clase` llega del SQL 61: sin esa
+      columna la consulta falla, y quedarse sin el botón es infinitamente
+      mejor que quedarse sin la pantalla de notas.
+    */
+    supabase
+      .from('miembros')
+      .select('perfil_id')
+      .eq('hogar_id', hogarId ?? '')
+      .eq('clase', 'dispositivo')
+      .limit(1)
+      .then(
+        (r: { data: unknown[] | null }) => r.data ?? [],
+        () => []
+      ),
   ])
+
+  const hayPantalla = (pantallas as unknown[]).length > 0
 
   /*
     Los nombres de la casa. Hacen falta dos veces: para firmar cada
@@ -79,6 +100,7 @@ export default async function PaginaNotas({
 
       <div className="columna pt-2">
         <Notas
+          hayPantalla={hayPantalla}
           notas={conFecha(notas)}
           gente={gente}
           yo={user.id}

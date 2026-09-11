@@ -197,7 +197,7 @@ export async function PATCH(peticion: NextRequest) {
   const mia = nota.escrita_por === user.id
   const paraMi = nota.para === user.id
 
-  const cambio: Record<string, string | null> = {}
+  const cambio: Record<string, string | boolean | null> = {}
 
   switch (cuerpo.que) {
     case 'visto':
@@ -285,6 +285,32 @@ export async function PATCH(peticion: NextRequest) {
         return NextResponse.json({ error: 'Esa nota no es tuya.' }, { status: 403 })
       }
       cambio.guardada_en = null
+      break
+
+    /*
+      QUE SE VEA —O QUE NO— EN LA PANTALLA DE LA COCINA.
+
+      El mismo permiso que «Quitar»: quien la escribió o para quien es.
+      Y no hace falta comprobar más, porque la política `notas_editar`
+      exige exactamente eso; un tercero no llegaría hasta aquí.
+
+      «Quitar de la cocina» deja `null`, no `false`. Los dos se leen
+      igual —no se enseña— pero `null` es «no se ha decidido» y `false`
+      es «se decidió que no», y esa diferencia va a hacer falta el día
+      que la tablet proponga por defecto qué enseñar.
+    */
+    case 'en-la-cocina':
+      if (!mia && !paraMi) {
+        return NextResponse.json({ error: 'Esa nota no es tuya.' }, { status: 403 })
+      }
+      cambio.visible_en_casa = true
+      break
+
+    case 'fuera-de-la-cocina':
+      if (!mia && !paraMi) {
+        return NextResponse.json({ error: 'Esa nota no es tuya.' }, { status: 403 })
+      }
+      cambio.visible_en_casa = null
       break
 
     default:
