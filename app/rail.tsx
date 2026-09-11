@@ -97,6 +97,26 @@ export default function Rail() {
       </div>
 
       <div className="grow" />
+
+      {/*
+        ── AJUSTES, AL PIE ──
+
+        Estaba arriba a la derecha, que es donde va en un móvil: junto
+        al pulgar y lejos de lo que se toca por error. En un ordenador
+        no hay pulgar, y arriba a la derecha es donde la gente busca su
+        cuenta, no los ajustes de la aplicación.
+
+        Al pie del rail es donde se buscan en todo lo demás que se use
+        en un ordenador, y de paso queda separado de las cinco
+        secciones por una línea: no es una sexta pestaña, es otra cosa.
+      */}
+      <Link
+        href="/ajustes"
+        className="tocable mt-2 flex items-center gap-3 rounded-[14px] border-t border-borde px-3 pb-1 pt-4 text-[16px] font-extrabold text-tinta-suave hover:text-tinta"
+      >
+        <Ico nombre="mandos" tam={21} />
+        <span>Ajustes</span>
+      </Link>
     </nav>
   )
 }

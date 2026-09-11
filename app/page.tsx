@@ -432,7 +432,15 @@ export default async function Inicio({
         />
       </div>
 
-      {/* ── Cabecera, clavada arriba ── */}
+      {/*
+        ── LA CABECERA, SOLO EN EL MÓVIL ──
+
+        En grande sobra entera: el logotipo ya está en el rail —salía
+        dos veces, y una marca repetida en la misma pantalla se lee
+        como un fallo de montaje— y Ajustes se ha ido al pie del rail,
+        que es donde se buscan los ajustes en un ordenador.
+      */}
+      <div className="lg:hidden">
       <Cabecera>
         {/*
           ── ARRIBA: QUIÉN ERES, Y AJUSTES ──
@@ -494,6 +502,7 @@ export default async function Inicio({
           </Link>
         </div>
       </Cabecera>
+      </div>
 
       {/*
         ── Y AQUÍ SE ENSANCHA ──
@@ -510,11 +519,51 @@ export default async function Inicio({
         derecha es margen, y está bien que lo sea.
       */}
       <div className="relative z-10 mx-auto w-full max-w-md px-5 pt-1 lg:mx-0 lg:max-w-[1100px] lg:px-9 lg:pt-5">
+        {/*
+          ═══════════════════════════════════════════════════════
+          LA CABECERA, EN GRANDE, EN DOS
+          ═══════════════════════════════════════════════════════
+
+          En el móvil esto es una columna y no cambia ni un píxel: los
+          `lg:` de abajo no existen por debajo de 1024 px.
+
+          En grande se reparte:
+
+            IZQUIERDA          DERECHA
+            quién eres         qué día es
+            en qué casa        hablar o buscar
+            (tu papel)         guardar documento
+
+          A la izquierda, QUIÉN y DÓNDE: la foto, el nombre, y debajo
+          la casa en la que estás. Van juntos porque son la misma
+          pregunta —«¿quién soy y dónde estoy?»— y porque elegir casa
+          es algo que se hace desde uno mismo, no desde un menú suelto
+          arriba del todo.
+
+          A la derecha, QUÉ VAS A HACER: el día, y las dos acciones.
+
+          La colocación es EXPLÍCITA —`col-start` y `row-start` en cada
+          pieza— y no por orden de aparición. Así el orden del móvil se
+          queda como está y no hay que mover nada de sitio en el
+          código: en una pantalla el orden de lectura y el orden del
+          documento pueden ser distintos, y forzarlos a coincidir es lo
+          que obliga a reescribir media pantalla por un cambio de
+          columna.
+        */}
+        <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-8">
+
+        {/* ── El día, arriba a la derecha y en grande ── */}
+        <p className="hidden text-[19px] font-bold text-tenue lg:col-start-2 lg:row-start-1 lg:block lg:text-right">
+          {hoyEnPalabras()}
+        </p>
+
         {/* ── En qué casa estás, y las que te han ofrecido ── */}
         {/* Va lo primero, encima del saludo del día: si alguien te ha
             dado acceso a los papeles de su casa, eso no puede quedar
             debajo de la lista de la compra. */}
-        <Casas casas={casas} />
+        <div className="lg:col-start-1 lg:row-start-2">
+          <Casas casas={casas} />
+        </div>
 
         {/* ── Saludo ── */}
         {/*
@@ -526,10 +575,12 @@ export default async function Inicio({
           con qué cuenta se ha entrado, que en una casa donde dos
           personas comparten el mismo iPad no es un detalle.
         */}
-        <div className="mt-2.5 flex items-center gap-3">
+        <div className="mt-2.5 flex items-center gap-3 lg:col-start-1 lg:row-start-1 lg:mt-0">
           <Avatar nombre={nombre} foto={perfil.foto} tam={52} />
           <div className="min-w-0 flex-1">
-            <p className="text-[14.5px] font-bold text-tenue">{hoyEnPalabras()}</p>
+            {/* En grande el día se va arriba a la derecha y en grande de
+                verdad: es lo primero que se mira al sentarse. */}
+            <p className="text-[14.5px] font-bold text-tenue lg:hidden">{hoyEnPalabras()}</p>
             {/* Nunca "Buenas tardes," a secas: si no hubiera nombre, se
                 saluda sin coma y punto. Una frase colgando hace dudar de
                 todo lo que viene debajo. */}
@@ -552,7 +603,7 @@ export default async function Inicio({
           en las pestañas de abajo.
         */}
         {rol && rol !== 'familia' && (
-          <p className="mt-4 rounded-[18px] border border-borde bg-superficie px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
+          <p className="mt-4 rounded-[18px] border border-borde bg-superficie px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tinta-suave lg:col-start-1 lg:row-start-3">
             {rol === 'ayuda'
               ? 'Aquí tienes lo que te han encargado y la lista de la compra. El ticket del súper se guarda desde la propia compra.'
               : rol === 'asesor'
@@ -561,10 +612,12 @@ export default async function Inicio({
           </p>
         )}
 
-        {conectado && <Invitacion />}
+        <div className="lg:col-start-2 lg:row-start-2">
+          {conectado && <Invitacion />}
+        </div>
 
         {aviso && (
-          <div className="mt-5">
+          <div className="mt-5 lg:col-span-2 lg:row-start-4">
             <Aviso tono={aviso.bien ? 'bien' : 'alerta'} titulo={aviso.texto} />
           </div>
         )}
@@ -606,8 +659,16 @@ export default async function Inicio({
             pone debajo de seis tarjetas.
 
             Se pinta solo cuando hace falta —y en el ordenador nunca—,
-            así que en un teléfono bien puesto esta línea no existe. */}
-        <SinAvisos />
+            así que en un teléfono bien puesto esta línea no existe.
+
+            Va envuelto y con sitio dicho —fila 5, las dos columnas—
+            porque dentro de una rejilla lo que no dice dónde va se
+            coloca solo, en el primer hueco libre que encuentre. Y el
+            primer hueco libre de esta rejilla está arriba, al lado del
+            saludo. */}
+        <div className="lg:col-span-2 lg:row-start-5">
+          <SinAvisos />
+        </div>
 
         {/*
           ── PRIMEROS PASOS ──
@@ -621,11 +682,13 @@ export default async function Inicio({
           partir de ahí, la guía vive en Ajustes y nada más.
         */}
         {pasos.length > 0 && (
-          <PrimerosPasos
-            pasos={pasos}
-            hechos={[...hechos]}
-            cuantasMas={accionesDe(papel).length - pasos.length}
-          />
+          <div className="lg:col-span-2 lg:row-start-6">
+            <PrimerosPasos
+              pasos={pasos}
+              hechos={[...hechos]}
+              cuantasMas={accionesDe(papel).length - pasos.length}
+            />
+          </div>
         )}
 
         {/* ── La grande: hacer una foto ── */}
@@ -641,7 +704,7 @@ export default async function Inicio({
             tranquiliza saberlo: quien guarda una factura y no vuelve a
             verla nunca acaba dudando de si se guardó.
           */
-          <div className="mt-2.5">
+          <div className="mt-2.5 lg:col-start-2 lg:row-start-3">
             <BotonPrincipal href="/guardar" icono="foto">
               Guardar documento
             </BotonPrincipal>
@@ -656,6 +719,11 @@ export default async function Inicio({
             </p>
           </div>
         )}
+
+        {/* Aquí se acaba la rejilla de la cabecera. Lo de abajo
+            —conectar Drive, HOY, PRÓXIMAMENTE— tiene su propio
+            reparto y no entra en estas dos columnas. */}
+        </div>
 
         {/* ── Conectar Drive ── */}
         {!conectado && manda && (
