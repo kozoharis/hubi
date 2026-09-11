@@ -25,6 +25,8 @@ import { AMBITO, Aviso, BotonPrincipal, Fila, PastillaAmbito, Vacio } from './pi
 import Casas from './casas'
 import { type Deber } from './rutinas-hoy'
 import { elEspacio, elEspacioO } from '@/lib/espacio'
+import { laMesa, haceCuanto } from '@/lib/escritorio'
+import { euros, eurosRedondo } from '@/lib/periodos'
 import { laPuertaQueFalta } from '@/lib/enlaces'
 
 export const dynamic = 'force-dynamic'
@@ -134,6 +136,7 @@ export default async function Inicio({
     { data: siguientes },
     { data: conexion },
     { data: ultimoPapel, count: cuantosPapeles },
+    mesa,
   ] =
     await Promise.all([
       leerPerfil(supabase, user.id, user.email),
@@ -172,14 +175,53 @@ export default async function Inicio({
         guardó. «34 papeles · el último, hace 2 días» contesta esa
         duda sin entrar.
       */
+      /*
+        Y de paso vienen CINCO, no uno.
+
+        El móvil sigue usando solo el primero y el total. Pero en una
+        pantalla grande cabe la lista de los últimos papeles, y traerla
+        aquí no cuesta un viaje más: es la misma consulta pidiendo
+        cuatro filas de más.
+
+        Sin cruzar con `categorias` ni con `perfiles`: desde que
+        existen los hogares hay dos caminos para ir de un documento a
+        una persona y la base de datos se niega a elegir. La ruta de la
+        carpeta se enseña en Papeles, que sí tiene el árbol cargado.
+      */
       supabase
         .from('documentos')
-        .select('creado_en', { count: 'exact' })
+        .select('id, titulo, proveedor, importe, creado_en', { count: 'exact' })
         .eq('hogar_id', espacio)
         .is('eliminado_en', null)
         .order('creado_en', { ascending: false })
-        .limit(1),
+        .limit(5),
+
+      /*
+        LAS CIFRAS DE LA CASA, en una sola llamada.
+
+        `mi_escritorio` ya existe desde el SQL 52 y calcula en la base
+        de datos lo del trimestre en curso: ingresos, gastos, papeles y
+        lo que te espera. Se usaba solo en el escritorio; aquí sirve
+        para la fila de números que solo sale en grande.
+
+        Envuelto: si el SQL 52 no estuviera ejecutado, `laMesa`
+        devuelve `null` y la fila no se pinta. Nadie se queda sin
+        Inicio por una fila de cifras.
+      */
+      laMesa(supabase).catch(() => null),
     ])
+
+  /* La fila de esta casa dentro de la mesa. Con una sola casa es la
+     única que hay; con varias, la que se está mirando. */
+  const cifras = (mesa ?? []).find((c) => c.id === hogarId) ?? null
+
+  const ultimos = (ultimoPapel ?? []) as {
+    id: string
+    titulo: string | null
+    proveedor: string | null
+    importe: number | null
+    creado_en: string
+  }[]
 
   const hoy = (pendientes ?? []) as Recordatorio[]
   const proximos = (siguientes ?? []) as Recordatorio[]
@@ -643,6 +685,57 @@ export default async function Inicio({
         {rol === 'ayuda' && casaHoy && <TarjetaCasa {...casaHoy} mia />}
 
         {/*
+          ── LO QUE SOLO CABE EN GRANDE ──
+
+          Una pantalla de ordenador no tiene que enseñar lo mismo más
+          ancho: tiene que enseñar MÁS. En el móvil, saber lo del
+          trimestre cuesta entrar en Cuentas, y ver los últimos papeles
+          cuesta entrar en Papeles. Aquí caben las dos cosas sin entrar
+          en ninguna parte, y ése es todo el motivo de que exista una
+          versión ancha.
+
+          `hidden lg:grid`: en el móvil no se pinta. No es que se
+          esconda pequeño — es que ahí abajo sobra, y una fila de
+          cuatro cifras a 360 px son cuatro cifras ilegibles.
+        */}
+        {cifras && rol !== 'ayuda' && (
+          <div className="mt-6 hidden grid-cols-4 gap-4 lg:grid">
+            <Cifra
+              rotulo="Papeles guardados"
+              valor={String(cifras.papeles)}
+              pie={
+                cifras.ultimoPapel
+                  ? `El último, ${haceCuanto(cifras.ultimoPapel, hoyISO).toLowerCase()}`
+                  : 'Todavía ninguno'
+              }
+            />
+            <Cifra
+              rotulo="Este trimestre"
+              valor={eurosRedondo(cifras.balance, true)}
+              /* El color dice lo mismo que el signo, y para quien no
+                 distingue bien los signos pequeños dice más. */
+              color={cifras.balance < 0 ? 'text-alerta' : 'text-bien'}
+              pie={`Ingresos ${eurosRedondo(cifras.ingresos)} · Gastos ${eurosRedondo(cifras.gastos)}`}
+            />
+            <Cifra
+              rotulo="Para hoy"
+              valor={hoy.length === 0 ? 'Nada' : String(hoy.length)}
+              color={hoy.length > 0 ? 'text-atencion' : undefined}
+              pie={hoy.length === 1 ? 'una cosa apuntada' : 'cosas apuntadas'}
+            />
+            <Cifra
+              rotulo="Lo que viene"
+              valor={proximos.length === 0 ? 'Nada' : String(proximos.length)}
+              pie={
+                proximos[0]?.fecha
+                  ? `Lo primero, ${enCuanto(proximos[0].fecha).toLowerCase()}`
+                  : 'en los próximos dos meses'
+              }
+            />
+          </div>
+        )}
+
+        {/*
           ── DE UNA COLUMNA A DOS ──
 
           En el móvil esto sigue siendo lo que era: todo seguido, y lo
@@ -800,6 +893,48 @@ export default async function Inicio({
               />
             </div>
           )}
+            {/*
+              ── LOS ÚLTIMOS PAPELES ──
+
+              Solo en grande, y por el mismo motivo que las cifras: en
+              el móvil esto es la pantalla de Papeles, y repetirla en el
+              Inicio sería alargar la única pantalla que tiene que poder
+              leerse de un vistazo.
+            */}
+            {/* A quien ayuda en casa, no: la base de datos le vacía los
+                papeles —eso funciona— pero una sección vacía no se lee
+                como «esto no es para ti», se lee como «esto está
+                roto». Al asesor sí, aunque no pueda subirlos: los
+                papeles son justamente a lo que viene. */}
+            {rol !== 'ayuda' && ultimos.length > 0 && (
+              <section className="mt-6 hidden lg:block">
+                <h2 className="t-seccion">Últimos papeles</h2>
+                <ul className="mt-2.5 space-y-2">
+                  {ultimos.map((d) => (
+                    <li key={d.id}>
+                      <Link
+                        href={`/documentos/${d.id}`}
+                        className="tocable flex items-center gap-3 rounded-[16px] border border-borde bg-superficie px-4 py-3"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="t-cuerpo block truncate">
+                            {d.proveedor || d.titulo || 'Papel sin nombre'}
+                          </span>
+                          <span className="t-apoyo block truncate">
+                            {haceCuanto(d.creado_en.slice(0, 10), hoyISO)}
+                          </span>
+                        </span>
+                        {d.importe != null && (
+                          <span className="t-cifra-2 shrink-0 tabular-nums">
+                            {euros(Number(d.importe))}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
         </div>
       </div>
@@ -929,5 +1064,37 @@ function TarjetaCasa({
         <Ico nombre="flecha" tam={22} grosor={2.2} />
       </span>
     </Link>
+  )
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  UNA CIFRA
+  ═══════════════════════════════════════════════════════════════
+
+  Rótulo pequeño arriba, el número grande, y debajo lo que significa.
+  Ese orden y no otro: el número es lo que se busca, y tiene que poder
+  leerse sin leer nada más. Lo de abajo es para la segunda mirada.
+
+  `tabular-nums` para que 127,43 y 1.940,00 tengan las cifras en la
+  misma columna. Sin eso, cuatro tarjetas en fila bailan.
+*/
+function Cifra({
+  rotulo,
+  valor,
+  pie,
+  color,
+}: {
+  rotulo: string
+  valor: string
+  pie?: string
+  color?: string
+}) {
+  return (
+    <div className="rounded-[20px] border border-borde bg-superficie px-5 py-4">
+      <p className="rotulo">{rotulo}</p>
+      <p className={'t-cifra mt-2 tabular-nums ' + (color ?? 'text-tinta')}>{valor}</p>
+      {pie && <p className="t-apoyo mt-1.5">{pie}</p>}
+    </div>
   )
 }
