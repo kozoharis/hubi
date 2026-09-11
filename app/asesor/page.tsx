@@ -199,8 +199,8 @@ export default async function DelAsesor() {
   const titulo = soyElAsesor ? laCasa : suyo.nombre.split(' ')[0]
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
         <Volver href="/dia" />
         <div className="flex h-14 items-center gap-3">
           <Persona nombre={titulo} color={suyo.color} tam={44} />
@@ -213,7 +213,7 @@ export default async function DelAsesor() {
         </div>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-2">
+      <div className="columna pt-2">
         <Hilo
           cosas={cosas}
           paraQuien={suyo.id}

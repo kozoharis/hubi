@@ -117,10 +117,10 @@ export default async function Seccion({
   }
 
   return (
-    <main className="min-h-screen pb-40">
+    <main className="min-h-screen pb-40 lg:pb-16">
       {/* El título vive en la cabecera (D6): aquí estaba en el cuerpo
           y se perdía al hacer scroll. */}
-      <Cabecera>
+      <Cabecera ancho>
         <Volver href="/documentos" />
         <div className="mt-2.5 flex items-center gap-3">
           <PastillaAmbito icono={s.icono} ambito={s.ambito} />
@@ -133,7 +133,7 @@ export default async function Seccion({
         </div>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5">
+      <div className="columna">
 
         {averia && (
           <div className="mt-4">
@@ -172,7 +172,15 @@ export default async function Seccion({
         {grupos.map((g, i) => (
           <section key={g.titulo ?? `sueltas-${i}`} className="mt-5">
             {g.titulo && <h2 className="rotulo">{g.titulo}</h2>}
-            <ul className={g.titulo ? 'mt-2.5 space-y-2' : 'space-y-2'}>
+            {/* Las carpetas, a dos por fila en grande: una sección
+                como Finca tiene siete u ocho y en una sola tira hay que
+                deslizar para ver la última. */}
+            <ul
+              className={
+                (g.titulo ? 'mt-2.5 space-y-2' : 'space-y-2') +
+                ' lg:grid lg:grid-cols-2 lg:gap-2.5 lg:space-y-0'
+              }
+            >
               {g.carpetas.map((c) => {
                 const n = cuantos.get(c.id) ?? 0
                 const dineros = filtrados
@@ -251,7 +259,9 @@ export default async function Seccion({
                 ? `Todos los papeles · ${filtrados.length}`
                 : `Papeles de ${trimestre ? `T${trimestre} ` : ''}${anio} · ${filtrados.length}`}
             </h2>
-            <ul className="mt-2.5 space-y-2.5">
+            {/* Cien papeles en una tira de 448 px son ocho pantallas
+                de deslizar. A dos columnas, cuatro. */}
+            <ul className="mt-2.5 space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-2.5 lg:space-y-0">
               {filtrados.slice(0, 100).map((d) => (
                 <li key={d.id}>
                   <Fila href={`/documentos/${d.id}`}>

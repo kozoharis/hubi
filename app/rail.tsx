@@ -62,7 +62,25 @@ export default function Rail() {
   return (
     <nav
       aria-label="Secciones"
-      className="hidden w-[248px] shrink-0 flex-col border-r border-borde bg-superficie px-3 py-5 lg:flex"
+      /*
+        `relative z-10` NO ES DECORACIÓN: sin eso, el Inicio borra el
+        rail. Y solo el Inicio.
+
+        El Inicio pinta un telón —las manchas de color y el degradado
+        que las apaga hacia abajo— que es `position: fixed; inset: 0`,
+        o sea LA VENTANA ENTERA, rail incluido. Y al estar colocado
+        con `position`, se pinta por encima de todo lo que no lo está.
+
+        El contenido se salvaba de casualidad: vive dentro del mismo
+        `<main>` que el telón y va después en el documento. El rail
+        está fuera y no estaba colocado, así que se comía el degradado
+        entero: Papeles algo apagado, Día a día casi invisible y
+        Ajustes, que es el de más abajo, borrado del todo.
+
+        Se ve como un desvanecido bonito, y por eso puede pasar meses
+        sin que nadie lo llame fallo.
+      */
+      className="relative z-10 hidden w-[248px] shrink-0 flex-col border-r border-borde bg-superficie px-3 py-5 lg:flex"
     >
       <div className="flex items-center gap-2.5 px-3 pb-6">
         <Marca />

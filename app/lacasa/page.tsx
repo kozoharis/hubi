@@ -104,8 +104,8 @@ export default async function LaCasaHoy({
   const hechas = deberes.filter((d) => d.hecha).length
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
         <Volver href="/dia" />
         <div className="flex h-14 items-center gap-3">
           {laAyuda && <Persona nombre={laAyuda.nombre} color={laAyuda.color} tam={44} />}
@@ -122,7 +122,7 @@ export default async function LaCasaHoy({
         </div>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-1">
+      <div className="columna pt-1">
         {deberes.length > 0 ? (
           <RutinasHoy
             rutinas={deberes}

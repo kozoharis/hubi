@@ -344,6 +344,37 @@ body {
   min-width: 0;
 }
 
+/* ── La columna de contenido ───────────────────────────────
+   Estaba escrita a mano en cada pantalla —`mx-auto w-full max-w-md
+   px-5`— y con eso, en un ordenador, HUBI era una tira de 448 px
+   centrada con medio metro de papel a los lados.
+
+   Aquí está una sola vez, y con su otra medida:
+
+     móvil     448 px, centrada, 20 px de margen
+     grande    hasta 1100 px, PEGADA A LA IZQUIERDA
+
+   Pegada y no centrada a propósito: a la izquierda está el rail, y
+   una columna centrada dejaría un pasillo vacío entre la navegación y
+   lo que se lee. El ojo vuelve al mismo sitio al cambiar de pantalla.
+
+   Y 1100 y no todo lo ancho que dé: una línea de texto de 1600 px no
+   se lee, se recorre. */
+.columna {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 28rem;
+  padding-inline: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .columna {
+    margin-inline: 0;
+    max-width: 1100px;
+    padding-inline: 2.25rem;
+  }
+}
+
 /* Nada importante depende de pasar el ratón por encima:
    el foco tiene que verse siempre, y verse mucho. */
 :focus-visible {

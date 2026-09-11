@@ -185,6 +185,25 @@ export default async function Mes({
           </div>
         )}
 
+      {/*
+        ── EN GRANDE: LA CUADRÍCULA Y LA LISTA, A LA VEZ ──
+
+        En el móvil van una debajo de otra y está bien: se mira la
+        forma del mes, se desliza, se lee lo que hay.
+
+        En un ordenador esa misma pila tiene dos problemas. El primero
+        es que la cuadrícula es de casillas cuadradas: a todo lo ancho,
+        cada día mediría 145 px y el mes ocuparía una pantalla entera
+        para decir dónde hay puntos. Por eso se le pone techo.
+
+        El segundo es el bueno: con el mes al lado de la lista, el
+        punto del día 17 y la línea que dice qué es ese día 17 se ven
+        JUNTOS. Es la diferencia entre saber que hay algo y saber qué
+        hay, y era lo único que la vista de mes no conseguía.
+      */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,500px)_minmax(0,1fr)] lg:items-start lg:gap-8">
+
+        <div>
       {/* ── La cuadrícula ── */}
         <div className="mt-4 grid grid-cols-7 gap-1">
           {DIAS.map((d, i) => (
@@ -243,6 +262,7 @@ export default async function Mes({
             )
           )}
         </div>
+        </div>
 
         {/*
           ═══════════════════════════════════════════════════════
@@ -263,7 +283,7 @@ export default async function Mes({
           Es la misma regla en las tres escalas: lo que estás mirando
           se ve entero, y se entra para ver el detalle.
         */}
-        <section className="mt-6">
+        <section className="mt-6 lg:mt-4">
           <h2 className="rotulo">
             {conAlgo.length === 0
               ? 'Este mes'
@@ -344,7 +364,9 @@ export default async function Mes({
           )}
         </section>
 
-        <div className="mt-5">
+        </div>
+
+        <div className="mt-5 lg:max-w-[500px]">
           <BotonPrincipal href="/tablon/nuevo" icono="mas">
             Apuntar algo
           </BotonPrincipal>

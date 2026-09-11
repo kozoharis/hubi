@@ -75,13 +75,13 @@ export default async function PaginaPagos() {
   }
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
         <Volver href="/cuentas" />
         <h1 className="t-titulo mt-2.5">Pagos fijos</h1>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5">
+      <div className="columna">
         <Fijos
           partidas={hojas.map((c) => ({
             id: c.id,

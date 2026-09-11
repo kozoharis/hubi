@@ -94,28 +94,55 @@ export default async function Cuentas() {
   const nombreMes = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(hoy)
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
-        <Volver href="/" />
+    <main className="min-h-screen pb-40 lg:pb-16">
+      {/* El «volver» solo en el móvil: en grande el rail está a la
+          vista y el Inicio está a un toque, siempre en el mismo sitio.
+          Una flecha atrás encima de una navegación permanente es un
+          segundo camino para lo mismo. */}
+      <Cabecera ancho>
+        <div className="lg:hidden">
+          <Volver href="/" />
+        </div>
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono="euro" ambito="pizarra" tam={44} />
           <h1 className="t-titulo">Cuentas</h1>
         </div>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-1">
+      <div className="columna pt-1">
         {/*
           La caja de HUBI. La misma que en Inicio y en Papeles, con la
           sugerencia de aquí: lo que cambia entre pantallas es lo que
           se propone, no lo que hace.
         */}
-        <div className="mb-4">
+        <div className="mb-4 lg:max-w-[560px]">
           <HubiCaja donde="cuentas" />
         </div>
+
+        {/*
+          ══ LO QUE LLEVAS Y LO QUE SE VA ══
+
+          Dos bloques que no se comparan entre sí y por eso pueden ir
+          en paralelo.
+
+          A la izquierda LAS ACTIVIDADES: la finca, la obra, los pisos.
+          Cada una con su balance, y ahí la pregunta es «¿cómo va?».
+
+          A la derecha LA CASA: los gastos corrientes y lo que se paga
+          todos los meses. La pregunta es otra —«¿cuánto se va sin que
+          nadie lo mire?»— y mezclarlas en una sola tira hacía que lo
+          de la casa quedara siempre debajo, al final del todo, que es
+          donde se deja de mirar.
+
+          En el móvil siguen una detrás de otra y en el mismo orden.
+        */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8">
+
+        <section className="lg:col-start-1 lg:row-start-1">
         {/* ══ LAS ACTIVIDADES ══ */}
         {actividades.length > 0 ? (
           <>
-            <h2 className="t-seccion mt-4">Cómo va cada una</h2>
+            <h2 className="t-seccion mt-4 lg:mt-0">Cómo va cada una</h2>
             <p className="t-apoyo mt-1">En {nombreMes}</p>
 
             <ul className="mt-3 space-y-2.5">
@@ -155,6 +182,19 @@ export default async function Cuentas() {
           </div>
         )}
 
+        {/* Crear una actividad desde aquí. Mandar a Ajustes a alguien
+            que está mirando justo sus cuentas es hacerle dar un rodeo
+            para volver al mismo sitio.
+
+            Debajo de las actividades y no al final de la pantalla: es
+            «y una más», y eso se entiende pegado a la lista a la que
+            se añade, no después de los gastos de la casa. */}
+        <div className="mt-6">
+          <NuevaActividad />
+        </div>
+        </section>
+
+        <section className="lg:col-start-2 lg:row-start-1">
         {/*
           ══ LA CASA ══
 
@@ -166,7 +206,7 @@ export default async function Cuentas() {
           se mira, y si desapareciera cuando está a cero habría que
           recordar que existe.
         */}
-        <h2 className="t-seccion mt-8">La casa</h2>
+        <h2 className="t-seccion mt-8 lg:mt-0">La casa</h2>
         <p className="t-apoyo mt-1">Lo que no es de ninguna actividad</p>
 
         <div className="mt-3 space-y-2.5">
@@ -202,12 +242,8 @@ export default async function Cuentas() {
             pie="Internet, teléfono, seguros, suscripciones"
           />
         </div>
+        </section>
 
-        {/* Crear una actividad desde aquí. Mandar a Ajustes a alguien
-            que está mirando justo sus cuentas es hacerle dar un rodeo
-            para volver al mismo sitio. */}
-        <div className="mt-6">
-          <NuevaActividad />
         </div>
       </div>
 

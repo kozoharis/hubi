@@ -376,8 +376,8 @@ export default async function Cuentas({
   }
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono={seccion.icono} ambito={seccion.ambito} tam={44} />
           <h1 className="t-titulo min-w-0 truncate">{seccion.nombre}</h1>
@@ -403,7 +403,7 @@ export default async function Cuentas({
         </div>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-1">
+      <div className="columna pt-1">
 
         {/* ── Qué periodo ── */}
         {/* Eran de 44 px —por debajo del suelo de 48 del propio CSS— y
@@ -673,9 +673,29 @@ export default async function Cuentas({
           </section>
         )}
 
+        {/*
+          ══ EL DESGLOSE Y LOS MOVIMIENTOS, UNO AL LADO DEL OTRO ══
+
+          Son la misma pregunta mirada de dos maneras. «En qué se ha
+          gastado» dice la FORMA del dinero —la luz se lleva la mitad,
+          los productos casi nada—; «Movimientos» dice los HECHOS, uno
+          a uno, con su fecha y su papel.
+
+          En el móvil van seguidas y se mira una y luego la otra. Y ahí
+          está el problema que esto arregla: para comprobar si esos 340
+          € de luz son una factura gorda o seis normales hay que
+          deslizar hasta los movimientos, y al llegar ya no se ve el
+          340. Se acaba subiendo y bajando para comparar dos números
+          que caben juntos en cualquier ordenador.
+
+          A la izquierda la forma, a la derecha los hechos. Y la lista
+          de movimientos, que es la larga, se lleva la columna ancha.
+        */}
+        <div className="lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start lg:gap-8">
+
         {/* ── En qué se ha ido ── */}
         {desglose.length > 0 && (
-          <section className="mt-5">
+          <section className="mt-5 lg:col-start-1 lg:row-start-1">
             <h2 className="rotulo">En qué se ha gastado</h2>
             <ul className="mt-3">
               {desglose.map((d) => (
@@ -704,7 +724,7 @@ export default async function Cuentas({
         )}
 
         {/* ── El detalle ── */}
-        <section className="mt-5">
+        <section className="mt-5 lg:col-start-2 lg:row-start-1">
           <h2 className="rotulo">Movimientos</h2>
 
           {movimientos.length === 0 ? (
@@ -768,6 +788,8 @@ export default async function Cuentas({
           )}
         </section>
 
+        </div>
+
         {/*
           «UN MOVIMIENTO», NO «UN GASTO».
 
@@ -781,7 +803,10 @@ export default async function Cuentas({
           dice MOVIMIENTOS: son la misma cosa llamada de dos maneras
           en la misma pantalla.
         */}
-        <div className="mt-5">
+        {/* Un botón no crece con la pantalla: a 1100 px de ancho
+            «Apuntar un movimiento» deja de parecer un botón y parece
+            una franja. */}
+        <div className="mt-5 lg:max-w-[560px]">
           <BotonPrincipal
             href={`/finca/apuntar?seccion=${seccion.raiz ?? 'resto'}`}
             icono="mas"

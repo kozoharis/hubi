@@ -69,15 +69,15 @@ export default async function PaginaNotas({
   }
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
         <Volver href="/dia" />
         <div className="flex h-12 items-center">
           <h1 className="t-titulo">Notas</h1>
         </div>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-2">
+      <div className="columna pt-2">
         <Notas
           notas={conFecha(notas)}
           gente={gente}

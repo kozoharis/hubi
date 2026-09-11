@@ -130,9 +130,12 @@ export default async function DiaADia() {
   const veAsesor = !soyLaAyuda && !soyElAsesor && laGestoria !== null
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
-        <Volver href="/" />
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
+        {/* Solo en el móvil: en grande el rail ya lleva al Inicio. */}
+        <div className="lg:hidden">
+          <Volver href="/" />
+        </div>
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono="taza" ambito="arena" tam={44} />
           {/* Aquí sí se llama por su nombre entero. En la barra pone
@@ -141,15 +144,38 @@ export default async function DiaADia() {
         </div>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-1 space-y-2.5">
+      <div className="columna pt-1">
         {/*
           La caja de HUBI. La misma que en Inicio y en Papeles, con la
           sugerencia de aquí: lo que cambia entre pantallas es lo que
           se propone, no lo que hace.
         */}
-        <div className="pb-1.5">
+        <div className="pb-1.5 lg:max-w-[560px]">
           <HubiCaja donde="dia" />
         </div>
+
+        {/*
+          ══ LAS CINCO, A LA VEZ ══
+
+          Esta pantalla no es una lista que se lee de arriba abajo: son
+          cinco sitios distintos —la compra, la casa de hoy, los menús,
+          el corcho y el asesor— y se viene aquí sabiendo a cuál se va.
+
+          En el móvil van en fila porque no hay otra, y el orden
+          importa: la compra primero, que es lo que se toca todos los
+          días.
+
+          En grande no hay motivo para hacer deslizar hasta el corcho.
+          Dos por fila y están las cinco delante, cada una con su
+          color, y se toca la que se venía a tocar sin leer las otras
+          cuatro. El orden se conserva: en una rejilla de dos columnas
+          se sigue leyendo izquierda-derecha, arriba-abajo.
+
+          `lg:space-y-0` no es maquillaje: `space-y` mete margen entre
+          hermanos y dentro de una rejilla eso desencaja las filas. En
+          grande manda `gap`, que es lo que sabe de rejillas.
+        */}
+        <div className="space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
         {/*
           ── LA COMPRA, LA PRIMERA ──
 
@@ -254,6 +280,7 @@ export default async function DiaADia() {
             estado={laGestoria.esperando > 0 ? 'atencion' : undefined}
           />
         )}
+        </div>
       </div>
 
       <Barra activa="dia" />

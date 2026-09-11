@@ -567,7 +567,7 @@ export default async function Inicio({
         deja de poder seguirse sin perder el renglón. Lo que sobra a la
         derecha es margen, y está bien que lo sea.
       */}
-      <div className="relative z-10 mx-auto w-full max-w-md px-5 pt-1 lg:mx-0 lg:max-w-[1100px] lg:px-9 lg:pt-5">
+      <div className="columna relative z-10 pt-1 lg:pt-5">
         {/*
           ═══════════════════════════════════════════════════════
           LA CABECERA, EN GRANDE, EN DOS

@@ -29,13 +29,13 @@ export default async function PaginaMenus() {
   if (!user) redirect('/entrar')
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
         <Volver href="/dia" />
         <h1 className="t-titulo mt-2.5">Menús</h1>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5">
+      <div className="columna">
         <Semana />
       </div>
 

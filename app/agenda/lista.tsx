@@ -302,7 +302,26 @@ export default async function Lista({
               texto={enEstaSemana ? 'Nada más esta semana.' : 'Nada esta semana.'}
             />
           ) : (
-            <div className="mt-5 space-y-5">
+            /*
+              ── DOS COLUMNAS EN GRANDE ──
+
+              Esto es una vista SEMANAL, y en una tira de 448 px la
+              semana no cabe: con tres cosas el martes y dos el
+              jueves, el domingo ya está fuera de la pantalla. Para
+              saber si el finde está libre hay que deslizar, y
+              entonces el martes deja de verse. Eso no es mirar una
+              semana: es mirar días de uno en uno con más pasos.
+
+              A dos columnas los siete caben de golpe, que es la
+              única razón por la que alguien abre la semana en vez
+              del día.
+
+              `items-start` para que un día con cuatro cosas no
+              estire al de al lado, y `space-y-0` porque el margen
+              entre hermanos desencaja las filas de una rejilla —
+              ahí manda `gap`.
+            */
+            <div className="mt-5 space-y-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-8 lg:gap-y-6 lg:space-y-0">
               {conAlgo.map((d) => (
                 <section key={d.fecha}>
                   <Link

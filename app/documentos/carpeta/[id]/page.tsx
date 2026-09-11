@@ -95,8 +95,8 @@ export default async function Carpeta({
     : '/documentos'
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
         <Volver href={volver} />
         <div className="mt-2.5 flex items-center gap-3">
           <PastillaAmbito icono={s.icono} ambito={s.ambito} />
@@ -110,7 +110,7 @@ export default async function Carpeta({
         </div>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5">
+      <div className="columna">
 
         {averia ? (
           <div className="mt-6">
@@ -128,7 +128,10 @@ export default async function Carpeta({
             />
           </div>
         ) : (
-          <ul className="mt-5 space-y-2.5">
+          /* El contenido de una carpeta: a dos columnas en grande, que
+             es para lo que se entra aquí — a encontrar uno entre
+             muchos. */
+          <ul className="mt-5 space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-2.5 lg:space-y-0">
             {papeles.map((p) => (
               <li key={p.id}>
                 {/*

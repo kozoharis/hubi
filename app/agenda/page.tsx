@@ -87,8 +87,8 @@ export default async function Agenda({
   if (!(await quien(supabase))) redirect('/entrar')
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono="calendario" ambito="azul" tam={44} />
           <h1 className="t-titulo">Agenda</h1>
@@ -100,7 +100,11 @@ export default async function Agenda({
             Y son la píldora del sistema: la puesta se rellena de
             tinta, igual que Semana/Mes en cualquier otra pantalla.
             Antes iban con `--t-boton`, el color de antes. */}
-        <div className="mt-2 flex gap-2" role="group" aria-label="Cómo verlo">
+        {/* En grande no se estiran a media pantalla: dos botones de
+            550 px cada uno para elegir entre semana y mes es una
+            botonera de sala de espera. Se quedan del tamaño de su
+            palabra. */}
+        <div className="mt-2 flex gap-2 lg:max-w-[360px]" role="group" aria-label="Cómo verlo">
           {/* «Semana» y no «Lista»: las dos vistas acaban enseñando una
               lista —al tocar un día del Mes también sale una—, así que
               «Lista» no distinguía nada. Lo que las diferencia es
@@ -140,10 +144,10 @@ export default async function Agenda({
         </div>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-2">
+      <div className="columna pt-2">
         {/* La caja de HUBI, con la sugerencia de aquí. Lo que cambia
             entre pantallas es lo que se propone, no lo que hace. */}
-        <div className="mb-4">
+        <div className="mb-4 lg:max-w-[560px]">
           <HubiCaja donde="agenda" />
         </div>
         {enDia ? (

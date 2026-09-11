@@ -141,13 +141,13 @@ export default async function Documentos({
     }
 
     return (
-      <main className="min-h-screen pb-40">
-        <Cabecera>
+      <main className="min-h-screen pb-40 lg:pb-16">
+        <Cabecera ancho>
           <Titulo />
           <Buscador valor={busqueda} />
         </Cabecera>
 
-        <div className="mx-auto w-full max-w-md px-5 pt-2">
+        <div className="columna pt-2">
 
           {averia && (
             <div className="mt-4">
@@ -179,7 +179,11 @@ export default async function Documentos({
             </p>
           )}
 
-          <ul className="mt-4 space-y-2.5">
+          {/* Dos columnas en grande. Una carpeta entera pueden ser
+              cuarenta papeles, y cuarenta renglones en una tira de 448
+              px son cuatro pantallas de deslizar para ver si está el
+              que buscas. */}
+          <ul className="mt-4 space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-2.5 lg:space-y-0">
             {encontrados.map((d) => {
               const c = todasCat.find((x) => x.id === d.categoria_id)
               const s = seccionPintada(c?.segmento_drive)
@@ -269,16 +273,26 @@ export default async function Documentos({
     toque, aunque su carpeta se llame de otra manera o esté mal
     colocada.
   */
-  const recientes = papeles.slice(0, 6)
+  /*
+    Seis en el móvil y DOCE en grande.
+
+    No es un número más grande por gusto: en el móvil esta lista va
+    encima de las carpetas y cada línea de más aleja la sección que
+    estás buscando. En grande va en su propia columna, al lado, y la
+    columna se queda a medias con seis. El corte lo hace el CSS —los
+    seis últimos se esconden en el móvil—, así no hay dos consultas ni
+    dos maneras de contar.
+  */
+  const recientes = papeles.slice(0, 12)
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
         <Titulo />
         <Buscador valor="" />
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-2">
+      <div className="columna pt-2">
 
         {averia && (
           <div className="mt-3">
@@ -289,15 +303,40 @@ export default async function Documentos({
           </div>
         )}
 
+        {/*
+          ══ DOS CAMINOS AL MISMO PAPEL, UNO AL LADO DEL OTRO ══
+
+          Esta pantalla contesta una sola pregunta —«¿dónde está ese
+          papel?»— y la contesta de dos maneras que no se parecen en
+          nada: por la carpeta donde debería estar, o por lo que se
+          guardó hace poco. Quien busca la factura de la luz de julio
+          va por carpetas; quien busca «eso que fotografié el martes»
+          va por lo reciente.
+
+          En el móvil van una debajo de otra y hay que elegir: lo
+          reciente primero, porque el papel recién guardado es el que
+          más se busca.
+
+          En grande no hay que elegir. Las carpetas a la izquierda —a
+          dos por fila, así se ven las seis secciones sin deslizar— y
+          lo último a la derecha, con el doble de líneas.
+
+          El sitio se dice con `col-start`, no con el orden del
+          documento: en el móvil manda el orden de lectura de arriba
+          abajo, y ése se queda como está.
+        */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
+
         {/* Lo último, directo. Sin pasar por el árbol de carpetas. */}
         {recientes.length > 0 && (
-          <>
+          <section className="lg:col-start-2 lg:row-start-1">
             <h2 className="rotulo mt-3">Lo último guardado</h2>
             <ul className="mt-3 space-y-2.5">
-              {recientes.map((d) => {
+              {recientes.map((d, i) => {
                 const s = seccionPintada(segmentoPorId.get(d.categoria_id))
                 return (
-                  <li key={d.id}>
+                  /* Del séptimo en adelante, solo en grande. */
+                  <li key={d.id} className={i > 5 ? 'hidden lg:list-item' : undefined}>
                     <Fila href={`/documentos/${d.id}`}>
                       <PastillaAmbito icono={s.icono} ambito={s.ambito} tam={44} />
                       <span className="min-w-0 flex-1">
@@ -315,11 +354,16 @@ export default async function Documentos({
                 )
               })}
             </ul>
-          </>
+          </section>
         )}
 
-        <h2 className="rotulo mt-6">Todo, por carpetas</h2>
-        <ul className="mt-3 space-y-2.5">
+        <section className="lg:col-start-1 lg:row-start-1">
+        <h2 className="rotulo mt-6 lg:mt-3">Todo, por carpetas</h2>
+        {/* Dos por fila en grande. Las secciones son seis o siete: en
+            una sola columna hay que deslizar para ver Vehículos, y
+            entonces la pantalla de las carpetas no enseña las
+            carpetas. */}
+        <ul className="mt-3 space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
           {secciones.map((c) => {
             const s = seccionPintada(c.segmento_drive)
             const n = cuantos.get(c.id) ?? 0
@@ -342,6 +386,9 @@ export default async function Documentos({
             )
           })}
         </ul>
+        </section>
+
+        </div>
 
         {/* Solo cuando de verdad no hay ninguno. Si la consulta ha
             fallado, arriba sale el aviso rojo: decir "todavía no hay
@@ -359,8 +406,13 @@ export default async function Documentos({
 
         {/* El mismo botón que al final de cada carpeta, para que esté
             siempre en el mismo sitio: abajo del todo. Aquí sin carpeta
-            puesta — desde la lista general aún hay que elegirla. */}
-        <Anadir />
+            puesta — desde la lista general aún hay que elegirla.
+
+            Con techo en grande: un botón de 1100 px de ancho deja de
+            leerse como un botón. */}
+        <div className="lg:max-w-[560px]">
+          <Anadir />
+        </div>
       </div>
       <Barra activa="documentos" />
     </main>

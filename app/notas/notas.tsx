@@ -263,7 +263,22 @@ export default function Notas({
                 `Aquí no hay nada. ${comoSeLlama} está vacío.`}
         </p>
       ) : (
-        <ul className="mt-4 space-y-2.5">
+        /*
+          ── EN GRANDE, UN CORCHO DE VERDAD ──
+
+          Esto se llama tablón y en el móvil es una columna de papeles
+          uno encima de otro, porque no cabe otra cosa. En un ordenador
+          sí cabe: tres por fila, y entonces se parece a lo que dice
+          ser — se ve todo lo que hay puesto sin descolgar nada.
+
+          Y no es solo estética: un recado se busca por su SITIO («el
+          amarillo de arriba a la derecha»), no leyendo veinte de
+          arriba abajo. Eso solo funciona si los sitios existen.
+
+          `items-start` para que una nota larga no estire a las dos de
+          al lado hasta su altura.
+        */
+        <ul className="mt-4 space-y-2.5 lg:grid lg:grid-cols-3 lg:items-start lg:gap-3 lg:space-y-0">
           {visibles.map((n) => {
             const mia = n.escrita_por === yo
             const paraMi = n.para === yo
