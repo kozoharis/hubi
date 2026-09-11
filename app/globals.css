@@ -331,6 +331,17 @@ body {
   overflow-x: hidden;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+
+  /* Desde que a la izquierda puede haber un rail, el marco es la otra
+     mitad de una fila. Sin esto se llevaría el ancho entero y empujaría
+     al rail fuera de la pantalla.
+
+     `min-width: 0` es el que de verdad hace falta y el que nadie pone:
+     un elemento flexible se niega a encoger por debajo de lo que mide
+     su contenido, así que una tabla ancha o un título largo sacarían
+     la pantalla de madre en vez de quedarse dentro con su barra. */
+  flex-grow: 1;
+  min-width: 0;
 }
 
 /* Nada importante depende de pasar el ratón por encima:

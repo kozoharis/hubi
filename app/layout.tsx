@@ -5,6 +5,8 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { actividadesDe, type Actividad } from '@/lib/actividades'
 import { ProveedorActividades } from './actividades-contexto'
 import Marco from './marco'
+import { elEspacio } from '@/lib/espacio'
+import Rail from './rail'
 
 const fuente = { variable: 'font-stub', className: 'font-stub' }
 
@@ -137,19 +139,22 @@ export default async function RootLayout({
 
     if (yo) {
       /*
-        LA CASA QUE ESTÁ MIRANDO, preguntándoselo a la base de datos.
+        EN QUÉ CASA ESTÁ, Y SALE DE LA RUTA.
 
-        Se le pide a `mi_hogar()` y no se coge «la primera fila de
-        miembros»: quien está en dos casas tiene dos filas con dos
-        roles distintos —familia en la suya, ayuda en la de al lado— y
-        coger una al azar le pondría la barra equivocada la mitad de
-        las veces.
+        Aquí se preguntaba a `mi_hogar()`, o sea al dato global. Tenía
+        sentido mientras el espacio era único: quien está en dos casas
+        tiene dos filas con dos roles distintos —familia en la suya,
+        ayuda en la de al lado— y coger una al azar le pondría la
+        navegación equivocada la mitad de las veces.
 
-        Y así dice exactamente lo mismo que las políticas, que es la
-        única manera de que la pantalla y los permisos no se
-        contradigan.
+        Desde el paso 3 la respuesta buena está en la dirección, y
+        `elEspacio()` la da. Con el dato global, abrir la casa de un
+        cliente en una pestaña le cambiaba las pestañas a la otra.
+
+        Y es lo mismo que contestan las políticas, que es la única
+        manera de que la pantalla y los permisos no se contradigan.
       */
-      const { data: casaActiva } = await supabase.rpc('mi_hogar')
+      const casaActiva = await elEspacio(supabase)
 
       const { data: mio } = casaActiva
         ? await supabase
@@ -207,7 +212,27 @@ export default async function RootLayout({
           a la ventana. El porqué largo está en `globals.css`.
         */}
         <ProveedorActividades casa={{ actividades, rol, usaCompra }}>
-          <Marco>{children}</Marco>
+          {/*
+            ── DOS SUPERFICIES, UN ARMAZÓN ──
+
+            En el móvil esto es una sola columna que se desliza, con la
+            barra de pestañas abajo: exactamente lo de siempre, sin
+            tocar.
+
+            A partir de 1024 px se convierte en dos: el rail de pie a
+            la izquierda y el contenido a su derecha. El rail no se
+            desliza —está fuera del marco—, así que la navegación se
+            queda quieta mientras se lee, que es lo que se espera de un
+            ordenador y lo contrario de lo que se espera de un móvil.
+
+            La barra de abajo se esconde sola en grande (`lg:hidden` en
+            su propio archivo); si salieran las dos, habría dos sitios
+            señalando dónde estás.
+          */}
+          <div className="flex h-full">
+            <Rail />
+            <Marco>{children}</Marco>
+          </div>
         </ProveedorActividades>
       </body>
     </html>

@@ -369,7 +369,7 @@ export default async function Inicio({
       : null
 
   return (
-    <main className="relative min-h-screen pb-40">
+    <main className="relative min-h-screen pb-40 lg:pb-16">
       <Arranque />
 
       {/* El color, de borde a borde y siempre por detrás */}
@@ -453,7 +453,21 @@ export default async function Inicio({
         </div>
       </Cabecera>
 
-      <div className="relative z-10 mx-auto w-full max-w-md px-5 pt-1">
+      {/*
+        ── Y AQUÍ SE ENSANCHA ──
+
+        En el móvil, `max-w-md`: la columna de siempre, sin tocar.
+
+        En grande, hasta 1100 px y a la IZQUIERDA, no centrada. Con el
+        rail al lado, una columna centrada deja un pasillo de aire
+        entre la navegación y lo que se lee, y la vista tiene que
+        saltarlo en cada renglón. Pegada al rail, se lee de corrido.
+
+        No es el ancho completo: 1100 px es donde una línea de texto
+        deja de poder seguirse sin perder el renglón. Lo que sobra a la
+        derecha es margen, y está bien que lo sea.
+      */}
+      <div className="relative z-10 mx-auto w-full max-w-md px-5 pt-1 lg:mx-0 lg:max-w-[1100px] lg:px-9 lg:pt-5">
         {/* ── En qué casa estás, y las que te han ofrecido ── */}
         {/* Va lo primero, encima del saludo del día: si alguien te ha
             dado acceso a los papeles de su casa, eso no puede quedar
@@ -628,6 +642,27 @@ export default async function Inicio({
 
         {rol === 'ayuda' && casaHoy && <TarjetaCasa {...casaHoy} mia />}
 
+        {/*
+          ── DE UNA COLUMNA A DOS ──
+
+          En el móvil esto sigue siendo lo que era: todo seguido, y lo
+          de hoy justo debajo de la acción.
+
+          En grande se pone al lado. A la izquierda HOY, que es lo que
+          hay que hacer y lo que más ocupa; a la derecha LO QUE VIENE,
+          que es una lista corta de avisos.
+
+          Y en ese orden, no al revés: la vista empieza por la
+          izquierda, y lo primero que se lee tiene que ser lo de hoy.
+          Lo de dentro de tres semanas puede esperar a la segunda
+          mirada.
+
+          `items-start` para que las dos no se estiren a la altura de
+          la más larga: tres avisos estirados para igualar a doce
+          tareas son aire con borde.
+        */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8">
+          <div>
         {/* ── Hoy ── */}
         {ve.agenda && hoy.length > 0 && (
           <section className="mt-6">
@@ -723,6 +758,9 @@ export default async function Inicio({
           </section>
         )}
 
+          </div>
+
+          <div>
         {/* ── Próximamente ── */}
         {ve.agenda && proximos.length > 0 && (
           <section className="mt-6">
@@ -762,6 +800,8 @@ export default async function Inicio({
               />
             </div>
           )}
+          </div>
+        </div>
       </div>
 
       {/*

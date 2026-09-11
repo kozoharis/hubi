@@ -5,6 +5,7 @@ import Link from '@/app/enlace'
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { Ico, type Icono } from './iconos'
 import { useCasa } from './actividades-contexto'
+import { pestanasDe, puedeHablar } from './pestanas'
 
 /*
   La barra de abajo.
@@ -75,21 +76,8 @@ type Seccion = string | null
   día —que se usa varias veces al día, no una vez a la semana— pasa a
   estar a un toque en vez de a un scroll.
 */
-type Pestana = { clave: string; texto: string; icono: Icono; href: string }
-
-const INICIO:   Pestana = { clave: 'inicio',     texto: 'Inicio',  icono: 'casa',       href: '/' }
-const PAPELES:  Pestana = { clave: 'documentos', texto: 'Papeles', icono: 'carpeta',    href: '/documentos' }
-const AGENDA:   Pestana = { clave: 'agenda',     texto: 'Agenda',  icono: 'calendario', href: '/agenda' }
-const CUENTAS:  Pestana = { clave: 'cuentas',    texto: 'Cuentas', icono: 'euro',       href: '/cuentas' }
-/*
-  «Día a día» y no «El día a día»: a 360 px la barra reparte 72 px por
-  botón, y el rótulo va a 12 px. «El día a día» se parte en dos
-  renglones y descuadra las otras cuatro. Dentro, la pantalla sí se
-  llama por su nombre entero.
-*/
-const DIA_A_DIA: Pestana = { clave: 'dia', texto: 'Día a día', icono: 'taza', href: '/dia' }
-
-
+/* Las pestañas viven en `pestanas.ts`: las comparten esta barra y el
+   rail del ordenador, y escritas dos veces acabarían discrepando. */
 /*
   ═══════════════════════════════════════════════════════════════
   Y LA BARRA NO ES LA MISMA PARA TODOS
@@ -152,7 +140,7 @@ export default function Barra({
   /* La voz sirve para APUNTAR y para preguntar. A quien no puede
      escribir nada —el asesor, quien solo mira— le daría un botón
      grande que falla en cuanto lo use. */
-  const puedeHablar = rol !== 'asesor' && rol !== 'mirar'
+  const sePuedeHablar = puedeHablar(rol)
 
   /*
     ── Y LA BARRA NO ES LA MISMA PARA TODOS ──
@@ -178,17 +166,14 @@ export default function Barra({
     trabajo — «el día 20 hay un pago» va en un calendario, no en un
     WhatsApp.
   */
-  const PESTANAS: Pestana[] =
-    rol === 'ayuda'
-      ? [INICIO, AGENDA, DIA_A_DIA]
-      : rol === 'asesor'
-        ? [INICIO, PAPELES, AGENDA, CUENTAS]
-        : [INICIO, PAPELES, AGENDA, CUENTAS, DIA_A_DIA]
+  const PESTANAS = pestanasDe(rol)
 
+  /* `lg:hidden`: en grande navega el rail de la izquierda. Dos sitios
+     señalando dónde estás es peor que uno. */
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 lg:hidden">
       <div className="pointer-events-none relative mx-auto max-w-md">
-        {voz && puedeHablar && (
+        {voz && sePuedeHablar && (
           <Link
             href="/hablar"
             aria-label="Hablar con HUBI"
