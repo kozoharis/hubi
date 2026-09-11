@@ -8,6 +8,7 @@ import {
   rutaDeCarpetas,
   nombreDeArchivo,
   extensionDe,
+  esReservado,
   type Categoria,
 } from '@/lib/rutas'
 import { rehacerAvisos, esAviso, type Vencimiento } from '@/lib/vencimientos'
@@ -410,6 +411,7 @@ export async function PATCH(
       titulo,
       creadoPor: user.id,
       hoy: hoyAqui(),
+      reservado: esReservado(camino),
       ...vence,
     })
 

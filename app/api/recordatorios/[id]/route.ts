@@ -38,7 +38,12 @@ export async function PATCH(
     })
     .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
-    .select('id, titulo, tipo, fecha, hora, nota, asignado_a, repite, repite_hasta, evento_google')
+    /* Los dos últimos son nuevos, y están para que la siguiente vuelta
+       de una tarea que se repite no los pierda: de qué papel nace el
+       aviso, y si puede salir en la pantalla de la cocina.
+       (Va en una sola línea a propósito: `supabase-js` deduce los tipos
+       del texto literal, y partirlo con un `+` le deja sin tipar.) */
+    .select('id, titulo, tipo, fecha, hora, nota, asignado_a, repite, repite_hasta, evento_google, documento_origen_id, visible_en_casa')
     .maybeSingle()
 
   if (error) {
@@ -98,6 +103,20 @@ export async function PATCH(
           repite: data.repite,
           repite_hasta: data.repite_hasta,
           nace_de: data.id,
+          /*
+            Y lo que la vuelta anterior ya sabía.
+
+            `documento_origen_id` no se copiaba, así que un vencimiento
+            que se repite perdía su papel a la segunda vuelta: el aviso
+            seguía saliendo, pero el documento se quedaba sin él y la
+            ficha del papel dejaba de enseñarlo.
+
+            `visible_en_casa` igual: si esta tarea se veía en la cocina,
+            la siguiente también. Si no se había decidido, sigue sin
+            decidirse —nulo es «no se enseña»—.
+          */
+          documento_origen_id: data.documento_origen_id,
+          visible_en_casa: data.visible_en_casa,
         })
         .select('id')
         .maybeSingle()
@@ -255,6 +274,7 @@ export async function PUT(
     repite?: string | null
     repite_hasta?: string | null
     aviso_previo?: string | null
+    visible_en_casa?: boolean | null
   }
 
   const cambios: Record<string, unknown> = {}
@@ -288,6 +308,19 @@ export async function PUT(
       c.repite_hasta && /^\d{4}-\d{2}-\d{2}$/.test(c.repite_hasta) ? c.repite_hasta : null
   }
   if (c.aviso_previo !== undefined) cambios.aviso_previo = c.aviso_previo || 'sin_aviso'
+
+  /*
+    Si esto puede salir en la pantalla común de la casa.
+
+    Tres valores y no dos: `true` sale, `false` no sale, y `null` es
+    «no se ha decidido», que se lee como que NO sale. Se acepta el nulo
+    a propósito, para poder devolver una cosa a «sin decidir» en vez de
+    tener que elegir por narices.
+  */
+  if (c.visible_en_casa !== undefined) {
+    cambios.visible_en_casa =
+      c.visible_en_casa === null ? null : Boolean(c.visible_en_casa)
+  }
 
   if (Object.keys(cambios).length === 0) {
     return NextResponse.json({ ok: true })

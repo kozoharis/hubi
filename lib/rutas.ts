@@ -21,6 +21,25 @@ export function cadena(categorias: Categoria[], hojaId: string): Categoria[] {
   return camino
 }
 
+/*
+  LAS SECCIONES RESERVADAS · Salud y Personal.
+
+  Se mira la RAÍZ del camino, así que una carpeta nueva dentro de Salud
+  nace protegida sin que nadie tenga que acordarse de nada.
+
+  Vivía suelta dentro de `app/api/documentos/route.ts`, donde solo la
+  usaba el OCR —de lo que cuelga de estas dos no se guarda el texto
+  leído—. Ahora también decide si un aviso nacido de uno de estos
+  papeles puede salir en la pantalla de la cocina, y por eso sube aquí:
+  dos copias de esta lista significa que un día no coincidan y el
+  informe médico acabe en la pared de la cocina.
+*/
+const RESERVADAS = ['SALUD', 'PERSONAL']
+
+export function esReservado(camino: { segmento_drive: string }[]): boolean {
+  return RESERVADAS.includes((camino[0]?.segmento_drive ?? '').toUpperCase())
+}
+
 /**
  * Construye la ruta de carpetas dentro de la carpeta HUBI del Drive.
  *

@@ -5,6 +5,7 @@ import { quien } from '@/lib/supabase/quien'
 import { cuando, iconoDe, atrasado, type Recordatorio } from '@/lib/tablon'
 import AccionHecho from './accion'
 import Editar from './editar'
+import EnLaCocina from './en-la-cocina'
 import Barra from '../../barra'
 import { Volver } from '../../iconos'
 import { elEspacioO } from '@/lib/espacio'
@@ -33,7 +34,7 @@ export default async function Detalle({
   const { data } = await supabase
     .from('recordatorios')
     .select(
-      'id, titulo, tipo, asignado_a, creado_por, fecha, hora, estado, nota, documento_origen_id, aviso_previo, repite, repite_hasta, creado_en, hecho_en, hecho_por'
+      'id, titulo, tipo, asignado_a, creado_por, fecha, hora, estado, nota, documento_origen_id, aviso_previo, repite, repite_hasta, creado_en, hecho_en, hecho_por, visible_en_casa'
     )
     .eq('hogar_id', await elEspacioO(supabase))
     .eq('id', id)
@@ -48,7 +49,24 @@ export default async function Detalle({
     creado_en: string
     hecho_en: string | null
     hecho_por: string | null
+    visible_en_casa: boolean | null
   }
+
+  /*
+    ¿Tiene esta casa una pantalla común?
+
+    Si no la tiene, el interruptor de «se ve en la cocina» no se pinta:
+    sería una decisión más en una pantalla, sobre un aparato que no
+    existe. El día que se encienda una tablet, aparece solo.
+  */
+  const { data: pantallas } = await supabase
+    .from('miembros')
+    .select('perfil_id')
+    .eq('hogar_id', await elEspacioO(supabase))
+    .eq('clase', 'dispositivo')
+    .limit(1)
+
+  const hayPantalla = (pantallas ?? []).length > 0
 
   const { data: perfiles } = await supabase.from('perfiles').select('id, nombre')
   const nombres = Object.fromEntries((perfiles ?? []).map((p) => [p.id, p.nombre]))
@@ -141,6 +159,10 @@ export default async function Detalle({
             </span>
             <span className="text-verde">›</span>
           </Link>
+        )}
+
+        {hayPantalla && (
+          <EnLaCocina id={r.id} inicial={r.visible_en_casa} />
         )}
 
         <div className="mt-10">

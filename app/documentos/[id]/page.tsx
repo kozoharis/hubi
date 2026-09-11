@@ -136,12 +136,31 @@ export default async function Documento({
         .maybeSingle()
     : conDesglose
 
-  const { data: recordatorio } = await supabase
+  /*
+    TODOS los avisos del papel, no uno.
+
+    Aquí había un `.maybeSingle()`, y `maybeSingle` **da error cuando
+    hay más de una fila**. Y un papel puede tener varias: el `sql/45`
+    dice literalmente que puede llevar su preaviso Y su vencimiento, y
+    encima los que escriba una persona sobre el mismo papel.
+
+    Como el error se tragaba en el destructuring, no rompía nada: hacía
+    desaparecer el aviso **en silencio**, y justo en los papeles que
+    tienen los dos, que son los que más importan.
+  */
+  const { data: avisos } = await supabase
     .from('recordatorios')
     .select('id, titulo, fecha, estado')
     .eq('hogar_id', await elEspacioO(supabase))
     .eq('documento_origen_id', id)
-    .maybeSingle()
+    .order('fecha', { ascending: true })
+
+  const losAvisos = (avisos ?? []) as {
+    id: string
+    titulo: string
+    fecha: string | null
+    estado: string
+  }[]
 
   const apunte = movimiento as {
     id: string
@@ -301,18 +320,29 @@ export default async function Documento({
           </div>
         )}
 
-        {recordatorio && (
-          <div className="mt-2.5">
-          <Fila href={`/tablon/${recordatorio.id}`}>
+        {/*
+          Uno por aviso. Con dos —el preaviso y el vencimiento— salen
+          los dos, cada uno con su fecha, que es la información que de
+          verdad se viene a buscar aquí.
+        */}
+        {losAvisos.map((aviso) => (
+          <div className="mt-2.5" key={aviso.id}>
+          <Fila href={`/tablon/${aviso.id}`}>
             <PastillaAmbito icono="campana" ambito="arena" tam={40} />
             <span className="min-w-0 flex-1">
-              <span className="t-cuerpo block font-extrabold">Tiene un aviso</span>
-              <span className="t-apoyo block truncate">{recordatorio.titulo}</span>
+              <span className="t-cuerpo block truncate font-extrabold">{aviso.titulo}</span>
+              <span className="t-apoyo block truncate">
+                {aviso.estado === 'hecho'
+                  ? 'Ya está hecho'
+                  : aviso.fecha
+                    ? fechaLarga(aviso.fecha)
+                    : 'Sin fecha'}
+              </span>
             </span>
             <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-apagado" />
           </Fila>
           </div>
-        )}
+        ))}
 
         {/* ── Ver el papel ── */}
         {/*

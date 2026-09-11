@@ -11,6 +11,7 @@ import {
   rutaDeCarpetas,
   nombreDeArchivo,
   extensionDe,
+  esReservado,
   type Categoria,
 } from '@/lib/rutas'
 
@@ -352,19 +353,6 @@ export async function POST(peticion: NextRequest) {
     enPapeles,
     seccion: camino[0]?.nombre ?? null,
   })
-}
-
-/*
-  ¿Este documento va a una sección reservada?
-
-  Salud y Personal. De lo que cuelgue de ellas no se guarda el texto
-  leído. Se mira la raíz del camino, así que una carpeta nueva dentro
-  de Salud nace protegida sin que nadie tenga que acordarse.
-*/
-const RESERVADAS = ['SALUD', 'PERSONAL']
-
-function esReservado(camino: { segmento_drive: string }[]): boolean {
-  return RESERVADAS.includes((camino[0]?.segmento_drive ?? '').toUpperCase())
 }
 
 /** Un número entero dentro de rango, o nada. Nunca a medias. */

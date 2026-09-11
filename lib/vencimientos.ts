@@ -152,6 +152,20 @@ export async function rehacerAvisos(
     titulo: string
     creadoPor: string
     hoy: string
+    /*
+      Si el papel vive en una sección reservada —Salud o Personal—.
+
+      Es el ÚNICO de los cinco caminos que crean recordatorios en HUBI
+      que sabe de qué carpeta viene la cosa: los demás (una tarea a
+      mano, la voz, repetir una hecha, poner fecha a una lista de la
+      compra) no tienen ni carpeta ni forma de saberla, porque
+      `recordatorios` no tiene `categoria_id`.
+
+      Así que aquí, y solo aquí, se puede decidir sin preguntar: el
+      aviso de un informe médico nace **sin salir en la cocina**; el de
+      la ITV del coche nace saliendo.
+    */
+    reservado?: boolean
   } & Vencimiento
 ): Promise<{
   puestos: number
@@ -239,7 +253,22 @@ export async function rehacerAvisos(
 
     let { data, error } = await supabase
       .from('recordatorios')
-      .insert({ ...fila, motivo: nuevos[i].motivo })
+      .insert({
+        ...fila,
+        motivo: nuevos[i].motivo,
+        /*
+          Lo de Salud y lo Personal, nunca en la pantalla común. El
+          resto sí: la ITV, el seguro y la garantía son justo lo que esa
+          pantalla existe para recordar.
+
+          Va en el PRIMER intento y no en `fila`, por la misma regla que
+          `motivo`: si la columna no estuviera —el SQL 63 sin ejecutar—
+          el segundo intento la deja fuera y el aviso se crea igual, con
+          `visible_en_casa` a nulo. Y nulo es «no se enseña», o sea que
+          fallar aquí cae del lado seguro.
+        */
+        visible_en_casa: !datos.reservado,
+      })
       .select('id')
 
     if (error) {
