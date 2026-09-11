@@ -9,6 +9,7 @@ import { hoyAqui } from '@/lib/tablon'
 import Barra from '../barra'
 import HubiCaja from '../hubi-caja'
 import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import { Volver } from '../iconos'
 import { ambitoDeColor, PastillaAmbito, TarjetaAccion } from '../piezas'
 
@@ -132,16 +133,25 @@ export default async function DiaADia() {
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
-        {/* Solo en el móvil: en grande el rail ya lleva al Inicio. */}
         <div className="lg:hidden">
+          {/* El volver, solo en el móvil: en grande el rail ya lleva
+              al Inicio y está siempre a la vista. */}
           <Volver href="/" />
-        </div>
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono="taza" ambito="arena" tam={44} />
           {/* Aquí sí se llama por su nombre entero. En la barra pone
               «Día a día» porque a 12 px no cabe más. */}
           <h1 className="t-titulo">El día a día</h1>
         </div>
+        </div>
+
+        <Encabezado
+          icono="taza"
+          ambito="arena"
+          titulo="El día a día"
+          pie="La compra, la casa, los menús y el corcho"
+          caja={<HubiCaja donde="dia" />}
+        />
       </Cabecera>
 
       <div className="columna pt-1">
@@ -150,7 +160,9 @@ export default async function DiaADia() {
           sugerencia de aquí: lo que cambia entre pantallas es lo que
           se propone, no lo que hace.
         */}
-        <div className="pb-1.5 lg:max-w-[560px]">
+        {/* En grande sube a la banda de arriba, con el resto de las
+            acciones de HUBI. */}
+        <div className="pb-1.5 lg:hidden">
           <HubiCaja donde="dia" />
         </div>
 

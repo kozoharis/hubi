@@ -4,6 +4,7 @@ import { quien } from '@/lib/supabase/quien'
 import Barra from '../barra'
 import HubiCaja from '../hubi-caja'
 import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import { PastillaAmbito, Pildora } from '../piezas'
 import Lista from './lista'
 import Mes from './mes'
@@ -86,68 +87,92 @@ export default async function Agenda({
   const supabase = await clienteSesion()
   if (!(await quien(supabase))) redirect('/entrar')
 
+  /*
+    ── LOS SEGMENTOS, ESCRITOS UNA VEZ ──
+
+    Los usan las dos cabeceras —la del móvil y la banda de escritorio—
+    y llevan dentro toda la lógica de qué semana y qué mes arrastra
+    cada uno. Copiarlos sería tener dos sitios donde arreglar el mismo
+    enlace, y el enlace de éstos ya se arregló una vez.
+
+    Las dos formas de mirar lo mismo. Con texto, no solo icono: un
+    dibujo suelto obliga a adivinar. Y son la píldora del sistema: la
+    puesta se rellena de tinta, igual que en cualquier otra pantalla.
+  */
+  const segmentos = (
+    <div className="flex gap-2" role="group" aria-label="Cómo verlo">
+      {/* «Semana» y no «Lista»: las dos vistas acaban enseñando una
+          lista —al tocar un día del Mes también sale una—, así que
+          «Lista» no distinguía nada. Lo que las diferencia es cuánto
+          abarcan. */}
+      <Pildora
+        puesta={!enMes && !enDia}
+        className="flex-1"
+        href={enlaceAgenda(actuales, {
+          vista: null, mes: null, dia: null, semana: semanaDestino,
+        })}
+      >
+        Semana
+      </Pildora>
+      <Pildora
+        puesta={enMes}
+        className="flex-1"
+        href={enlaceAgenda(actuales, {
+          vista: 'mes', mes: mesDestino, ver: null, semana: null, dia: null,
+        })}
+      >
+        Mes
+      </Pildora>
+      {/* El día solo sale cuando estás dentro de uno: es una escala a
+          la que se entra, no una entre la que elegir. Y así se puede
+          volver a la semana de un toque. */}
+      {enDia && (
+        <Pildora
+          puesta
+          className="flex-1"
+          href={enlaceAgenda(actuales, {
+            vista: 'dia', ver: null, mes: null, semana: null,
+          })}
+        >
+          El día
+        </Pildora>
+      )}
+    </div>
+  )
+
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
-        <div className="flex h-14 items-center gap-3">
-          <PastillaAmbito icono="calendario" ambito="azul" tam={44} />
-          <h1 className="t-titulo">Agenda</h1>
+        {/* En el móvil, la cabecera de siempre. */}
+        <div className="lg:hidden">
+          <div className="flex h-14 items-center gap-3">
+            <PastillaAmbito icono="calendario" ambito="azul" tam={44} />
+            <h1 className="t-titulo">Agenda</h1>
+          </div>
+          <div className="mt-2">{segmentos}</div>
         </div>
 
-        {/* Las dos formas de mirar lo mismo. Con texto, no solo icono:
-            un dibujo suelto obliga a adivinar.
-
-            Y son la píldora del sistema: la puesta se rellena de
-            tinta, igual que Semana/Mes en cualquier otra pantalla.
-            Antes iban con `--t-boton`, el color de antes. */}
-        {/* En grande no se estiran a media pantalla: dos botones de
-            550 px cada uno para elegir entre semana y mes es una
-            botonera de sala de espera. Se quedan del tamaño de su
-            palabra. */}
-        <div className="mt-2 flex gap-2 lg:max-w-[360px]" role="group" aria-label="Cómo verlo">
-          {/* «Semana» y no «Lista»: las dos vistas acaban enseñando una
-              lista —al tocar un día del Mes también sale una—, así que
-              «Lista» no distinguía nada. Lo que las diferencia es
-              cuánto abarcan. */}
-          <Pildora
-            puesta={!enMes && !enDia}
-            className="flex-1"
-            href={enlaceAgenda(actuales, {
-              vista: null, mes: null, dia: null, semana: semanaDestino,
-            })}
-          >
-            Semana
-          </Pildora>
-          <Pildora
-            puesta={enMes}
-            className="flex-1"
-            href={enlaceAgenda(actuales, {
-              vista: 'mes', mes: mesDestino, ver: null, semana: null, dia: null,
-            })}
-          >
-            Mes
-          </Pildora>
-          {/* El día solo sale cuando estás dentro de uno: es una
-              escala a la que se entra, no una entre la que elegir. Y
-              así se puede volver a la semana de un toque. */}
-          {enDia && (
-            <Pildora
-              puesta
-              className="flex-1"
-              href={enlaceAgenda(actuales, {
-                vista: 'dia', ver: null, mes: null, semana: null,
-              })}
-            >
-              El día
-            </Pildora>
-          )}
-        </div>
+        {/* En grande, la banda común: identidad a la izquierda,
+            acciones a la derecha, y los segmentos debajo del título y
+            de su tamaño. */}
+        <Encabezado
+          icono="calendario"
+          ambito="azul"
+          titulo="Agenda"
+          controles={segmentos}
+          caja={<HubiCaja donde="agenda" />}
+          accion={{ texto: 'Apuntar algo', href: '/tablon/nuevo', icono: 'mas' }}
+        />
       </Cabecera>
 
       <div className="columna pt-2">
         {/* La caja de HUBI, con la sugerencia de aquí. Lo que cambia
-            entre pantallas es lo que se propone, no lo que hace. */}
-        <div className="mb-4 lg:max-w-[560px]">
+            entre pantallas es lo que se propone, no lo que hace.
+
+            En grande sube a la banda de arriba, con el botón de
+            apuntar: las acciones van todas juntas y en el mismo sitio
+            en todas las pantallas. */}
+        <div className="mb-4 lg:hidden">
           <HubiCaja donde="agenda" />
         </div>
         {enDia ? (

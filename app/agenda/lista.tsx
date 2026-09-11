@@ -427,7 +427,8 @@ export default async function Lista({
 
           {/* Lo que queda más allá NO se esconde: se dice cuánto hay. */}
           {masAlla > 0 && (
-            <div className="mt-4">
+            /* Con techo en grande: un botón no crece con la pantalla. */
+            <div className="mt-4 lg:max-w-[420px]">
               <BotonSecundario
                 href={enlaceAgenda({ de }, { ver: 'adelante' })}
                 icono="flecha"
@@ -439,9 +440,14 @@ export default async function Lista({
         </>
       )}
 
-      {/* Apuntar algo ES la acción de la Agenda. Iba con `bg-boton`,
-          que era el color de antes. */}
-      <div className="mt-3">
+      {/* Apuntar algo ES la acción de la Agenda.
+
+          SOLO EN EL MÓVIL: en grande vive arriba a la derecha, en la
+          banda, con la caja de HUBI. Aquí abajo, después de la semana
+          entera y con el ancho de la pantalla, quedaba flotando en
+          mitad del papel a media pantalla de lo que se estaba
+          leyendo. */}
+      <div className="mt-3 lg:hidden">
         <BotonPrincipal href="/tablon/nuevo" icono="mas">
           Apuntar algo
         </BotonPrincipal>

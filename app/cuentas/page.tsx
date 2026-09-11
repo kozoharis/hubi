@@ -6,6 +6,7 @@ import { gastadoEnCasa } from '@/lib/gastos-casa'
 import Barra from '../barra'
 import HubiCaja from '../hubi-caja'
 import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import { Ico, Volver } from '../iconos'
 import { Fila, PastillaAmbito, seccionPintada, TarjetaAccion, Vacio } from '../piezas'
 import NuevaActividad from '../ajustes/nueva-actividad'
@@ -102,11 +103,19 @@ export default async function Cuentas() {
       <Cabecera ancho>
         <div className="lg:hidden">
           <Volver href="/" />
+          <div className="flex h-14 items-center gap-3">
+            <PastillaAmbito icono="euro" ambito="pizarra" tam={44} />
+            <h1 className="t-titulo">Cuentas</h1>
+          </div>
         </div>
-        <div className="flex h-14 items-center gap-3">
-          <PastillaAmbito icono="euro" ambito="pizarra" tam={44} />
-          <h1 className="t-titulo">Cuentas</h1>
-        </div>
+
+        <Encabezado
+          icono="euro"
+          ambito="pizarra"
+          titulo="Cuentas"
+          pie={`Todo el dinero de la casa · ${nombreMes}`}
+          caja={<HubiCaja donde="cuentas" />}
+        />
       </Cabecera>
 
       <div className="columna pt-1">
@@ -115,7 +124,9 @@ export default async function Cuentas() {
           sugerencia de aquí: lo que cambia entre pantallas es lo que
           se propone, no lo que hace.
         */}
-        <div className="mb-4 lg:max-w-[560px]">
+        {/* En grande la caja sube a la banda de arriba, con el resto
+            de las acciones. */}
+        <div className="mb-4 lg:hidden">
           <HubiCaja donde="cuentas" />
         </div>
 

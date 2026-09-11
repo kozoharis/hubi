@@ -366,7 +366,8 @@ export default async function Mes({
 
         </div>
 
-        <div className="mt-5 lg:max-w-[500px]">
+        {/* Solo en el móvil: en grande está arriba, en la banda. */}
+        <div className="mt-5 lg:hidden">
           <BotonPrincipal href="/tablon/nuevo" icono="mas">
             Apuntar algo
           </BotonPrincipal>

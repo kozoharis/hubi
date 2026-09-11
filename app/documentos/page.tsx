@@ -5,6 +5,7 @@ import { quien } from '@/lib/supabase/quien'
 import Anadir from "./anadir"
 import Barra from '../barra'
 import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import { Ico } from '../iconos'
 import { Fila, Vacio, Aviso, PastillaAmbito, seccionPintada } from '../piezas'
 import HubiCaja from '../hubi-caja'
@@ -143,8 +144,17 @@ export default async function Documentos({
     return (
       <main className="min-h-screen pb-40 lg:pb-16">
         <Cabecera ancho>
-          <Titulo />
-          <Buscador valor={busqueda} />
+          <div className="lg:hidden">
+            <Titulo />
+            <Buscador valor={busqueda} />
+          </div>
+          <Encabezado
+            icono="carpeta"
+            ambito="azul"
+            titulo="Documentos"
+            caja={<HubiCaja donde="papeles" valor={busqueda} buscarEn="/documentos" />}
+            accion={{ texto: 'Añadir documento', href: '/guardar', icono: 'mas' }}
+          />
         </Cabecera>
 
         <div className="columna pt-2">
@@ -283,13 +293,31 @@ export default async function Documentos({
     seis últimos se esconden en el móvil—, así no hay dos consultas ni
     dos maneras de contar.
   */
-  const recientes = papeles.slice(0, 12)
+  const recientes = papeles.slice(0, 8)
 
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
+      {/*
+        En el móvil, la cabecera de siempre: el título y debajo la caja
+        de HUBI a todo lo ancho, que es donde se busca con el pulgar.
+
+        En grande, la banda común: el título a la izquierda con su
+        pastilla —como Agenda, Cuentas y El día a día, que la tenían y
+        ésta no—, y a la derecha lo que se viene a hacer aquí: buscar
+        un papel o guardar uno.
+      */}
       <Cabecera ancho>
-        <Titulo />
-        <Buscador valor="" />
+        <div className="lg:hidden">
+          <Titulo />
+          <Buscador valor="" />
+        </div>
+        <Encabezado
+          icono="carpeta"
+          ambito="azul"
+          titulo="Documentos"
+          caja={<HubiCaja donde="papeles" buscarEn="/documentos" />}
+          accion={{ texto: 'Añadir documento', href: '/guardar', icono: 'mas' }}
+        />
       </Cabecera>
 
       <div className="columna pt-2">
@@ -337,6 +365,9 @@ export default async function Documentos({
                 return (
                   /* Del séptimo en adelante, solo en grande. */
                   <li key={d.id} className={i > 5 ? 'hidden lg:list-item' : undefined}>
+                    {/* Seis en el móvil, ocho en grande: los dos
+                        últimos solo salen cuando hay columna donde
+                        ponerlos. */}
                     <Fila href={`/documentos/${d.id}`}>
                       <PastillaAmbito icono={s.icono} ambito={s.ambito} tam={44} />
                       <span className="min-w-0 flex-1">
@@ -408,9 +439,12 @@ export default async function Documentos({
             siempre en el mismo sitio: abajo del todo. Aquí sin carpeta
             puesta — desde la lista general aún hay que elegirla.
 
-            Con techo en grande: un botón de 1100 px de ancho deja de
-            leerse como un botón. */}
-        <div className="lg:max-w-[560px]">
+            SOLO EN EL MÓVIL. En grande esta misma acción está arriba a
+            la derecha, en la banda, junto al buscador: es donde se
+            buscan las cosas que se hacen cuando no hay pulgar. Tenerla
+            en los dos sitios sería ofrecer dos veces lo mismo en la
+            misma pantalla. */}
+        <div className="lg:hidden">
           <Anadir />
         </div>
       </div>

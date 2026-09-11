@@ -8,6 +8,7 @@ import { nombreApartamento } from '@/lib/reservas'
 import { unidadesDe, comoEsLaSeccion } from '@/lib/unidades'
 import Barra from './barra'
 import Cabecera from './cabecera'
+import Encabezado from './encabezado'
 import { Ico, type Icono } from './iconos'
 import {
   Aviso,
@@ -375,9 +376,37 @@ export default async function Cuentas({
     cuantosPapeles = count ?? 0
   }
 
+  /*
+    ── LOS SEGMENTOS DEL PERIODO, ESCRITOS UNA VEZ ──
+
+    En el móvil van en el cuerpo, encima de las cifras. En grande van
+    en la banda de arriba, debajo del nombre. Es el mismo control y el
+    mismo enlace: escribirlo dos veces sería tener dos sitios donde
+    arreglar el mismo `ancla`.
+
+    Eran de 44 px —por debajo del suelo de 48 del propio CSS— y se
+    rellenaban del color de la sección. Ahora son las del sistema: la
+    elegida se rellena de tinta, igual en todas las pantallas.
+  */
+  const segmentos = (
+    <div className="flex gap-2" role="group" aria-label="Periodo">
+      {(['mes', 'trimestre', 'anio'] as const).map((v) => (
+        <Pildora
+          key={v}
+          href={`${seccion.ruta}?vista=${v}&ancla=${periodo.desde}`}
+          puesta={v === vista}
+          className="flex-1"
+        >
+          {v === 'mes' ? 'Mes' : v === 'trimestre' ? 'Trimestre' : 'Año'}
+        </Pildora>
+      ))}
+    </div>
+  )
+
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
+        <div className="lg:hidden">
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono={seccion.icono} ambito={seccion.ambito} tam={44} />
           <h1 className="t-titulo min-w-0 truncate">{seccion.nombre}</h1>
@@ -401,6 +430,36 @@ export default async function Cuentas({
             </Link>
           )}
         </div>
+        </div>
+
+        {/*
+          En grande, la banda común de HUBI: el nombre de la actividad
+          a la izquierda con su pastilla, los segmentos debajo y a su
+          tamaño, y a la derecha lo único que se viene a HACER aquí —
+          apuntar un movimiento— junto al lápiz de cómo se lleva.
+        */}
+        <Encabezado
+          icono={seccion.icono}
+          ambito={seccion.ambito}
+          titulo={seccion.nombre}
+          controles={segmentos}
+          accion={{
+            texto: 'Apuntar un movimiento',
+            href: `/finca/apuntar?seccion=${seccion.raiz ?? 'resto'}`,
+            icono: 'mas',
+          }}
+          extra={
+            raiz ? (
+              <Link
+                href={`/seccion/${raiz.id}/ajustes`}
+                aria-label={`Cómo llevas ${seccion.nombre}`}
+                className="flex h-12 w-12 items-center justify-center rounded-[16px] text-tenue"
+              >
+                <Ico nombre="lapiz" tam={20} grosor={2.2} />
+              </Link>
+            ) : undefined
+          }
+        />
       </Cabecera>
 
       <div className="columna pt-1">
@@ -410,21 +469,14 @@ export default async function Cuentas({
             se rellenaban del color de la sección. Ahora son las del
             sistema: la elegida se rellena de tinta, igual en todas las
             pantallas. */}
-        <div className="flex gap-2" role="group" aria-label="Periodo">
-          {(['mes', 'trimestre', 'anio'] as const).map((v) => (
-            <Pildora
-              key={v}
-              href={`${seccion.ruta}?vista=${v}&ancla=${periodo.desde}`}
-              puesta={v === vista}
-              className="flex-1"
-            >
-              {v === 'mes' ? 'Mes' : v === 'trimestre' ? 'Trimestre' : 'Año'}
-            </Pildora>
-          ))}
-        </div>
+        <div className="lg:hidden">{segmentos}</div>
 
-        {/* ── Cuál ── */}
-        <div className="mt-3 flex items-center justify-between">
+        {/* ── Cuál ──
+            Con techo en grande: una fila de tres elementos —flecha,
+            título, flecha— repartida en mil cien píxeles deja el
+            título solo en mitad del papel y las flechas en los
+            bordes, a un palmo de distancia de lo que mueven. */}
+        <div className="mt-3 flex items-center justify-between lg:mt-4 lg:max-w-[440px]">
           <Link
             href={`${seccion.ruta}?vista=${vista}&ancla=${periodo.anterior}`}
             aria-label="Periodo anterior"
@@ -448,8 +500,21 @@ export default async function Cuentas({
           )}
         </div>
 
-        {/* ── Los tres números ── */}
-        <div className="mt-3 flex gap-2.5">
+        {/*
+          ── LOS TRES NÚMEROS ──
+
+          En el móvil: Ingresos y Gastos a mitad y mitad, y el Balance
+          debajo a lo ancho, porque es el que se viene a mirar.
+
+          En grande, LOS TRES IGUALES en una fila. Dos tarjetas de 550
+          px y una de 1100 debajo no es jerarquía: es lo que queda al
+          estirar una pantalla pensada para 360. Los tres son la misma
+          clase de dato —el dinero del periodo— y se comparan mejor
+          alineados. El Balance sigue destacando por donde tiene que
+          destacar: su cifra es más grande y va en color.
+        */}
+        <div className="mt-3 lg:grid lg:grid-cols-3 lg:gap-4">
+        <div className="flex gap-2.5 lg:contents">
           <Cifra etiqueta="Ingresos" valor={eurosRedondo(ingresos)} punto="bien" />
           <Cifra etiqueta="Gastos" valor={eurosRedondo(gastos)} punto="alerta" />
         </div>
@@ -470,7 +535,7 @@ export default async function Cuentas({
           donde sí dice algo: EL SIGNO. Verde si sobra, coral si falta.
           Eso es lo que se viene a mirar.
         */}
-        <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4">
+        <div className="mt-2.5 rounded-[20px] border border-borde bg-superficie px-4 py-4 lg:mt-0">
           <p className="rotulo">Balance</p>
           <p
             className="t-cifra mt-2"
@@ -479,6 +544,35 @@ export default async function Cuentas({
             {eurosRedondo(balance, true)}
           </p>
         </div>
+        </div>
+
+        {/*
+          ══════════════════════════════════════════════════════════
+          EL CUERPO, EN DOS COLUMNAS DE VERDAD
+          ══════════════════════════════════════════════════════════
+
+          Dos columnas y no una rejilla de celdas sueltas: cada columna
+          es un `div` que apila lo suyo. Con celdas, una fila valdría lo
+          que midiera la más alta de las dos, y el IVA —que lleva
+          cobrado, pagado y a veces un aviso— dejaría medio palmo de
+          papel en blanco al lado del desglose.
+
+          IZQUIERDA · EL DINERO. En qué se ha gastado y los
+          movimientos, uno debajo del otro. Es la pregunta larga: la
+          forma del gasto y los hechos que la componen, juntos, sin
+          tener que subir y bajar para comparar.
+
+          DERECHA · LO DEMÁS DE LA ACTIVIDAD. El impuesto, los pagos
+          fijos, los papeles y cada unidad. Son cuatro puertas y un
+          dato, no una lectura: viven en una banda estrecha y no
+          estorban.
+
+          En el móvil son dos `div` seguidos y el orden no cambia ni
+          una línea.
+        */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8">
+
+        <div className="lg:col-start-2 lg:row-start-1">
 
         {/*
           ── EL IGIC O EL IVA DEL PERIODO ──
@@ -673,29 +767,13 @@ export default async function Cuentas({
           </section>
         )}
 
-        {/*
-          ══ EL DESGLOSE Y LOS MOVIMIENTOS, UNO AL LADO DEL OTRO ══
+        </div>
 
-          Son la misma pregunta mirada de dos maneras. «En qué se ha
-          gastado» dice la FORMA del dinero —la luz se lleva la mitad,
-          los productos casi nada—; «Movimientos» dice los HECHOS, uno
-          a uno, con su fecha y su papel.
-
-          En el móvil van seguidas y se mira una y luego la otra. Y ahí
-          está el problema que esto arregla: para comprobar si esos 340
-          € de luz son una factura gorda o seis normales hay que
-          deslizar hasta los movimientos, y al llegar ya no se ve el
-          340. Se acaba subiendo y bajando para comparar dos números
-          que caben juntos en cualquier ordenador.
-
-          A la izquierda la forma, a la derecha los hechos. Y la lista
-          de movimientos, que es la larga, se lleva la columna ancha.
-        */}
-        <div className="lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <div className="lg:col-start-1 lg:row-start-1">
 
         {/* ── En qué se ha ido ── */}
         {desglose.length > 0 && (
-          <section className="mt-5 lg:col-start-1 lg:row-start-1">
+          <section className="mt-5">
             <h2 className="rotulo">En qué se ha gastado</h2>
             <ul className="mt-3">
               {desglose.map((d) => (
@@ -724,7 +802,7 @@ export default async function Cuentas({
         )}
 
         {/* ── El detalle ── */}
-        <section className="mt-5 lg:col-start-2 lg:row-start-1">
+        <section className="mt-5">
           <h2 className="rotulo">Movimientos</h2>
 
           {movimientos.length === 0 ? (
@@ -787,6 +865,7 @@ export default async function Cuentas({
             </ul>
           )}
         </section>
+        </div>
 
         </div>
 
@@ -803,10 +882,11 @@ export default async function Cuentas({
           dice MOVIMIENTOS: son la misma cosa llamada de dos maneras
           en la misma pantalla.
         */}
-        {/* Un botón no crece con la pantalla: a 1100 px de ancho
-            «Apuntar un movimiento» deja de parecer un botón y parece
-            una franja. */}
-        <div className="mt-5 lg:max-w-[560px]">
+        {/* SOLO EN EL MÓVIL. En grande esta acción vive arriba a la
+            derecha, en la banda: aquí abajo, después de toda la lista
+            de movimientos, quedaba flotando en mitad del papel a media
+            pantalla de lo que se estaba leyendo. */}
+        <div className="mt-5 lg:hidden">
           <BotonPrincipal
             href={`/finca/apuntar?seccion=${seccion.raiz ?? 'resto'}`}
             icono="mas"
