@@ -206,11 +206,29 @@ export default function QuienVe({
         Se dice lo que HOY no separa el permiso, porque quien reparte
         acceso tiene que saber dónde está el límite. Prometer más
         privacidad de la que hay es peor que no ofrecerla.
+
+        ─────────────────────────────────────────────────────────
+        CORREGIDO EL 12 DE SEPTIEMBRE
+
+        Aquí ponía: «Las tareas, la agenda y la lista de la compra las
+        siguen viendo todos». **Dejó de ser verdad el día anterior**,
+        con el sql/64: un asesor ya no ve la agenda ni el tablón de la
+        casa, solo lo suyo y lo que le encarguen.
+
+        Un cartel que promete de más en la pantalla donde se reparte el
+        acceso es peor que no tener cartel: es justo donde alguien
+        decide confiando en lo que lee.
+
+        Lo que dice ahora es lo único que esta pantalla puede prometer:
+        que reparte CARPETAS. Lo demás lo decide el papel de cada
+        persona, que se elige arriba y no aquí.
       */}
       <p className="mt-4 rounded-[16px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
         El permiso es por carpeta entera: quien ve <strong className="text-tinta">Casa</strong>{' '}
-        ve todo lo que hay dentro. Las tareas, la agenda y la lista de la compra las siguen
-        viendo todos.
+        ve todo lo que hay dentro, y no se puede afinar más.
+        <br />
+        Aquí se reparten <strong className="text-tinta">carpetas</strong> y nada más. La agenda,
+        el tablón y la compra los decide el papel de cada persona.
       </p>
 
       <div className="mt-3 flex gap-2">

@@ -6,6 +6,7 @@ import { clienteServidor } from '@/lib/supabase/servidor'
 import BotonSalir from '../boton-salir'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import { Ico, Logo, Volver, type Icono } from '../iconos'
 import { ambitoDe, AMBITO, type Ambito, PastillaAmbito, Pildora } from '../piezas'
 import SelectorTema from '../tema'
@@ -473,28 +474,70 @@ export default async function Ajustes({
   const plan: Rutina[] = manda ? await planDeLaCasa(supabase, hogarId ?? NINGUNO) : []
 
 
+  /* El nombre de la casa en la que estás. Va de pie del título en
+     grande: en una pantalla donde caben las dos mitades a la vez,
+     «Ajustes» a secas no dice de QUÉ casa son. */
+  const laCasa = susCasas.find((c) => c.id === hogarId)?.nombre ?? null
+
+  /*
+    Los dos segmentos, escritos UNA vez.
+
+    Salen en la cabecera del móvil y en la banda de escritorio. Dos
+    copias serían dos sitios donde arreglar el mismo enlace el día que
+    cambie.
+  */
+  const segmentos = (
+    <div className="flex gap-2" role="group" aria-label="Qué ajustes">
+      <Pildora href="/ajustes" puesta={!enLaCasa} className="flex-1">
+        Tú
+      </Pildora>
+      <Pildora href="/ajustes?ver=casa" puesta={enLaCasa} className="flex-1">
+        La casa
+      </Pildora>
+    </div>
+  )
+
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
-        <Volver href="/" />
-
-        <h1 className="t-titulo">Ajustes</h1>
-
-        <div className="mt-2 flex gap-2" role="group" aria-label="Qué ajustes">
-          <Pildora href="/ajustes" puesta={!enLaCasa} className="flex-1">
-            Tú
-          </Pildora>
-          <Pildora href="/ajustes?ver=casa" puesta={enLaCasa} className="flex-1">
-            La casa
-          </Pildora>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
+        {/* La de siempre, solo en el móvil. */}
+        <div className="lg:hidden">
+          <Volver href="/" />
+          <h1 className="t-titulo">Ajustes</h1>
+          <div className="mt-2">{segmentos}</div>
         </div>
+
+        <Encabezado
+          icono="mandos"
+          titulo="Ajustes"
+          pie={enLaCasa ? (laCasa ?? undefined) : nombre}
+          controles={segmentos}
+        />
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-1">
+      <div className="columna pt-1">
 
         {/* ══════════════ TÚ ══════════════ */}
         {!enLaCasa && (
           <>
+        {/*
+          ── DOS COLUMNAS EN GRANDE ──
+
+          Aquí caben seis cosas cortas y en el móvil van en fila india,
+          que es lo correcto con un pulgar. En un monitor esa misma fila
+          india deja media pantalla en blanco al lado y obliga a
+          deslizar para llegar al calendario.
+
+          Cada lado va envuelto en su propio `div` y NO como celdas
+          sueltas de una rejilla: con celdas, cada fila mediría lo que
+          la más alta y quedarían huecos entre unas y otras.
+
+          Izquierda, quién eres y cómo lo ves. Derecha, por dónde te
+          avisa HUBI. La salida, abajo y a lo ancho: es la única acción
+          de la que no se vuelve.
+        */}
+        <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
+        <div>
         {/* ── Quién eres ── */}
         <div className="mt-3">
           <TuPerfil nombre={nombre} foto={perfil.foto} />
@@ -571,8 +614,11 @@ export default async function Ajustes({
           <SelectorTema />
         </div>
 
+        </div>
+
+        <div>
         {/* ── Los avisos de ESTE teléfono ── */}
-        <h2 className="rotulo mt-5">Tus avisos</h2>
+        <h2 className="rotulo mt-5 lg:mt-3">Tus avisos</h2>
         <div className="mt-2.5 space-y-2.5">
           <Opcion
             href="/avisos"
@@ -611,8 +657,11 @@ export default async function Ajustes({
           />
         </div>
 
+        </div>
+        </div>
+
         {/* ── Y la puerta de salida, al final de lo tuyo ── */}
-        <div className="mt-8 border-t border-borde pt-6">
+        <div className="mt-8 border-t border-borde pt-6 lg:max-w-[440px]">
           <BotonSalir />
         </div>
           </>
@@ -621,6 +670,20 @@ export default async function Ajustes({
         {/* ══════════════ LA CASA ══════════════ */}
         {enLaCasa && (
           <>
+        {/*
+          ── DOS COLUMNAS EN GRANDE ──
+
+          Izquierda: la gente y las carpetas, que son las dos listas y
+          lo que de verdad se viene a mirar aquí. Derecha: dónde se
+          guarda, la compra y las actividades — interruptores y
+          enlaces, cortos.
+
+          Cada lado en su `div`, no en celdas: la lista de gente y la
+          de carpetas miden lo que midan, y con celdas cada fila se
+          igualaría a la más alta dejando huecos.
+        */}
+        <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
+        <div>
         {/* ── Quién vive aquí ── */}
         {/*
           Va lo primero. Es la respuesta a la pregunta que más importa
@@ -663,6 +726,9 @@ export default async function Ajustes({
           />
         </div>
 
+        </div>
+
+        <div>
         {/* ── Tus carpetas ── */}
         {/*
           Las que solo guardan papeles. Las actividades —con sus
@@ -672,7 +738,7 @@ export default async function Ajustes({
         */}
         {carpetas.length > 0 && (
           <>
-            <h2 className="rotulo mt-5">Tus carpetas</h2>
+            <h2 className="rotulo mt-5 lg:mt-3">Tus carpetas</h2>
             <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
               Donde se guardan los papeles. Apaga las que no uses y añade las que te falten.
             </p>
@@ -724,6 +790,8 @@ export default async function Ajustes({
             />
           ))}
           <NuevaActividad />
+        </div>
+        </div>
         </div>
           </>
         )}

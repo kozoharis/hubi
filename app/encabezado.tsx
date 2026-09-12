@@ -72,6 +72,8 @@ export type AccionDeEncabezado = {
   texto: string
   href: string
   icono?: Icono
+  /** Abre en otra pestaña. El papel de un documento, por ejemplo. */
+  externo?: boolean
 }
 
 export default function Encabezado({
@@ -114,7 +116,12 @@ export default function Encabezado({
 
         {accion && (
           <div className="shrink-0">
-            <BotonPrincipal href={accion.href} icono={accion.icono} ancho="auto">
+            <BotonPrincipal
+              href={accion.href}
+              icono={accion.icono}
+              externo={accion.externo}
+              ancho="auto"
+            >
               {accion.texto}
             </BotonPrincipal>
           </div>

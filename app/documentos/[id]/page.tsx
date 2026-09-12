@@ -6,6 +6,7 @@ import { caminoDe, fechaLarga, type Categoria } from '@/lib/carpetas'
 import { diaLimite } from '@/lib/vencimientos'
 import Barra from '../../barra'
 import Cabecera from '../../cabecera'
+import Encabezado from '../../encabezado'
 import { Ico, Volver } from '../../iconos'
 import { elEspacioO } from '@/lib/espacio'
 import {
@@ -177,7 +178,7 @@ export default async function Documento({
     : '/documentos'
 
   return (
-    <main className="min-h-screen pb-40">
+    <main className="min-h-screen pb-40 lg:pb-16">
       {/*
         EL TÍTULO SUBE A LA CABECERA.
 
@@ -187,13 +188,54 @@ export default async function Documento({
         arriba, así que la misma zona hacía dos cosas distintas en
         pantallas contiguas.
       */}
-      <Cabecera>
-        <Volver href={volver} />
-        <h1 className="t-titulo mt-2.5 line-clamp-2">{d.titulo}</h1>
+      <Cabecera ancho>
+        <div className="lg:hidden">
+          <Volver href={volver} />
+          <h1 className="t-titulo mt-2.5 line-clamp-2">{d.titulo}</h1>
+        </div>
+
+        {/*
+          En grande, el camino de carpetas sube al pie del título: ahí
+          dice DÓNDE estás, que es media pregunta de esta pantalla. Y
+          las dos acciones, arriba a la derecha — «Ver el papel» abre
+          otra pestaña, por eso va con `externo`.
+        */}
+        <Encabezado
+          icono={icono}
+          ambito={ambito}
+          titulo={d.titulo}
+          pie={camino.map((c) => c.nombre).join(' › ')}
+          accion={{ texto: 'Ver el papel', href: enlace, icono: 'ojo', externo: true }}
+          extra={
+            <BotonSecundario href={`/documentos/${d.id}/editar`} icono="lapiz" ancho="auto">
+              Corregir
+            </BotonSecundario>
+          }
+        />
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5">
+      <div className="columna">
 
+        {/*
+          ── EL PAPEL A UN LADO Y SUS DATOS AL OTRO ──
+
+          En el móvil esto es una columna y está bien: se ve la foto,
+          se desliza, se leen los datos. En un monitor esa misma
+          columna deja la foto en 288 px de alto con medio metro de
+          papel blanco al lado, y obliga a deslizar para comparar lo
+          que pone el papel con lo que HUBI ha entendido — que es
+          exactamente lo que se viene a hacer aquí.
+
+          El papel se queda PEGADO al desplazarse (`sticky`): se leen
+          los datos de la derecha sin perder de vista la factura.
+
+          La columna de la derecha tiene medida fija. Una ficha de
+          datos de setecientos píxeles de ancho no se lee mejor: deja
+          la etiqueta y el valor en dos extremos de la pantalla.
+        */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-start lg:gap-8">
+
+        <div className="lg:sticky lg:top-4">
         {/* ── El papel ── */}
         <a
           href={enlace}
@@ -203,17 +245,24 @@ export default async function Documento({
         >
           {esImagen ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={enlace} alt={d.titulo} className="max-h-72 w-full object-contain" />
+            <img
+              src={enlace}
+              alt={d.titulo}
+              className="max-h-72 w-full object-contain lg:max-h-[72vh]"
+            />
           ) : (
-            <p className="flex items-center justify-center gap-3 px-6 py-14 text-[17px] font-bold text-tinta-suave">
+            <p className="flex items-center justify-center gap-3 px-6 py-14 text-[17px] font-bold text-tinta-suave lg:py-32">
               <Ico nombre="papel" tam={24} grosor={2} />
               {d.nombre_archivo}
             </p>
           )}
         </a>
+        </div>
 
+        <div>
         {/* ── Dónde está ── */}
-        <div className="mt-4 flex items-center gap-2">
+        {/* En grande ya lo dice el pie del título, así que aquí sobra. */}
+        <div className="mt-4 flex items-center gap-2 lg:hidden">
           <PastillaAmbito icono={icono} ambito={ambito} tam={24} />
           <p className="rotulo truncate">
             {camino.map((c) => c.nombre.toUpperCase()).join(' › ')}
@@ -352,7 +401,7 @@ export default async function Documento({
           HUBI — que es la razón por la que en la primera migración
           tuve que repetir sus estilos a mano.
         */}
-        <div className="mt-4">
+        <div className="mt-4 lg:hidden">
           <BotonPrincipal href={enlace} externo icono="ojo">
             Ver el papel
           </BotonPrincipal>
@@ -367,7 +416,7 @@ export default async function Documento({
           única forma de arreglarlo era volver a fotografiar el papel y
           quedarse con dos copias en Drive.
         */}
-        <div className="mt-2.5">
+        <div className="mt-2.5 lg:hidden">
           <BotonSecundario href={`/documentos/${d.id}/editar`} icono="lapiz">
             Corregir o borrar
           </BotonSecundario>
@@ -389,6 +438,8 @@ export default async function Documento({
             )}
           </details>
         )}
+        </div>
+        </div>
       </div>
 
       <Barra activa="documentos" />
