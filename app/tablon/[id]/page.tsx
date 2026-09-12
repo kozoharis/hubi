@@ -7,10 +7,33 @@ import AccionHecho from './accion'
 import Editar from './editar'
 import EnLaCocina from './en-la-cocina'
 import Barra from '../../barra'
+import Encabezado from '../../encabezado'
 import { Volver } from '../../iconos'
+import type { Icono } from '../../iconos'
 import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
+
+/*
+  El mismo tipo que decide el emoji del móvil (`lib/tablon.ts`), dicho
+  con los iconos dibujados de HUBI, que son los que entiende la banda.
+
+  Se traduce aquí y no allí a propósito: `lib/tablon.ts` lo usan
+  también la Agenda y el resumen del Inicio, y no tienen por qué
+  conocer el juego de iconos de las pantallas.
+*/
+const ICONO_DE_BANDA: Record<string, Icono> = {
+  farmacia: 'pastilla',
+  cita: 'corazon',
+  coche: 'coche',
+  papeles: 'papel',
+  vencimiento: 'reloj',
+  recado: 'bolsa',
+}
+
+function iconoBanda(tipo: string): Icono {
+  return ICONO_DE_BANDA[tipo] ?? 'check'
+}
 
 const CUANTO_ANTES: Record<string, string> = {
   sin_aviso: 'Sin aviso',
@@ -86,6 +109,29 @@ export default async function Detalle({
   return (
     <main className="techo-holgado min-h-screen px-5 pb-40 lg:px-0 lg:pb-16">
       {/*
+        ── LA BANDA ──
+
+        Esta pantalla no tenía `Cabecera` —su título vive en el cuerpo y
+        se va al deslizar—, así que la banda se pone suelta dentro de su
+        propia `columna` en vez de envolver lo de siempre. En el móvil
+        no se pinta (`Encabezado` es `hidden lg:block`), y por eso la
+        ficha de abajo no se toca ni un píxel.
+
+        Sin esto, ésta era la última pantalla de HUBI que en un
+        ordenador seguía enseñando la cabecera del móvil: la flecha
+        redonda de volver y el emoji a tamaño de pulgar.
+      */}
+      <div className="columna">
+        <Encabezado
+          icono={iconoBanda(r.tipo)}
+          ambito="pizarra"
+          titulo={r.titulo}
+          pie={cuando(r.fecha, r.hora) + (tarde ? ' · sin hacer' : '')}
+          volver="/tablon"
+        />
+      </div>
+
+      {/*
         ── EN GRANDE, PEGADA A LA IZQUIERDA Y CON SU MEDIDA ──
 
         Esto NO se ensancha a mil cien píxeles, y es a propósito. Una
@@ -101,30 +147,34 @@ export default async function Detalle({
         misma regla que las demás; lo que cambia es el ancho.
       */}
       <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-[560px] lg:px-9">
-        <Volver href="/tablon" />
+        {/* La cabecera del móvil, intacta. Arriba de 1024 px lo dice la
+            banda, y sin este `lg:hidden` el título saldría dos veces. */}
+        <div className="lg:hidden">
+          <Volver href="/tablon" />
 
-        <p className="mt-8 flex items-start gap-3">
-          <span className="text-4xl leading-none">{iconoDe(r.tipo)}</span>
-        </p>
+          <p className="mt-8 flex items-start gap-3">
+            <span className="text-4xl leading-none">{iconoDe(r.tipo)}</span>
+          </p>
 
-        <h1
-          className={`mt-4 text-[26px] font-extrabold leading-tight tracking-tight ${
-            hecho ? 'text-tinta-suave line-through' : 'text-tinta'
-          }`}
-        >
-          {r.titulo}
-        </h1>
+          <h1
+            className={`mt-4 text-[26px] font-extrabold leading-tight tracking-tight ${
+              hecho ? 'text-tinta-suave line-through' : 'text-tinta'
+            }`}
+          >
+            {r.titulo}
+          </h1>
 
-        {/* Algo que tenía que estar hecho y no lo está SÍ es una
-            alerta: es de los pocos sitios donde el color dice lo que
-            pasa y no de qué es. */}
-        <p
-          className="mt-3 text-xl"
-          style={{ color: tarde ? 'var(--t-alerta)' : 'var(--t-tinta-suave)' }}
-        >
-          {cuando(r.fecha, r.hora)}
-          {tarde && ' · sin hacer'}
-        </p>
+          {/* Algo que tenía que estar hecho y no lo está SÍ es una
+              alerta: es de los pocos sitios donde el color dice lo que
+              pasa y no de qué es. */}
+          <p
+            className="mt-3 text-xl"
+            style={{ color: tarde ? 'var(--t-alerta)' : 'var(--t-tinta-suave)' }}
+          >
+            {cuando(r.fecha, r.hora)}
+            {tarde && ' · sin hacer'}
+          </p>
+        </div>
 
         {/* ── La nota, entera ── */}
         {r.nota && (

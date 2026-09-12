@@ -693,7 +693,7 @@ export default function Grabar({
         />
       </div>
 
-      <div className="relative mx-auto w-full max-w-md">
+      <div className="columna-formulario relative">
         <Volver href="/" oscuro />
 
         {/* ── Escuchando o en espera ── */}

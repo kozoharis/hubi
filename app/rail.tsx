@@ -53,11 +53,35 @@ function cualEsta(ruta: string): string {
   return ''
 }
 
+/*
+  DONDE TODAVÍA NO HAY NADIE DENTRO, NO HAY RAIL.
+
+  El rail vive en `layout.tsx`, o sea en TODAS las pantallas, y la
+  barra de abajo la pinta cada pantalla por su cuenta. Esa diferencia
+  tenía una consecuencia que no se veía en el móvil: en un ordenador,
+  quien abría HUBI sin haber entrado se encontraba las cinco pestañas
+  de la casa a la izquierda —Papeles, Cuentas, Ajustes— antes de
+  escribir su correo.
+
+  No abría nada, porque cada una de esas pantallas manda a `/entrar` al
+  no encontrar sesión. Pero enseñaba el interior de una casa a quien
+  todavía está en la puerta, y dejaba el formulario de entrar
+  encajonado en el hueco de la derecha.
+
+  Son también las únicas pantallas que se ven a pantalla completa, y
+  por eso son las únicas que siguen CENTRADAS: sin rail delante, no hay
+  pasillo vacío que corregir.
+*/
+const SIN_RAIL = ['/entrar', '/empezar', '/privacidad', '/terminos']
+
 export default function Rail() {
   const { rol } = useCasa()
   const ruta = usePathname() ?? '/'
   const activa = cualEsta(ruta)
   const pestanas = pestanasDe(rol)
+
+  const dentro = ruta.replace(/^\/e\/[0-9a-fA-F-]{36}/, '') || '/'
+  if (SIN_RAIL.some((r) => dentro === r || dentro.startsWith(r + '/'))) return null
 
   return (
     <nav

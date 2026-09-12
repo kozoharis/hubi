@@ -128,8 +128,8 @@ export default function Apuntar({
 
   if (paso === 'hecho') {
     return (
-      <main className="flex min-h-screen flex-col justify-center px-5 py-16">
-        <div className="mx-auto w-full max-w-md">
+      <main className="flex min-h-screen flex-col justify-center py-16">
+        <div className="columna-formulario">
           <Hecho
             titulo="Apuntado"
             explicacion={`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} de ${importe.replace('.', ',')} € · ${concepto}`}
@@ -147,8 +147,8 @@ export default function Apuntar({
   }
 
   return (
-    <main className="techo-holgado min-h-screen px-5 pb-10">
-      <div className="mx-auto w-full max-w-md">
+    <main className="techo-holgado min-h-screen pb-10">
+      <div className="columna-formulario">
         {/*
           El botón de volver del sistema.
 

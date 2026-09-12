@@ -137,7 +137,14 @@ export default async function Carpeta({
             <Vacio
               titulo="Aquí no hay nada guardado todavía"
               explicacion="Haz una foto y yo lo archivo en esta carpeta."
-              accion={{ texto: 'Guardar un papel', href: `/guardar?carpeta=${carpeta.id}`, icono: 'foto' }}
+              accion={{
+                texto: 'Guardar un papel',
+                /* `en`, no `carpeta`: es el nombre que lee /guardar
+                   (`app/guardar/page.tsx:18`). Con el otro, el papel
+                   llegaba sin carpeta y había que volver a bajar a mano. */
+                href: `/guardar?en=${carpeta.id}`,
+                icono: 'foto',
+              }}
             />
           </div>
         ) : (

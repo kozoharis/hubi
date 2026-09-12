@@ -54,12 +54,12 @@ export default async function AjustesDeGoogle() {
 
   return (
     <main className="min-h-screen pb-40">
-      <Cabecera>
+      <Cabecera formulario>
         <Volver href="/ajustes" />
         <h1 className="t-titulo mt-2.5">Google</h1>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-1">
+      <div className="columna-formulario pt-1">
         {/* ── Cómo está ── */}
         <div className="mt-3 rounded-[20px] border border-borde bg-superficie px-4 py-4">
           <p className="text-[17.5px] font-extrabold leading-snug">

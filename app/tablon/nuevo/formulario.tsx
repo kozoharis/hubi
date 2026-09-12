@@ -141,8 +141,8 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
 
   if (hecho) {
     return (
-      <main className="flex min-h-screen flex-col justify-center px-5 py-16">
-        <div className="mx-auto w-full max-w-md">
+      <main className="flex min-h-screen flex-col justify-center py-16">
+        <div className="columna-formulario">
           <Hecho titulo="Apuntado" explicacion={titulo}>
             {/* Decía «Ver el tablón» y llevaba a una pantalla titulada
                 «Agenda»: el tablón dejó de existir hace tiempo y el
@@ -156,8 +156,8 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
   }
 
   return (
-    <main className="techo-holgado min-h-screen px-5 pb-10">
-      <div className="mx-auto w-full max-w-md">
+    <main className="techo-holgado min-h-screen pb-10">
+      <div className="columna-formulario">
         <Volver href="/agenda" />
 
         {/* Era `font-titulo text-[2.5rem]` — 40 px, y la única

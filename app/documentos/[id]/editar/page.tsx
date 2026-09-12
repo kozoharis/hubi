@@ -69,11 +69,11 @@ export default async function EditarDocumento({
     console.error('[HUBI] No se ha podido abrir para corregir:', error.message)
     return (
       <main className="min-h-screen pb-40">
-        <Cabecera>
+        <Cabecera formulario>
           <Volver href={`/documentos/${id}`} />
           <h1 className="t-titulo mt-2.5">No se ha podido abrir</h1>
         </Cabecera>
-        <div className="mx-auto w-full max-w-md px-5">
+        <div className="columna-formulario">
           {/* El motivo técnico va al registro del servidor, arriba.
               Y faltaba la frase que sí importa: que no se ha perdido. */}
           <Aviso
@@ -96,12 +96,12 @@ export default async function EditarDocumento({
 
   return (
     <main className="min-h-screen pb-40">
-      <Cabecera>
+      <Cabecera formulario>
         <Volver href={`/documentos/${id}`} />
         <h1 className="t-titulo mt-2.5">Corregir</h1>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5">
+      <div className="columna-formulario">
         <Corregir papel={data as Papel} categorias={(cats ?? []) as Categoria[]} />
       </div>
 

@@ -457,11 +457,11 @@ export default async function Documento({
 function NoSeHaPodido() {
   return (
     <main className="min-h-screen pb-40">
-      <Cabecera>
+      <Cabecera formulario>
         <Volver href="/documentos" />
         <h1 className="t-titulo mt-2.5">No se ha podido abrir</h1>
       </Cabecera>
-      <div className="mx-auto w-full max-w-md px-5">
+      <div className="columna-formulario">
         {/* El motivo técnico va al registro del servidor, arriba. Aquí
             lo único que hace falta saber es que el papel no se ha
             perdido — eso es lo que preocupa. */}

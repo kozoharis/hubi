@@ -151,7 +151,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
       {/* El título va en la cabecera, como en el resto (decisión D6).
           Y el emoji sale: los iconos de HUBI son de trazo, y un emoji
           de campana se pinta distinto en cada teléfono. */}
-      <Cabecera>
+      <Cabecera formulario>
         <Volver href="/" />
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono="campana" ambito="azul" tam={44} />
@@ -159,7 +159,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
         </div>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-1">
+      <div className="columna-formulario pt-1">
         {estado === 'mirando' && <p className="t-cuerpo mt-4 text-tenue">Comprobando…</p>}
 
         {/* ── Hay que instalarla primero (iPhone) ── */}

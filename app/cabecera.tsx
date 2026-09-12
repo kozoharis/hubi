@@ -21,16 +21,36 @@
   Es opcional y por defecto no hace nada: las pantallas que todavía no
   tienen tratamiento ancho siguen exactamente como estaban.
 */
+/*
+  ── `formulario` ──
+
+  La tercera postura, y la que faltaba. Un formulario no se ensancha
+  —448 px en las dos superficies— pero en grande sí se PEGA A LA
+  IZQUIERDA, porque con el rail delante una columna centrada deja un
+  pasillo vacío. Si la cabecera se quedara centrada y el formulario se
+  fuera a la izquierda, el título flotaría encima de nada.
+
+  Es `.columna-formulario`, que está escrita una sola vez en
+  `globals.css` al lado de `.columna`.
+*/
 export default function Cabecera({
   children,
   ancho = false,
+  formulario = false,
 }: {
   children: React.ReactNode
   ancho?: boolean
+  formulario?: boolean
 }) {
+  const medida = ancho
+    ? 'columna'
+    : formulario
+      ? 'columna-formulario'
+      : 'mx-auto w-full max-w-md px-5'
+
   return (
     <div className="cabecera">
-      <div className={ancho ? 'columna' : 'mx-auto w-full max-w-md px-5'}>{children}</div>
+      <div className={medida}>{children}</div>
     </div>
   )
 }

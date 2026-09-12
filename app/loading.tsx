@@ -19,7 +19,7 @@
 export default function Cargando() {
   return (
     <main className="espera min-h-screen pb-40" aria-hidden>
-      <div className="techo mx-auto w-full max-w-md px-5">
+      <div className="techo columna-formulario">
         <div className="flex h-14 items-center justify-between">
           <Hueco ancho={120} alto={26} />
           <Hueco ancho={44} alto={44} redondez={999} />

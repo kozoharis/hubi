@@ -51,12 +51,12 @@ export default async function Guardar({
 
     return (
       <main className="min-h-screen pb-12">
-        <Cabecera>
+        <Cabecera formulario>
           <Volver href="/" />
           <h1 className="t-titulo">Guardar un papel</h1>
         </Cabecera>
 
-        <div className="mx-auto w-full max-w-md px-5 pt-1">
+        <div className="columna-formulario pt-1">
           {/*
             Esto no es un error: es una espera, y hay que decirlo así.
             El nombre sale de la casa y no está escrito aquí — en la

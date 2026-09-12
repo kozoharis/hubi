@@ -375,6 +375,32 @@ body {
   }
 }
 
+/* ── La columna de un formulario ───────────────────────────
+   Un formulario NO se ensancha nunca: alargar el recorrido del ojo
+   entre la etiqueta y el campo no da nada a cambio. Así que aquí los
+   448 px se quedan como están en las dos superficies.
+
+   Lo único que cambia es la POSTURA, y ésa estaba mal: el manual decía
+   «448, centrados» y en un ordenador eso deja el formulario flotando
+   en mitad del papel, con el rail a un lado y nada al otro. Se vio en
+   «Apuntar algo» y se corrige aquí, en un solo sitio.
+
+   Las pantallas de `SIN_RAIL` —entrar, empezar— no usan esto: sin rail
+   delante no hay pasillo que corregir, y ahí centrado está bien. */
+.columna-formulario {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 28rem;
+  padding-inline: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .columna-formulario {
+    margin-inline: 0;
+    padding-inline: 2.25rem;
+  }
+}
+
 /* Nada importante depende de pasar el ratón por encima:
    el foco tiene que verse siempre, y verse mucho. */
 :focus-visible {

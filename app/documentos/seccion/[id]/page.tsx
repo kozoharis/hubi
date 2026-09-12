@@ -5,6 +5,7 @@ import { quien } from '@/lib/supabase/quien'
 import Anadir from "../../anadir"
 import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
+import Encabezado from '../../../encabezado'
 import { Ico, Volver } from '../../../iconos'
 import {
   Aviso,
@@ -172,16 +173,30 @@ export default async function Seccion({
       {/* El título vive en la cabecera (D6): aquí estaba en el cuerpo
           y se perdía al hacer scroll. */}
       <Cabecera ancho>
-        <Volver href="/documentos" />
-        <div className="mt-2.5 flex items-center gap-3">
-          <PastillaAmbito icono={s.icono} ambito={s.ambito} />
-          <div className="min-w-0">
-            <h1 className="t-titulo truncate">{seccion.nombre}</h1>
-            <p className="t-apoyo">
-              {papeles.length} {papeles.length === 1 ? 'papel guardado' : 'papeles guardados'}
-            </p>
+        {/* La del móvil, intacta. Por encima de 1024 px no se pinta. */}
+        <div className="lg:hidden">
+          <Volver href="/documentos" />
+          <div className="mt-2.5 flex items-center gap-3">
+            <PastillaAmbito icono={s.icono} ambito={s.ambito} />
+            <div className="min-w-0">
+              <h1 className="t-titulo truncate">{seccion.nombre}</h1>
+              <p className="t-apoyo">
+                {papeles.length} {papeles.length === 1 ? 'papel guardado' : 'papeles guardados'}
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Y en grande, la banda de siempre: a la izquierda dónde
+            estás, a la derecha qué vienes a hacer. */}
+        <Encabezado
+          icono={s.icono}
+          ambito={s.ambito}
+          titulo={seccion.nombre}
+          pie={`${papeles.length} ${papeles.length === 1 ? 'papel guardado' : 'papeles guardados'}`}
+          volver="/documentos"
+          accion={{ texto: 'Guardar un papel', href: '/guardar', icono: 'foto' }}
+        />
       </Cabecera>
 
       <div className="columna">
@@ -345,8 +360,14 @@ export default async function Seccion({
         )}
 
         {/* Sin carpeta concreta: desde una sección aún hay que elegir
-            dónde va, porque una sección tiene varias dentro. */}
-        <Anadir texto="Añadir documento aquí" />
+            dónde va, porque una sección tiene varias dentro.
+
+            En grande no se pinta: la acción ya está arriba a la
+            derecha, en la banda. Dos botones que hacen lo mismo en la
+            misma pantalla son dos sitios donde dudar. */}
+        <div className="lg:hidden">
+          <Anadir texto="Añadir documento aquí" />
+        </div>
       </div>
 
       <Barra activa="documentos" />

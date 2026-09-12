@@ -64,7 +64,7 @@ export default async function ComoSeHace({
 
   return (
     <main className="min-h-screen pb-24">
-      <Cabecera>
+      <Cabecera formulario>
         <Volver href="/ajustes" />
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono="ojo" ambito="azul" tam={44} />
@@ -72,7 +72,7 @@ export default async function ComoSeHace({
         </div>
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-1">
+      <div className="columna-formulario pt-1">
         {!abrir && (
           <>
             {/*
