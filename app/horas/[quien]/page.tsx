@@ -6,6 +6,7 @@ import { partesDe, enHoras, primeroDelMes } from '@/lib/dia'
 import { hoyAqui } from '@/lib/tablon'
 import Barra from '../../barra'
 import Cabecera from '../../cabecera'
+import Encabezado from '../../encabezado'
 import { Ico, Volver } from '../../iconos'
 import { ambitoDeColor, BotonSecundario, Cifra, Fila, Tarjeta, Vacio } from '../../piezas'
 import { genteDeLaCasa } from '@/lib/gente'
@@ -96,15 +97,24 @@ export default async function HorasDeAlguien({
   const suyas = aQuien === user.id
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
-        <Volver href="/lacasa" />
-        <h1 className="t-titulo">
-          {suyas ? 'Mis horas de más' : `Horas de ${perfil.nombre.split(' ')[0]}`}
-        </h1>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
+        <div className="lg:hidden">
+          <Volver href="/lacasa" />
+          <h1 className="t-titulo">
+            {suyas ? 'Mis horas de más' : `Horas de ${perfil.nombre.split(' ')[0]}`}
+          </h1>
+        </div>
+
+        <Encabezado
+          icono="reloj"
+          ambito="pizarra"
+          titulo={suyas ? 'Mis horas de más' : `Horas de ${perfil.nombre.split(' ')[0]}`}
+          volver="/lacasa"
+        />
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5">
+      <div className="mx-auto w-full max-w-md px-5 lg:mx-0 lg:max-w-[560px] lg:px-9">
         {/* ── El mes ── */}
         <div className="mt-4 flex items-center gap-2">
           <Link

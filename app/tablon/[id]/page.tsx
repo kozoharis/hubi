@@ -84,8 +84,23 @@ export default async function Detalle({
   const tarde = atrasado(r)
 
   return (
-    <main className="techo-holgado min-h-screen px-5 pb-40">
-      <div className="mx-auto w-full max-w-md">
+    <main className="techo-holgado min-h-screen px-5 pb-40 lg:px-0 lg:pb-16">
+      {/*
+        ── EN GRANDE, PEGADA A LA IZQUIERDA Y CON SU MEDIDA ──
+
+        Esto NO se ensancha a mil cien píxeles, y es a propósito. Una
+        ficha de tarea es un documento corto: título, cuándo, una nota y
+        cuatro datos. Estirarla solo alarga el recorrido del ojo entre
+        la etiqueta y el valor, y deja los botones de «Hecho» y
+        «Cambiar» con el ancho de la pantalla entera — que es cuando un
+        botón deja de parecer un botón y parece una franja de color.
+
+        Lo que sí se arregla es la POSTURA: `columna` la pega a la
+        izquierda en vez de centrarla, para que al pasar de la Agenda a
+        una tarea el ojo no tenga que buscarla en otro sitio. Es la
+        misma regla que las demás; lo que cambia es el ancho.
+      */}
+      <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-[560px] lg:px-9">
         <Volver href="/tablon" />
 
         <p className="mt-8 flex items-start gap-3">

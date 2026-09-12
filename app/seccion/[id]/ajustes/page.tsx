@@ -3,6 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
+import Encabezado from '../../../encabezado'
 import { Volver, iconoDeEmoji } from '../../../iconos'
 import { PastillaAmbito, ambitoDe } from '../../../piezas'
 import Unidades, { type UnidadDeLaLista } from '../../../ajustes/unidades'
@@ -176,22 +177,37 @@ export default async function AjustesDeLaSeccion({
   }
 
   return (
-    <main className="min-h-screen pb-40">
-      <Cabecera>
-        <Volver href={`/seccion/${id}`} />
-        <div className="flex h-14 items-center gap-3">
-          <PastillaAmbito
-            icono={iconoDeEmoji(fila.icono as string | null)}
-            ambito={ambitoDe(fila.segmento_drive as string | null)}
-            tam={44}
-          />
-          {/* Era 25 px. El título de pantalla es 27 en todas partes:
-              seis tamaños distintos de h1 no son jerarquía, son ruido. */}
-          <h1 className="t-titulo">Cómo la llevas</h1>
+    <main className="min-h-screen pb-40 lg:pb-16">
+      <Cabecera ancho>
+        <div className="lg:hidden">
+          <Volver href={`/seccion/${id}`} />
+          <div className="flex h-14 items-center gap-3">
+            <PastillaAmbito
+              icono={iconoDeEmoji(fila.icono as string | null)}
+              ambito={ambitoDe(fila.segmento_drive as string | null)}
+              tam={44}
+            />
+            {/* Era 25 px. El título de pantalla es 27 en todas partes:
+                seis tamaños distintos de h1 no son jerarquía, son ruido. */}
+            <h1 className="t-titulo">Cómo la llevas</h1>
+          </div>
         </div>
+
+        {/* El nombre de la actividad al pie: «Cómo la llevas» a secas
+            no dice de CUÁL, y en grande se entra aquí desde una lista
+            donde hay varias. */}
+        <Encabezado
+          icono={iconoDeEmoji(fila.icono as string | null)}
+          ambito={ambitoDe(fila.segmento_drive as string | null)}
+          titulo="Cómo la llevas"
+          pie={(fila.nombre as string | null) ?? undefined}
+          volver={`/seccion/${id}`}
+        />
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 pt-1">
+      {/* Son ajustes: se rellenan, no se recorren. 560 px, pegados a la
+          izquierda como todo lo demás. */}
+      <div className="mx-auto w-full max-w-md px-5 pt-1 lg:mx-0 lg:max-w-[560px] lg:px-9">
         <Dividir
           seccionId={id}
           seccionNombre={nombre}
