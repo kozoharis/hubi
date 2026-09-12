@@ -50,9 +50,18 @@ export type Casa = {
   rol: string | null
   /** Si esta casa usa la lista de la compra. */
   usaCompra: boolean
+  /*
+    Si quien mira es una PANTALLA colgada en la casa y no una persona.
+
+    Va aquí y no se deduce del rol porque no se puede: un dispositivo
+    lleva el rol a nulo por obligación —lo impone el disparador del SQL
+    66— y hay personas con el rol a nulo también. La única señal que
+    los distingue es `miembros.clase`.
+  */
+  esPantalla: boolean
 }
 
-const VACIA: Casa = { actividades: [], rol: null, usaCompra: true }
+const VACIA: Casa = { actividades: [], rol: null, usaCompra: true, esPantalla: false }
 
 const Contexto = createContext<Casa | null>(null)
 

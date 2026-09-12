@@ -117,6 +117,20 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   let actividades: Actividad[] = []
   let rol: string | null = null
+  /*
+    ── Y DE QUÉ CLASE ES QUIEN MIRA ──
+
+    Una pantalla colgada en la cocina es un miembro más de la casa
+    (`clase = 'dispositivo'`), y hasta ahora se le daba exactamente la
+    misma navegación que a una persona: las cinco pestañas, Papeles y
+    Cuentas incluidas — que para ella están vacías porque
+    `nivel_por_rol('casa', …)` dice `nada`— y el botón de HABLAR.
+
+    No era una fuga: no abría nada que no debiera. Pero una pantalla de
+    pared no se navega, se MIRA, y un menú de cinco puertas de las que
+    tres no llevan a ningún sitio es lo contrario de eso.
+  */
+  let esPantalla = false
   let usaCompra = true
 
   try {
@@ -159,18 +173,19 @@ export default async function RootLayout({
       const { data: mio } = casaActiva
         ? await supabase
             .from('miembros')
-            .select('rol, hogar_id')
+            .select('rol, clase, hogar_id')
             .eq('perfil_id', yo)
             .eq('hogar_id', casaActiva as string)
             .maybeSingle()
         : await supabase
             .from('miembros')
-            .select('rol, hogar_id')
+            .select('rol, clase, hogar_id')
             .eq('perfil_id', yo)
             .limit(1)
             .maybeSingle()
 
       rol = (mio?.rol as string | null) ?? null
+      esPantalla = (mio?.clase as string | null) === 'dispositivo'
 
       if (mio?.hogar_id) {
         const { data: casa } = await supabase
@@ -211,7 +226,7 @@ export default async function RootLayout({
           consigo la barra de abajo ni la cabecera, que están clavadas
           a la ventana. El porqué largo está en `globals.css`.
         */}
-        <ProveedorActividades casa={{ actividades, rol, usaCompra }}>
+        <ProveedorActividades casa={{ actividades, rol, usaCompra, esPantalla }}>
           {/*
             ── DOS SUPERFICIES, UN ARMAZÓN ──
 

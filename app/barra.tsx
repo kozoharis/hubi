@@ -108,7 +108,7 @@ export default function Barra({
   activa?: Seccion
   voz?: boolean
 }) {
-  const { rol } = useCasa()
+  const { rol, esPantalla } = useCasa()
 
   /*
     ═══════════════════════════════════════════════════════════
@@ -167,6 +167,12 @@ export default function Barra({
     WhatsApp.
   */
   const PESTANAS = pestanasDe(rol)
+
+  /* Una pantalla colgada en la cocina no navega: mira. Sin esto se le
+     pintaban las cinco pestañas —tres de ellas vacías, porque el techo
+     de un aparato es `nada` en carpetas y en cuentas— y el botón de
+     HABLAR, que en una pared no lo va a pulsar nadie. */
+  if (esPantalla) return null
 
   /* `lg:hidden`: en grande navega el rail de la izquierda. Dos sitios
      señalando dónde estás es peor que uno. */

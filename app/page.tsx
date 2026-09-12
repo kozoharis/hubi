@@ -28,7 +28,7 @@ import { type Deber } from './rutinas-hoy'
 import { elEspacio, elEspacioO } from '@/lib/espacio'
 import { laMesa, haceCuanto } from '@/lib/escritorio'
 import { euros, eurosRedondo } from '@/lib/periodos'
-import { laPuertaQueFalta } from '@/lib/enlaces'
+import { aqui, laPuertaQueFalta } from '@/lib/enlaces'
 
 export const dynamic = 'force-dynamic'
 
@@ -130,6 +130,30 @@ export default async function Inicio({
   */
   const puerta = await laPuertaQueFalta(hogarId)
   if (puerta) redirect(puerta)
+
+  /*
+    ── Y SI QUIEN ABRE ES UNA PANTALLA DE PARED, A SU SITIO ──
+
+    Va DESPUÉS de la puerta a propósito: primero se sabe en qué casa
+    está, porque `/casa` lo necesita para preguntar de qué clase es
+    este miembro — y la clase es de la casa, no de la persona.
+
+    Sin esto, una tableta colgada en la cocina se encontraría el Inicio
+    de siempre: «Buenos días, La cocina», el botón de HABLAR y
+    «Guardar documento». No enseñaría nada que no pueda —el techo de un
+    aparato ya lo impide— pero es lo contrario de lo que tiene que ser
+    una pantalla que se mira de paso.
+  */
+  const { data: soyUnAparato } = await supabase
+    .from('miembros')
+    .select('clase')
+    .eq('perfil_id', user.id)
+    .eq('hogar_id', hogarId)
+    .maybeSingle()
+
+  if ((soyUnAparato?.clase as string | null) === 'dispositivo') {
+    redirect(await aqui('/casa'))
+  }
 
   /* En cuántas casas está, y si le han invitado a alguna. Con una sola
      —o sea, casi siempre— esto no pinta nada en la pantalla. */

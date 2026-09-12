@@ -170,6 +170,23 @@ export async function POST(peticion: NextRequest) {
       papel: 'miembro',
       rol: null,
       clase: 'dispositivo',
+      /*
+        ⚠️  Y LOS DOS ATAJOS APAGADOS. Esto faltaba, y se vio en cuanto
+        se colgó la primera pantalla: la cocina veía todos los papeles
+        de la casa.
+
+        `miembros.ve_todo` tiene `default true`, y `ve_todo` **se salta
+        el techo del aparato**: `puedo_ver_carpeta` empieza con
+        «si ve_todo entonces sí» y no pregunta ni por el nivel ni por
+        la clase. Con el valor por defecto, una pantalla nacía viéndolo
+        todo aunque `nivel_en` dijera `nada`.
+
+        La base lo cierra además por su cuenta desde el paso 70, con
+        una restrictiva sobre `documentos`. Esto es el cinturón; aquello
+        son los tirantes.
+      */
+      ve_todo: false,
+      escribe_todo: false,
       aceptado_en: new Date().toISOString(),
     })
     .select('perfil_id')

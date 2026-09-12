@@ -75,13 +75,16 @@ function cualEsta(ruta: string): string {
 const SIN_RAIL = ['/entrar', '/empezar', '/privacidad', '/terminos']
 
 export default function Rail() {
-  const { rol } = useCasa()
+  const { rol, esPantalla } = useCasa()
   const ruta = usePathname() ?? '/'
   const activa = cualEsta(ruta)
   const pestanas = pestanasDe(rol)
 
   const dentro = ruta.replace(/^\/e\/[0-9a-fA-F-]{36}/, '') || '/'
   if (SIN_RAIL.some((r) => dentro === r || dentro.startsWith(r + '/'))) return null
+
+  /* Una pantalla colgada en la pared no se navega, se mira. */
+  if (esPantalla) return null
 
   return (
     <nav
