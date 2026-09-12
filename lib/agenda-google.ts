@@ -54,15 +54,99 @@ export function etiquetaIcal(perfilId: string): string {
   return `ical-${perfilId}`
 }
 
-/** Quién tiene calendario y se puede enseñar a esta persona. */
+/*
+  ═══════════════════════════════════════════════════════════════
+  QUIÉN TIENE CALENDARIO Y SE TE PUEDE ENSEÑAR A TI
+  ═══════════════════════════════════════════════════════════════
+
+  ⚠️  ESTA FUNCIÓN CORRE CON LA LLAVE DE SERVICIO, Y ESO TIENE PRECIO.
+
+  Tiene que correr con ella: `perfiles.ical_cifrado` guarda la
+  dirección del calendario de una persona cifrada, y esa columna NO se
+  le da a nadie —ni a su dueño— desde el navegador. Por eso aquí se usa
+  `clienteServidor()` y no la sesión.
+
+  Pero la llave de servicio **se salta el RLS entero**. O sea que aquí
+  dentro no hay red de seguridad: lo que no filtre este código, no lo
+  filtra nadie.
+
+  ─────────────────────────────────────────────────────────────
+  LO QUE HACÍA ANTES, Y POR QUÉ ERA UNA FUGA
+
+  Esto:
+
+      .from('perfiles')
+      .select('id, nombre, color, ical_cifrado, ical_compartido')
+
+  Sin un solo `.eq()`. O sea: **todos los perfiles de la base**, y de
+  ahí se quedaba con cualquiera que tuviera `ical_compartido = true`.
+
+  Con una familia sola no se nota, y por eso ha durado. Con dos, en la
+  Agenda de Juan Miguel sale un botón con el nombre de un DESCONOCIDO
+  de otra casa; y al pulsarlo, `citasDeLaFamilia` le trae y le pinta
+  las citas de esa persona —el médico de alguien, con su hora y su
+  sitio—.
+
+  No hacía falta nada raro para llegar: bastaba con que otra familia
+  usara HUBI y alguien de ella compartiera su calendario, que es
+  exactamente para lo que existe ese interruptor.
+
+  ─────────────────────────────────────────────────────────────
+  LA REGLA, AHORA
+
+  Un calendario se te puede enseñar si se cumplen las dos cosas:
+
+    1 · esa persona está en ALGUNA de tus casas, aceptada;
+    2 · y lo ha compartido (o eres tú).
+
+  Y se comprueba en este orden a propósito: primero quién es de los
+  tuyos, y solo entre ésos se mira el interruptor. Al revés —primero
+  los que comparten, luego si son tuyos— es como estaba escrito el
+  fallo.
+*/
 export async function calendariosVisibles(
   miId: string
 ): Promise<{ id: string; nombre: string; color: string }[]> {
   try {
     const supa = clienteServidor()
+
+    /* 1 · En qué casas estoy yo. Solo aceptadas: una invitación sin
+           contestar no da acceso a nada, y menos a la agenda de nadie. */
+    const { data: mias, error: fallo1 } = await supa
+      .from('miembros')
+      .select('hogar_id')
+      .eq('perfil_id', miId)
+      .not('aceptado_en', 'is', null)
+
+    if (fallo1 || !mias || mias.length === 0) return []
+
+    /* 2 · Quién más está en esas casas.
+
+           `clase = 'persona'`: una pantalla de cocina es un miembro más
+           de la tabla, y sin esto saldría en la lista de calendarios
+           como si fuera alguien. No tiene calendario —así que hoy la
+           filtraría el `ical_cifrado` de abajo— pero eso es suerte, no
+           una regla, y el día que un aparato tenga uno dejaría de
+           serlo. */
+    const { data: vecinos, error: fallo2 } = await supa
+      .from('miembros')
+      .select('perfil_id')
+      .in('hogar_id', mias.map((m) => m.hogar_id as string))
+      .eq('clase', 'persona')
+      .not('aceptado_en', 'is', null)
+
+    if (fallo2 || !vecinos) return []
+
+    /* Sin repetidos: quien está conmigo en dos casas sale dos veces, y
+       con él saldría su calendario dos veces en la misma pantalla. */
+    const delGrupo = [...new Set(vecinos.map((v) => v.perfil_id as string))]
+    if (delGrupo.length === 0) return []
+
+    /* 3 · Y ahora sí, sus perfiles. */
     const { data, error } = await supa
       .from('perfiles')
       .select('id, nombre, color, ical_cifrado, ical_compartido')
+      .in('id', delGrupo)
 
     if (error || !data) return []
 

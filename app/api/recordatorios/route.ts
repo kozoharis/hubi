@@ -191,7 +191,14 @@ export async function POST(peticion: NextRequest) {
   after(async () => {
     for (const fila of data) {
       try {
-        await avisarDeLoNuevo(user.id, fila.asignado_a, fila.titulo, fila.fecha, fila.hora)
+        await avisarDeLoNuevo(
+          espacio,
+          user.id,
+          fila.asignado_a,
+          fila.titulo,
+          fila.fecha,
+          fila.hora
+        )
       } catch (e) {
         console.error('[HUBI] Recordatorio creado sin aviso:', e)
       }
@@ -231,16 +238,45 @@ export async function POST(peticion: NextRequest) {
   return NextResponse.json({ id: data[0].id, ids: data.map((d) => d.id) })
 }
 
+/*
+  ── A QUIÉN SE AVISA, Y DE QUÉ CASA ──
+
+  Esto leía `perfiles` entero y avisaba a todos menos al autor. Con una
+  casa sola está bien; con dos, no: `perfiles_leer` deja ver a la gente
+  de TODAS tus casas, así que una tarea «para los dos» apuntada en casa
+  de los padres le llegaba también a quien está contigo en la otra casa
+  —que no la puede ni abrir—.
+
+  Ahora la casa entra como argumento y los destinatarios salen de
+  `miembros` de ESA casa. Y solo personas: una pantalla de cocina es un
+  miembro más de la tabla y no se le manda un aviso al móvil.
+*/
 async function avisarDeLoNuevo(
+  hogarId: string | null,
   quienLoCrea: string,
   asignadoA: string | null,
   titulo: string,
   fecha: string | null,
   hora: string | null
 ) {
+  if (!hogarId) return
+
   const supabase = await clienteSesion()
 
-  const { data: perfiles } = await supabase.from('perfiles').select('id, nombre')
+  const { data: deLaCasa } = await supabase
+    .from('miembros')
+    .select('perfil_id')
+    .eq('hogar_id', hogarId)
+    .eq('clase', 'persona')
+    .not('aceptado_en', 'is', null)
+  if (!deLaCasa || deLaCasa.length === 0) return
+
+  const dentro = new Set(deLaCasa.map((m) => m.perfil_id as string))
+
+  const { data: perfiles } = await supabase
+    .from('perfiles')
+    .select('id, nombre')
+    .in('id', [...dentro])
   if (!perfiles) return
 
   const autor = perfiles.find((p) => p.id === quienLoCrea)?.nombre ?? 'Alguien'

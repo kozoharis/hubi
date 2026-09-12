@@ -21,7 +21,6 @@ type Papel = {
   tipo_mime: string
   importe: number | null
   proveedor: string | null
-  visibilidad: string
   categoria_id: string
   subido_por: string | null
 }
@@ -62,7 +61,7 @@ export default async function Carpeta({
          caminos para ir de un documento a una persona y la base de datos
          se niega a elegir, así que la consulta entera fallaba. Los
          nombres se piden aparte, abajo. */
-      'id, titulo, fecha_documento, tipo_mime, importe, proveedor, visibilidad, categoria_id, subido_por'
+      'id, titulo, fecha_documento, tipo_mime, importe, proveedor, categoria_id, subido_por'
     )
     .eq('hogar_id', await elEspacioO(supabase))
     .in('categoria_id', dentro)
@@ -175,11 +174,19 @@ export default async function Carpeta({
                       {p.proveedor ? `${p.proveedor} · ` : ''}
                       {fechaCorta(p.fecha_documento)}
                     </span>
+                    {/* El candado se va: se pintaba desde `visibilidad`,
+                        que desde el paso 63 no decide quién ve un papel
+                        —lo deciden la carpeta y los permisos— y que
+                        además vale siempre 'compartido', porque es lo
+                        único que escribe `/api/documentos`.
+
+                        Un candado que no puede salir nunca es ruido; y
+                        el día que saliera, diría algo que no es cierto.
+                        Queda quién lo guardó, que sí es verdad y es lo
+                        que se busca en una lista. */}
                     <span className="t-apoyo mt-1 flex items-center gap-1.5">
-                      <Ico nombre={p.visibilidad === 'privado' ? 'candado' : 'gente'} tam={16} grosor={2} />
-                      {p.visibilidad === 'privado'
-                        ? 'Privado'
-                        : `Guardó ${(p.subido_por && quienEs.get(p.subido_por)) ?? 'alguien'}`}
+                      <Ico nombre="gente" tam={16} grosor={2} />
+                      {`Guardó ${(p.subido_por && quienEs.get(p.subido_por)) ?? 'alguien'}`}
                     </span>
                   </span>
                   {p.importe != null && (

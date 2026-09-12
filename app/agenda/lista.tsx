@@ -71,7 +71,30 @@ export default async function Lista({
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
 
-  const { data: perfiles } = await supabase.from('perfiles').select('id, nombre')
+  /*
+    LOS NOMBRES, SOLO LOS DE ESTA CASA.
+
+    Esto era `from('perfiles').select('id, nombre')` a secas. Con la
+    sesión no es una fuga —`perfiles_leer` ya limita a la gente de tus
+    casas— pero con dos casas el mapa mezcla a todo el mundo, y una
+    pantalla de cocina, que en `miembros` es un miembro más, entraría
+    como si fuera una persona.
+
+    Se pide la casa una vez y se reutiliza abajo: antes se llamaba a
+    `elEspacioO` dentro de la consulta y era otra ida y vuelta.
+  */
+  const casa = await elEspacioO(supabase)
+
+  const { data: deLaCasa } = await supabase
+    .from('miembros')
+    .select('perfil_id')
+    .eq('hogar_id', casa)
+    .eq('clase', 'persona')
+
+  const { data: perfiles } = await supabase
+    .from('perfiles')
+    .select('id, nombre')
+    .in('id', (deLaCasa ?? []).map((m) => m.perfil_id as string))
   const nombres = Object.fromEntries((perfiles ?? []).map((p) => [p.id, p.nombre]))
 
   const { data } = await supabase
@@ -79,7 +102,7 @@ export default async function Lista({
     .select(
       'id, titulo, tipo, asignado_a, creado_por, fecha, hora, estado, nota, documento_origen_id'
     )
-    .eq('hogar_id', await elEspacioO(supabase))
+    .eq('hogar_id', casa)
     .order('fecha', { ascending: true, nullsFirst: false })
     .order('hora', { ascending: true, nullsFirst: true })
     .limit(200)

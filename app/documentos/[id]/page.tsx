@@ -55,7 +55,7 @@ export default async function Documento({
     error de lectura no puede disfrazarse de documento inexistente.
   */
   const BASE =
-    'id, titulo, tipo_mime, nombre_archivo, fecha_documento, fecha_vencimiento, importe, proveedor, texto_ocr, visibilidad, confianza_ocr, categoria_id, subido_por'
+    'id, titulo, tipo_mime, nombre_archivo, fecha_documento, fecha_vencimiento, importe, proveedor, texto_ocr, confianza_ocr, categoria_id, subido_por'
 
   /* Dos intentos: `se_renueva` y `preaviso_dias` son del SQL 43, y sin
      él Postgres rechazaría la consulta entera y esta pantalla diría «no
@@ -92,7 +92,6 @@ export default async function Documento({
     importe: number | null
     proveedor: string | null
     texto_ocr: string | null
-    visibilidad: string
     confianza_ocr: string | null
     categoria_id: string
     subido_por: string | null
@@ -303,11 +302,43 @@ export default async function Documento({
             />
           ) : null}
           <Dato etiqueta="Lo guardó" valor={autor?.nombre ?? null} />
+
+          {/*
+            ── QUIÉN LO VE: LO DICE LA CARPETA ──
+
+            Aquí ponía «Los dos», o «Solo quien lo subió» con un
+            candado, y las dos cosas eran mentira desde el paso 63.
+
+            Lo eran por dos motivos distintos, y los dos importan:
+
+            · `visibilidad` ya no decide nada. Hasta el 63, las tres
+              políticas de `documentos` llevaban dentro
+              `visibilidad = 'compartido' or subido_por = auth.uid()`.
+              El 63 lo quitó: quién ve un papel lo deciden ahora el
+              ámbito de su carpeta y los permisos de cada persona. La
+              columna sigue ahí, pero no gobierna.
+
+            · Y aunque gobernara, nunca vale 'privado': `/api/documentos`
+              escribe `visibilidad: 'compartido'` a pelo (línea 243) y
+              no hay ni una pantalla para cambiarlo. O sea que el
+              candado no podía salir ni queriendo.
+
+            «Los dos» además se quedó viejo por otro lado: en una casa
+            con alguien que ayuda o con un asesor, los que ven un papel
+            ya no son dos.
+
+            Lo que sí es verdad hoy, y lo que se enseña: se ve según la
+            sección donde está. Y se dice CON la sección, no en
+            abstracto, porque «depende de los permisos» no es una
+            respuesta para nadie.
+          */}
           <div className="flex items-center justify-between gap-4 py-3">
-            <span className="t-apoyo shrink-0">Lo pueden ver</span>
-            <span className="t-cuerpo flex items-center gap-1.5 font-extrabold">
-              <Ico nombre={d.visibilidad === 'privado' ? 'candado' : 'gente'} tam={19} grosor={2} />
-              {d.visibilidad === 'privado' ? 'Solo quien lo subió' : 'Los dos'}
+            <span className="t-apoyo shrink-0">Quién lo ve</span>
+            <span className="t-cuerpo flex min-w-0 items-center gap-1.5 font-extrabold">
+              <Ico nombre="gente" tam={19} grosor={2} />
+              <span className="truncate">
+                {seccion ? `Quien tenga ${seccion.nombre}` : 'La familia'}
+              </span>
             </span>
           </div>
         </div>
