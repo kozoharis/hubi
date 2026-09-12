@@ -4,6 +4,8 @@ import { quien } from '@/lib/supabase/quien'
 import { laMesa } from '@/lib/escritorio'
 import { calcular } from '@/lib/periodos'
 import { hoyAqui } from '@/lib/tablon'
+import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import { Volver } from '../iconos'
 import { Aviso } from '../piezas'
 import Mesa from './mesa'
@@ -80,16 +82,28 @@ export default async function Escritorio() {
 
   return (
     <main className="min-h-screen pb-24">
-      <div className="cabecera">
-        <div className="mx-auto w-full max-w-5xl px-5">
+      {/* Era una cabecera escrita a mano, con `max-w-5xl` centrado: la
+          única medida de HUBI que no salía del sistema, y centrada
+          además, o sea flotando al lado del rail. Ahora es la columna
+          de siempre —1100 a la izquierda— y la banda de siempre. */}
+      <Cabecera ancho>
+        <div className="lg:hidden">
           <Volver href="/" />
           <div className="flex h-14 items-center">
             <h1 className="t-titulo">El escritorio</h1>
           </div>
         </div>
-      </div>
 
-      <div className="mx-auto w-full max-w-5xl px-5 pt-1">
+        <Encabezado
+          icono="casa"
+          ambito="pizarra"
+          titulo="El escritorio"
+          pie={unaSola ? 'Ahora mismo tienes una casa' : 'Tus casas, de una vez'}
+          volver="/"
+        />
+      </Cabecera>
+
+      <div className="columna pt-1">
         <p className="t-apoyo">
           {unaSola
             ? 'Aquí saldrán todas tus casas juntas. Ahora mismo tienes una.'

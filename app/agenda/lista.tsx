@@ -580,7 +580,25 @@ function Tira({
   const LETRAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
   return (
-    <div className="mt-4 flex justify-between gap-1">
+    /*
+      ── NO SE ESTIRA ──
+
+      Cada casilla es `flex-1`, así que en una columna de 1100 px los
+      siete días salían de ciento cincuenta píxeles de ancho por
+      sesenta y dos de alto: siete rectángulos tumbados, con una letra
+      y un número perdidos en el centro de cada uno, haciendo de
+      pancarta encima de los días de verdad.
+
+      Una tira de días es un CONTROL, no un contenido: tiene su tamaño
+      natural y ensancharlo no enseña ni un dato más. Es la misma regla
+      que la caja de HUBI (420) y los segmentos (440) de la banda —
+      medidas fijas, y el sitio que sobra se deja sobrar.
+
+      440 para que sea exactamente la de los segmentos: en la Agenda
+      las dos cosas están una debajo de la otra y desalinearlas por
+      veinte píxeles se ve.
+    */
+    <div className="mt-4 flex justify-between gap-1 lg:max-w-[440px]">
       {dias.map((d, i) => {
         /* Ya no hay «día elegido»: tocar un día ENTRA en él. Lo único
            que se marca es hoy, que es el punto de referencia. */

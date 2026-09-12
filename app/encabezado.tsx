@@ -81,6 +81,7 @@ export type AccionDeEncabezado = {
 export default function Encabezado({
   icono,
   ambito = 'pizarra',
+  marca,
   titulo,
   pie,
   volver,
@@ -91,6 +92,15 @@ export default function Encabezado({
 }: {
   icono?: Icono
   ambito?: Ambito
+  /*
+    En vez de la pastilla de ámbito, una marca cualquiera: la foto de
+    una persona, casi siempre.
+
+    «La casa» y «El asesor» no van de un ámbito sino de ALGUIEN, y ahí
+    la pastilla de color diría menos que la cara. Si vienen las dos,
+    manda ésta.
+  */
+  marca?: ReactNode
   titulo: string
   /** Una línea debajo del título. El nombre de la casa, el periodo… */
   pie?: string
@@ -127,7 +137,11 @@ export default function Encabezado({
               <Ico nombre="atras" tam={22} grosor={2.4} />
             </Link>
           )}
-          {icono && <PastillaAmbito icono={icono} ambito={ambito} tam={44} />}
+          {marca ? (
+            <span className="shrink-0">{marca}</span>
+          ) : (
+            icono && <PastillaAmbito icono={icono} ambito={ambito} tam={44} />
+          )}
           <div className="min-w-0">
             <h1 className="t-titulo truncate">{titulo}</h1>
             {pie && <p className="t-apoyo mt-0.5 truncate">{pie}</p>}

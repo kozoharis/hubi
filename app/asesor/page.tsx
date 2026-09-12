@@ -3,6 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import { Volver } from '../iconos'
 import { Persona } from '../piezas'
 import { elEspacio } from '@/lib/espacio'
@@ -201,16 +202,25 @@ export default async function DelAsesor() {
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
-        <Volver href="/dia" />
-        <div className="flex h-14 items-center gap-3">
-          <Persona nombre={titulo} color={suyo.color} tam={44} />
-          <span className="min-w-0">
-            <h1 className="t-titulo truncate">{titulo}</h1>
-            <p className="t-apoyo">
-              {soyElAsesor ? 'Lo que les dejas y lo que te piden' : 'Tu asesor'}
-            </p>
-          </span>
+        <div className="lg:hidden">
+          <Volver href="/dia" />
+          <div className="flex h-14 items-center gap-3">
+            <Persona nombre={titulo} color={suyo.color} tam={44} />
+            <span className="min-w-0">
+              <h1 className="t-titulo truncate">{titulo}</h1>
+              <p className="t-apoyo">
+                {soyElAsesor ? 'Lo que les dejas y lo que te piden' : 'Tu asesor'}
+              </p>
+            </span>
+          </div>
         </div>
+
+        <Encabezado
+          marca={<Persona nombre={titulo} color={suyo.color} tam={44} />}
+          titulo={titulo}
+          pie={soyElAsesor ? 'Lo que les dejas y lo que te piden' : 'Tu asesor'}
+          volver="/dia"
+        />
       </Cabecera>
 
       <div className="columna pt-2">

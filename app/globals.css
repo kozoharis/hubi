@@ -401,6 +401,30 @@ body {
   }
 }
 
+/* ── La columna de un texto seguido ────────────────────────
+   Para las pantallas que son PROSA y no lista ni formulario: «Cómo se
+   hace», los términos, la privacidad.
+
+   448 las deja en renglones de siete u ocho palabras —se lee a
+   tirones, y en algo que ya cuesta leer eso se nota—; 1100 las deja en
+   renglones que el ojo recorre pero no lee, porque al saltar de línea
+   pierde por dónde iba. 650 son unas noventa letras por renglón, que
+   es lo que usa cualquier libro y por algo será. */
+.columna-texto {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 28rem;
+  padding-inline: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .columna-texto {
+    margin-inline: 0;
+    max-width: 650px;
+    padding-inline: 2.25rem;
+  }
+}
+
 /* Nada importante depende de pasar el ratón por encima:
    el foco tiene que verse siempre, y verse mucho. */
 :focus-visible {

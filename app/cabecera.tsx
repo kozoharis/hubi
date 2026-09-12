@@ -33,20 +33,31 @@
   Es `.columna-formulario`, que está escrita una sola vez en
   `globals.css` al lado de `.columna`.
 */
+/*
+  ── `texto` ──
+
+  Y la cuarta, para las pantallas que son prosa seguida: 650 px a la
+  izquierda. Ni 448, que parte las frases en renglones de ocho
+  palabras, ni 1100, que el ojo recorre pero no lee.
+*/
 export default function Cabecera({
   children,
   ancho = false,
   formulario = false,
+  texto = false,
 }: {
   children: React.ReactNode
   ancho?: boolean
   formulario?: boolean
+  texto?: boolean
 }) {
   const medida = ancho
     ? 'columna'
-    : formulario
-      ? 'columna-formulario'
-      : 'mx-auto w-full max-w-md px-5'
+    : texto
+      ? 'columna-texto'
+      : formulario
+        ? 'columna-formulario'
+        : 'mx-auto w-full max-w-md px-5'
 
   return (
     <div className="cabecera">

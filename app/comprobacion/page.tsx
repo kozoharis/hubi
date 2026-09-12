@@ -62,8 +62,11 @@ export default function Comprobacion() {
   }, [])
 
   return (
-    <main className="min-h-screen bg-fondo px-6 py-12 text-tinta">
-      <div className="mx-auto max-w-xl">
+    <main className="min-h-screen bg-fondo py-12 text-tinta">
+      {/* Es una pantalla de diagnóstico y no de producto, pero se ve
+          dentro del mismo armazón —con el rail delante— y centrada
+          flotaba como las demás. La medida de texto le sirve. */}
+      <div className="columna-texto">
         <p className="rotulo tracking-[0.2em]">HUBI</p>
         <h1 className="t-titulo mt-3">Comprobación del sistema</h1>
         <p className="t-cuerpo mt-3">

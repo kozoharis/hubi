@@ -3,6 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import { Volver } from '../iconos'
 import { ambitoDeColor, Persona, TarjetaAccion, Vacio } from '../piezas'
 import { genteDeLaCasa, type Quien } from '@/lib/gente'
@@ -106,20 +107,41 @@ export default async function LaCasaHoy({
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
-        <Volver href="/dia" />
-        <div className="flex h-14 items-center gap-3">
-          {laAyuda && <Persona nombre={laAyuda.nombre} color={laAyuda.color} tam={44} />}
-          <span className="min-w-0">
-            <h1 className="t-titulo truncate">
-              {esHoy ? 'La casa hoy' : enPalabras(fecha)}
-            </h1>
-            <p className="t-apoyo">
-              {laAyuda
-                ? `${laAyuda.nombre.split(' ')[0]} · ${hechas} de ${deberes.length}`
-                : `${hechas} de ${deberes.length}`}
-            </p>
-          </span>
+        <div className="lg:hidden">
+          <Volver href="/dia" />
+          <div className="flex h-14 items-center gap-3">
+            {laAyuda && <Persona nombre={laAyuda.nombre} color={laAyuda.color} tam={44} />}
+            <span className="min-w-0">
+              <h1 className="t-titulo truncate">
+                {esHoy ? 'La casa hoy' : enPalabras(fecha)}
+              </h1>
+              <p className="t-apoyo">
+                {laAyuda
+                  ? `${laAyuda.nombre.split(' ')[0]} · ${hechas} de ${deberes.length}`
+                  : `${hechas} de ${deberes.length}`}
+              </p>
+            </span>
+          </div>
         </div>
+
+        {/* Aquí la marca es la cara de quien ayuda, no un ámbito: esta
+            pantalla va de una persona y de un día. */}
+        <Encabezado
+          marca={
+            laAyuda ? (
+              <Persona nombre={laAyuda.nombre} color={laAyuda.color} tam={44} />
+            ) : undefined
+          }
+          icono="casa"
+          ambito="pizarra"
+          titulo={esHoy ? 'La casa hoy' : enPalabras(fecha)}
+          pie={
+            laAyuda
+              ? `${laAyuda.nombre.split(' ')[0]} · ${hechas} de ${deberes.length}`
+              : `${hechas} de ${deberes.length}`
+          }
+          volver="/dia"
+        />
       </Cabecera>
 
       <div className="columna pt-1">
