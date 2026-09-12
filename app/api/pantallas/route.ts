@@ -187,3 +187,122 @@ export async function POST(peticion: NextRequest) {
 
   return NextResponse.json({ bien: true, correo, nombre })
 }
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  QUITAR UNA PANTALLA
+  ═══════════════════════════════════════════════════════════════
+
+  Esto faltaba, y faltaba de una manera concreta: se podía colgar una
+  pantalla y no se podía descolgar. Con el correo bien escrito no pasa
+  nada; con uno mal escrito —una dirección de ejemplo, un dedazo— queda
+  una puerta abierta a nombre de nadie y la única salida era escribir
+  SQL a mano.
+
+  Una acción que se puede hacer desde una pantalla tiene que poder
+  deshacerse desde una pantalla.
+
+  ─────────────────────────────────────────────────────────────
+  QUITAR UNA PANTALLA SÍ ES BORRAR. SACAR A UNA PERSONA, NO.
+
+  Aquí se borra la cuenta entera, y está bien: una pantalla no es
+  nadie, no ha vivido nada, y lo que enseñaba sigue estando en HUBI.
+
+  Con una persona sería lo contrario, y la base lo demuestra:
+
+      recordatorios.creado_por  →  ON DELETE CASCADE
+
+  Borrar a alguien **se lleva por delante las tareas que escribió**.
+  Por eso sacar a una persona de la casa será otra cosa —el paso 70— y
+  no reutilizará este camino.
+
+  Y por eso esto comprueba las dos cosas antes de tocar nada: que sea
+  un `dispositivo`, y que no haya escrito nada.
+*/
+export async function DELETE(peticion: NextRequest) {
+  const supabase = await clienteSesion()
+  const user = await quien(supabase)
+  if (!user) {
+    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
+  }
+
+  const hogarId = await elEspacio(supabase)
+  if (!hogarId) {
+    return NextResponse.json({ error: 'No se sabe de qué casa.' }, { status: 403 })
+  }
+
+  if (!(await mandaEnSuCasa(supabase, user.id))) {
+    return NextResponse.json(
+      { error: 'Solo quien creó esta casa puede quitar una pantalla.' },
+      { status: 403 }
+    )
+  }
+
+  const cuerpo = (await peticion.json().catch(() => null)) as { id?: string } | null
+  const id = String(cuerpo?.id ?? '')
+  if (!/^[0-9a-f-]{36}$/i.test(id)) {
+    return NextResponse.json({ error: 'No se sabe qué pantalla.' }, { status: 400 })
+  }
+
+  const admin = clienteServidor()
+
+  /* Que sea una pantalla DE ESTA CASA. Sin el `hogar_id` se podría
+     quitar la de otra familia sabiendo su identificador. */
+  const { data: fila } = await admin
+    .from('miembros')
+    .select('clase')
+    .eq('perfil_id', id)
+    .eq('hogar_id', hogarId)
+    .maybeSingle()
+
+  if (!fila) {
+    return NextResponse.json({ error: 'Esa pantalla no está en esta casa.' }, { status: 404 })
+  }
+
+  if (fila.clase !== 'dispositivo') {
+    return NextResponse.json(
+      {
+        error: 'Eso no es una pantalla, es una persona.',
+        detalle: 'A una persona se la saca de la casa, no se la borra. Todavía no está hecho.',
+      },
+      { status: 409 }
+    )
+  }
+
+  /* Y que no haya escrito nada, porque al borrarla se iría con ella. */
+  const [tareas, recados] = await Promise.all([
+    admin
+      .from('recordatorios')
+      .select('id', { count: 'exact', head: true })
+      .or(`creado_por.eq.${id},asignado_a.eq.${id}`),
+    admin
+      .from('notas')
+      .select('id', { count: 'exact', head: true })
+      .or(`escrita_por.eq.${id},para.eq.${id}`),
+  ])
+
+  const escritas = (tareas.count ?? 0) + (recados.count ?? 0)
+  if (escritas > 0) {
+    return NextResponse.json(
+      {
+        error: 'Esa pantalla tiene cosas escritas a su nombre.',
+        detalle: `Son ${escritas}, y quitarla se las llevaría por delante. Dímelo antes.`,
+      },
+      { status: 409 }
+    )
+  }
+
+  /* La cuenta, y lo demás cae solo: `perfiles` va en cascada desde
+     `auth.users`, y `miembros` desde `perfiles`. */
+  const { error } = await admin.auth.admin.deleteUser(id)
+
+  if (error) {
+    console.error('[HUBI] No se ha podido quitar la pantalla:', error.message)
+    return NextResponse.json(
+      { error: 'No se ha podido quitar.', detalle: error.message },
+      { status: 500 }
+    )
+  }
+
+  return NextResponse.json({ bien: true })
+}

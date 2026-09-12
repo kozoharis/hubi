@@ -156,6 +156,21 @@ export default async function LaCocina() {
 
   const guardados = dice?.tipos_en_casa ?? null
 
+  /* Las pantallas colgadas, con su nombre. El nombre vive en
+     `perfiles`, así que son dos consultas: `miembros` dice cuáles son
+     de esta casa y `perfiles` cómo se llaman. Sin nombre, quitar una
+     de dos sería elegir a ciegas. */
+  const suyos = (aparatos.data ?? []).map((m) => m.perfil_id as string)
+  const { data: comoSeLlaman } = suyos.length
+    ? await supabase.from('perfiles').select('id, nombre').in('id', suyos)
+    : { data: [] }
+
+  const pantallas = suyos.map((id) => ({
+    id,
+    nombre:
+      (comoSeLlaman ?? []).find((p) => p.id === id)?.nombre ?? 'Una pantalla',
+  }))
+
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
@@ -194,7 +209,7 @@ export default async function LaCocina() {
           final, que es como se hace cualquier otra cosa en una casa.
         */}
         <div className="mt-4">
-          <AnadirPantalla cuantas={aparatos.data?.length ?? 0} />
+          <AnadirPantalla pantallas={pantallas} />
         </div>
       </div>
 

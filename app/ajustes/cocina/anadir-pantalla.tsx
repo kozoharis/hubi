@@ -19,7 +19,10 @@ import { Aviso, BotonPrincipal, BotonSecundario } from '../../piezas'
   seis cifras que llega al buzón. Si eso no está escrito aquí, hay que
   acordarse — y no se acuerda nadie.
 */
-export default function AnadirPantalla({ cuantas }: { cuantas: number }) {
+export type Pantalla = { id: string; nombre: string }
+
+export default function AnadirPantalla({ pantallas }: { pantallas: Pantalla[] }) {
+  const cuantas = pantallas.length
   const router = useRouter()
 
   const [abierto, setAbierto] = useState(false)
@@ -28,6 +31,50 @@ export default function AnadirPantalla({ cuantas }: { cuantas: number }) {
   const [ocupado, setOcupado] = useState(false)
   const [fallo, setFallo] = useState<{ que: string; porque?: string } | null>(null)
   const [lista, setLista] = useState<string | null>(null)
+  const [quitando, setQuitando] = useState<string | null>(null)
+  const [seguro, setSeguro] = useState<string | null>(null)
+
+  /*
+    QUITARLA.
+
+    Esto faltaba, y faltaba de una manera concreta: se podía colgar una
+    pantalla y no se podía descolgar. Con el correo bien escrito no
+    pasa nada; con uno mal escrito queda una puerta abierta a nombre de
+    nadie, y la única salida era escribir SQL a mano.
+
+    Pide confirmación en dos toques porque borra una cuenta. No con un
+    `confirm()` del navegador —que en una tableta sale como un cartel
+    del sistema que nadie relaciona con lo que estaba haciendo— sino
+    cambiando el propio botón, ahí mismo.
+  */
+  async function quitar(id: string) {
+    setQuitando(id)
+    setFallo(null)
+
+    try {
+      const r = await fetch(api('/api/pantallas'), {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      const d = (await r.json().catch(() => null)) as {
+        bien?: boolean
+        error?: string
+        detalle?: string
+      } | null
+
+      if (!r.ok || d?.bien !== true) {
+        setFallo({ que: d?.error ?? 'No se ha podido quitar.', porque: d?.detalle })
+        return
+      }
+      setSeguro(null)
+      router.refresh()
+    } catch {
+      setFallo({ que: 'No hay conexión. Inténtalo otra vez.' })
+    } finally {
+      setQuitando(null)
+    }
+  }
 
   async function crear() {
     setOcupado(true)
@@ -184,6 +231,58 @@ export default function AnadirPantalla({ cuantas }: { cuantas: number }) {
         Una tableta vieja en la pared de la cocina, encendida todo el día, con lo que hay que
         recordar. No hace falta instalar nada: se abre HUBI en su navegador y se queda.
       </p>
+
+      {pantallas.length > 0 && (
+        <ul className="mt-4 space-y-2.5">
+          {pantallas.map((p) => (
+            <li
+              key={p.id}
+              className="flex items-center gap-3 rounded-[20px] border border-borde px-4 py-3"
+            >
+              <span className="text-[22px] leading-none" aria-hidden>
+                🖥
+              </span>
+              <span className="t-cuerpo min-w-0 flex-1 truncate font-extrabold">{p.nombre}</span>
+
+              {seguro === p.id ? (
+                <span className="flex shrink-0 items-center gap-2">
+                  <button
+                    onClick={() => quitar(p.id)}
+                    disabled={quitando !== null}
+                    className="r-campo px-4 py-2.5 text-[15px] font-extrabold disabled:opacity-50"
+                    style={{ background: 'var(--t-alerta-velo)', color: 'var(--t-alerta)' }}
+                  >
+                    {quitando === p.id ? 'Quitando…' : 'Sí, quitarla'}
+                  </button>
+                  <button
+                    onClick={() => setSeguro(null)}
+                    className="px-2 py-2.5 text-[15px] font-bold text-tinta-suave underline underline-offset-4"
+                  >
+                    No
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => {
+                    setFallo(null)
+                    setSeguro(p.id)
+                  }}
+                  className="r-campo shrink-0 border border-borde px-4 py-2.5 text-[15px] font-bold"
+                >
+                  Quitarla
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {fallo && !abierto && (
+        <div className="mt-4">
+          <Aviso titulo={fallo.que} explicacion={fallo.porque} />
+        </div>
+      )}
+
       <div className="mt-4">
         <BotonSecundario onClick={() => setAbierto(true)} icono="mas">
           {cuantas === 0 ? 'Añadir una pantalla' : 'Añadir otra'}
