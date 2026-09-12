@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
-import { Aviso } from '../../piezas'
+import { Aviso, BotonPrincipal } from '../../piezas'
 
 export type Cuenta = {
   tipo: string
@@ -277,13 +277,9 @@ export default function Decidir({
         </div>
       )}
 
-      <button
-        onClick={guardar}
-        disabled={guardando}
-        className="r-campo w-full bg-boton px-6 py-5 text-[19px] font-extrabold text-fondo disabled:opacity-50"
-      >
+      <BotonPrincipal onClick={guardar} desactivado={guardando}>
         {guardando ? 'Guardando…' : 'Así está bien'}
-      </button>
+      </BotonPrincipal>
     </div>
   )
 }

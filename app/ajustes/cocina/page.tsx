@@ -7,6 +7,7 @@ import Cabecera from '../../cabecera'
 import Encabezado from '../../encabezado'
 import { Volver } from '../../iconos'
 import Decidir, { type Cuenta } from './decidir'
+import AnadirPantalla from './anadir-pantalla'
 
 export const dynamic = 'force-dynamic'
 
@@ -184,6 +185,17 @@ export default async function LaCocina() {
           conRecados={dice?.notas_en_casa ?? false}
           hayPantalla={(aparatos.data?.length ?? 0) > 0}
         />
+
+        {/*
+          Colgar la pantalla va DESPUÉS de decidir qué se ve en ella, y
+          no antes. Al revés, el orden sería: das de alta la tableta,
+          se enciende en la pared enseñando lo que sea, y entonces te
+          pones a decidir. Aquí se decide con calma y se cuelga al
+          final, que es como se hace cualquier otra cosa en una casa.
+        */}
+        <div className="mt-4">
+          <AnadirPantalla cuantas={aparatos.data?.length ?? 0} />
+        </div>
       </div>
 
       <Barra activa="ajustes" />
