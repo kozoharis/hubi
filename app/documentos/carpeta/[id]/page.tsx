@@ -5,6 +5,7 @@ import { quien } from '@/lib/supabase/quien'
 import Anadir from "../../anadir"
 import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
+import Encabezado from '../../../encabezado'
 import { Ico, Volver } from '../../../iconos'
 import { Aviso, PastillaAmbito, Vacio, seccionPintada } from '../../../piezas'
 import { caminoDe, ramaDe, fechaCorta, type Categoria } from '@/lib/carpetas'
@@ -97,17 +98,29 @@ export default async function Carpeta({
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
-        <Volver href={volver} />
-        <div className="mt-2.5 flex items-center gap-3">
-          <PastillaAmbito icono={s.icono} ambito={s.ambito} />
-          <div className="min-w-0">
-            <h1 className="t-titulo truncate">{carpeta.nombre}</h1>
-            <p className="t-apoyo">
-              {cuando} · {papeles.length} {papeles.length === 1 ? 'papel' : 'papeles'}
-              {total > 0 ? ` · ${euros(total)}` : ''}
-            </p>
+        <div className="lg:hidden">
+          <Volver href={volver} />
+          <div className="mt-2.5 flex items-center gap-3">
+            <PastillaAmbito icono={s.icono} ambito={s.ambito} />
+            <div className="min-w-0">
+              <h1 className="t-titulo truncate">{carpeta.nombre}</h1>
+              <p className="t-apoyo">
+                {cuando} · {papeles.length} {papeles.length === 1 ? 'papel' : 'papeles'}
+                {total > 0 ? ` · ${euros(total)}` : ''}
+              </p>
+            </div>
           </div>
         </div>
+
+        <Encabezado
+          icono={s.icono}
+          ambito={s.ambito}
+          titulo={carpeta.nombre}
+          pie={`${cuando} · ${papeles.length} ${papeles.length === 1 ? 'papel' : 'papeles'}${
+            total > 0 ? ` · ${euros(total)}` : ''
+          }`}
+          volver={volver}
+        />
       </Cabecera>
 
       <div className="columna">

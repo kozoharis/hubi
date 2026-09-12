@@ -3,6 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import { Aviso, PastillaAmbito } from '../piezas'
 import Pantalla, { type Cerrada, type ListaCompra } from './lista'
 import { elEspacioO } from '@/lib/espacio'
@@ -245,12 +246,14 @@ export default async function Compra() {
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
-        <div className="flex h-14 items-center gap-3">
+        <div className="flex h-14 items-center gap-3 lg:hidden">
           {/* Era `#0EA5E9`, el cian que no está declarado en la
               paleta. La compra es de la casa, y la casa lleva arena. */}
           <PastillaAmbito icono="bolsa" ambito="arena" tam={44} />
           <h1 className="t-titulo">La compra</h1>
         </div>
+
+        <Encabezado icono="bolsa" ambito="arena" titulo="La compra" volver="/dia" />
       </Cabecera>
 
       <div className="columna pt-1">

@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
+import Link from './enlace'
 import { BotonPrincipal, PastillaAmbito } from './piezas'
+import { Ico } from './iconos'
 import type { Ambito } from '@/lib/ambitos'
 import type { Icono } from './iconos'
 
@@ -81,6 +83,7 @@ export default function Encabezado({
   ambito = 'pizarra',
   titulo,
   pie,
+  volver,
   controles,
   caja,
   accion,
@@ -91,6 +94,17 @@ export default function Encabezado({
   titulo: string
   /** Una línea debajo del título. El nombre de la casa, el periodo… */
   pie?: string
+  /*
+    A dónde se vuelve, en las pantallas de segundo nivel.
+
+    En las cinco pestañas no hace falta —el rail de la izquierda ES la
+    navegación—, pero una carpeta, los pagos o los menús cuelgan de otra
+    pantalla y sin esto la única salida sería el botón del navegador.
+
+    Va DENTRO de la banda y no encima, para que el título siga
+    empezando donde empieza en todas las demás.
+  */
+  volver?: string
   /** Los segmentos de la pantalla: Mes/Trimestre/Año, Semana/Mes. */
   controles?: ReactNode
   /** La caja de HUBI de esta pantalla, si la tiene. */
@@ -104,6 +118,15 @@ export default function Encabezado({
     <div className="hidden lg:block">
       <div className="flex items-center gap-5 pb-0.5 pt-1">
         <div className="flex min-w-0 flex-1 items-center gap-3">
+          {volver && (
+            <Link
+              href={volver}
+              aria-label="Volver"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-borde bg-superficie text-tinta"
+            >
+              <Ico nombre="atras" tam={22} grosor={2.4} />
+            </Link>
+          )}
           {icono && <PastillaAmbito icono={icono} ambito={ambito} tam={44} />}
           <div className="min-w-0">
             <h1 className="t-titulo truncate">{titulo}</h1>

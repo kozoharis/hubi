@@ -3,6 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import { Volver } from '../iconos'
 import Semana from './semana'
 
@@ -31,8 +32,12 @@ export default async function PaginaMenus() {
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
-        <Volver href="/dia" />
-        <h1 className="t-titulo mt-2.5">Menús</h1>
+        <div className="lg:hidden">
+          <Volver href="/dia" />
+          <h1 className="t-titulo mt-2.5">Menús</h1>
+        </div>
+
+        <Encabezado icono="taza" ambito="arena" titulo="Menús" volver="/dia" />
       </Cabecera>
 
       <div className="columna">

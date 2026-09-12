@@ -3,6 +3,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Barra from '../barra'
 import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import { Volver } from '../iconos'
 import { esImpuesto, type Impuesto } from '@/lib/impuesto'
 import type { Categoria } from '@/lib/rutas'
@@ -77,8 +78,12 @@ export default async function PaginaPagos() {
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
-        <Volver href="/cuentas" />
-        <h1 className="t-titulo mt-2.5">Pagos fijos</h1>
+        <div className="lg:hidden">
+          <Volver href="/cuentas" />
+          <h1 className="t-titulo mt-2.5">Pagos fijos</h1>
+        </div>
+
+        <Encabezado icono="euro" ambito="pizarra" titulo="Pagos fijos" volver="/cuentas" />
       </Cabecera>
 
       <div className="columna">

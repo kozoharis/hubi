@@ -5,6 +5,7 @@ import { genteDeLaCasa } from '@/lib/gente'
 import { puedeEscribir } from '@/lib/hogar'
 import { notasDe, conFecha } from '@/lib/notas'
 import Cabecera from '../cabecera'
+import Encabezado from '../encabezado'
 import Barra from '../barra'
 import { Volver } from '../iconos'
 import Notas from './notas'
@@ -92,10 +93,14 @@ export default async function PaginaNotas({
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
-        <Volver href="/dia" />
-        <div className="flex h-12 items-center">
-          <h1 className="t-titulo">Notas</h1>
+        <div className="lg:hidden">
+          <Volver href="/dia" />
+          <div className="flex h-12 items-center">
+            <h1 className="t-titulo">Notas</h1>
+          </div>
         </div>
+
+        <Encabezado icono="chincheta" ambito="arena" titulo="Notas" volver="/dia" />
       </Cabecera>
 
       <div className="columna pt-2">
