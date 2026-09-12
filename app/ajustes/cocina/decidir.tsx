@@ -257,9 +257,10 @@ export default function Decidir({
               <span className="t-cuerpo block font-extrabold">Volver a decidirlo todo</span>
               <span className="t-apoyo mt-0.5 block leading-snug">
                 Hay {yaDecididasEnTotal}{' '}
-                {yaDecididasEnTotal === 1 ? 'cosa decidida' : 'cosas decididas'} una por una
-                desde su propia ficha. Normalmente <strong className="text-tinta">se
-                respetan</strong>. Marca esto solo si quieres empezar de cero.
+                {yaDecididasEnTotal === 1 ? 'cosa apartada' : 'cosas apartadas'} a mano desde
+                su propia ficha, y no sigue lo de aquí. Normalmente{' '}
+                <strong className="text-tinta">se respeta</strong>. Marca esto solo si quieres
+                que vuelvan a seguir la regla.
               </span>
             </span>
           </label>

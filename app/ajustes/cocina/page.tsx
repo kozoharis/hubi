@@ -106,14 +106,40 @@ export default async function LaCocina() {
 
   const filas = (cosas.data ?? []) as { tipo: string; visible_en_casa: boolean | null }[]
 
+  const reglaGuardada = ((laCasa.data ?? null) as { tipos_en_casa?: string[] | null } | null)
+    ?.tipos_en_casa
+
   const cuentas: Cuenta[] = LOS_TIPOS.map((t) => {
     const suyas = filas.filter((f) => f.tipo === t.tipo)
+
+    /*
+      ── QUÉ CUENTA COMO «DECIDIDO A MANO» ──
+
+      Aquí ponía `visible_en_casa !== null`, y estaba mal en cuanto se
+      pulsaba el botón una vez: la propia regla deja TODAS las filas con
+      un valor, y entonces la pantalla decía «hay 12 cosas decididas una
+      por una desde su propia ficha» sobre doce que acababa de decidir
+      ella misma.
+
+      Decidido a mano es que la fila diga **lo contrario** de lo que
+      dice la regla guardada. Si coincide con la regla, es la regla.
+
+      Y sin regla guardada todavía, cualquier valor no nulo sí lo puso
+      una persona — que es como se comportaba antes y sigue siendo
+      cierto en ese caso.
+    */
+    const loQueDiriaLaRegla = reglaGuardada ? reglaGuardada.includes(t.tipo) : null
+
     return {
       ...t,
       cuantas: suyas.length,
-      /* Cuántas de ésas tienen ya una decisión a mano. Es lo que hace
-         falta para poder avisar de que la forma fuerte las pisaría. */
-      yaDecididas: suyas.filter((f) => f.visible_en_casa !== null).length,
+      yaDecididas: suyas.filter((f) =>
+        f.visible_en_casa === null
+          ? false
+          : loQueDiriaLaRegla === null
+            ? true
+            : f.visible_en_casa !== loQueDiriaLaRegla
+      ).length,
     }
   })
 
