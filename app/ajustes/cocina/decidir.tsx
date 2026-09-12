@@ -120,13 +120,26 @@ export default function Decidir({
 
   return (
     <div className="space-y-4 pb-4">
-      {/* ── Dónde estamos ── */}
+      {/*
+        ── Dónde estamos ──
+
+        Esto iba en un `Aviso`, y salía EN ROJO. Mal: rojo quiere decir
+        «algo va mal», y aquí no va nada mal — es contexto. Los tres
+        tonos del sistema son «bien», «atención» y «alerta», y ninguno
+        sirve para «te cuento dónde estás», así que la respuesta no era
+        elegir otro tono sino no usar `Aviso`.
+
+        Con personas mayores delante esto importa más de lo que parece:
+        un recuadro rojo en una pantalla de ajustes se lee como que uno
+        ha roto algo, y quien cree que ha roto algo no toca nada más.
+      */}
       {!hayPantalla && (
-        <div className="mt-4">
-          <Aviso
-            titulo="Todavía no hay ninguna pantalla en casa"
-            explicacion="Esto no cambia nada de lo que ves tú. Deja decidido lo que se verá el día que se cuelgue una, para no tener que decidirlo con ella ya encendida en la pared."
-          />
+        <div className="mt-4 rounded-[24px] bg-superficie px-6 py-5">
+          <p className="t-cuerpo font-extrabold">Todavía no hay ninguna pantalla en casa</p>
+          <p className="t-apoyo mt-1.5 leading-relaxed">
+            Esto no cambia nada de lo que ves tú. Deja decidido lo que se verá el día que se
+            cuelgue una, para no tener que decidirlo con ella ya encendida en la pared.
+          </p>
         </div>
       )}
 
