@@ -418,6 +418,25 @@ export default async function Ajustes({
      en vez de decir «esa columna no existe». */
   let usaCompra = true
   let impuesto: Impuesto = 'ninguno'
+  /* Qué sale en la pantalla de la cocina. `null` es «nadie lo ha
+     decidido», y es distinto de la lista vacía, que es «se ha decidido
+     que no salga nada». La primera se dice; la segunda también, pero
+     con otras palabras. Va en su propio intento porque la columna es
+     del SQL 69 y no puede tumbar el resto de Ajustes. */
+  let tiposEnCasa: string[] | null = null
+  try {
+    if (hogarId) {
+      const { data } = await supabase
+        .from('hogares')
+        .select('tipos_en_casa')
+        .eq('id', hogarId)
+        .maybeSingle()
+      tiposEnCasa = (data?.tipos_en_casa as string[] | null) ?? null
+    }
+  } catch {
+    /* Sin la columna todavía: se comporta como si nadie lo hubiera
+       decidido, que es la verdad. */
+  }
   try {
     /* Nunca `.eq('id', hogarId ?? '')`: la cadena vacía no es un
        identificador válido y Postgres rechazaría la consulta entera,
@@ -756,6 +775,38 @@ export default async function Ajustes({
           <div className="mt-3">
             <ImpuestoDeLaCasa puesto={impuesto} />
           </div>
+        </div>
+
+        {/*
+          ── La pantalla de la cocina ──
+
+          Sale aunque todavía no haya ninguna colgada, y es a propósito.
+          Si apareciera solo al dar de alta el aparato, habría que
+          decidir qué se ve CON la tableta ya encendida en la pared
+          enseñándolo todo — que es justo el momento en que nadie quiere
+          ponerse a decidir nada.
+
+          Aquí se deja decidido antes, con calma, y la propia pantalla
+          dice que por ahora no hay ninguna.
+        */}
+        <h2 className="rotulo mt-5">La pantalla de la cocina</h2>
+        <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
+          Una pantalla colgada en casa la ve cualquiera que entre. Aquí se decide
+          qué sale en ella.
+        </p>
+        <div className="mt-2.5">
+          <Opcion
+            href="/ajustes/cocina"
+            icono="casa"
+            titulo="Qué se ve en la cocina"
+            pie={
+              tiposEnCasa === null
+                ? 'Sin decidir · no se vería nada'
+                : tiposEnCasa.length === 0
+                  ? 'Ahora mismo no sale nada'
+                  : `Salen ${tiposEnCasa.length} ${tiposEnCasa.length === 1 ? 'clase de cosa' : 'clases de cosas'}`
+            }
+          />
         </div>
 
         {/*
