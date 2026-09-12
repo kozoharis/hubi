@@ -152,9 +152,9 @@ export default async function Documentos({
           <Encabezado
             icono="carpeta"
             ambito="azul"
-            titulo="Documentos"
+            titulo="Papeles"
             caja={<HubiCaja donde="papeles" valor={busqueda} buscarEn="/documentos" />}
-            accion={{ texto: 'Añadir documento', href: '/guardar', icono: 'mas' }}
+            accion={{ texto: 'Guardar un papel', href: '/guardar', icono: 'foto' }}
           />
         </Cabecera>
 
@@ -347,9 +347,9 @@ export default async function Documentos({
         <Encabezado
           icono="carpeta"
           ambito="azul"
-          titulo="Documentos"
+          titulo="Papeles"
           caja={<HubiCaja donde="papeles" buscarEn="/documentos" />}
-          accion={{ texto: 'Añadir documento', href: '/guardar', icono: 'mas' }}
+          accion={{ texto: 'Guardar un papel', href: '/guardar', icono: 'foto' }}
         />
       </Cabecera>
 
@@ -496,10 +496,30 @@ export default async function Documentos({
   )
 }
 
+/*
+  ── SE LLAMA PAPELES, Y AQUÍ PONÍA «DOCUMENTOS» ──
+
+  La pestaña de abajo dice Papeles, el rail dice Papeles, y dentro se
+  cuentan «papeles guardados» y «1 papel». Esta cabecera era el único
+  sitio de HUBI donde esa sección se llamaba de otra manera.
+
+  Una cosa con dos nombres obliga a traducir mentalmente cada vez, y
+  con personas mayores delante eso no es un detalle: se toca «Papeles»
+  abajo y se llega a una pantalla titulada «Documentos», que parece
+  otra.
+
+  Gana «Papeles» y no «Documentos» porque es la palabra que ya usa todo
+  lo demás — y porque es la que usaría cualquiera al hablar. Nadie dice
+  «voy a buscar el documento del coche».
+
+  Y le faltaba el icono: Agenda lleva su calendario, Cuentas su euro y
+  el Día a día su taza. Ésta era la única cabecera pelada de las cinco.
+*/
 function Titulo() {
   return (
-    <div className="flex h-12 items-center">
-      <h1 className="t-titulo">Documentos</h1>
+    <div className="flex h-12 items-center gap-3">
+      <PastillaAmbito icono="carpeta" ambito="azul" tam={44} />
+      <h1 className="t-titulo">Papeles</h1>
     </div>
   )
 }

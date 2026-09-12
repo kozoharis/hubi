@@ -676,7 +676,7 @@ export default async function Cuentas({
             <Fila href={`/documentos/carpeta/${carpetaPapeles.id}`} alto="alta">
               <PastillaAmbito icono="papel" ambito={seccion.ambito} />
               <span className="min-w-0 flex-1">
-                <span className="t-tarjeta block truncate">Documentos</span>
+                <span className="t-tarjeta block truncate">Papeles</span>
                 <span className="t-apoyo block truncate">
                   {cuantosPapeles === 0
                     ? 'Contratos, seguros, licencias…'

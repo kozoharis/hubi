@@ -10,7 +10,6 @@ import Barra from '../barra'
 import HubiCaja from '../hubi-caja'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
-import { Volver } from '../iconos'
 import { ambitoDeColor, PastillaAmbito, TarjetaAccion } from '../piezas'
 
 export const dynamic = 'force-dynamic'
@@ -136,7 +135,19 @@ export default async function DiaADia() {
         <div className="lg:hidden">
           {/* El volver, solo en el móvil: en grande el rail ya lleva
               al Inicio y está siempre a la vista. */}
-          <Volver href="/" />
+          {/*
+            AQUÍ NO VA UN «VOLVER».
+
+            Ésta es una de las cinco pestañas, y una pestaña no cuelga
+            de ninguna parte: la navegación es la barra de abajo (o el
+            rail, en grande). Papeles y Agenda nunca lo tuvieron;
+            Cuentas y el Día a día sí, y eso hacía que dos de las cinco
+            parecieran pantallas de dentro de otra.
+
+            El botón de atrás se queda donde SÍ significa algo: en las
+            pantallas que cuelgan de una pestaña — una carpeta, los
+            pagos, los menús, una tarea.
+          */}
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono="taza" ambito="arena" tam={44} />
           {/* Aquí sí se llama por su nombre entero. En la barra pone

@@ -7,7 +7,7 @@ import Barra from '../barra'
 import HubiCaja from '../hubi-caja'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
-import { Ico, Volver } from '../iconos'
+import { Ico } from '../iconos'
 import { Fila, PastillaAmbito, seccionPintada, TarjetaAccion, Vacio } from '../piezas'
 import NuevaActividad from '../ajustes/nueva-actividad'
 import { elEspacio, elEspacioO } from '@/lib/espacio'
@@ -102,7 +102,19 @@ export default async function Cuentas() {
           segundo camino para lo mismo. */}
       <Cabecera ancho>
         <div className="lg:hidden">
-          <Volver href="/" />
+          {/*
+            AQUÍ NO VA UN «VOLVER».
+
+            Ésta es una de las cinco pestañas, y una pestaña no cuelga
+            de ninguna parte: la navegación es la barra de abajo (o el
+            rail, en grande). Papeles y Agenda nunca lo tuvieron;
+            Cuentas y el Día a día sí, y eso hacía que dos de las cinco
+            parecieran pantallas de dentro de otra.
+
+            El botón de atrás se queda donde SÍ significa algo: en las
+            pantallas que cuelgan de una pestaña — una carpeta, los
+            pagos, los menús, una tarea.
+          */}
           <div className="flex h-14 items-center gap-3">
             <PastillaAmbito icono="euro" ambito="pizarra" tam={44} />
             <h1 className="t-titulo">Cuentas</h1>
