@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from '@/app/enlace'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import {
   ambitoDeColor,
@@ -68,6 +68,12 @@ export default function Hilo({
   soyElAsesor: boolean
 }) {
   const router = useRouter()
+
+  /* Por dónde se vino, tal cual — con el espacio de la dirección si lo
+     lleva. Escribirlo a mano como «/asesor» perdería la casa en las
+     direcciones con espacio (`/e/<casa>/asesor`) y devolvería a la
+     casa equivocada a quien tenga dos. */
+  const dondeEstoy = usePathname() ?? '/asesor'
 
   /* Su color, ya traducido a la paleta apagada. La marca del borde
      baja de 4 px a 3, que es la de `Fila`: cuatro colores distintos a
@@ -157,10 +163,32 @@ export default function Hilo({
           >
             {ocupado ? 'Enviando…' : 'Enviar'}
           </BotonPrincipal>
-          {/* Poner una fecha es otra cosa y vive en la Agenda. Aquí
-              solo el enlace: duplicar el formulario de tareas sería
-              duplicar también sus fallos. */}
-          <BotonSecundario href="/tablon/nuevo" icono="calendario" ancho="completo">
+          {/*
+            Poner una fecha es otra cosa y vive en la Agenda. Aquí solo
+            el enlace: duplicar el formulario de tareas sería duplicar
+            también sus fallos.
+
+            Pero el enlace iba a secas —`/tablon/nuevo`— y eso tenía
+            tres consecuencias, las tres feas:
+
+              · se perdía lo que ya estaba escrito;
+              · la tarea nacía «para mí» en vez de para quien se estaba
+                hablando;
+              · y al volver se acababa en la Agenda, a dos pantallas del
+                hilo donde uno estaba.
+
+            Ahora las tres cosas viajan en la dirección. Lo escrito, el
+            destinatario, y por dónde se vino.
+          */}
+          <BotonSecundario
+            href={
+              `/tablon/nuevo?para=${encodeURIComponent(paraQuien)}` +
+              `&volver=${encodeURIComponent(dondeEstoy)}` +
+              (texto.trim() ? `&texto=${encodeURIComponent(texto.trim().slice(0, 600))}` : '')
+            }
+            icono="calendario"
+            ancho="completo"
+          >
             Con fecha
           </BotonSecundario>
         </div>

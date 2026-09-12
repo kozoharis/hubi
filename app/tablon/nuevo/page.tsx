@@ -6,7 +6,24 @@ import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
 
-export default async function PaginaNuevo() {
+export default async function PaginaNuevo({
+  searchParams,
+}: {
+  searchParams: Promise<{ texto?: string; para?: string; volver?: string }>
+}) {
+  /*
+    ── LO QUE VIENE DE OTRA PANTALLA ──
+
+    «Con fecha», en el hilo del asesor, mandaba aquí con un enlace a
+    secas: se perdía lo escrito, no se sabía para quién era, y al
+    volver se acababa en la Agenda, a dos pantallas de donde se estaba.
+
+    Ahora viaja en la dirección. `volver` además es lo que hace que el
+    botón de atrás devuelva al sitio de donde se vino y no al de
+    siempre.
+  */
+  const traido = await searchParams
+
   const supabase = await clienteSesion()
   const user = await quien(supabase)
   if (!user) redirect('/entrar')
@@ -31,10 +48,15 @@ export default async function PaginaNuevo() {
   try {
     const hogarId = await elEspacio(supabase)
     if (hogarId) {
+      /* `clase = 'persona'`: una pantalla de cocina es un miembro más
+         de esta tabla, y sin esto saldría en «Para quién» como si
+         fuera alguien. Dejarle un recado a una pared no lo lee
+         nadie. */
       const { data, error } = await supabase
         .from('miembros')
         .select('perfil_id, aceptado_en')
         .eq('hogar_id', hogarId)
+        .eq('clase', 'persona')
 
       if (!error && data) {
         dentro = data
@@ -53,5 +75,19 @@ export default async function PaginaNuevo() {
       ? (perfiles ?? []).filter((p) => dentro!.includes(p.id as string))
       : (perfiles ?? [])
 
-  return <Nuevo perfiles={gente} yo={user.id} />
+  /* Solo se admite un `volver` de dentro de HUBI. Sin esto, una
+     dirección con `?volver=https://…` convertiría este botón en un
+     salto a donde quisiera quien mandara el enlace. */
+  const volver =
+    traido.volver && /^\/[A-Za-z0-9/_-]*$/.test(traido.volver) ? traido.volver : '/agenda'
+
+  return (
+    <Nuevo
+      perfiles={gente}
+      yo={user.id}
+      textoInicial={(traido.texto ?? '').slice(0, 600)}
+      paraInicial={traido.para ?? null}
+      volver={volver}
+    />
+  )
 }

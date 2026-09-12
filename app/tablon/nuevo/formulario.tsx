@@ -71,9 +71,30 @@ const AVISOS: { valor: string; texto: string; necesitaHora?: boolean }[] = [
   { valor: '1_mes', texto: 'Un mes antes' },
 ]
 
-export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string }) {
-  const [titulo, setTitulo] = useState('')
-  const [para, setPara] = useState<string[]>([yo])
+export default function Nuevo({
+  perfiles,
+  yo,
+  textoInicial = '',
+  paraInicial = null,
+  volver = '/agenda',
+}: {
+  perfiles: Perfil[]
+  yo: string
+  /** Lo que ya venía escrito de la pantalla anterior. */
+  textoInicial?: string
+  /** Para quién, si la pantalla anterior ya lo sabía. */
+  paraInicial?: string | null
+  /** A dónde devuelve el botón de atrás. */
+  volver?: string
+}) {
+  const [titulo, setTitulo] = useState(textoInicial)
+  /* Si viene con destinatario, ése; si no, yo — que es lo de siempre.
+     Se comprueba que esa persona esté de verdad en la lista: una
+     dirección con un identificador inventado dejaría el formulario
+     apuntando a alguien que no existe. */
+  const [para, setPara] = useState<string[]>(
+    paraInicial && perfiles.some((p) => p.id === paraInicial) ? [paraInicial] : [yo]
+  )
   const [fecha, setFecha] = useState<string | null>(HOY())
   const [hora, setHora] = useState('')
   const [nota, setNota] = useState('')
@@ -158,7 +179,7 @@ export default function Nuevo({ perfiles, yo }: { perfiles: Perfil[]; yo: string
   return (
     <main className="techo-holgado min-h-screen pb-10">
       <div className="columna-formulario">
-        <Volver href="/agenda" />
+        <Volver href={volver} />
 
         {/* Era `font-titulo text-[2.5rem]` — 40 px, y la única
             pantalla del producto que usaba esa familia. El título de
