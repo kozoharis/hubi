@@ -4,6 +4,7 @@ import { laPared, losMenus } from '@/lib/pared'
 import { Ico } from '../../iconos'
 import { AMBITO } from '../../piezas'
 import { Nada, Rotulo } from '../rotulo'
+import Recetas, { type Receta } from './recetas'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,7 +45,28 @@ export default async function Menu() {
   const lunes = elLunesDe(hoy)
   const dias = laSemanaDe(lunes)
 
-  const menus = await losMenus(supabase, casa, dias[0], dias[6])
+  const [menus, lasRecetas] = await Promise.all([
+    losMenus(supabase, casa, dias[0], dias[6]),
+    /*
+      El cajón de recetas de la casa. Envuelto como todo lo que puede no
+      estar: sin el sql/48, la pantalla del menú no puede caerse por una
+      columna de la derecha.
+    */
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('recetas')
+          .select('id, titulo, url, nota')
+          .eq('hogar_id', casa)
+          .order('creado_en', { ascending: false })
+          .limit(40)
+        if (error) return []
+        return (data ?? []) as Receta[]
+      } catch {
+        return []
+      }
+    })(),
+  ])
 
   const hayAlguno = menus.some((m) => (m.que ?? '').trim().length > 0)
 
@@ -57,6 +79,8 @@ export default async function Menu() {
         </p>
       </div>
 
+      <div className="mt-2 xl:grid xl:grid-cols-[1.35fr_1fr] xl:items-start xl:gap-12">
+      <div>
       {!hayAlguno ? (
         <Nada>
           Esta semana no hay menú puesto. Se pone desde el móvil, en El día a día → Menús.
@@ -101,6 +125,27 @@ export default async function Menu() {
           })}
         </ul>
       )}
+      </div>
+
+      {/*
+        ── LAS RECETAS, A LA DERECHA ──
+
+        Con su ventana encima: se toca una y se abre ahí mismo, sea un
+        vídeo de YouTube o la página de donde salió.
+
+        Es la cocina. Tener la receta en la pared en vez de en el móvil
+        apoyado en la encimera con las manos llenas de harina es toda la
+        diferencia — y es, probablemente, lo que más se va a usar de
+        toda esta pantalla.
+
+        De esa ventana no se sale: lo impone el `sandbox` del marco, que
+        no lleva ni `allow-top-navigation` ni `allow-popups`. Está
+        explicado en `lib/enlace-seguro.ts`.
+      */}
+      <div className="mt-12 xl:mt-0">
+        <Recetas recetas={lasRecetas} />
+      </div>
+      </div>
     </section>
   )
 }

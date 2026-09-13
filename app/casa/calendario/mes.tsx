@@ -45,12 +45,26 @@ export default function Mes({
   conAlgo,
   /** El lunes de la semana que se está enseñando arriba. */
   lunes,
+  /*
+    El día que se está mirando, cuando NO es hoy. Sale con el círculo
+    lleno en azul, y hoy se queda con un aro.
+
+    Existe porque el mes acompaña al detalle de un día: mirando el
+    jueves 10, un calendario que solo marca el domingo 13 no dice dónde
+    estás — que es justo lo que se le pide. «Así tenemos siempre
+    controlado dónde estamos.»
+  */
+  senalado,
 }: {
   hoy: string
   conAlgo: Set<string>
   lunes: string
+  senalado?: string
 }) {
-  const [ano, mes] = hoy.split('-').map(Number)
+  /* El mes que se pinta es el del día señalado si lo hay: mirando el 3
+     de octubre desde el 13 de septiembre, un calendario de septiembre
+     no serviría de nada. */
+  const [ano, mes] = (senalado ?? hoy).split('-').map(Number)
 
   /* El día 1 y cuántos días trae el mes. `new Date(ano, mes, 0)` es el
      último día del mes anterior contando desde 1, o sea el último de
@@ -92,6 +106,7 @@ export default function Mes({
 
           const iso = `${ano}-${String(mes).padStart(2, '0')}-${String(d).padStart(2, '0')}`
           const esHoy = iso === hoy
+          const esElQueMiro = senalado ? iso === senalado : esHoy
           const deEstaSemana = iso >= lunes && iso <= domingo
           const tiene = conAlgo.has(iso)
 
@@ -104,16 +119,33 @@ export default function Mes({
                    hilo entre las dos mitades de esta pantalla: sin él,
                    el mes y la semana parecen dos cosas que no se
                    hablan. */
-                deEstaSemana && !esHoy
+                deEstaSemana && !esElQueMiro
                   ? { background: `color-mix(in srgb, ${AMBITO.azul} 9%, transparent)` }
                   : undefined
               }
             >
+              {/*
+                Tres estados y no dos, y ninguno de más:
+
+                  el que miro     →  círculo lleno
+                  hoy, si no lo estoy mirando  →  aro
+                  el resto        →  nada
+
+                El aro y no un segundo relleno: dos círculos llenos en
+                la misma rejilla compiten, y a dos metros no se sabe
+                cuál es cuál.
+              */}
               <span
                 className={`flex h-[29px] w-[29px] items-center justify-center rounded-full text-[16px] font-extrabold tabular-nums ${
-                  esHoy ? 'text-white' : 'text-tinta'
+                  esElQueMiro ? 'text-white' : 'text-tinta'
                 }`}
-                style={esHoy ? { background: AMBITO.verde } : undefined}
+                style={
+                  esElQueMiro
+                    ? { background: senalado ? AMBITO.azul : AMBITO.verde }
+                    : esHoy
+                      ? { boxShadow: `inset 0 0 0 2.5px ${AMBITO.verde}` }
+                      : undefined
+                }
               >
                 {d}
               </span>

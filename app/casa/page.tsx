@@ -127,8 +127,11 @@ export default async function Hoy() {
           ) : (
             <ul className="mt-6 space-y-4">
               {deHoy.map((c) => (
+                /* Con `id`: lo de HOY se tacha desde la pared, que es
+                   donde tachar significa algo. Lo de «Después», no. */
                 <Cosa
                   key={c.id}
+                  id={c.id}
                   titulo={c.titulo}
                   cuando={c.hora ? c.hora.slice(0, 5) : ''}
                   talla="hoy"
