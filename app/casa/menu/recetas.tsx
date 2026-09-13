@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { api } from '@/lib/api'
 import { deDondeEs } from '@/lib/menus'
 import { paraLaVentana, SANDBOX } from '@/lib/enlace-seguro'
 import { Ico } from '../../iconos'
@@ -48,11 +50,55 @@ import { AMBITO } from '../../piezas'
   solo con Escape: en una tableta colgada de una pared no hay teclado.
 */
 
-export type Receta = { id: string; titulo: string; url: string | null; nota: string | null }
+export type Receta = {
+  id: string
+  titulo: string
+  url: string | null
+  nota: string | null
+  /* Lo que lleva, una línea por ingrediente (paso 80). */
+  ingredientes?: string[] | null
+}
 
 export default function Recetas({ recetas }: { recetas: Receta[] }) {
+  const router = useRouter()
   const [abierta, setAbierta] = useState<Receta | null>(null)
   const [grande, setGrande] = useState(false)
+  const [compra, setCompra] = useState<'quieto' | 'yendo' | 'hecho' | 'fallo'>('quieto')
+
+  /*
+    ── LOS INGREDIENTES, A LA COMPRA DE UN TOQUE ──
+
+    Haris: *«un espacio donde añadir ingredientes, que estarán
+    vinculados con la compra»*. Ésta es la vinculación, y es la parte
+    que vale: copiar seis ingredientes a mano de una receta a la lista
+    es trabajo doble hecho por una persona.
+
+    Se mandan TAL CUAL están escritos —«medio kilo de harina»— y no
+    partidos ni limpiados. La ruta de la compra ya descarta lo que
+    seguro que no es un producto; lo demás entra, que es lo correcto:
+    ante la duda, que esté apuntado.
+  */
+  async function aLaCompra(r: Receta) {
+    const cuales = (r.ingredientes ?? []).filter((i) => i && i.trim().length > 1)
+    if (cuales.length === 0) return
+
+    setCompra('yendo')
+    try {
+      const res = await fetch(api('/api/compra'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cosas: cuales.map((q) => ({ que: q })) }),
+      })
+      if (!res.ok) throw new Error()
+      setCompra('hecho')
+      router.refresh()
+      /* Vuelve a su sitio solo: un cartel de «hecho» permanente en una
+         pared lo acaba tapando alguien con la mano. */
+      setTimeout(() => setCompra('quieto'), 2500)
+    } catch {
+      setCompra('fallo')
+    }
+  }
 
   const ventana = paraLaVentana(abierta?.url ?? null)
 
@@ -148,18 +194,101 @@ export default function Recetas({ recetas }: { recetas: Receta[] }) {
                 /* Lo que de verdad cierra esta ventana. Ver
                    `lib/enlace-seguro.ts`. */
                 sandbox={SANDBOX}
-                referrerPolicy="no-referrer"
+                /*
+                  ⚠️  AQUÍ PONÍA `no-referrer`, Y ERA UN FALLO
+
+                  Se veía como un **Error 153** de YouTube dentro de la
+                  ventana: «error de configuración del reproductor».
+
+                  YouTube exige saber QUÉ PÁGINA le está incrustando el
+                  vídeo, para poder comprobar si ese dueño permite que
+                  se incruste. Con `no-referrer` el navegador no manda
+                  ninguna cabecera, YouTube no puede comprobarlo, y se
+                  niega a reproducir. Lo puse por prudencia y lo que
+                  hice fue romper la función.
+
+                  `origin` manda SOLO el dominio —
+                  `https://family-hub-…vercel.app` — y nunca la ruta. O
+                  sea: YouTube sabe que le incrusta HUBI, y no sabe qué
+                  pantalla de HUBI, ni de qué casa, ni qué receta. La
+                  privacidad que se buscaba se mantiene entera; lo único
+                  que se pierde es el error.
+                */
+                referrerPolicy="origin"
                 allow="encrypted-media; picture-in-picture"
               />
             </div>
           ) : (
-            /* Una receta sin enlace no es un error: hay recetas que son
-               una nota escrita a mano. Se enseña la nota, que es lo que
-               hay. */
+            /* Una receta sin enlace no es un error: hay recetas que se
+               escriben. Se enseña lo escrito, que es lo que hay. */
             <div className="rounded-[28px] border border-borde bg-superficie px-8 py-8">
-              <p className="whitespace-pre-wrap text-[22px] font-extrabold leading-snug text-tinta">
-                {abierta.nota || 'Esta receta no tiene ni enlace ni nota.'}
+              <p className="whitespace-pre-wrap text-[24px] font-extrabold leading-snug text-tinta">
+                {abierta.nota || 'Esta receta todavía no está escrita. Se escribe desde el móvil, en El día a día → Menús.'}
               </p>
+            </div>
+          )}
+
+          {/*
+            ── Y LO ESCRITO TAMBIÉN CUANDO HAY VÍDEO ──
+
+            Antes la nota solo salía si NO había enlace, y eso estaba
+            mal: quien apunta «le pongo menos azúcar que en el vídeo»
+            lo apunta justamente en la que tiene vídeo. Se pierde el
+            único trozo que es de esta casa.
+          */}
+          {ventana && abierta.nota && (
+            <div className="mt-4 rounded-[24px] border border-borde bg-superficie px-7 py-5">
+              <p className="whitespace-pre-wrap text-[21px] font-extrabold leading-snug text-tinta">
+                {abierta.nota}
+              </p>
+            </div>
+          )}
+
+          {/* ── Lo que lleva, y el botón que lo manda a la compra ── */}
+          {(abierta.ingredientes ?? []).length > 0 && (
+            <div
+              className="mt-4 rounded-[24px] border bg-superficie px-7 py-5"
+              style={{ borderColor: 'var(--t-borde)', borderLeft: `6px solid ${AMBITO.oliva}` }}
+            >
+              <p className="text-[17px] font-extrabold uppercase tracking-[0.14em] text-tenue">
+                Lo que lleva
+              </p>
+
+              <ul className="mt-3 space-y-1.5">
+                {(abierta.ingredientes ?? []).map((i, n) => (
+                  <li
+                    key={`${i}-${n}`}
+                    className="flex items-start gap-3 text-[21px] font-extrabold leading-snug text-tinta"
+                  >
+                    <span
+                      className="mt-[10px] block h-[8px] w-[8px] shrink-0 rounded-full"
+                      style={{ background: AMBITO.oliva }}
+                    />
+                    {i}
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                type="button"
+                onClick={() => aLaCompra(abierta)}
+                disabled={compra === 'yendo'}
+                className="tocable mt-5 flex h-[72px] w-full items-center justify-center gap-3 rounded-[22px] text-[22px] font-extrabold disabled:opacity-50"
+                style={{ background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }}
+              >
+                <Ico nombre="bolsa" tam={26} grosor={2.3} />
+                {compra === 'yendo'
+                  ? 'Apuntando…'
+                  : compra === 'hecho'
+                    ? 'Apuntado en la compra'
+                    : 'Añadirlo a la compra'}
+              </button>
+
+              {compra === 'fallo' && (
+                <p className="mt-3 text-[18px] font-bold" style={{ color: 'var(--t-alerta)' }}>
+                  No se ha podido apuntar. Inténtalo otra vez.
+                </p>
+              )}
             </div>
           )}
 

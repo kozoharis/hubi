@@ -29,7 +29,15 @@ import {
 */
 
 type Menu = { id: string; fecha: string; momento: Momento; que: string; receta_id: string | null }
-type Receta = { id: string; titulo: string; url: string | null; nota: string | null }
+type Receta = {
+  id: string
+  titulo: string
+  url: string | null
+  nota: string | null
+  /* Lo que lleva, una línea por ingrediente (paso 80). Desde la pared
+     se mandan enteros a la compra de un toque. */
+  ingredientes?: string[] | null
+}
 
 export default function Semana() {
   const [lunes, setLunes] = useState<string | null>(null)
@@ -43,6 +51,14 @@ export default function Semana() {
   const [abierto, setAbierto] = useState(false)
   const [titulo, setTitulo] = useState('')
   const [url, setUrl] = useState('')
+  /* La receta escrita, para las que no tienen enlace — y también para
+     las que sí: «le pongo menos azúcar que en el vídeo». */
+  const [nota, setNota] = useState('')
+  /* Los ingredientes, escritos uno por línea. Un campo de texto y no
+     una lista de campos con su botón de añadir: quien copia una receta
+     de una página los pega de golpe, y con campos sueltos habría que
+     repartirlos a mano. */
+  const [loQueLleva, setLoQueLleva] = useState('')
   const [guardando, setGuardando] = useState(false)
 
   async function traer(cual?: string) {
@@ -134,7 +150,15 @@ export default function Semana() {
     const r = await fetch(api('/api/menus'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ titulo: titulo.trim(), url: url.trim() }),
+      body: JSON.stringify({
+        titulo: titulo.trim(),
+        url: url.trim(),
+        nota: nota.trim(),
+        ingredientes: loQueLleva
+          .split('\n')
+          .map((i) => i.trim())
+          .filter((i) => i.length > 1),
+      }),
     })
     const d = (await r.json().catch(() => ({}))) as {
       receta?: Receta
@@ -151,6 +175,8 @@ export default function Semana() {
     setRecetas((x) => [d.receta!, ...x])
     setTitulo('')
     setUrl('')
+    setNota('')
+    setLoQueLleva('')
     setAbierto(false)
   }
 
@@ -271,7 +297,19 @@ export default function Semana() {
                 </a>
               )}
               {r.nota && (
-                <p className="t-apoyo mt-1">{r.nota}</p>
+                <p className="t-apoyo mt-1 whitespace-pre-wrap">{r.nota}</p>
+              )}
+
+              {/* Lo que lleva, en corto: aquí se está eligiendo qué se
+                  come, no cocinando. La lista entera se lee en la
+                  cocina, que es donde hace falta. */}
+              {(r.ingredientes ?? []).length > 0 && (
+                <p className="t-apoyo mt-1 font-extrabold">
+                  Lleva {(r.ingredientes ?? []).length}{' '}
+                  {(r.ingredientes ?? []).length === 1 ? 'cosa' : 'cosas'}:{' '}
+                  {(r.ingredientes ?? []).slice(0, 3).join(', ')}
+                  {(r.ingredientes ?? []).length > 3 && '…'}
+                </p>
               )}
 
               {/*
@@ -341,7 +379,51 @@ export default function Semana() {
           </label>
           <p className="t-apoyo mt-1.5">
             Pega la dirección del vídeo o de la página. Si no hay enlace, déjalo
-            vacío: con el nombre basta.
+            vacío y escríbela aquí abajo.
+          </p>
+
+          {/*
+            ── LA RECETA ESCRITA ──
+
+            Haris: *«las recetas deberían poder escribirse si es que no
+            tienen un enlace»*. Y sirve también cuando SÍ lo tiene: «le
+            pongo menos azúcar que en el vídeo» es justo lo que hay que
+            apuntar, y es el único trozo que es de esta casa.
+          */}
+          <label className="mt-4 block">
+            <span className="rotulo">Cómo se hace</span>
+            <textarea
+              value={nota}
+              onChange={(e) => setNota(e.target.value)}
+              rows={5}
+              maxLength={2000}
+              placeholder="Se mezcla la harina con la levadura, se deja reposar una hora…"
+              className="entrada mt-2 w-full resize-none py-3"
+            />
+          </label>
+
+          {/*
+            ── Y LO QUE LLEVA ──
+
+            Un campo de texto y no una lista de campos con su botón de
+            añadir. Quien copia una receta de una página pega los
+            ingredientes de golpe; con campos sueltos habría que
+            repartirlos a mano uno por uno, que es exactamente el
+            trabajo que esto viene a quitar.
+          */}
+          <label className="mt-4 block">
+            <span className="rotulo">Lo que lleva</span>
+            <textarea
+              value={loQueLleva}
+              onChange={(e) => setLoQueLleva(e.target.value)}
+              rows={5}
+              placeholder={'Medio kilo de harina\nDos huevos\nLeche\nSal'}
+              className="entrada mt-2 w-full resize-none py-3"
+            />
+          </label>
+          <p className="t-apoyo mt-1.5">
+            Uno por línea. Desde la pantalla de la cocina se añaden todos a la compra de un
+            toque.
           </p>
 
           {/* Eran `bg-verde` con texto blanco, uno al lado del otro a

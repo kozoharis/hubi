@@ -39,12 +39,36 @@ export async function GET(peticion: NextRequest) {
     return NextResponse.json({ lunes, dias, menus: [], recetas: [], sinTablas: true })
   }
 
-  const { data: recetas } = await supabase
+  /*
+    Los ingredientes son del paso 80. Si no está dado, Postgres rechaza
+    la consulta ENTERA —no la columna— y el cajón de las recetas se
+    quedaría vacío por una casilla que todavía no existe. Así que se
+    pide con ellos y, si falla, se vuelve a pedir sin ellos.
+
+    Es la tercera vez que esta red hace falta en este proyecto, y las
+    tres por lo mismo: **una columna nueva nunca puede ser obligatoria
+    para lo que ya funcionaba.**
+  */
+  const CON = 'id, titulo, url, nota, ingredientes'
+  const SIN = 'id, titulo, url, nota'
+
+  let { data: recetas, error: falloRecetas } = await supabase
     .from('recetas')
-    .select('id, titulo, url, nota')
+    .select(CON)
     .eq('hogar_id', await elEspacioO(supabase))
     .order('creado_en', { ascending: false })
     .limit(100)
+
+  if (falloRecetas) {
+    const segunda = await supabase
+      .from('recetas')
+      .select(SIN)
+      .eq('hogar_id', await elEspacioO(supabase))
+      .order('creado_en', { ascending: false })
+      .limit(100)
+    recetas = segunda.data as typeof recetas
+    falloRecetas = segunda.error
+  }
 
   return NextResponse.json({ lunes, dias, menus: data ?? [], recetas: recetas ?? [] })
 }
@@ -155,6 +179,10 @@ export async function POST(peticion: NextRequest) {
     titulo?: string
     url?: string
     nota?: string
+    /* Una línea por ingrediente (paso 80). «Medio kilo de harina»,
+       «dos huevos». Se guardan tal cual: en la pared se mandan a la
+       compra sin tocarlos. */
+    ingredientes?: string[]
   }
 
   const titulo = String(cuerpo.titulo ?? '').trim().slice(0, 120)
@@ -174,16 +202,43 @@ export async function POST(peticion: NextRequest) {
     )
   }
 
-  const { data, error } = await supabase
+  /* Sin líneas vacías, sin duplicados y con un tope: lo que se pega
+     de una página trae renglones sueltos, y una receta con cuarenta
+     ingredientes no es una receta de casa. */
+  const ingredientes = [
+    ...new Set(
+      (cuerpo.ingredientes ?? [])
+        .map((i) => String(i ?? '').trim().replace(/\s+/g, ' ').slice(0, 80))
+        .filter((i) => i.length > 1)
+    ),
+  ].slice(0, 30)
+
+  const laFila = {
+    hogar_id: await elEspacioO(supabase),
+    titulo,
+    url: url || null,
+    /* 2000 y no 500: una receta escrita entera no cabe en 500 letras,
+       y ésa es justo la que no tiene enlace. */
+    nota: String(cuerpo.nota ?? '').trim().slice(0, 2000) || null,
+    creado_por: user.id,
+  }
+
+  let { data, error } = await supabase
     .from('recetas')
-    .insert({
-      hogar_id: await elEspacioO(supabase),
-      titulo,
-      url: url || null,
-      nota: String(cuerpo.nota ?? '').trim().slice(0, 500) || null,
-      creado_por: user.id,
-    })
-    .select('id, titulo, url, nota')
+    .insert({ ...laFila, ingredientes })
+    .select('id, titulo, url, nota, ingredientes')
+
+  /*
+    Si la rechaza por la columna nueva, se guarda SIN ella. Perder los
+    ingredientes es un incordio; perder la receta que alguien acaba de
+    escribir, no.
+  */
+  if (error && /ingredientes/.test(error.message)) {
+    ;({ data, error } = await supabase
+      .from('recetas')
+      .insert(laFila)
+      .select('id, titulo, url, nota'))
+  }
 
   if (error) {
     return NextResponse.json(

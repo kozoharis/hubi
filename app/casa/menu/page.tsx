@@ -56,11 +56,30 @@ export default async function Menu() {
       try {
         const { data, error } = await supabase
           .from('recetas')
-          .select('id, titulo, url, nota')
+          .select('id, titulo, url, nota, ingredientes')
           .eq('hogar_id', casa)
           .order('creado_en', { ascending: false })
           .limit(40)
-        if (error) return []
+
+        /*
+          Los ingredientes son del paso 80. Sin él, Postgres rechaza la
+          consulta ENTERA y la pared se quedaría sin recetas por una
+          casilla que todavía no existe. Se vuelve a pedir sin ellos.
+
+          Es la misma red que en `/api/menus`, y por lo mismo: una
+          columna nueva nunca puede ser obligatoria para lo que ya
+          funcionaba.
+        */
+        if (error) {
+          const segunda = await supabase
+            .from('recetas')
+            .select('id, titulo, url, nota')
+            .eq('hogar_id', casa)
+            .order('creado_en', { ascending: false })
+            .limit(40)
+          if (segunda.error) return []
+          return (segunda.data ?? []) as Receta[]
+        }
         return (data ?? []) as Receta[]
       } catch {
         return []
