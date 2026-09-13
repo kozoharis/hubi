@@ -1,10 +1,15 @@
 import { hoyAqui } from '@/lib/tablon'
+import { elLunesDe } from '@/lib/menus'
 import { laPared, loApuntado, loDestacado, losMenus } from '@/lib/pared'
+import { loDeHoy } from '@/lib/rutinas'
 import { Ico } from '../iconos'
 import { pintaDe } from '../iconos'
 import { AMBITO, PastillaAmbito } from '../piezas'
 import Cosa from './cosa'
+import Mes from './calendario/mes'
 import Fotos from './fotos'
+import Rutinas from './rutinas'
+import Tiempo from './tiempo'
 import { Nada, Rotulo } from './rotulo'
 
 export const dynamic = 'force-dynamic'
@@ -53,7 +58,12 @@ export default async function Hoy() {
   /* Hasta dentro de dos semanas: de ahí sale «después». */
   const dentroDeDos = sumarDias(hoy, 14)
 
-  const [cosas, menus, destacado, laCompra] = await Promise.all([
+  /* Y el mes entero, solo para los puntitos del calendario pequeño. */
+  const [ano, mes] = hoy.split('-').map(Number)
+  const delMes = `${ano}-${String(mes).padStart(2, '0')}`
+  const ultimo = String(new Date(ano, mes, 0).getDate()).padStart(2, '0')
+
+  const [cosas, menus, destacado, laCompra, delMesEntero, rutinas] = await Promise.all([
     loApuntado(supabase, casa, hoy, dentroDeDos),
     losMenus(supabase, casa, hoy, hoy),
     loDestacado(supabase, casa),
@@ -79,7 +89,13 @@ export default async function Hoy() {
         return []
       }
     })(),
+    loApuntado(supabase, casa, `${delMes}-01`, `${delMes}-${ultimo}`),
+    /* Lo que toca hoy. `loDeHoy` ya envuelve sus fallos y devuelve
+       vacío si las tablas no están. */
+    loDeHoy(supabase, casa),
   ])
+
+  const conAlgo = new Set(delMesEntero.map((c) => c.fecha).filter(Boolean) as string[])
 
   const pendientes = cosas.filter((c) => c.estado !== 'hecho')
   const deHoy = pendientes.filter((c) => c.fecha === hoy)
@@ -110,6 +126,29 @@ export default async function Hoy() {
             </ul>
           )}
         </section>
+
+        {/*
+          ── LO DE CADA DÍA ──
+
+          Debajo de lo de hoy y encima de lo destacado. Es lo que se
+          mira al pasar por la cocina —regar, la basura, las pastillas de
+          la mañana— y lo único de esta pantalla que además se TACHA.
+
+          Y existía en HUBI desde hace tiempo sin salir por ninguna
+          parte de la pared, que es donde más falta hacía.
+        */}
+        {rutinas.length > 0 && (
+          <section className="mt-11">
+            <Rutinas
+              rutinas={rutinas.map((r) => ({
+                id: r.id,
+                que: r.que,
+                hora: r.hora,
+                hecha: r.hecha,
+              }))}
+            />
+          </section>
+        )}
 
         {/*
           Lo destacado sale también aquí, y no solo en el Calendario. Es
@@ -152,10 +191,54 @@ export default async function Hoy() {
             </ul>
           </section>
         )}
+
+        {/*
+          ── Y LAS FOTOS, ABAJO DEL TODO Y A LA IZQUIERDA ──
+
+          Estaban a la derecha y Haris lo vio enseguida: «muévelo para la
+          izquierda, que hay más espacio». Es verdad y es estructural, no
+          casualidad de un día tranquilo — la columna izquierda es la
+          ancha, y una foto es lo único de esta pantalla que gana de
+          verdad con el tamaño. Una lista de la compra no.
+
+          Abajo del todo a propósito. Lo de arriba es lo que hay que
+          SABER —qué hay hoy, qué está pendiente— y se lee en segundos
+          desde la puerta. Las fotos son lo que hace que uno se quede
+          mirando, y eso va después de lo útil, nunca delante.
+
+          El ancho tope de 760 px no es por estética: sin él, en la
+          columna ancha una foto en 16/10 mide 630 px de alto y empuja
+          todo lo demás fuera de la pantalla. Una pared no se desliza.
+
+          `puedeSubir`: aquí sí, porque quien mira esto ES la pantalla de
+          la cocina, y es la única cosa que puede escribir en todo HUBI
+          aparte de la compra.
+        */}
+        <section className="mt-11">
+          <Rotulo>En casa</Rotulo>
+          <div className="mt-6 max-w-[760px]">
+            <Fotos puedeSubir />
+          </div>
+        </section>
       </div>
 
       {/* ── DERECHA · lo que se contesta con tres palabras ── */}
       <div className="mt-12 xl:mt-0">
+        {/*
+          ── EL TIEMPO, LO PRIMERO DE LA DERECHA ──
+
+          Es lo que más se mira de esta columna y lo primero que mira
+          cualquiera por la mañana en una cocina. En una casa con finca
+          no es curiosidad: es si hay que regar, si se puede tender y si
+          conviene adelantar la recogida.
+
+          Si la previsión no llega, este bloque no se pinta — ni cartel
+          de error ni hueco gris. Lo decide `tiempo.tsx`.
+        */}
+        <div className="mb-11">
+          <Tiempo />
+        </div>
+
         <section>
           <Rotulo>Qué se come</Rotulo>
 
@@ -237,24 +320,21 @@ export default async function Hoy() {
         )}
 
         {/*
-          ── Y LAS FOTOS, LO ÚLTIMO DE LA COLUMNA ──
+          ── EL MES ──
 
-          Abajo del todo a propósito. Lo de arriba es lo que hay que
-          SABER —qué hay hoy, qué se come, qué falta— y se lee en
-          segundos desde la puerta. Las fotos son lo que hace que uno se
-          quede mirando, y eso va después de lo útil, nunca delante.
+          Aquí abajo a la derecha, la misma rejilla que en el Calendario
+          y la misma pieza: hoy en círculo, un punto en los días que
+          tienen algo, y la semana en curso teñida.
 
-          Y llena justo el hueco que quedaba: un día tranquilo dejaba la
-          mitad de abajo de la pantalla vacía.
-
-          `puedeSubir`: aquí sí, porque quien mira esto ES la pantalla de
-          la cocina, y es la única cosa que puede escribir en todo HUBI
-          aparte de la compra.
+          No es repetir el Calendario: es la pregunta que ninguna de las
+          listas de esta pantalla contesta — «¿en qué parte del mes
+          estamos?» y «el día 4, ¿qué día cae?». Sin un mes delante eso
+          se cuenta con los dedos.
         */}
         <section className="mt-11">
-          <Rotulo>En casa</Rotulo>
+          <Rotulo>El mes</Rotulo>
           <div className="mt-6">
-            <Fotos puedeSubir />
+            <Mes hoy={hoy} conAlgo={conAlgo} lunes={elLunesDe(hoy)} />
           </div>
         </section>
       </div>

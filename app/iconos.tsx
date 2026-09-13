@@ -17,6 +17,7 @@ export type Icono =
   | 'refrescar' | 'casco' | 'maleta' | 'herramienta' | 'barco' | 'mascota'
   | 'taza' | 'mandos'
   | 'sol' | 'luna' | 'contraste'
+  | 'nube' | 'lluvia' | 'tormenta' | 'niebla' | 'nieve'
 
 const TRAZOS: Record<Icono, string> = {
   /*
@@ -37,6 +38,24 @@ const TRAZOS: Record<Icono, string> = {
      esfera: es «a veces uno y a veces el otro» sin tener que rellenar
      nada, que estos iconos son solo de línea. */
   contraste: 'M12 3.4a8.6 8.6 0 1 1 0 17.2 8.6 8.6 0 0 1 0-17.2ZM12 3.6v16.8M14.6 5.4v13.2M17.2 8.1v7.8',
+
+  /*
+    ── EL TIEMPO ──
+
+    Cinco dibujos nuevos. `sol` ya estaba, y los cinco que faltaban se
+    han DIBUJADO en vez de coger lo más parecido que hubiera: es la
+    regla 3 de `reglas-de-pantalla.md`, que ya se rompió dos veces —el
+    ojo por «claro», el tic verde por «tarea»— y las dos veces por lo
+    mismo.
+
+    Todos comparten la misma nube, para que a dos metros se lea la
+    familia entera de un vistazo y lo que cambie sea solo lo de debajo.
+  */
+  nube:      'M7 17.5h10.2a4 4 0 0 0 .3-8 5.7 5.7 0 0 0-10.9-1.5 4.3 4.3 0 0 0 .4 9.5',
+  lluvia:    'M7 15.5h10.2a4 4 0 0 0 .3-8 5.7 5.7 0 0 0-10.9-1.5 4.3 4.3 0 0 0 .4 9.5M8.6 18.6v2.1M12 18.6v2.9M15.4 18.6v2.1',
+  tormenta:  'M7 15.5h10.2a4 4 0 0 0 .3-8 5.7 5.7 0 0 0-10.9-1.5 4.3 4.3 0 0 0 .4 9.5M12.9 18.2l-2.4 3.1h3.3l-2.1 2.4',
+  niebla:    'M3.5 7.5h17M6 11.5h12.5M3.5 15.5h17M8 19.5h8',
+  nieve:     'M7 15.5h10.2a4 4 0 0 0 .3-8 5.7 5.7 0 0 0-10.9-1.5 4.3 4.3 0 0 0 .4 9.5M8.7 19.2h.01M12 21.2h.01M15.3 19.2h.01',
   casa:      'M3 10.5 12 3l9 7.5M5.5 9.5V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5',
   /* Un casco de obra. Media cúpula, la visera que sobresale por
      delante y la cinta de la base — que es lo que hace que se lea
