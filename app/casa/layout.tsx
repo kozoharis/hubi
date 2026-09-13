@@ -3,6 +3,7 @@ import { laPared } from '@/lib/pared'
 import Reloj from './reloj'
 import Pestanas from './pestanas'
 import VuelveAHoy from './vuelve-a-hoy'
+import Microfono from './microfono'
 
 export const dynamic = 'force-dynamic'
 
@@ -110,6 +111,20 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
       </header>
 
       {children}
+
+      {/*
+        ── EL MICRÓFONO, EN EL ARMAZÓN Y NO EN CADA PANTALLA ──
+
+        Aquí abajo porque tiene que estar en las CINCO pestañas y en el
+        mismo sitio en todas. El punto 20 del planteamiento: «debe
+        existir SIEMPRE un botón: 🎙️ HABLAR».
+
+        Llegó a haber tres micrófonos distintos metidos dentro de tres
+        pantallas, y ninguno en las otras dos. Eso obligaba a aprender
+        dónde se puede hablar — que es justo lo que esta aplicación no
+        debe pedirle a nadie.
+      */}
+      <Microfono />
     </div>
   )
 }

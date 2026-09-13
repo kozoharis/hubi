@@ -1,10 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
-import { grabarVoz, sePuedeGrabar, type Grabando } from '../../hablar/grabadora'
-import { NOCHE, DEGRADADO, DEGRADADO_TUMBADO } from '@/lib/voz-hubi'
 import { Ico } from '../../iconos'
 
 /*
@@ -31,13 +29,18 @@ import { Ico } from '../../iconos'
   se deja desde el móvil. Está razonado entero en el `sql/78`.
 
   ─────────────────────────────────────────────────────────────
-  Y POR VOZ, CON PISTA DE NOTA
+  Y EL MICRÓFONO NO ESTÁ AQUÍ: ESTÁ EN LA PARED ENTERA
 
-  «Ponle que he dejado los papeles en la mesa» — con `pista: 'nota'`,
-  el intérprete no vuelve a adivinar qué se ha querido decir: lo lee
-  como nota. Sin ella, una frase con un día dentro —«los papeles hasta
-  el jueves»— se leería como recordatorio y esta pantalla devolvería
-  algo que no puede guardar aquí.
+  Llegó a haber uno metido en este formulario, y otro en la compra, y
+  otro en el día. Tres botones distintos en tres pantallas obligaban a
+  aprender dónde se puede hablar.
+
+  Ahora hay UNO, en el armazón, abajo a la derecha en las cinco
+  pestañas — y entiende «ponle que he dejado los papeles en la mesa»
+  igual de bien. Está en `app/casa/microfono.tsx`.
+
+  Esto se queda para escribirlo a mano, que es lo que hace falta
+  cuando hay alguien durmiendo o la cocina está con la freidora puesta.
 */
 
 export default function Apuntar() {
@@ -47,73 +50,6 @@ export default function Apuntar() {
   const [texto, setTexto] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
-
-  const [oyendo, setOyendo] = useState(false)
-  const [pensando, setPensando] = useState(false)
-  const [nivel, setNivel] = useState(0)
-  const grabando = useRef<Grabando | null>(null)
-
-  /* Si hay micrófono se sabe DESPUÉS de pintar: en el servidor no hay
-     `navigator`. El porqué largo, en `app/casa/compra/dictar.tsx`. */
-  const [hayMicro, setHayMicro] = useState(false)
-  useEffect(() => setHayMicro(sePuedeGrabar()), [])
-
-  async function escuchar() {
-    setFallo(null)
-    setOyendo(true)
-
-    grabando.current = await grabarVoz({
-      alNivel: setNivel,
-      alPausar: () => {},
-      alSeguir: () => {},
-      alTerminar: (audio) => {
-        grabando.current = null
-        interpretar(audio)
-      },
-      alFallar: (motivo) => {
-        grabando.current = null
-        setOyendo(false)
-        setNivel(0)
-        setFallo(
-          motivo === 'sin-permiso'
-            ? 'Esta pantalla no tiene permiso para usar el micrófono.'
-            : motivo === 'sin-micro'
-              ? 'Esta pantalla no tiene micrófono.'
-              : 'No se ha oído nada. Prueba otra vez.'
-        )
-      },
-    })
-  }
-
-  async function interpretar(audio: Blob) {
-    setOyendo(false)
-    setNivel(0)
-    setPensando(true)
-
-    try {
-      const paquete = new FormData()
-      paquete.append('audio', audio, 'nota.webm')
-      paquete.append('pista', 'nota')
-
-      const r = await fetch(api('/api/voz'), { method: 'POST', body: paquete })
-      const d = (await r.json().catch(() => null)) as
-        | { titulo?: string | null; error?: string }
-        | null
-
-      if (!r.ok || !d?.titulo) {
-        setFallo(d?.error ?? 'No se ha entendido. Prueba otra vez.')
-        return
-      }
-
-      /* La voz RELLENA el campo, no guarda. Se lee escrito y se toca
-         Dejarla — la misma regla que en todo HUBI. */
-      setTexto(d.titulo)
-    } catch {
-      setFallo('No se ha podido entender. Prueba otra vez.')
-    } finally {
-      setPensando(false)
-    }
-  }
 
   async function guardar() {
     const que = texto.trim()
@@ -182,40 +118,6 @@ export default function Apuntar() {
         className="entrada mt-4 w-full resize-none py-4 text-[28px] font-extrabold leading-snug"
       />
 
-      {hayMicro && (
-        <>
-          <button
-            type="button"
-            onClick={() => {
-              if (oyendo) grabando.current?.parar()
-              else if (!pensando) escuchar()
-            }}
-            disabled={pensando}
-            /* El azul de noche de HUBI: en toda la aplicación significa
-               «esto escucha y entiende». Ver `lib/voz-hubi.ts`. */
-            className="tocable mt-3 flex h-[72px] w-full items-center justify-center gap-3 rounded-[24px] text-[22px] font-extrabold text-white disabled:opacity-60"
-            style={{ background: NOCHE, backgroundImage: oyendo ? DEGRADADO : undefined }}
-          >
-            <Ico nombre="micro" tam={26} grosor={2.3} />
-            {pensando ? 'Un momento…' : oyendo ? 'Te escucho · toca para terminar' : 'O dilo en voz alta'}
-          </button>
-
-          {oyendo && (
-            <div
-              className="mt-2.5 h-[10px] w-full overflow-hidden rounded-full"
-              style={{ background: 'var(--t-velo)' }}
-            >
-              <div
-                className="h-full rounded-full transition-[width] duration-100"
-                style={{
-                  width: `${Math.min(100, Math.round(nivel * 140))}%`,
-                  background: DEGRADADO_TUMBADO,
-                }}
-              />
-            </div>
-          )}
-        </>
-      )}
 
       <p className="mt-3 text-[18px] font-bold leading-snug text-tenue">
         Lo que se deja aquí lo ve toda la casa. Para dejarle una nota a una persona, el móvil.

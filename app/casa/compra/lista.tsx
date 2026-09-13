@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Ico } from '../../iconos'
 import { AMBITO } from '../../piezas'
-import Dictar from './dictar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -234,14 +233,6 @@ export default function Lista({
           )}
         </div>
 
-        {/* ── Decirlo en voz alta ── */}
-        {/*
-          Va debajo del campo y no encima, aunque sea lo más cómodo de
-          los dos. Escribir es lo que SIEMPRE funciona; el micrófono
-          puede no estar, puede no tener permiso y necesita que el sitio
-          esté en silencio. Lo que nunca falla va primero.
-        */}
-        <Dictar />
 
         {/* ── Sin escribir nada ── */}
         {ofrecidas.length > 0 && (
