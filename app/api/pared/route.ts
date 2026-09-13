@@ -18,8 +18,9 @@ export const dynamic = 'force-dynamic'
   POR QUÉ UNA RUTA PROPIA Y NO `/api/recordatorios`
 
   Porque lo que apunta una pared no es un recordatorio cualquiera: es
-  uno con una forma exacta —visible en la casa, sin dueño, pendiente—
-  que la política del paso 75 exige. Meter esas cuatro condiciones
+  uno con una forma exacta —visible en la casa, pendiente, y con dueño
+  solo si es alguien de esta casa— que exigen las políticas de los pasos
+  75 y 76. Meter esas condiciones
   dentro de la ruta general sería añadirle a un sitio que ya hace
   bastante un caso especial que solo vale para un aparato.
 
@@ -49,6 +50,7 @@ export async function POST(peticion: NextRequest) {
     titulo?: string
     fecha?: string
     hora?: string | null
+    para?: string | null
   } | null
 
   const titulo = String(cuerpo?.titulo ?? '').trim().replace(/\s+/g, ' ').slice(0, 120)
@@ -67,6 +69,21 @@ export async function POST(peticion: NextRequest) {
   const hora = String(cuerpo?.hora ?? '').trim()
   const laHora = /^([01]\d|2[0-3]):[0-5]\d$/.test(hora) ? hora : null
 
+  /*
+    De quién es. Vacío = de la casa, de nadie en concreto.
+
+    Aquí solo se comprueba la FORMA, no quién es: que sea alguien de
+    esta casa y que sea una persona lo decide la política del paso 76,
+    con `es_persona_de_la_casa`. Comprobarlo también aquí sería una
+    segunda regla para lo mismo — y el día que una se olvide, conviene
+    que se olvide la que no protege.
+  */
+  /* `deQuien` y no `quien`: `quien` ya es la función que dice de quién
+     es la sesión, importada arriba. Dos cosas con el mismo nombre en el
+     mismo fichero es la manera de leer mal una de las dos. */
+  const deQuien = String(cuerpo?.para ?? '').trim()
+  const paraQuien = /^[0-9a-f-]{36}$/i.test(deQuien) ? deQuien : null
+
   const { error } = await supabase
     .from('recordatorios')
     .insert({
@@ -80,11 +97,11 @@ export async function POST(peticion: NextRequest) {
       hora: laHora,
       creado_por: user.id,
       estado: 'pendiente',
-      /* Las tres ataduras del paso 75. Van también aquí porque la
+      /* Las ataduras de los pasos 75 y 76. Van también aquí porque la
          política las EXIGE: mandarlas mal sería un rechazo seguro, y
          más vale que este fichero diga en voz alta cuáles son. */
       visible_en_casa: true,
-      asignado_a: null,
+      asignado_a: paraQuien,
     })
     .select('id')
 

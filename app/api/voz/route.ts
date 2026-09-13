@@ -109,6 +109,27 @@ export async function POST(peticion: NextRequest) {
       )
     }
     audio = subido
+
+    /*
+      ── LA PISTA TAMBIÉN VIENE POR AQUÍ · ARREGLADO ──
+
+      Sólo se leía en el camino del texto, y eso dejaba fuera justo el
+      teléfono donde importaba: el iPhone no transcribe, manda el
+      audio, así que al pulsar «esto es para la compra» la pista se
+      perdía por el camino y HUBI volvía a adivinar lo mismo que
+      acababa de fallar.
+
+      Y es lo que le permite a la pantalla de la cocina tener micrófono
+      sin tener el asistente entero: manda audio con `pista: compra` y
+      lo que salga de ahí es la compra, no un gasto.
+
+      Que la pista venga del cliente no es un permiso: es una
+      preferencia. Lo que se puede guardar de verdad lo sigue diciendo
+      la RLS, y una pantalla de cocina tiene `nada` en cuentas y en
+      papeles diga lo que diga esta línea.
+    */
+    const dicha = formulario.get('pista')
+    if (typeof dicha === 'string' && dicha) pista = dicha
   }
 
   /* Con la sesión: así la frontera del hogar la pone la base de datos.

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Ico } from '../../iconos'
 import { AMBITO } from '../../piezas'
+import Dictar from './dictar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -36,6 +37,33 @@ import { AMBITO } from '../../piezas'
   dando: el sitio donde hay que dar es el sitio donde está la palabra.
 
   ─────────────────────────────────────────────────────────────
+  VARIAS LISTAS, Y SOLO LAS QUE SE HAYAN QUERIDO
+
+  La compra de HUBI son varias listas: la del sábado, la de la
+  ferretería, la de la finca. La pared las enseñaba todas revueltas en
+  una montonera.
+
+  Ahora salen separadas y con su nombre, y **solo las que alguien haya
+  marcado** para que se vean aquí (paso 77). La compra corriente de la
+  casa —lo que no está en ninguna lista— sale siempre: es donde va la
+  leche y es lo que se apunta desde aquí.
+
+  ─────────────────────────────────────────────────────────────
+  Y CASI NUNCA HAY QUE ESCRIBIR
+
+  Debajo del campo hay una fila de botones: lo que ESTA casa compra a
+  menudo primero, y detrás lo corriente para rellenar. Se toca y se
+  apunta — un toque en vez de seis letras y un teclado que tapa media
+  tableta.
+
+  El botón desaparece en cuanto se toca. En una pared, algo que sigue
+  ahí medio segundo después de tocarlo se toca otra vez, y entonces en
+  el súper compran dos leches.
+
+  De dónde salen y por qué son treinta y no trescientos, en
+  `lib/lo-de-siempre.ts`.
+
+  ─────────────────────────────────────────────────────────────
   LO TACHADO NO DESAPARECE
 
   Se queda, apagado y con una raya. Dos razones, y las dos se ven en una
@@ -43,25 +71,40 @@ import { AMBITO } from '../../piezas'
   que la leche YA está comprada evita que la apunte otro.
 */
 
-export type Cosa = { id: string; que: string; comprado: boolean }
+export type Cosa = { id: string; que: string; comprado: boolean; lista_id: string | null }
 
-export default function Lista({ cosas }: { cosas: Cosa[] }) {
+/*
+  Un grupo es una lista de la compra con su nombre: «El sábado», «La
+  ferretería». El primero, sin nombre, es lo que no está en ninguna
+  lista — la compra corriente de la casa, que es donde va la leche.
+*/
+export type Grupo = { id: string | null; nombre: string | null; cosas: Cosa[] }
+
+export default function Lista({
+  grupos,
+  sugerencias = [],
+}: {
+  grupos: Grupo[]
+  sugerencias?: string[]
+}) {
   const router = useRouter()
 
-  const [locales, setLocales] = useState(cosas)
+  const [locales, setLocales] = useState(grupos.flatMap((g) => g.cosas))
   const [texto, setTexto] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
 
-  async function anadir() {
-    const que = texto.trim().replace(/\s+/g, ' ')
-    if (que.length < 2) return
+  /* Lo tocado en los botones de abajo desde que se cargó la pantalla.
+     Sirve para que el botón desaparezca EN EL ACTO: si hay que esperar
+     al refresco, se toca «Leche» dos veces y se apuntan dos. */
+  const [recien, setRecien] = useState<string[]>([])
+
+  async function apuntar(bruto: string) {
+    const que = bruto.trim().replace(/\s+/g, ' ')
+    if (que.length < 2) return false
 
     setFallo(null)
     setOcupado(true)
-    /* Se vacía ya: quien apunta tres cosas seguidas escribe la segunda
-       mientras la primera todavía va por el aire. */
-    setTexto('')
 
     try {
       const r = await fetch(api('/api/compra'), {
@@ -71,12 +114,33 @@ export default function Lista({ cosas }: { cosas: Cosa[] }) {
       })
       if (!r.ok) throw new Error()
       router.refresh()
+      return true
     } catch {
       setFallo('No se ha podido apuntar. Inténtalo otra vez.')
-      setTexto(que)
+      return false
     } finally {
       setOcupado(false)
     }
+  }
+
+  async function anadir() {
+    const que = texto.trim().replace(/\s+/g, ' ')
+    if (que.length < 2) return
+
+    /* Se vacía ya: quien apunta tres cosas seguidas escribe la segunda
+       mientras la primera todavía va por el aire. */
+    setTexto('')
+    const bien = await apuntar(que)
+    if (!bien) setTexto(que)
+  }
+
+  /* Un botón de los de abajo. Se aparta ANTES de que conteste el
+     servidor, y si falla vuelve: en una pared, un botón que sigue ahí
+     medio segundo después de tocarlo se toca otra vez. */
+  async function tocarSugerencia(que: string) {
+    setRecien((r) => [...r, que])
+    const bien = await apuntar(que)
+    if (!bien) setRecien((r) => r.filter((x) => x !== que))
   }
 
   async function tachar(cosa: Cosa) {
@@ -100,8 +164,26 @@ export default function Lista({ cosas }: { cosas: Cosa[] }) {
     }
   }
 
-  const faltan = locales.filter((c) => !c.comprado)
-  const puestas = locales.filter((c) => c.comprado)
+  /*
+    Lo que se ofrece AHORA. Se recorta con lo que hay en pantalla y con
+    lo recién tocado, no solo con lo que había al cargar: si no, tras
+    apuntar la leche a mano el botón «Leche» seguiría ahí hasta el
+    siguiente refresco, invitando a apuntarla otra vez.
+  */
+  const puestas = new Set([
+    ...locales.map((c) => c.que.trim().toLowerCase()),
+    ...recien.map((r) => r.trim().toLowerCase()),
+  ])
+  const ofrecidas = sugerencias.filter((s) => !puestas.has(s.trim().toLowerCase()))
+
+  /* Los grupos con lo que hay ahora mismo en pantalla, para que al
+     tachar algo no salte de sitio. */
+  const enPantalla = grupos
+    .map((g) => ({
+      ...g,
+      cosas: locales.filter((c) => c.lista_id === g.id),
+    }))
+    .filter((g) => g.cosas.length > 0 || g.id === null)
 
   return (
     <div className="mt-8 xl:grid xl:grid-cols-[1fr_1.25fr] xl:items-start xl:gap-14">
@@ -151,17 +233,71 @@ export default function Lista({ cosas }: { cosas: Cosa[] }) {
             </p>
           )}
         </div>
+
+        {/* ── Decirlo en voz alta ── */}
+        {/*
+          Va debajo del campo y no encima, aunque sea lo más cómodo de
+          los dos. Escribir es lo que SIEMPRE funciona; el micrófono
+          puede no estar, puede no tener permiso y necesita que el sitio
+          esté en silencio. Lo que nunca falla va primero.
+        */}
+        <Dictar />
+
+        {/* ── Sin escribir nada ── */}
+        {ofrecidas.length > 0 && (
+          <div className="mt-7">
+            <p className="text-[19px] font-extrabold uppercase tracking-[0.14em] text-tenue">
+              Tócalo y se apunta
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2.5">
+              {ofrecidas.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => tocarSugerencia(s)}
+                  className="tocable flex h-[64px] items-center gap-3 rounded-full border bg-superficie px-6 text-[22px] font-extrabold text-tinta"
+                  style={{ borderColor: 'var(--t-borde)' }}
+                >
+                  <span style={{ color: AMBITO.oliva }}>
+                    <Ico nombre="mas" tam={22} grosor={2.6} />
+                  </span>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── La lista ── */}
-      <div className="mt-10 xl:mt-0">
-        {locales.length === 0 ? (
+      {/* ── Las listas ── */}
+      <div className="mt-10 space-y-9 xl:mt-0">
+        {locales.length === 0 && (
           <div className="rounded-[28px] border border-borde bg-superficie px-8 py-10">
             <p className="text-[30px] font-extrabold leading-snug text-tinta-suave">
               No falta nada en casa.
             </p>
           </div>
-        ) : (
+        )}
+
+        {enPantalla.map((g) => {
+          const faltan = g.cosas.filter((c) => !c.comprado)
+          const puestas = g.cosas.filter((c) => c.comprado)
+          if (g.cosas.length === 0) return null
+
+          return (
+          <div key={g.id ?? 'la-casa'}>
+            {/*
+              El nombre de la lista solo si HAY varias. Con una sola, un
+              rótulo que diga «La casa» encima de la única lista que hay
+              es una palabra que no distingue nada.
+            */}
+            {enPantalla.filter((x) => x.cosas.length > 0).length > 1 && (
+              <h3 className="mb-4 text-[19px] font-extrabold uppercase tracking-[0.16em] text-tenue">
+                {g.nombre ?? 'La casa'}
+              </h3>
+            )}
+
           <ul className="space-y-3">
             {[...faltan, ...puestas].map((c) => (
               <li key={c.id}>
@@ -203,7 +339,9 @@ export default function Lista({ cosas }: { cosas: Cosa[] }) {
               </li>
             ))}
           </ul>
-        )}
+          </div>
+          )
+        })}
       </div>
     </div>
   )

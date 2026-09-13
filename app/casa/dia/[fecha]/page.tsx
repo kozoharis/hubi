@@ -5,10 +5,11 @@ import { elLunesDe } from '@/lib/menus'
 import { laPared, loApuntado, losMenus, type CosaDeLaPared } from '@/lib/pared'
 import { Ico } from '../../../iconos'
 import { AMBITO } from '../../../piezas'
+import { colorApagado } from '@/lib/gente'
 import Cosa from '../../cosa'
 import Mes from '../../calendario/mes'
 import { Rotulo } from '../../rotulo'
-import Apuntar from './apuntar'
+import Apuntar, { type Quien } from './apuntar'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,7 +83,7 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
   const delMes = `${ano}-${String(mes).padStart(2, '0')}`
   const ultimo = String(new Date(ano, mes, 0).getDate()).padStart(2, '0')
 
-  const [cosas, menus, delMesEntero, puedeApuntar] = await Promise.all([
+  const [cosas, menus, delMesEntero, puedeApuntar, gente] = await Promise.all([
     loApuntado(supabase, casa, fecha, fecha),
     losMenus(supabase, casa, fecha, fecha),
     loApuntado(supabase, casa, `${delMes}-01`, `${delMes}-${ultimo}`),
@@ -101,6 +102,44 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
         return data === true
       } catch {
         return false
+      }
+    })(),
+    /*
+      Quién vive aquí, para poder ponerle nombre a lo que se apunta.
+      Solo personas: a una pantalla de cocina no se le asignan recados,
+      y la política del paso 76 lo rechazaría de todas formas.
+    */
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('miembros')
+          .select('perfil_id, color')
+          .eq('hogar_id', casa)
+          .eq('clase', 'persona')
+          .not('aceptado_en', 'is', null)
+        const suyos = (data ?? []) as { perfil_id: string; color: string | null }[]
+        if (suyos.length === 0) return [] as Quien[]
+
+        const { data: perfiles } = await supabase
+          .from('perfiles')
+          .select('id, nombre')
+          .in('id', suyos.map((m) => m.perfil_id))
+
+        const nombreDe = new Map(
+          ((perfiles ?? []) as { id: string; nombre: string }[]).map((p) => [p.id, p.nombre])
+        )
+
+        return suyos
+          .map((m) => ({
+            id: m.perfil_id,
+            /* Solo el nombre de pila: en un botón de una pared, «María
+               del Carmen Rodríguez» no cabe y no hace falta. */
+            nombre: (nombreDe.get(m.perfil_id) ?? '').split(' ')[0],
+            color: colorApagado(m.color, null),
+          }))
+          .filter((q) => q.nombre.length > 0) as Quien[]
+      } catch {
+        return [] as Quien[]
       }
     })(),
   ])
@@ -220,7 +259,7 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
             })}
           </div>
 
-          {puedeApuntar && <Apuntar fecha={fecha} />}
+          {puedeApuntar && <Apuntar fecha={fecha} gente={gente} />}
         </div>
 
         {/* ── El mes, con este día marcado ── */}

@@ -7,6 +7,7 @@ import Cabecera from '../../cabecera'
 import Encabezado from '../../encabezado'
 import { Volver } from '../../iconos'
 import Decidir, { type Cuenta } from './decidir'
+import Listas, { type LaLista } from './listas'
 import AnadirPantalla from './anadir-pantalla'
 import Fotos from './fotos'
 
@@ -172,6 +173,53 @@ export default async function LaCocina() {
       (comoSeLlaman ?? []).find((p) => p.id === id)?.nombre ?? 'Una pantalla',
   }))
 
+  /*
+    ── LAS LISTAS DE LA COMPRA (paso 77) ──
+
+    Envuelto, y por lo de siempre: `visible_en_casa` es del sql/77, y
+    si no está dado Postgres rechaza la consulta ENTERA. Sin eso, esta
+    pantalla —que es la de decidir qué se ve en la cocina— se caería
+    por la parte más nueva. Se queda sin la sección y lo demás sigue.
+  */
+  const lasListas: LaLista[] = await (async () => {
+    try {
+      const { data, error } = await supabase
+        .from('listas_compra')
+        .select('id, nombre, visible_en_casa')
+        .eq('hogar_id', casa)
+        .is('archivada_en', null)
+        .order('creada_en', { ascending: true })
+      if (error || !data) return []
+
+      const abiertas = data as { id: string; nombre: string; visible_en_casa: boolean | null }[]
+      if (abiertas.length === 0) return []
+
+      /* Cuántas cosas tiene cada una pendientes. Sin esto, «El sábado»
+         y «La ferretería» son dos palabras sin nada detrás y no hay
+         forma de saber cuál es la que importa. */
+      const { data: cosas } = await supabase
+        .from('compra')
+        .select('lista_id')
+        .eq('hogar_id', casa)
+        .is('archivado_en', null)
+        .eq('comprado', false)
+
+      const cuenta = new Map<string, number>()
+      for (const c of (cosas ?? []) as { lista_id: string | null }[]) {
+        if (c.lista_id) cuenta.set(c.lista_id, (cuenta.get(c.lista_id) ?? 0) + 1)
+      }
+
+      return abiertas.map((l) => ({
+        id: l.id,
+        nombre: l.nombre,
+        visible: l.visible_en_casa,
+        cuantas: cuenta.get(l.id) ?? 0,
+      }))
+    } catch {
+      return []
+    }
+  })()
+
   return (
     <main className="min-h-screen pb-40 lg:pb-16">
       <Cabecera ancho>
@@ -201,6 +249,13 @@ export default async function LaCocina() {
           conRecados={dice?.notas_en_casa ?? false}
           hayPantalla={(aparatos.data?.length ?? 0) > 0}
         />
+
+        {/*
+          Las listas van justo debajo de los recordatorios: es la misma
+          pregunta —qué cuelga de esa pared— hecha sobre la otra mitad
+          de lo que la pared enseña.
+        */}
+        <Listas listas={lasListas} />
 
         {/*
           Colgar la pantalla va DESPUÉS de decidir qué se ve en ella, y
