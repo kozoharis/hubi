@@ -38,14 +38,32 @@ import { AMBITO } from '../piezas'
   paso 67.
 
   ─────────────────────────────────────────────────────────────
-  QUIÉN LA MARCÓ NO SE DICE
+  QUIÉN LA MARCÓ NO SE DICE · DE QUIÉN ES, SÍ
 
-  La base guarda `quien`, y aquí es «la pantalla de la cocina», que no
-  es nadie. Enseñarlo sería enseñar una mentira. Y además: lo que
-  importa en una casa es que la basura está sacada, no quién la sacó.
+  Son dos cosas distintas y la pared solo enseña una.
+
+  **Quién la marcó** no se dice. La base guarda `quien`, y aquí es «la
+  pantalla de la cocina», que no es nadie: enseñarlo sería enseñar una
+  mentira. Y además, lo que importa en una casa es que la basura está
+  sacada, no quién la sacó.
+
+  **De quién es** sí, y faltaba. En una casa de dos personas da igual;
+  en una con niños, «17:00 · Inglés» sin decir de quién no sirve de
+  nada. Va delante y en pequeño, como el remite de una nota.
+
+  Solo el nombre de pila, y nada cuando es de la casa: «Sacar la
+  basura» no es de nadie en concreto, y ponerle una etiqueta «CASA»
+  sería ruido en todas las filas para no decir nada.
 */
 
-export type RutinaEnLaPared = { id: string; que: string; hora: string | null; hecha: boolean }
+export type RutinaEnLaPared = {
+  id: string
+  que: string
+  hora: string | null
+  hecha: boolean
+  /** El nombre de pila de quien la tiene. Vacío = es de la casa. */
+  dequien: string | null
+}
 
 export default function Rutinas({ rutinas }: { rutinas: RutinaEnLaPared[] }) {
   const router = useRouter()
@@ -126,9 +144,11 @@ export default function Rutinas({ rutinas }: { rutinas: RutinaEnLaPared[] }) {
               </span>
 
               <span className="min-w-0 flex-1">
-                {r.hora && (
-                  <span className="block text-[15px] font-extrabold tabular-nums text-tenue">
-                    {r.hora.slice(0, 5)}
+                {(r.hora || r.dequien) && (
+                  <span className="block text-[15px] font-extrabold uppercase tracking-wider text-tenue">
+                    {r.hora && <span className="tabular-nums normal-case">{r.hora.slice(0, 5)}</span>}
+                    {r.hora && r.dequien && <span className="mx-2">·</span>}
+                    {r.dequien}
                   </span>
                 )}
                 <span

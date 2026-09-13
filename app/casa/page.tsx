@@ -63,7 +63,7 @@ export default async function Hoy() {
   const delMes = `${ano}-${String(mes).padStart(2, '0')}`
   const ultimo = String(new Date(ano, mes, 0).getDate()).padStart(2, '0')
 
-  const [cosas, menus, destacado, laCompra, delMesEntero, rutinas] = await Promise.all([
+  const [cosas, menus, destacado, laCompra, delMesEntero, rutinas, gente] = await Promise.all([
     loApuntado(supabase, casa, hoy, dentroDeDos),
     losMenus(supabase, casa, hoy, hoy),
     loDestacado(supabase, casa),
@@ -93,7 +93,18 @@ export default async function Hoy() {
     /* Lo que toca hoy. `loDeHoy` ya envuelve sus fallos y devuelve
        vacío si las tablas no están. */
     loDeHoy(supabase, casa),
+    /* Los nombres, para poder decir DE QUIÉN es cada rutina. En una
+       casa de dos da igual; en una con niños, «17:00 · Inglés» sin
+       decir de quién no sirve de nada. */
+    supabase.from('perfiles').select('id, nombre'),
   ])
+
+  const nombreDe = new Map(
+    ((gente.data ?? []) as { id: string; nombre: string }[]).map((p) => [
+      p.id,
+      p.nombre.split(' ')[0],
+    ])
+  )
 
   const conAlgo = new Set(delMesEntero.map((c) => c.fecha).filter(Boolean) as string[])
 
@@ -145,6 +156,7 @@ export default async function Hoy() {
                 que: r.que,
                 hora: r.hora,
                 hecha: r.hecha,
+                dequien: r.para ? (nombreDe.get(r.para) ?? null) : null,
               }))}
             />
           </section>
