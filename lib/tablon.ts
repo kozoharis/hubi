@@ -12,44 +12,42 @@ export type Recordatorio = {
 }
 
 /**
- * El icono lo decide el sistema, no la persona.
+ * DE QUÉ VA UNA TAREA, DEDUCIDO DE LO QUE SE ESCRIBIÓ.
  *
  * Al crear algo solo se escribe qué hay que hacer. Pedirles que además
  * elijan una categoría sería exactamente la complejidad que no queremos
  * trasladarles.
+ *
+ * ─────────────────────────────────────────────────────────────
+ * AQUÍ HABÍA UNA TERCERA COLUMNA CON EMOJIS, Y SE HA IDO
+ *
+ * Cada pista llevaba además su emoji —💊, 🩺, 🚗, 📄, ⏳, 🛍— y una
+ * función `iconoDe(tipo)` que lo devolvía, con `✅` para lo que no
+ * reconocía. Así que HUBI tenía **dos vocabularios de iconos**: los
+ * dibujados de `iconos.tsx`, que son los de la marca, y estos, que son
+ * los del teclado del móvil.
+ *
+ * Se notó el día que se colgó la pantalla de la cocina: la misma cita
+ * médica era un corazón rosa en el teléfono y un 🩺 en la pared. Y una
+ * tarea pendiente cualquiera salía con un `✅` verde, diciendo «hecho»
+ * a dos metros de distancia.
+ *
+ * El icono y el color de una tarea los da `pintaDe(titulo)` en
+ * `app/iconos.tsx`, y solo esa. Aquí se deduce el TIPO, que es otra
+ * cosa: un dato que se guarda en la base.
  */
-const PISTAS: [RegExp, string, string][] = [
-  [/farmac|medicaci|medicament|receta|pastill/i, 'farmacia', '💊'],
-  [/m[eé]dic|doctor|consulta|an[aá]lisis|cita|hospital|dentista|revisi[oó]n m/i, 'cita', '🩺'],
-  [/coche|taller|itv|gasolin|mec[aá]nic|neum[aá]tic/i, 'coche', '🚗'],
-  [/papel|documento|contrato|p[oó]liza|seguro|banco|gestor|notar/i, 'papeles', '📄'],
-  [/vence|caduca|renov/i, 'vencimiento', '⏳'],
-  [/compr|super|mercad|tienda|traer|llevar|recoger|dejar/i, 'recado', '🛍'],
+const PISTAS: [RegExp, string][] = [
+  [/farmac|medicaci|medicament|receta|pastill/i, 'farmacia'],
+  [/m[e\u00e9]dic|doctor|consulta|an[a\u00e1]lisis|cita|hospital|dentista|revisi[o\u00f3]n m/i, 'cita'],
+  [/coche|taller|itv|gasolin|mec[a\u00e1]nic|neum[a\u00e1]tic/i, 'coche'],
+  [/papel|documento|contrato|p[o\u00f3]liza|seguro|banco|gestor|notar/i, 'papeles'],
+  [/vence|caduca|renov/i, 'vencimiento'],
+  [/compr|super|mercad|tienda|traer|llevar|recoger|dejar/i, 'recado'],
 ]
 
 export function deducirTipo(titulo: string): string {
   for (const [patron, tipo] of PISTAS) if (patron.test(titulo)) return tipo
   return 'tarea'
-}
-
-/*
-  EL DIBUJO DE UNA TAREA CUALQUIERA NO PUEDE SER UN VISTO VERDE.
-
-  Era `✅`, y se vio en la pantalla de la cocina: «Presentación del cole
-  de Paula», pendiente, con un cuadro verde y un tic al lado. A dos
-  metros de distancia eso no dice «tarea»: dice **hecho**. Y decía lo
-  contrario de la verdad.
-
-  Es la regla 3 de `reglas-de-pantalla.md` otra vez —un icono que no
-  significa lo que dice es peor que ninguno—, y aparece siempre igual:
-  se coge lo más parecido que hay a mano en vez de elegir el que toca.
-
-  `📌` es el del tablón desde el planteamiento. Dice «esto está
-  apuntado», que es exactamente lo que es, y no dice nada del estado.
-*/
-export function iconoDe(tipo: string): string {
-  for (const [, t, icono] of PISTAS) if (t === tipo) return icono
-  return '📌'
 }
 
 /*

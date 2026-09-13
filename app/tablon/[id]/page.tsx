@@ -2,7 +2,9 @@ import Link from '@/app/enlace'
 import { redirect, notFound } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import { cuando, iconoDe, atrasado, type Recordatorio } from '@/lib/tablon'
+import { cuando, atrasado, type Recordatorio } from '@/lib/tablon'
+import { pintaDe } from '../../iconos'
+import { PastillaAmbito } from '../../piezas'
 import AccionHecho from './accion'
 import Editar from './editar'
 import EnLaCocina from './en-la-cocina'
@@ -152,8 +154,17 @@ export default async function Detalle({
         <div className="lg:hidden">
           <Volver href="/tablon" />
 
+          {/*
+            Era un emoji suelto a `text-4xl` — 🩺, 💊, ⏳— mientras que
+            la banda de al lado, en pantalla ancha, pintaba el mismo
+            tipo con el icono DIBUJADO de HUBI. La misma tarea, dos
+            dibujos distintos, en el mismo fichero.
+
+            Ahora es la pastilla de siempre, la misma que en el tablón,
+            en la agenda y en la pantalla de la cocina.
+          */}
           <p className="mt-8 flex items-start gap-3">
-            <span className="text-4xl leading-none">{iconoDe(r.tipo)}</span>
+            <PastillaAmbito icono={pintaDe(r.titulo).icono} ambito={pintaDe(r.titulo).ambito} />
           </p>
 
           <h1

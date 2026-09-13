@@ -2,7 +2,9 @@ import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { elEspacioO } from '@/lib/espacio'
-import { hoyAqui, iconoDe, type Recordatorio } from '@/lib/tablon'
+import { hoyAqui, type Recordatorio } from '@/lib/tablon'
+import { pintaDe } from '../iconos'
+import { AMBITO, PastillaAmbito } from '../piezas'
 import Reloj from './reloj'
 
 export const dynamic = 'force-dynamic'
@@ -16,12 +18,42 @@ export const dynamic = 'force-dynamic'
   Lo que NO es: el HUBI de una persona puesto en horizontal.
 
   ─────────────────────────────────────────────────────────────
-  CINCO DECISIONES, Y NINGUNA ES DE ADORNO
+  ⚠️  LO QUE SE APRENDIÓ AQUÍ, Y ES LA LECCIÓN MÁS CARA DEL DÍA
 
-  **1 · Saluda al sitio, no a la persona.** «SOLETES · viernes 12 de
-  septiembre», y la hora grande. Sin avatar y sin «Buenas tardes,
-  Juan Miguel»: la tableta no es de nadie. Saludar por su nombre a la
-  cuenta del aparato sería además mentira — se llama «La cocina».
+  La primera versión de esta pantalla **no hablaba el idioma de HUBI**.
+  Era texto suelto sobre un fondo liso, con emojis por iconos: un panel
+  de administrador, exactamente lo que el punto 28 del planteamiento
+  descarta. Colgado en una cocina al lado del resto de la aplicación,
+  parecía otro producto.
+
+  Y pasó por una razón concreta que conviene dejar escrita: se escribió
+  desde cero, «porque una pared es otra cosa». No lo es. Una pared es
+  **la misma casa vista desde más lejos**.
+
+      LA PANTALLA NUEVA NO INVENTA UN LENGUAJE. USA EL QUE HAY,
+      MÁS GRANDE.
+
+  Así que todo lo que se ve aquí sale de las mismas piezas que las
+  cuarenta y cuatro pantallas del móvil:
+
+    · el papel cálido y el blanco de las tarjetas — `bg-fondo`,
+      `bg-superficie`, `border-borde`;
+    · los iconos DIBUJADOS de `iconos.tsx`, nunca emojis;
+    · `pintaDe(titulo)`, que es la misma función que decide el icono y
+      el color de una tarea en el tablón y en la agenda — así una cita
+      médica es rosa en los tres sitios;
+    · `PastillaAmbito`, la misma pieza, solo que a 64 px en vez de 44;
+    · la marca de ámbito al borde izquierdo, como en `Fila`.
+
+  Si mañana cambia el color de Salud, cambia aquí solo.
+
+  ─────────────────────────────────────────────────────────────
+  Y LAS CINCO DECISIONES DE SIEMPRE
+
+  **1 · Saluda al sitio, no a la persona.** El nombre de la casa y la
+  hora grande. Sin avatar y sin «Buenas tardes, Juan Miguel»: la tableta
+  no es de nadie. Saludar por su nombre a la cuenta del aparato sería
+  además mentira — se llama «La cocina».
 
   **2 · No hay navegación.** Ni rail ni barra: los dos se apagan solos
   cuando quien mira es un `dispositivo` (`app/rail.tsx`,
@@ -30,31 +62,25 @@ export const dynamic = 'force-dynamic'
   parar de andar.
 
   **3 · Solo lo que se decidió que saliera.** Y eso no lo decide esta
-  pantalla: lo decide la base. Las restrictivas del paso 63 y del 64 ya
-  filtran por `visible_en_casa` y por el techo de la clase, así que
-  aquí se piden los recordatorios del día **sin una sola condición
-  añadida** y llega únicamente lo que puede llegar.
+  pantalla: lo decide la base. Las restrictivas del paso 63 y del 64
+  filtran por `visible_en_casa` y por el techo de la clase, así que aquí
+  se piden los recordatorios **sin una sola condición añadida** y llega
+  únicamente lo que puede llegar.
 
   Es a propósito: si esta pantalla filtrara por su cuenta, habría dos
   reglas para lo mismo y la de arriba —la de verdad— dejaría de ser la
   única. El día que una se olvide, que se olvide la que no protege.
 
-  **4 · Tamaño de pared.** El cuerpo va a 26–34 px. No es para leerlo
-  sentado: es para verlo desde la puerta.
+  **4 · Tamaño de pared.** La hora a 96 px, lo de hoy a 34, lo de
+  después a 27. No es para leerlo sentado: es para verlo desde la
+  puerta.
 
   **5 · Cosas de pantalla encendida.** Se refresca sola cada cinco
   minutos, sin ruedas girando, y a partir de las once de la noche baja
   el brillo. Lo lleva `reloj.tsx`, que es lo único de navegador que
-  tiene esta pantalla.
-
-  ─────────────────────────────────────────────────────────────
-  Y LO QUE NO LLEVA, DICHO
-
-  No lleva la lista de la compra ni el corcho todavía. El aparato SÍ
-  tiene nivel para los dos (`compra` y `dia` son `anadir` para una
-  pantalla), así que caben — pero una pantalla de pared que se toca es
-  otra conversación, y hoy lo que hace falta es que se VEA. Primero
-  esto, y cuando esté colgada de verdad se decide lo demás mirándola.
+  tiene esta pantalla. Y va siempre en claro: el tema se fija en el
+  `<html>` desde `layout.tsx`, porque en una tableta colgada de una
+  pared no hay nadie que vaya a entrar en Ajustes.
 */
 
 export default async function LaPared() {
@@ -114,88 +140,147 @@ export default async function LaPared() {
     ── DOS COLUMNAS CUANDO LA PARED ES ANCHA ──
 
     Una tableta de cocina en horizontal, o un televisor, son 1280 px o
-    más. Con una sola columna, «Hoy» y «Después» bajaban pegados al
-    borde izquierdo y los otros dos tercios de la pantalla se quedaban
-    en negro: lo que se ve desde la puerta es un cartel pequeño en la
-    esquina de un rectángulo vacío.
+    más. Con una sola columna todo bajaba pegado al borde izquierdo y
+    los otros dos tercios se quedaban vacíos: lo que se ve desde la
+    puerta es un cartel pequeño en la esquina de un rectángulo.
 
-    Se parte en dos a partir de 1280 y solo cuando hay las dos cosas.
-    Si no hay nada después, «Hoy» se queda ancho — media pantalla vacía
-    a la derecha sería el mismo fallo con otra forma.
+    Se parte en dos solo cuando hay las dos cosas. Si no hay nada
+    después, «Hoy» se queda ancho — media pantalla vacía a la derecha
+    sería el mismo fallo con otra forma.
   */
   const enDos = luego.length > 0
 
   return (
-    <main className="min-h-screen px-10 py-8 xl:px-14" id="la-pared">
+    <main className="min-h-screen bg-fondo px-10 py-9 xl:px-14" id="la-pared">
       {/* ── Dónde y cuándo ── */}
-      <header className="flex items-end justify-between gap-8">
-        <div className="min-w-0">
-          <p className="truncate text-[26px] font-extrabold uppercase tracking-[0.18em] text-tenue">
-            {laCasa.data?.nombre ?? 'En casa'}
-          </p>
-          <Reloj />
-        </div>
+      <header className="min-w-0">
+        <p className="truncate text-[22px] font-extrabold uppercase tracking-[0.2em] text-tenue">
+          {laCasa.data?.nombre ?? 'En casa'}
+        </p>
+        <Reloj />
       </header>
 
-      <div className={enDos ? 'xl:grid xl:grid-cols-2 xl:items-start xl:gap-20' : undefined}>
-      {/* ── HOY ── */}
-      <section className="mt-10">
-        <h2 className="text-[22px] font-extrabold uppercase tracking-[0.18em] text-tenue">Hoy</h2>
+      <div className={enDos ? 'xl:grid xl:grid-cols-2 xl:items-start xl:gap-14' : undefined}>
+        {/* ── HOY ── */}
+        <section className="mt-12">
+          <h2 className="text-[20px] font-extrabold uppercase tracking-[0.2em] text-tenue">Hoy</h2>
 
-        {deHoy.length === 0 ? (
-          /* El vacío es la mejor pantalla posible, y se diseña con
-             cariño: no dice «no hay datos», dice que no hay nada que
-             hacer, que es una buena noticia. */
-          <p className="mt-5 text-[32px] font-extrabold leading-snug text-tinta-suave">
-            Hoy no hay nada apuntado.
-          </p>
-        ) : (
-          <ul className="mt-5 space-y-4">
-            {deHoy.map((r) => (
-              <li key={r.id} className="flex items-baseline gap-5">
-                <span className="w-[130px] shrink-0 text-[30px] font-extrabold tabular-nums text-tinta-suave">
-                  {r.hora ? r.hora.slice(0, 5) : '—'}
-                </span>
-                <span className="text-[34px] leading-none" aria-hidden>
-                  {iconoDe(r.tipo)}
-                </span>
-                <span className="min-w-0 text-[34px] font-extrabold leading-tight text-tinta">
-                  {r.titulo}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          {deHoy.length === 0 ? (
+            /*
+              El vacío es la mejor pantalla posible y se diseña con
+              cariño: no dice «no hay datos», dice que no hay nada que
+              hacer, que es una buena noticia.
 
-      {/* ── LO QUE VIENE ── */}
-      {luego.length > 0 && (
-        <section className="mt-12 xl:mt-10">
-          <h2 className="text-[22px] font-extrabold uppercase tracking-[0.18em] text-tenue">
-            Después
-          </h2>
-          <ul className="mt-5 space-y-3">
-            {luego.map((r) => (
-              <li key={r.id} className="flex items-baseline gap-5">
-                {/* 210 y no 130: con el año escrito, «mar 10 ago 2027» no
-                    cabía y partía por la mitad, dejando un «ago» solo en
-                    la línea de abajo. */}
-                <span className="w-[210px] shrink-0 whitespace-nowrap text-[24px] font-extrabold tabular-nums text-tenue">
-                  {diaCorto(r.fecha, anoDeHoy)}
-                </span>
-                <span className="text-[26px] leading-none" aria-hidden>
-                  {iconoDe(r.tipo)}
-                </span>
-                <span className="min-w-0 text-[26px] font-extrabold leading-tight text-tinta-suave">
-                  {r.titulo}
-                </span>
-              </li>
-            ))}
-          </ul>
+              Va en tarjeta como todo lo demás. Un párrafo suelto sobre
+              el papel parecía que la pantalla no había terminado de
+              cargar.
+            */
+            <div className="mt-6 rounded-[28px] border border-borde bg-superficie px-8 py-10">
+              <p className="text-[32px] font-extrabold leading-snug text-tinta-suave">
+                Hoy no hay nada apuntado.
+              </p>
+            </div>
+          ) : (
+            <ul className="mt-6 space-y-4">
+              {deHoy.map((r) => (
+                <EnLaPared key={r.id} r={r} cuando={r.hora ? r.hora.slice(0, 5) : ''} grande />
+              ))}
+            </ul>
+          )}
         </section>
-      )}
+
+        {/* ── LO QUE VIENE ── */}
+        {luego.length > 0 && (
+          <section className="mt-12">
+            <h2 className="text-[20px] font-extrabold uppercase tracking-[0.2em] text-tenue">
+              Después
+            </h2>
+            <ul className="mt-6 space-y-3">
+              {luego.map((r) => (
+                <EnLaPared key={r.id} r={r} cuando={diaCorto(r.fecha, anoDeHoy)} />
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
     </main>
+  )
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  UNA COSA EN LA PARED
+  ═══════════════════════════════════════════════════════════════
+
+  La misma tarjeta de `tablon/tarjeta.tsx`, sin nada de lo que se toca:
+  papel blanco, marca del ámbito al borde izquierdo, pastilla con el
+  icono dibujado, y el cuándo en cifra tabular a la izquierda del texto.
+
+  Dos tamaños y ni uno más —el de hoy y el de después—, por la misma
+  razón por la que `Fila` tiene dos alturas: en cuanto haya tres,
+  vuelve a haber un dibujo por pantalla en vez de un sistema.
+*/
+function EnLaPared({
+  r,
+  cuando,
+  grande = false,
+}: {
+  r: Recordatorio
+  /** La hora, o el día. Ya escrito, porque quien lo sabe es de fuera. */
+  cuando: string
+  grande?: boolean
+}) {
+  /*
+    La MISMA función que pinta esa tarea en el tablón y en la agenda.
+    Antes esta pantalla tenía su propia tabla de emojis, así que una
+    cita médica era 🩺 aquí y un corazón rosa en el móvil: dos idiomas
+    para la misma cosa, y ninguno de los dos era el de HUBI.
+  */
+  const p = pintaDe(r.titulo)
+
+  return (
+    <li
+      className={`flex items-center rounded-[28px] border bg-superficie ${
+        grande ? 'gap-7 px-7 py-6' : 'gap-5 px-6 py-4'
+      }`}
+      style={{
+        borderColor: 'var(--t-borde)',
+        borderLeft: `6px solid ${AMBITO[p.ambito]}`,
+      }}
+    >
+      {/*
+        El cuándo va PRIMERO, que es lo que se busca desde la puerta, y
+        en columna fija para que los títulos de todas las filas empiecen
+        en el mismo sitio. Sin hora, la columna se queda vacía en vez de
+        poner una raya: un guion a 40 px es una cosa que hay que leer
+        para descubrir que no dice nada.
+
+        275 px en «después», y `whitespace-nowrap`. Con 230 px, «mar 10
+        ago 2027» partía y dejaba el «2027» solo en la línea de abajo —
+        que es la regla 1 de `reglas-de-pantalla.md` otra vez, y ya van
+        dos veces en esta misma pantalla. Se vio renderizándola y
+        mirándola, no leyendo el código.
+      */}
+      <span
+        className={`shrink-0 whitespace-nowrap font-extrabold tabular-nums tracking-tight ${
+          grande
+            ? 'w-[132px] text-[40px] text-tinta xl:w-[150px] xl:text-[48px]'
+            : 'w-[275px] text-[26px] text-tinta-suave'
+        }`}
+      >
+        {cuando}
+      </span>
+
+      <PastillaAmbito icono={p.icono} ambito={p.ambito} tam={grande ? 64 : 48} />
+
+      <span
+        className={`min-w-0 flex-1 font-extrabold leading-tight text-tinta ${
+          grande ? 'text-[34px] xl:text-[38px]' : 'text-[27px]'
+        }`}
+      >
+        {r.titulo}
+      </span>
+    </li>
   )
 }
 

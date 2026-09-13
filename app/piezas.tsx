@@ -408,11 +408,23 @@ export function Tarjeta({
  * 48 px en una tarjeta de acción, 44 en una fila. Radio de campo,
  * porque es un cuadrado pequeño y no una tarjeta.
  */
+/*
+  Las cuatro primeras son las de la aplicación. Las dos últimas existen
+  solo para la pantalla de la pared, que se mira a dos metros: son la
+  misma pastilla con la misma proporción —radio a un tercio del lado,
+  icono a la mitad— y no un dibujo nuevo.
+
+  Se añaden aquí y no se pintan a mano en `/casa` justamente por eso: en
+  cuanto la pastilla se dibuja dos veces, un día cambia en un sitio y no
+  en el otro.
+*/
 const PASTILLA: Record<number, { radio: number; icono: number }> = {
   24: { radio: 8, icono: 14 },
   40: { radio: 13, icono: 20 },
   44: { radio: 14, icono: 22 },
   48: { radio: 16, icono: 24 },
+  64: { radio: 21, icono: 32 },
+  80: { radio: 26, icono: 40 },
 }
 
 export function PastillaAmbito({
@@ -422,7 +434,7 @@ export function PastillaAmbito({
 }: {
   icono: Icono
   ambito?: Ambito
-  tam?: 24 | 40 | 44 | 48
+  tam?: 24 | 40 | 44 | 48 | 64 | 80
 }) {
   const color = AMBITO[ambito]
   const m = PASTILLA[tam]

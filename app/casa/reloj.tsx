@@ -74,9 +74,10 @@ export default function Reloj() {
   }, [ahora])
 
   if (!ahora) {
-    /* El hueco mide lo mismo que la hora, para que al llegar no empuje
-       nada hacia abajo. */
-    return <div className="h-[104px]" aria-hidden />
+    /* El hueco mide lo mismo que la hora Y la fecha juntas, para que al
+       llegar no empuje nada hacia abajo. Medía 104 cuando ya ocupaban
+       más: la pantalla daba un salto al segundo de encenderse. */
+    return <div className="h-[150px] xl:h-[192px]" aria-hidden />
   }
 
   const hh = String(ahora.getHours()).padStart(2, '0')
@@ -84,7 +85,13 @@ export default function Reloj() {
 
   return (
     <div>
-      <p className="mt-1 text-[84px] font-extrabold leading-none tabular-nums tracking-tight text-tinta">
+      {/*
+        La hora es el número grande de esta pantalla, y en una pared de
+        1080 px de alto 96 px se queda corta: el bloque entero se
+        amontonaba arriba a la izquierda y dejaba media pantalla en
+        blanco. En grande sube a 132.
+      */}
+      <p className="mt-1.5 text-[96px] font-extrabold leading-none tabular-nums tracking-tight text-tinta xl:text-[132px]">
         {hh}:{mm}
       </p>
       {/*
@@ -92,7 +99,7 @@ export default function Reloj() {
         «Domingo 13 De Septiembre». En español la mayúscula es solo la
         primera, y ni los días ni los meses la llevan.
       */}
-      <p className="mt-2 text-[26px] font-extrabold text-tinta-suave">
+      <p className="mt-2 text-[26px] font-extrabold text-tinta-suave xl:text-[30px]">
         {enMayuscula(
           `${DIAS[ahora.getDay()]} ${ahora.getDate()} de ${MESES[ahora.getMonth()]}`
         )}
