@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { grabarVoz, sePuedeGrabar, type Grabando } from '../../../hablar/grabadora'
 import { Ico } from '../../../iconos'
-import { AMBITO } from '../../../piezas'
+import { NOCHE, DEGRADADO, DEGRADADO_TUMBADO } from '@/lib/voz-hubi'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -263,16 +263,13 @@ export default function Apuntar({ fecha, gente }: { fecha: string; gente: Quien[
               else if (!pensando) escuchar()
             }}
             disabled={pensando}
-            className="tocable mt-3 flex h-[72px] w-full items-center justify-center gap-3 rounded-[24px] border-2 text-[22px] font-extrabold disabled:opacity-60"
-            style={
-              oyendo
-                ? {
-                    borderColor: AMBITO.verde,
-                    background: `color-mix(in srgb, ${AMBITO.verde} 10%, var(--t-superficie))`,
-                    color: 'var(--t-tinta)',
-                  }
-                : { borderColor: 'var(--t-borde)', background: 'var(--t-fondo)', color: 'var(--t-tinta-suave)' }
-            }
+            /* El azul de noche de HUBI: en toda la aplicación este color
+               significa «esto escucha y entiende». Ver `lib/voz-hubi.ts`. */
+            className="tocable mt-3 flex h-[72px] w-full items-center justify-center gap-3 rounded-[24px] text-[22px] font-extrabold text-white disabled:opacity-60"
+            style={{
+              background: NOCHE,
+              backgroundImage: oyendo ? DEGRADADO : undefined,
+            }}
           >
             <Ico nombre="micro" tam={26} grosor={2.3} />
             {pensando
@@ -288,7 +285,7 @@ export default function Apuntar({ fecha, gente }: { fecha: string; gente: Quien[
                 className="h-full rounded-full transition-[width] duration-100"
                 style={{
                   width: `${Math.min(100, Math.round(nivel * 140))}%`,
-                  background: AMBITO.verde,
+                  background: DEGRADADO_TUMBADO,
                 }}
               />
             </div>

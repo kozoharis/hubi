@@ -7,6 +7,7 @@ import ColorDeBarra from '../color-barra'
 import { grabarVoz, sePuedeGrabar, type Grabando } from './grabadora'
 import { decir, callar } from './decir'
 import { api } from '@/lib/api'
+import { NOCHE, DEGRADADO } from '@/lib/voz-hubi'
 
 type Estado = 'listo' | 'grabando' | 'pensando' | 'buscando' | 'entendido' | 'guardando' | 'hecho'
 
@@ -679,9 +680,9 @@ export default function Grabar({
   return (
     <main
       className="techo relative min-h-screen overflow-hidden px-6 pb-8"
-      style={{ background: '#01071B', color: '#fff' }}
+      style={{ background: NOCHE, color: '#fff' }}
     >
-      <ColorDeBarra color="#01071B" />
+      <ColorDeBarra color={NOCHE} />
 
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <span className="mancha deriva-1" style={{ width: 330, height: 330, left: -130, top: -100, background: 'rgba(20,184,166,.34)' }} />
@@ -761,7 +762,7 @@ export default function Grabar({
                          icono: la onda en vez del micrófono. Que algo
                          cambie de color al pulsarlo no dice qué está
                          pasando; que cambie de dibujo, sí. */
-                      background: 'linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)',
+                      background: DEGRADADO,
                       boxShadow: '0 14px 44px rgba(20,184,166,.42)',
                     }}
                   >
@@ -869,7 +870,7 @@ export default function Grabar({
                       disabled={escrito.trim().length === 0}
                       aria-label="Enviar"
                       className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[13px] text-white disabled:opacity-30"
-                      style={{ background: 'linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)' }}
+                      style={{ background: DEGRADADO }}
                     >
                       <Ico nombre="flecha" tam={22} grosor={2.4} />
                     </button>

@@ -83,7 +83,7 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
   const delMes = `${ano}-${String(mes).padStart(2, '0')}`
   const ultimo = String(new Date(ano, mes, 0).getDate()).padStart(2, '0')
 
-  const [cosas, menus, delMesEntero, puedeApuntar, gente] = await Promise.all([
+  const [cosas, menus, delMesEntero, puedeApuntar, gente, puedeCambiar] = await Promise.all([
     loApuntado(supabase, casa, fecha, fecha),
     losMenus(supabase, casa, fecha, fecha),
     loApuntado(supabase, casa, `${delMes}-01`, `${delMes}-${ultimo}`),
@@ -140,6 +140,20 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
           .filter((q) => q.nombre.length > 0) as Quien[]
       } catch {
         return [] as Quien[]
+      }
+    })(),
+    /*
+      ¿Puede esta pantalla cambiar y quitar? Se le pregunta a la base
+      igual que lo de apuntar. Si el paso 79 no está dado, la función no
+      existe, esto contesta que no y el botón de Cambiar no sale.
+    */
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc('la_cocina_cambia', { casa })
+        if (error) return false
+        return data === true
+      } catch {
+        return false
       }
     })(),
   ])
@@ -212,6 +226,11 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
                   cuando={c.hora ? c.hora.slice(0, 5) : 'Sin hora'}
                   talla="lista"
                   hecha={c.estado === 'hecho'}
+                  cambiable={puedeCambiar}
+                  fecha={c.fecha}
+                  hora={c.hora}
+                  para={c.asignado_a ?? null}
+                  gente={gente}
                 />
               ))}
             </ul>
@@ -249,7 +268,7 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
                     ) : (
                       <ul className="space-y-2">
                         {suyas.map((c) => (
-                          <EnSuHora key={c.id} c={c} />
+                          <EnSuHora key={c.id} c={c} cambiable={puedeCambiar} gente={gente} />
                         ))}
                       </ul>
                     )}
@@ -281,7 +300,15 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
 
   Se tacha tocándolo, como en todas partes en la pared.
 */
-function EnSuHora({ c }: { c: CosaDeLaPared }) {
+function EnSuHora({
+  c,
+  cambiable,
+  gente,
+}: {
+  c: CosaDeLaPared
+  cambiable: boolean
+  gente: Quien[]
+}) {
   return (
     <Cosa
       id={c.id}
@@ -289,6 +316,11 @@ function EnSuHora({ c }: { c: CosaDeLaPared }) {
       cuando={c.hora!.slice(0, 5)}
       talla="lista"
       hecha={c.estado === 'hecho'}
+      cambiable={cambiable}
+      fecha={c.fecha}
+      hora={c.hora}
+      para={c.asignado_a ?? null}
+      gente={gente}
     />
   )
 }

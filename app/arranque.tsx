@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { DEGRADADO } from '@/lib/voz-hubi'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -133,7 +134,7 @@ export default function Arranque() {
         className="hubi-linea mt-[26px] block h-[2px] w-[148px] rounded-sm"
         style={{
           transformOrigin: 'center',
-          background: 'linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)',
+          background: DEGRADADO,
         }}
       />
 

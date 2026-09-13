@@ -7,6 +7,7 @@ import { clienteNavegador } from '@/lib/supabase/navegador'
 import { Ico, Logo } from '../iconos'
 import ColorDeBarra from '../color-barra'
 import { api } from '@/lib/api'
+import { NOCHE } from '@/lib/voz-hubi'
 
 /*
   Tres pasos, no dos.
@@ -168,10 +169,10 @@ export default function Entrar() {
   return (
     <main
       className="techo relative flex min-h-screen flex-col justify-center overflow-hidden px-6 pb-16"
-      style={{ background: '#01071B' }}
+      style={{ background: NOCHE }}
     >
       {/* El color que va a la deriva por detrás */}
-      <ColorDeBarra color="#01071B" />
+      <ColorDeBarra color={NOCHE} />
 
       {/*
         ═══════════════════════════════════════════════════════

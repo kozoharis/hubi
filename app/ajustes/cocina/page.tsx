@@ -269,6 +269,38 @@ export default async function LaCocina() {
         </div>
 
         {/*
+          ── EL AVISO DEL MICRÓFONO, ANTES Y NO DESPUÉS ──
+
+          La pared tiene micrófono: se puede dictar la compra, apuntar
+          algo en un día y dejar una nota. Pero el navegador de la
+          tableta pide permiso la primera vez, y eso NO se puede
+          conceder desde aquí — hay que hacerlo en la propia tableta.
+
+          Haris: *«sería bueno que dé el aviso desde el inicio»*. Y
+          tiene razón por una razón concreta: si esto no se dice aquí, se
+          descubre el día que alguien está de pie en la cocina con las
+          manos mojadas, toca el micrófono y sale un cartel del navegador
+          que nadie esperaba. Se toca «Bloquear» por reflejo, y entonces
+          la voz queda apagada para siempre sin que nadie sepa por qué.
+
+          Dicho antes, es una casilla que se marca una vez mientras se
+          cuelga la tableta.
+        */}
+        <div className="mt-6 rounded-[24px] border border-borde px-5 py-4">
+          <p className="t-cuerpo font-extrabold">Una cosa al colgar la tableta</p>
+          <p className="t-apoyo mt-1.5 leading-snug">
+            En la cocina se puede hablar: dictar la compra, apuntar algo en un día y dejar una
+            nota. La primera vez que se toque el micrófono, el navegador de la tableta
+            preguntará si le deja usarlo. Hay que decir que{' '}
+            <strong className="text-tinta">sí</strong>, y solo se pregunta una vez.
+          </p>
+          <p className="t-apoyo mt-2 leading-snug">
+            Si por lo que sea se dijo que no, se vuelve a permitir desde los ajustes del propio
+            navegador de la tableta. Desde aquí no se puede.
+          </p>
+        </div>
+
+        {/*
           ── LAS FOTOS, Y SOLO SI HAY PANTALLA ──
 
           Debajo de todo, porque es lo último que se decide: primero qué

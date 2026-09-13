@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { grabarVoz, sePuedeGrabar, type Grabando } from '../../hablar/grabadora'
 import { Ico } from '../../iconos'
 import { AMBITO } from '../../piezas'
+import { NOCHE, DEGRADADO, DEGRADADO_TUMBADO, TURQUESA } from '@/lib/voz-hubi'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -203,7 +204,20 @@ export default function Dictar() {
   if (estado === 'leyendo') {
     return (
       <div className="mt-5 rounded-[28px] border border-borde bg-superficie px-7 py-6">
-        <p className="text-[19px] font-extrabold uppercase tracking-[0.14em] text-tenue">
+        {/*
+          Este cartel lleva el color de la voz y no el de la compra, y
+          es a propósito: lo de aquí abajo TODAVÍA NO ESTÁ GUARDADO. Es
+          lo que HUBI cree haber oído, y hasta que no se toca «Apuntarlo»
+          no es una lista de la compra — es una interpretación.
+
+          En cuanto se guarda, se pinta con el oliva de la compra como
+          todo lo demás. El color dice en qué punto está.
+        */}
+        <p className="flex items-center gap-3 text-[19px] font-extrabold uppercase tracking-[0.14em] text-tenue">
+          <span
+            className="block h-[14px] w-[14px] shrink-0 rounded-full"
+            style={{ background: DEGRADADO }}
+          />
           Esto es lo que he entendido
         </p>
 
@@ -214,7 +228,7 @@ export default function Dictar() {
               className="flex items-center gap-4 rounded-[20px] border px-5 py-3"
               style={{
                 borderColor: 'var(--t-borde)',
-                borderLeft: `6px solid ${AMBITO.oliva}`,
+                borderLeft: `6px solid ${TURQUESA}`,
               }}
             >
               <span className="text-[28px] font-extrabold leading-tight text-tinta">{q}</span>
@@ -285,12 +299,28 @@ export default function Dictar() {
           else if (!pensando) empezar()
         }}
         disabled={pensando}
-        className="tocable flex h-[88px] w-full items-center justify-center gap-4 rounded-[24px] border-2 text-[26px] font-extrabold disabled:opacity-60"
-        style={
-          oyendo
-            ? { borderColor: AMBITO.oliva, background: `color-mix(in srgb, ${AMBITO.oliva} 10%, var(--t-superficie))`, color: 'var(--t-tinta)' }
-            : { borderColor: 'var(--t-borde)', background: 'var(--t-superficie)', color: 'var(--t-tinta)' }
-        }
+        /*
+          ── EL COLOR DE LA VOZ, EL DE HUBI ──
+
+          Azul de noche y letra blanca. No es decoración: en HUBI este
+          color significa una cosa concreta —«esto ESCUCHA y entiende»—
+          y es el mismo de la pantalla de Hablar del móvil, del arranque
+          y de la puerta de entrar.
+
+          Antes este botón era una tarjeta blanca más, igual que el de
+          apuntar de al lado. Y eso estaba mal por algo más que estético:
+          en una pared llena de tarjetas blancas, la única que hace algo
+          distinto tiene que parecer distinta.
+
+          Los colores, en `lib/voz-hubi.ts`.
+        */
+        className="tocable flex h-[88px] w-full items-center justify-center gap-4 rounded-[24px] text-[26px] font-extrabold text-white disabled:opacity-60"
+        style={{
+          background: NOCHE,
+          /* Mientras escucha, el degradado por encima: se ve desde la
+             puerta de la cocina que la pared está oyendo. */
+          backgroundImage: oyendo ? DEGRADADO : undefined,
+        }}
       >
         <Ico nombre="micro" tam={32} grosor={2.3} />
         {pensando ? 'Un momento…' : oyendo ? 'Te escucho · toca para terminar' : 'Decirlo en voz alta'}
@@ -301,6 +331,10 @@ export default function Dictar() {
         prueba honesta de que el micrófono está entrando. Se mueve
         porque hay sonido, no porque se haya entendido algo — y eso es
         exactamente lo que hay que enseñar mientras se habla.
+
+        El degradado tumbado y no el de 140 grados: con el inclinado,
+        una barra corta sale entera turquesa y no se distingue de una
+        larga.
       */}
       {oyendo && (
         <div className="mt-3 h-[10px] w-full overflow-hidden rounded-full" style={{ background: 'var(--t-velo)' }}>
@@ -308,7 +342,7 @@ export default function Dictar() {
             className="h-full rounded-full transition-[width] duration-100"
             style={{
               width: `${Math.min(100, Math.round(nivel * 140))}%`,
-              background: AMBITO.oliva,
+              background: DEGRADADO_TUMBADO,
             }}
           />
         </div>

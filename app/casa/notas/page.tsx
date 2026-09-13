@@ -1,6 +1,7 @@
 import { laPared } from '@/lib/pared'
 import { AMBITO } from '../../piezas'
 import { Nada, Rotulo } from '../rotulo'
+import Apuntar from './apuntar'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,18 +44,61 @@ export const dynamic = 'force-dynamic'
 type Nota = {
   id: string
   texto: string
-  creado_en: string | null
+  creada_en: string | null
 }
 
 export default async function Notas() {
   const { supabase, casa } = await laPared()
 
+  /*
+    ⚠️  AQUÍ HABÍA UN FALLO, Y DE LOS QUE NO SE VEN
+
+    Ponía `creado_en`. La columna se llama `creada_en` —una nota es
+    femenina, y así se escribió en el sql/35—. Postgres no devuelve la
+    columna vacía en ese caso: **rechaza la consulta entera**. O sea que
+    esta pestaña no es que saliera sin fechas: salía SIEMPRE vacía,
+    diciendo «no hay nada escrito en el corcho» aunque hubiera diez
+    notas puestas.
+
+    Y no daba error en ningún sitio, porque el error se recogía en un
+    `data` nulo que la pantalla interpreta como «no hay notas».
+
+    La regla que sale de aquí: cuando una pantalla enseñe
+    invariablemente su estado vacío, sospechar del nombre de las
+    columnas antes que de los datos.
+
+    ── Y lo guardado, fuera ──
+
+    Faltaba también `guardada_en is null`. Una nota que alguien ha
+    quitado de en medio desde el móvil seguía colgada en la cocina: la
+    restrictiva del paso 63 filtra por `visible_en_casa`, que es otra
+    cosa. Se quita de la casa, se quita de la pared.
+  */
   const { data } = await supabase
     .from('notas')
-    .select('id, texto, creado_en')
+    .select('id, texto, creada_en')
     .eq('hogar_id', casa)
-    .order('creado_en', { ascending: false })
+    .is('guardada_en', null)
+    .order('creada_en', { ascending: false })
     .limit(12)
+
+  /*
+    ¿Puede esta pantalla dejar una nota? Se le pregunta a la BASE, no se
+    deduce aquí. Si el paso 78 no está dado, la función no existe, esto
+    contesta que no y el botón no sale.
+
+    Un botón que falla es peor que ningún botón — la misma regla que con
+    lo de tachar y lo de apuntar.
+  */
+  const puedeDejarNotas = await (async () => {
+    try {
+      const { data, error } = await supabase.rpc('la_cocina_deja_notas', { casa })
+      if (error) return false
+      return data === true
+    } catch {
+      return false
+    }
+  })()
 
   const notas = (data ?? []) as Nota[]
 
@@ -83,13 +127,21 @@ export default async function Notas() {
               <p className="whitespace-pre-wrap text-[24px] font-extrabold leading-snug text-tinta">
                 {n.texto}
               </p>
-              {n.creado_en && (
-                <p className="mt-2.5 text-[16px] font-bold text-tenue">{haceCuanto(n.creado_en)}</p>
+              {n.creada_en && (
+                <p className="mt-2.5 text-[16px] font-bold text-tenue">{haceCuanto(n.creada_en)}</p>
               )}
             </div>
           ))}
         </div>
       )}
+
+      {/*
+        Y se puede clavar una nota desde aquí (paso 78). Va debajo del
+        corcho y no encima: esta pantalla se lee mucho más de lo que se
+        escribe, y un campo de texto permanente en una pared invita a
+        que alguien escriba cualquier cosa al pasar.
+      */}
+      {puedeDejarNotas && <Apuntar />}
     </section>
   )
 }

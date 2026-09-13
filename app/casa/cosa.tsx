@@ -49,12 +49,20 @@ import { AMBITO, PastillaAmbito } from '../piezas'
 
 export type Talla = 'hoy' | 'lista' | 'columna'
 
+/** Alguien de la casa, para poder decir de quién es un recado. */
+export type Quien = { id: string; nombre: string; color: string }
+
 export default function Cosa({
   id,
   titulo,
   cuando,
   talla = 'lista',
   hecha = false,
+  cambiable = false,
+  fecha,
+  hora,
+  para = null,
+  gente = [],
 }: {
   /** Con identificador, se puede tachar. Sin él, es papel. */
   id?: string
@@ -63,10 +71,18 @@ export default function Cosa({
   cuando?: string
   talla?: Talla
   hecha?: boolean
+  /** Con esto sale el botón de Cambiar (paso 79). */
+  cambiable?: boolean
+  /** Lo que hay guardado, para poder editarlo sin volver a pedirlo. */
+  fecha?: string | null
+  hora?: string | null
+  para?: string | null
+  gente?: Quien[]
 }) {
   const router = useRouter()
   const [marcada, setMarcada] = useState(hecha)
   const [fallo, setFallo] = useState(false)
+  const [editando, setEditando] = useState(false)
 
   /*
     La MISMA función que pinta esa tarea en el tablón y en la agenda.
@@ -187,6 +203,33 @@ export default function Cosa({
     </>
   )
 
+  /*
+    ── CAMBIAR ESTÁ ABIERTO (paso 79) ──
+
+    El botón va FUERA del botón de tachar, no dentro: un botón dentro de
+    otro botón no es HTML válido y, peor, en una pantalla táctil el
+    dedo no sabe cuál de los dos ha tocado.
+
+    Y es pequeño al lado de la tarjeta entera a propósito: tachar es lo
+    que se hace veinte veces al día y cambiar una vez a la semana. El
+    sitio grande es para lo que se usa.
+  */
+  if (editando && id) {
+    return (
+      <li>
+        <Cambiar
+          id={id}
+          titulo={titulo}
+          fecha={fecha ?? null}
+          hora={hora ?? null}
+          para={para}
+          gente={gente}
+          alCerrar={() => setEditando(false)}
+        />
+      </li>
+    )
+  }
+
   const pinta = {
     borderColor: 'var(--t-borde)',
     borderLeft: `6px solid ${marcada ? 'var(--t-borde)' : AMBITO[p.ambito]}`,
@@ -197,7 +240,7 @@ export default function Cosa({
     `${marcada ? 'opacity-50' : ''}`
 
   return (
-    <li>
+    <li className={cambiable && id ? 'flex items-center gap-3' : undefined}>
       {id ? (
         <button type="button" onClick={tachar} className={`tocable ${clase} text-left`} style={pinta}>
           {dentro}
@@ -207,7 +250,274 @@ export default function Cosa({
           {dentro}
         </div>
       )}
+
+      {cambiable && id && (
+        <button
+          type="button"
+          onClick={() => setEditando(true)}
+          className="tocable flex h-[60px] shrink-0 items-center gap-2.5 rounded-full border border-borde bg-superficie px-6 text-[18px] font-extrabold text-tinta-suave"
+        >
+          <Ico nombre="lapiz" tam={20} grosor={2.3} />
+          Cambiar
+        </button>
+      )}
     </li>
+  )
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  CAMBIAR UNA COSA, DE PIE EN LA COCINA
+  ═══════════════════════════════════════════════════════════════
+
+  El texto, el día, la hora y de quién es. Y quitarlo.
+
+  ─────────────────────────────────────────────────────────────
+  ⚠️  QUITAR NO BORRA, Y SE DICE CON PALABRAS
+
+  Va a la papelera, y desde el móvil se recupera. El botón lo dice —«Se
+  puede recuperar desde el móvil»— porque quien está delante de una
+  pared no tiene por qué saber qué hace HUBI por dentro, y sin esa
+  frase «Quitar» da miedo y no se usa, o da igual y se usa de más.
+
+  Lo que no lleva es un «¿estás seguro?». Una pregunta que sale siempre
+  se contesta que sí sin leerla, y entonces no protege nada: lo que
+  protege de verdad es que se pueda deshacer.
+
+  ─────────────────────────────────────────────────────────────
+  LO QUE NO SE PUEDE CAMBIAR AQUÍ
+
+  Lo que se repite. «Los martes a las cinco, inglés» tiene una pregunta
+  detrás que no cabe en una pared: ¿este martes o todos? Contestarla mal
+  borra seis meses. Eso se hace desde el móvil, y la base lo impide
+  aunque esta pantalla lo mandara (paso 79).
+*/
+function Cambiar({
+  id,
+  titulo,
+  fecha,
+  hora,
+  para,
+  gente,
+  alCerrar,
+}: {
+  id: string
+  titulo: string
+  fecha: string | null
+  hora: string | null
+  para: string | null
+  gente: Quien[]
+  alCerrar: () => void
+}) {
+  const router = useRouter()
+  const [texto, setTexto] = useState(titulo)
+  const [elDia, setElDia] = useState(fecha ?? '')
+  const [laHora, setLaHora] = useState(hora ? hora.slice(0, 5) : '')
+  const [deQuien, setDeQuien] = useState<string | null>(para)
+  const [ocupado, setOcupado] = useState(false)
+  const [fallo, setFallo] = useState<string | null>(null)
+
+  async function mandar(cuerpo: Record<string, unknown>) {
+    setFallo(null)
+    setOcupado(true)
+    try {
+      const r = await fetch(api(`/api/pared/${id}`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cuerpo),
+      })
+      const d = (await r.json().catch(() => null)) as { error?: string } | null
+      if (!r.ok) {
+        setFallo(d?.error ?? 'No se ha podido guardar.')
+        return false
+      }
+      router.refresh()
+      return true
+    } catch {
+      setFallo('No se ha podido guardar.')
+      return false
+    } finally {
+      setOcupado(false)
+    }
+  }
+
+  return (
+    <div className="rounded-[28px] border border-borde bg-superficie px-7 py-6">
+      <label
+        htmlFor={`que-${id}`}
+        className="block text-[19px] font-extrabold uppercase tracking-[0.14em] text-tenue"
+      >
+        Qué hay que recordar
+      </label>
+
+      <input
+        id={`que-${id}`}
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        maxLength={120}
+        autoComplete="off"
+        className="entrada mt-3 h-[80px] w-full text-[28px] font-extrabold"
+      />
+
+      <div className="mt-4 flex flex-wrap items-end gap-4">
+        <div className="w-[260px]">
+          <label
+            htmlFor={`dia-${id}`}
+            className="block text-[17px] font-extrabold uppercase tracking-wider text-tenue"
+          >
+            Qué día
+          </label>
+          <input
+            id={`dia-${id}`}
+            type="date"
+            value={elDia}
+            onChange={(e) => setElDia(e.target.value)}
+            className="entrada mt-2 h-[68px] w-full text-[24px] font-extrabold tabular-nums"
+          />
+        </div>
+
+        <div className="w-[200px]">
+          <label
+            htmlFor={`hora-${id}`}
+            className="block text-[17px] font-extrabold uppercase tracking-wider text-tenue"
+          >
+            A qué hora
+          </label>
+          <input
+            id={`hora-${id}`}
+            type="time"
+            value={laHora}
+            onChange={(e) => setLaHora(e.target.value)}
+            className="entrada mt-2 h-[68px] w-full text-[24px] font-extrabold tabular-nums"
+          />
+        </div>
+      </div>
+
+      {gente.length > 0 && (
+        <div className="mt-4">
+          <p className="text-[17px] font-extrabold uppercase tracking-wider text-tenue">
+            De quién es
+          </p>
+          <div className="mt-2.5 flex flex-wrap gap-2.5">
+            <Pastilla texto="La casa" puesto={deQuien === null} alTocar={() => setDeQuien(null)} />
+            {gente.map((g) => (
+              <Pastilla
+                key={g.id}
+                texto={g.nombre}
+                color={g.color}
+                puesto={deQuien === g.id}
+                alTocar={() => setDeQuien(g.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {fallo && (
+        <p className="mt-4 text-[19px] font-bold" style={{ color: 'var(--t-alerta)' }}>
+          {fallo}
+        </p>
+      )}
+
+      <div className="mt-5 flex flex-wrap gap-3">
+        <button
+          type="button"
+          disabled={ocupado || texto.trim().length < 2}
+          onClick={async () => {
+            const bien = await mandar({
+              titulo: texto,
+              fecha: elDia || null,
+              hora: laHora || null,
+              para: deQuien,
+            })
+            if (bien) alCerrar()
+          }}
+          className="tocable flex h-[72px] flex-1 items-center justify-center gap-3 rounded-[24px] text-[22px] font-extrabold disabled:opacity-45"
+          style={{ background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }}
+        >
+          <Ico nombre="check" tam={26} grosor={2.6} />
+          {ocupado ? 'Guardando…' : 'Guardar'}
+        </button>
+
+        <button
+          type="button"
+          onClick={alCerrar}
+          className="tocable h-[72px] rounded-[24px] border border-borde bg-fondo px-8 text-[21px] font-extrabold text-tinta-suave"
+        >
+          Dejarlo
+        </button>
+      </div>
+
+      {/* Quitar, aparte de los otros dos y con su explicación debajo. */}
+      <div className="mt-5 border-t border-borde pt-5">
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={async () => {
+            const bien = await mandar({ quitar: true })
+            if (bien) alCerrar()
+          }}
+          className="tocable flex h-[64px] items-center gap-3 rounded-full border-2 px-7 text-[20px] font-extrabold disabled:opacity-45"
+          style={{ borderColor: 'var(--t-alerta)', color: 'var(--t-alerta)' }}
+        >
+          <Ico nombre="mas" tam={22} grosor={2.6} className="rotate-45" />
+          Quitarlo de aquí
+        </button>
+        <p className="mt-2.5 text-[17px] font-bold leading-snug text-tenue">
+          No se borra: queda guardado y se puede recuperar desde el móvil.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/* Un nombre para elegir, con SU color — el mismo con el que esa persona
+   sale en la agenda y en el corcho. En una casa el color es el nombre:
+   se reconoce antes de leerlo. «La casa» no lleva ninguno, porque no es
+   de nadie. */
+function Pastilla({
+  texto,
+  color,
+  puesto,
+  alTocar,
+}: {
+  texto: string
+  color?: string
+  puesto: boolean
+  alTocar: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={alTocar}
+      aria-pressed={puesto}
+      className="tocable flex h-[60px] items-center gap-3 rounded-full border px-6 text-[20px] font-extrabold"
+      style={
+        puesto
+          ? {
+              background: color
+                ? `color-mix(in srgb, ${color} 16%, var(--t-superficie))`
+                : 'var(--t-velo)',
+              borderColor: color
+                ? `color-mix(in srgb, ${color} 50%, transparent)`
+                : 'var(--t-tinta-suave)',
+              color: 'var(--t-tinta)',
+            }
+          : {
+              background: 'var(--t-superficie)',
+              borderColor: 'var(--t-borde)',
+              color: 'var(--t-tenue)',
+            }
+      }
+    >
+      {color && (
+        <span
+          className="block h-[13px] w-[13px] shrink-0 rounded-full"
+          style={{ background: color }}
+        />
+      )}
+      {texto}
+    </button>
   )
 }
 

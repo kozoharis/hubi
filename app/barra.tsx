@@ -6,6 +6,7 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { Ico, type Icono } from './iconos'
 import { useCasa } from './actividades-contexto'
 import { pestanasDe, puedeHablar } from './pestanas'
+import { DEGRADADO } from '@/lib/voz-hubi'
 
 /*
   La barra de abajo.
@@ -191,7 +192,7 @@ export default function Barra({
               <span
                 className="relative flex h-[52px] w-[52px] items-center justify-center rounded-full text-white"
                 style={{
-                  background: 'linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)',
+                  background: DEGRADADO,
                   boxShadow:
                     '0 10px 26px rgba(20,184,166,.45), inset 0 1px 0 rgba(255,255,255,.35)',
                 }}

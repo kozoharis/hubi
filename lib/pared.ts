@@ -79,6 +79,9 @@ export type CosaDeLaPared = {
   hora: string | null
   estado: 'pendiente' | 'hecho'
   grupo_id?: string | null
+  /* De quién es. Hace falta desde el paso 79: para poder cambiarlo
+     desde la pared hay que saber primero qué pone ahora. */
+  asignado_a?: string | null
 }
 
 /*
@@ -134,7 +137,7 @@ export async function loApuntado(
 ): Promise<CosaDeLaPared[]> {
   const { data } = await supabase
     .from('recordatorios')
-    .select('id, titulo, fecha, hora, estado, grupo_id')
+    .select('id, titulo, fecha, hora, estado, grupo_id, asignado_a')
     .eq('hogar_id', casa)
     .is('eliminado_en', null)
     .gte('fecha', desde)
@@ -166,7 +169,7 @@ export async function loDestacado(
   try {
     const { data, error } = await supabase
       .from('recordatorios')
-      .select('id, titulo, fecha, hora, estado, grupo_id')
+      .select('id, titulo, fecha, hora, estado, grupo_id, asignado_a')
       .eq('hogar_id', casa)
       .is('eliminado_en', null)
       .eq('destacado', true)
@@ -201,7 +204,7 @@ export async function loSinFecha(
 ): Promise<CosaDeLaPared[]> {
   const { data } = await supabase
     .from('recordatorios')
-    .select('id, titulo, fecha, hora, estado, grupo_id')
+    .select('id, titulo, fecha, hora, estado, grupo_id, asignado_a')
     .eq('hogar_id', casa)
     .is('eliminado_en', null)
     .is('fecha', null)

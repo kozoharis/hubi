@@ -60,7 +60,10 @@ export type EstadoHubi =
   | 'no_entendido'
   | 'sin_microfono'
 
-const DEGRADADO = 'linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)'
+/* Estaba escrito aquí a mano, y en otros cinco sitios. Ahora vive en
+   `lib/voz-hubi.ts` — una identidad copiada seis veces se deshace sola
+   en cuanto alguien retoca una copia. */
+import { DEGRADADO } from '@/lib/voz-hubi'
 
 /**
  * Lo que se sugiere en cada sitio.
