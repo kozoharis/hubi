@@ -181,6 +181,37 @@ export async function loDestacado(
   }
 }
 
+/*
+  ── LO QUE NO TIENE DÍA ──
+
+  Existe desde siempre y hasta ahora no salía en ninguna parte de la
+  pared: `loApuntado` pide por rango de fechas, y lo que no tiene fecha
+  no cae en ningún rango.
+
+  Se notaba poco mientras hubo una pestaña de Tareas. Al fundirla con el
+  Calendario —«tareas y calendario para mí es lo mismo»— habría
+  desaparecido del todo, y eso sí es perder algo.
+
+  Así que va debajo de la semana, al lado de lo destacado: las dos cosas
+  que hay que recordar y que el tiempo no ordena.
+*/
+export async function loSinFecha(
+  supabase: SupabaseClient,
+  casa: string
+): Promise<CosaDeLaPared[]> {
+  const { data } = await supabase
+    .from('recordatorios')
+    .select('id, titulo, fecha, hora, estado, grupo_id')
+    .eq('hogar_id', casa)
+    .is('eliminado_en', null)
+    .is('fecha', null)
+    .neq('estado', 'hecho')
+    .order('creado_en', { ascending: false })
+    .limit(12)
+
+  return unaSolaVez((data ?? []) as CosaDeLaPared[])
+}
+
 export type MenuDelDia = { fecha: string; momento: string; que: string | null }
 
 /** Los menús de una semana. Vacío y sin ruido si el sql/48 no está. */

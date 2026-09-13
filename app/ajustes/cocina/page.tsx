@@ -8,6 +8,7 @@ import Encabezado from '../../encabezado'
 import { Volver } from '../../iconos'
 import Decidir, { type Cuenta } from './decidir'
 import AnadirPantalla from './anadir-pantalla'
+import Fotos from './fotos'
 
 export const dynamic = 'force-dynamic'
 
@@ -211,6 +212,18 @@ export default async function LaCocina() {
         <div className="mt-4">
           <AnadirPantalla pantallas={pantallas} />
         </div>
+
+        {/*
+          ── LAS FOTOS, Y SOLO SI HAY PANTALLA ──
+
+          Debajo de todo, porque es lo último que se decide: primero qué
+          se ve, luego se cuelga el aparato, y cuando ya está colgado se
+          le ponen fotos.
+
+          Y solo si hay alguna pantalla dada de alta. Subir fotos para
+          una pared que no existe es una sección que no significa nada.
+        */}
+        {pantallas.length > 0 && <Fotos />}
       </div>
 
       <Barra activa="ajustes" />

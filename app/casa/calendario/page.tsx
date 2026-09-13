@@ -1,7 +1,7 @@
 import Link from '@/app/enlace'
 import { hoyAqui } from '@/lib/tablon'
 import { elLunesDe, laSemanaDe, comoSeLlamaLaSemana, otraSemana } from '@/lib/menus'
-import { laPared, loApuntado, loDestacado, losMenus } from '@/lib/pared'
+import { laPared, loApuntado, loDestacado, loSinFecha, losMenus } from '@/lib/pared'
 import { Ico, type Icono } from '../../iconos'
 import { AMBITO, PastillaAmbito } from '../../piezas'
 import { pintaDe } from '../../iconos'
@@ -100,12 +100,18 @@ export default async function Calendario({
   const delMes = `${ano}-${String(mes).padStart(2, '0')}`
   const ultimo = String(new Date(ano, mes, 0).getDate()).padStart(2, '0')
 
-  const [cosas, menus, delMesEntero, destacado] = await Promise.all([
+  const [cosas, menus, delMesEntero, destacado, sinFecha] = await Promise.all([
     loApuntado(supabase, casa, dias[0], dias[6]),
     losMenus(supabase, casa, dias[0], dias[6]),
     loApuntado(supabase, casa, `${delMes}-01`, `${delMes}-${ultimo}`),
     loDestacado(supabase, casa),
+    loSinFecha(supabase, casa),
   ])
+
+  /* Lo destacado primero y lo que no tiene día detrás, sin repetir: algo
+     puede estar en las dos listas. */
+  const yaEsta = new Set(destacado.map((c) => c.id))
+  const pendiente = [...destacado, ...sinFecha.filter((c) => !yaEsta.has(c.id))]
 
   const conAlgo = new Set(delMesEntero.map((c) => c.fecha).filter(Boolean) as string[])
 
@@ -239,12 +245,22 @@ export default async function Calendario({
         decide qué es importante no la quiere nadie.
       */}
       <section>
-        <Rotulo>A la vista</Rotulo>
+        {/*
+          Se llamaba «A la vista» y ahora es «Pendiente», porque lleva
+          dos cosas: lo que alguien dejó clavado con la chincheta, y lo
+          apuntado que no tiene día. Antes de fundir Tareas con el
+          Calendario, lo segundo vivía en su pestaña; ahora vive aquí,
+          que es donde se busca «¿me queda algo?».
 
-        {destacado.length === 0 ? (
+          Lo destacado va primero y lleva su chincheta. Lo demás va
+          detrás, sin ella.
+        */}
+        <Rotulo>Pendiente</Rotulo>
+
+        {pendiente.length === 0 ? (
           <div className="mt-6 rounded-[28px] border border-borde bg-superficie px-8 py-8">
             <p className="text-[24px] font-extrabold leading-snug text-tinta-suave">
-              Aquí se queda lo que no se puede olvidar.
+              No queda nada pendiente.
             </p>
             <p className="mt-2.5 text-[19px] font-bold leading-snug text-tenue">
               Desde el móvil, abre una cosa de la agenda y pulsa «Dejar a la vista».
@@ -252,7 +268,7 @@ export default async function Calendario({
           </div>
         ) : (
           <ul className="mt-6 grid gap-3 2xl:grid-cols-2">
-            {destacado.map((c) => {
+            {pendiente.map((c) => {
               const p = pintaDe(c.titulo)
               return (
                 <li
@@ -274,11 +290,14 @@ export default async function Calendario({
                       </span>
                     )}
                   </span>
-                  {/* La chincheta, que es el mismo dibujo del tablón:
-                      dice por qué está aquí esto y no otra cosa. */}
-                  <span className="shrink-0 text-apagado">
-                    <Ico nombre="chincheta" tam={22} grosor={2.1} />
-                  </span>
+                  {/* La chincheta solo en lo destacado: es lo que
+                      distingue «alguien decidió que esto no se olvide»
+                      de «esto está apuntado y no tiene día». */}
+                  {yaEsta.has(c.id) && (
+                    <span className="shrink-0 text-apagado">
+                      <Ico nombre="chincheta" tam={22} grosor={2.1} />
+                    </span>
+                  )}
                 </li>
               )
             })}

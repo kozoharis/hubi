@@ -1,106 +1,42 @@
-import { hoyAqui } from '@/lib/tablon'
-import { laPared, loApuntado } from '@/lib/pared'
-import Cosa from '../cosa'
-import { diaCorto } from '../page'
-import { Nada, Rotulo } from '../rotulo'
+import { redirect } from 'next/navigation'
+import { elEspacioO } from '@/lib/espacio'
+import { clienteSesion } from '@/lib/supabase/sesion'
 
 export const dynamic = 'force-dynamic'
 
 /*
   ═══════════════════════════════════════════════════════════════
-  TAREAS · lo que hay que hacer
+  AQUÍ ESTABA «TAREAS», Y AHORA LLEVA AL CALENDARIO
   ═══════════════════════════════════════════════════════════════
 
-  Todo lo pendiente, del más cercano al más lejano, sin cortar por
-  semanas. Es la lista que se mira cuando alguien pregunta «¿me queda
-  algo?».
+  Lo dijo Haris: *«tareas y calendario para mí es lo mismo»*. Y no es
+  solo su opinión — es el punto 18 del planteamiento, escrito al
+  principio de todo:
+
+      «Para Juan Miguel y Conchita no quiero que exista una diferencia
+       conceptual complicada entre evento, tarea, recordatorio y
+       deadline. Para ellos todo debe ser: COSAS QUE TENGO QUE
+       RECORDAR.»
+
+  Dos pestañas obligaban a esa distinción todos los días: ¿lo del médico
+  del martes es una tarea o es calendario? Se buscaba en las dos.
 
   ─────────────────────────────────────────────────────────────
-  ⚠️  TODAVÍA NO SE PUEDEN TACHAR, Y NO ES UN OLVIDO
+  POR QUÉ UN DESVÍO Y NO BORRAR EL FICHERO
 
-  Lo lógico en una pared es pasar y tachar. Hoy no se puede, y la razón
-  está en la base, no aquí:
+  Porque una pantalla colgada de una pared se queda abierta donde la
+  dejaron. Si esta dirección dejara de existir de golpe, la tableta que
+  estuviera en Tareas en ese momento —o la que se reinicie con esa
+  dirección guardada— se encontraría un «no existe» en la cocina.
 
-      recordatorios_editar  →  puedo_en_agenda(hogar_id)
-      y para un aparato, `nivel_por_rol('casa','agenda')` = mirar
-
-  O sea que una pantalla puede LEER la agenda y no escribirla. Es
-  correcto tal como está: si se le subiera el nivel a `anadir`, la
-  pantalla podría además INVENTAR tareas, y una pared que se saca
-  recados de la manga no la quiere nadie.
-
-  La solución buena es la del paso 67, permisos POR COLUMNA: el aparato
-  puede escribir `estado` y ninguna otra columna. Tachar sí; escribir
-  no. Va en su propio paso de SQL, con su ensayo, porque toca permisos.
-
-  Hasta entonces esta pantalla lo dice en voz alta en vez de enseñar un
-  botón que falla. Un botón roto es peor que ningún botón.
+  Así se va sola al sitio nuevo y nadie se entera. Se puede borrar
+  dentro de unos meses, cuando ya no quede ninguna abierta ahí.
 */
+export default async function DondeEstabanLasTareas() {
+  const supabase = await clienteSesion()
+  const casa = await elEspacioO(supabase).catch(() => null)
 
-export default async function Tareas() {
-  const { supabase, casa } = await laPared()
-
-  const hoy = hoyAqui()
-  const dentroDeUnAno = sumarDias(hoy, 400)
-
-  const cosas = await loApuntado(supabase, casa, hoy, dentroDeUnAno)
-  const pendientes = cosas.filter((c) => c.estado !== 'hecho').slice(0, 24)
-
-  const anoDeHoy = Number(hoy.slice(0, 4))
-
-  return (
-    <section className="mt-12">
-      <div className="flex items-baseline gap-5">
-        <Rotulo>Lo que hay que hacer</Rotulo>
-        {pendientes.length > 0 && (
-          <p className="text-[20px] font-extrabold text-tinta-suave">
-            {pendientes.length === 1 ? '1 cosa' : `${pendientes.length} cosas`}
-          </p>
-        )}
-      </div>
-
-      {pendientes.length === 0 ? (
-        <Nada>No queda nada pendiente.</Nada>
-      ) : (
-        <>
-          {/*
-            Dos columnas: con veinticuatro cosas, una sola columna
-            obligaría a deslizar una pantalla que está colgada de una
-            pared, y eso es justo lo que no se puede hacer de paso.
-          */}
-          <ul className="mt-6 grid gap-3 xl:grid-cols-2 xl:gap-x-8">
-            {pendientes.map((c) => (
-              <Cosa
-                key={c.id}
-                titulo={c.titulo}
-                cuando={cuandoCorto(c, anoDeHoy, hoy)}
-                talla="lista"
-              />
-            ))}
-          </ul>
-
-          <p className="mt-7 text-[17px] font-bold text-tenue">
-            Se tachan desde el móvil. Esta pantalla todavía no puede marcar nada como hecho.
-          </p>
-        </>
-      )}
-    </section>
-  )
-}
-
-/** «Hoy · 18:00» para lo de hoy; «mar 16 sep» para lo demás. */
-function cuandoCorto(
-  c: { fecha: string | null; hora: string | null },
-  anoDeHoy: number,
-  hoy: string
-): string {
-  const reloj = c.hora ? ` · ${c.hora.slice(0, 5)}` : ''
-  if (c.fecha === hoy) return `Hoy${reloj}`
-  return diaCorto(c.fecha, anoDeHoy)
-}
-
-function sumarDias(iso: string, cuantos: number): string {
-  const d = new Date(`${iso}T12:00:00`)
-  d.setDate(d.getDate() + cuantos)
-  return d.toISOString().slice(0, 10)
+  /* Con el espacio delante si lo hay: una pantalla de quien tenga dos
+     casas no puede acabar en la otra. */
+  redirect(casa ? `/e/${casa}/casa/calendario` : '/casa/calendario')
 }

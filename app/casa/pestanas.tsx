@@ -54,7 +54,19 @@ const SITIOS: { href: string; texto: string; icono: Icono; ambito: Ambito }[] = 
   { href: '/casa', texto: 'Hoy', icono: 'casa', ambito: 'verde' },
   { href: '/casa/calendario', texto: 'Calendario', icono: 'calendario', ambito: 'azul' },
   { href: '/casa/menu', texto: 'Menú', icono: 'taza', ambito: 'arena' },
-  { href: '/casa/tareas', texto: 'Tareas', icono: 'check', ambito: 'violeta' },
+  /*
+    Aquí estaba «Tareas», y se fue al Calendario. Lo dijo Haris —«tareas
+    y calendario para mí es lo mismo»— y lo dice el punto 18 del
+    planteamiento: para ellos todo son «cosas que tengo que recordar».
+    Dos pestañas obligaban a decidir todos los días si lo del médico del
+    martes era una tarea o era calendario.
+
+    El sitio lo ocupa la compra, que es lo único que la pared puede
+    escribir de verdad: su nivel en `compra` es `anadir` desde el paso
+    61, y está así porque es exactamente para lo que sirve una tableta
+    colgada en una cocina.
+  */
+  { href: '/casa/compra', texto: 'Compra', icono: 'bolsa', ambito: 'oliva' },
   { href: '/casa/notas', texto: 'Notas', icono: 'chincheta', ambito: 'rosa' },
 ]
 

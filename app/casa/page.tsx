@@ -4,6 +4,7 @@ import { Ico } from '../iconos'
 import { pintaDe } from '../iconos'
 import { AMBITO, PastillaAmbito } from '../piezas'
 import Cosa from './cosa'
+import Fotos from './fotos'
 import { Nada, Rotulo } from './rotulo'
 
 export const dynamic = 'force-dynamic'
@@ -234,6 +235,28 @@ export default async function Hoy() {
             </ul>
           </section>
         )}
+
+        {/*
+          ── Y LAS FOTOS, LO ÚLTIMO DE LA COLUMNA ──
+
+          Abajo del todo a propósito. Lo de arriba es lo que hay que
+          SABER —qué hay hoy, qué se come, qué falta— y se lee en
+          segundos desde la puerta. Las fotos son lo que hace que uno se
+          quede mirando, y eso va después de lo útil, nunca delante.
+
+          Y llena justo el hueco que quedaba: un día tranquilo dejaba la
+          mitad de abajo de la pantalla vacía.
+
+          `puedeSubir`: aquí sí, porque quien mira esto ES la pantalla de
+          la cocina, y es la única cosa que puede escribir en todo HUBI
+          aparte de la compra.
+        */}
+        <section className="mt-11">
+          <Rotulo>En casa</Rotulo>
+          <div className="mt-6">
+            <Fotos puedeSubir />
+          </div>
+        </section>
       </div>
     </div>
   )
