@@ -196,6 +196,7 @@ export default async function Ajustes({
       rol?: string | null
       acceso_hasta?: string | null
       color?: string | null
+      clase?: string | null
     }[] = []
 
     /*
@@ -209,7 +210,7 @@ export default async function Ajustes({
     const conPermisos = hogarId
       ? await supabase
           .from('miembros')
-          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en, rol, acceso_hasta, color')
+          .select('perfil_id, papel, ve_todo, escribe_todo, aceptado_en, rol, acceso_hasta, color, clase')
           .eq('hogar_id', hogarId)
           .order('unido_en')
       : { data: [], error: null }
@@ -260,6 +261,31 @@ export default async function Ajustes({
       const raices = todasLasRaices
 
       for (const m of filas) {
+        /*
+          ── UNA PANTALLA NO ES UNA VECINA ──
+
+          La tableta de la cocina es un miembro más de la casa —tiene su
+          fila en `miembros` y su sesión—, así que salía aquí, en la
+          lista de quién vive aquí, con sus casillas de carpetas al lado.
+
+          Y esas casillas ya no hacen nada. Desde el paso 71, lo que ve
+          un aparato lo decide su techo por `clase`, y ese techo dice
+          `nada` en Papeles pase lo que pase. Marcarle una carpeta a la
+          cocina era darle al interruptor de una lámpara desenchufada.
+
+          Lo que ve la cocina se decide donde toca: en Ajustes → La
+          cocina, que es la pantalla que pregunta lo que hay que
+          preguntar —qué clases de cosas salen y si salen las notas— y
+          desde donde además se cuelga y se descuelga.
+
+          El `=== 'dispositivo'` es a propósito, y no `!== 'persona'`:
+          si la columna no viniera —una base vieja, o el respaldo de
+          abajo, que solo pide `perfil_id` y `papel`— el valor es
+          indefinido y la fila se queda, que es el fallo bueno. Antes
+          enseñar de más que esconder a alguien que sí vive aquí.
+        */
+        if (m.clase === 'dispositivo') continue
+
         const id = m.perfil_id as string
         gente.push({
           id,
