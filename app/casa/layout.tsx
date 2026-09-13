@@ -41,18 +41,25 @@ export const dynamic = 'force-dynamic'
   ─────────────────────────────────────────────────────────────
   QUÉ LLEVA ESTA BANDA DE ARRIBA, Y POR QUÉ CADA COSA
 
-  **El logotipo.** Porque esto se cuelga en una cocina y lo va a ver
-  gente que no sabe qué es. Un reloj con listas no dice de dónde sale;
-  con la marca delante, sí. Va a la izquierda y pequeño: identifica, no
-  reclama.
+  **El logotipo y el nombre de la casa, ARRIBA A LA DERECHA.** Estaban
+  encima del reloj, y Haris lo vio a la primera: «veo eso muy
+  apretado». Tenía razón, y el motivo no es el espacio — es que eran
+  tres cosas distintas apiladas en la misma esquina. La marca dice de
+  quién es esto, el reloj dice qué hora es: no tienen por qué tocarse.
+
+  Arriba a la derecha es además donde una marca no estorba: se ve al
+  entrar y deja de verse enseguida. Identifica, no reclama.
 
   **El nombre de la casa, y no el de nadie.** «SOLETES», no «Buenas
   tardes, Juan Miguel». La tableta no es de nadie, y saludar por su
   nombre a la cuenta del aparato sería además mentira — se llama «La
   cocina».
 
-  **La hora, grande.** Es el número grande de esta pantalla y lo que se
-  mira desde la puerta cuarenta veces al día.
+  **La hora, grande pero menos.** Bajó de 132 px a 104. A 132 era lo
+  único que se veía: el número se comía la pantalla y las listas
+  quedaban de acompañamiento, cuando lo que hace falta saber en una
+  cocina es qué pasa hoy, no qué hora es — para eso hay un reloj en
+  todas las paredes desde hace doscientos años.
 
   **Las cinco pestañas.** Hoy, Semana, Menú, Tareas y Notas. A 88 px,
   casi el doble del suelo de HUBI: esto se toca de pie, de lado y con
@@ -77,24 +84,27 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
       <VuelveAHoy />
 
       <header className="flex items-end justify-between gap-10">
+        {/* Izquierda: la hora y la fecha, y nada más. */}
         <div className="min-w-0">
-          <p className="flex items-center gap-3.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-hubi.png" alt="HUBI" className="block h-[38px] w-auto" />
-            <span className="truncate text-[22px] font-extrabold uppercase tracking-[0.2em] text-tenue xl:text-[24px]">
-              {nombre}
-            </span>
-          </p>
           <Reloj />
         </div>
 
         {/*
-          Las pestañas van arriba a la derecha, a la altura de la hora,
-          y no abajo como en el teléfono. En un móvil la barra va abajo
-          porque ahí llega el pulgar; en una pared de 27 pulgadas, abajo
-          es la esquina que hay que agacharse a mirar.
+          Derecha: la marca arriba del todo y las pestañas debajo.
+
+          Las pestañas van arriba y no abajo como en el teléfono. En un
+          móvil la barra va abajo porque ahí llega el pulgar; en una
+          pared de 27 pulgadas, abajo es la esquina que hay que
+          agacharse a mirar.
         */}
-        <div className="shrink-0 pb-1">
+        <div className="flex shrink-0 flex-col items-end gap-5">
+          <p className="flex items-center gap-3.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-hubi.png" alt="HUBI" className="block h-[30px] w-auto" />
+            <span className="truncate text-[19px] font-extrabold uppercase tracking-[0.22em] text-tenue">
+              {nombre}
+            </span>
+          </p>
           <Pestanas />
         </div>
       </header>

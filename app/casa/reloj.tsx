@@ -77,7 +77,7 @@ export default function Reloj() {
     /* El hueco mide lo mismo que la hora Y la fecha juntas, para que al
        llegar no empuje nada hacia abajo. Medía 104 cuando ya ocupaban
        más: la pantalla daba un salto al segundo de encenderse. */
-    return <div className="h-[150px] xl:h-[192px]" aria-hidden />
+    return <div className="h-[134px] xl:h-[156px]" aria-hidden />
   }
 
   const hh = String(ahora.getHours()).padStart(2, '0')
@@ -86,12 +86,16 @@ export default function Reloj() {
   return (
     <div>
       {/*
-        La hora es el número grande de esta pantalla, y en una pared de
-        1080 px de alto 96 px se queda corta: el bloque entero se
-        amontonaba arriba a la izquierda y dejaba media pantalla en
-        blanco. En grande sube a 132.
+        La hora es el número grande de esta pantalla, pero a 132 px era
+        lo ÚNICO que se veía: se comía la pantalla y dejaba las listas
+        de acompañamiento. En una cocina lo que hace falta saber es qué
+        pasa hoy — la hora ya la dice un reloj de pared desde hace
+        doscientos años.
+
+        104 en grande, 84 en pequeño. Sigue leyéndose desde la puerta y
+        deja de mandar.
       */}
-      <p className="mt-1.5 text-[96px] font-extrabold leading-none tabular-nums tracking-tight text-tinta xl:text-[132px]">
+      <p className="mt-1.5 text-[84px] font-extrabold leading-none tabular-nums tracking-tight text-tinta xl:text-[104px]">
         {hh}:{mm}
       </p>
       {/*
@@ -99,7 +103,7 @@ export default function Reloj() {
         «Domingo 13 De Septiembre». En español la mayúscula es solo la
         primera, y ni los días ni los meses la llevan.
       */}
-      <p className="mt-2 text-[26px] font-extrabold text-tinta-suave xl:text-[30px]">
+      <p className="mt-2 text-[24px] font-extrabold text-tinta-suave xl:text-[26px]">
         {enMayuscula(
           `${DIAS[ahora.getDay()]} ${ahora.getDate()} de ${MESES[ahora.getMonth()]}`
         )}

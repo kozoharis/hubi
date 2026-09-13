@@ -8,6 +8,7 @@ import { PastillaAmbito } from '../../piezas'
 import AccionHecho from './accion'
 import Editar from './editar'
 import EnLaCocina from './en-la-cocina'
+import ALaVista from './a-la-vista'
 import Barra from '../../barra'
 import Encabezado from '../../encabezado'
 import { Volver } from '../../iconos'
@@ -92,6 +93,29 @@ export default async function Detalle({
     .limit(1)
 
   const hayPantalla = (pantallas ?? []).length > 0
+
+  /*
+    ¿Está destacado? En su propia consulta, envuelta.
+
+    Mientras el paso 72 no esté dado, la columna `destacado` no existe y
+    Postgres rechaza la consulta ENTERA en vez de decir «esa columna no
+    existe». Pedirla arriba dejaría esta pantalla en `notFound()` para
+    todas las tareas de todas las casas. Es la misma trampa de siempre
+    y por eso lo nuevo se pide aparte.
+  */
+  let destacado: boolean | null = null
+  if (hayPantalla) {
+    try {
+      const { data: d } = await supabase
+        .from('recordatorios')
+        .select('destacado')
+        .eq('id', id)
+        .maybeSingle()
+      destacado = (d?.destacado as boolean | null) ?? false
+    } catch {
+      destacado = null
+    }
+  }
 
   const { data: perfiles } = await supabase.from('perfiles').select('id, nombre')
   const nombres = Object.fromEntries((perfiles ?? []).map((p) => [p.id, p.nombre]))
@@ -238,7 +262,21 @@ export default async function Detalle({
         )}
 
         {hayPantalla && (
-          <EnLaCocina id={r.id} inicial={r.visible_en_casa} />
+          <>
+            <EnLaCocina id={r.id} inicial={r.visible_en_casa} />
+            {/*
+              Debajo del otro y no al lado: son dos decisiones parecidas
+              —una de intimidad y otra de importancia— y ponerlas en la
+              misma fila haría que se leyeran como una sola con dos
+              botones. Y solo si esta casa tiene pantalla: destacar algo
+              para un aparato que no existe no significa nada.
+
+              `destacado` llega aparte del resto de la fila por lo de
+              siempre: mientras el paso 72 no esté dado, esa columna no
+              existe y pedirla haría fallar la consulta ENTERA.
+            */}
+            <ALaVista id={r.id} inicial={destacado} />
+          </>
         )}
 
         <div className="mt-10">

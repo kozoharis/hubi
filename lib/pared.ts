@@ -101,6 +101,41 @@ export async function loApuntado(
   return (data ?? []) as CosaDeLaPared[]
 }
 
+/*
+  ── LO DESTACADO ──
+
+  Va en su propia consulta y envuelta, y no añadiendo `destacado` al
+  `select` de arriba. La razón es concreta: mientras el paso 72 no esté
+  dado, esa columna no existe, y Postgres rechaza la consulta ENTERA en
+  vez de decir «esa columna no existe» — o sea que pedirla de más
+  dejaría la pared en blanco, las cinco pantallas, por una casilla que
+  todavía no está.
+
+  Es la misma trampa que ya se sorteó en Ajustes con `ve_todo`. Aquí
+  otra vez: lo nuevo se pide aparte.
+*/
+export async function loDestacado(
+  supabase: SupabaseClient,
+  casa: string
+): Promise<CosaDeLaPared[]> {
+  try {
+    const { data, error } = await supabase
+      .from('recordatorios')
+      .select('id, titulo, fecha, hora, estado')
+      .eq('hogar_id', casa)
+      .is('eliminado_en', null)
+      .eq('destacado', true)
+      .neq('estado', 'hecho')
+      .order('fecha', { ascending: true, nullsFirst: false })
+      .limit(8)
+
+    if (error) return []
+    return (data ?? []) as CosaDeLaPared[]
+  } catch {
+    return []
+  }
+}
+
 export type MenuDelDia = { fecha: string; momento: string; que: string | null }
 
 /** Los menús de una semana. Vacío y sin ruido si el sql/48 no está. */

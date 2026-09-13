@@ -52,7 +52,7 @@ import { AMBITO, type Ambito } from '@/lib/ambitos'
 
 const SITIOS: { href: string; texto: string; icono: Icono; ambito: Ambito }[] = [
   { href: '/casa', texto: 'Hoy', icono: 'casa', ambito: 'verde' },
-  { href: '/casa/semana', texto: 'Semana', icono: 'calendario', ambito: 'azul' },
+  { href: '/casa/calendario', texto: 'Calendario', icono: 'calendario', ambito: 'azul' },
   { href: '/casa/menu', texto: 'Menú', icono: 'taza', ambito: 'arena' },
   { href: '/casa/tareas', texto: 'Tareas', icono: 'check', ambito: 'violeta' },
   { href: '/casa/notas', texto: 'Notas', icono: 'chincheta', ambito: 'rosa' },

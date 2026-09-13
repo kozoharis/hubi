@@ -26,8 +26,44 @@ export async function PATCH(
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  const { estado } = (await peticion.json()) as { estado?: string }
-  const hecho = estado === 'hecho'
+  const cuerpo = (await peticion.json()) as { estado?: string; destacado?: boolean }
+
+  /*
+    ── DESTACAR VA SOLO, Y NO MEZCLADO CON EL ESTADO ──
+
+    Son dos cosas distintas: el estado dice si está hecho, y destacar
+    dice que se quede a la vista en la pantalla de la cocina aunque no
+    sea de esta semana.
+
+    Si llegaran juntos en una misma llamada, marcar algo hecho lo
+    desdestacaría sin querer —porque `destacado` vendría sin poner y se
+    escribiría `false`—. Así que se mira cuál de los dos ha llegado.
+  */
+  if (typeof cuerpo.destacado === 'boolean') {
+    const { error } = await supabase
+      .from('recordatorios')
+      .update({ destacado: cuerpo.destacado })
+      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('id', id)
+      .select('id')
+
+    if (error) {
+      console.error('[HUBI] Fallo destacando recordatorio:', error)
+      return NextResponse.json(
+        {
+          error: 'No se ha podido destacar.',
+          /* Si falta el paso 72, el mensaje de Postgres lo dice, y es
+             mejor que un «algo ha ido mal». */
+          detalle: error.message,
+        },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ bien: true, destacado: cuerpo.destacado })
+  }
+
+  const hecho = cuerpo.estado === 'hecho'
 
   const { data, error } = await supabase
     .from('recordatorios')
