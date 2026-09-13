@@ -34,6 +34,11 @@ const MESES = [
   atenúa. Una tableta a brillo de día en una cocina a oscuras es una
   farola.
 */
+/** «domingo 13 de septiembre» → «Domingo 13 de septiembre». Solo la primera. */
+function enMayuscula(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
+}
+
 export default function Reloj() {
   const router = useRouter()
   const [ahora, setAhora] = useState<Date | null>(null)
@@ -82,8 +87,15 @@ export default function Reloj() {
       <p className="mt-1 text-[84px] font-extrabold leading-none tabular-nums tracking-tight text-tinta">
         {hh}:{mm}
       </p>
-      <p className="mt-2 text-[26px] font-extrabold capitalize text-tinta-suave">
-        {DIAS[ahora.getDay()]} {ahora.getDate()} de {MESES[ahora.getMonth()]}
+      {/*
+        `capitalize` de Tailwind pone en mayúscula CADA palabra, y salía
+        «Domingo 13 De Septiembre». En español la mayúscula es solo la
+        primera, y ni los días ni los meses la llevan.
+      */}
+      <p className="mt-2 text-[26px] font-extrabold text-tinta-suave">
+        {enMayuscula(
+          `${DIAS[ahora.getDay()]} ${ahora.getDate()} de ${MESES[ahora.getMonth()]}`
+        )}
       </p>
     </div>
   )

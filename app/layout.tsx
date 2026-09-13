@@ -201,19 +201,40 @@ export default async function RootLayout({
        tira de su lista de respaldo y se navega igual. */
   }
 
+  /*
+    ── LA PANTALLA DE LA PARED VA SIEMPRE EN CLARO ──
+
+    Una tableta colgada en la cocina no es el teléfono de nadie: es un
+    objeto de la casa, como un calendario de papel. Y salía NEGRA,
+    porque heredaba el modo oscuro del sistema a través de
+    `prefers-color-scheme`, y en esa tableta no hay nadie que vaya a
+    entrar en Ajustes a cambiarlo.
+
+    El punto 28 del planteamiento lo dice sin matices —«no quiero
+    interfaz negra»—, y aquí además es lo práctico: lo que se cuelga en
+    una cocina se lee de un vistazo y desde lejos, y eso es tinta oscura
+    sobre papel claro.
+
+    De noche ya baja sola: `reloj.tsx` atenúa la pantalla entera a partir
+    de las once. Bajar el brillo es lo que hace falta; cambiar de color
+    no.
+  */
   return (
-    <html lang="es" className={fuente.variable}>
+    <html lang="es" className={fuente.variable} data-tema={esPantalla ? 'claro' : undefined}>
       <head>
         {/*
           Se lee la preferencia y se marca el <html> ANTES de pintar
           nada. Si esto fuera un efecto de React, la pantalla saldría
           un instante en claro y saltaría a oscuro: un fogonazo blanco
           en la cara, de noche, es exactamente lo que no queremos.
+
+          Y si el servidor ya ha puesto un tema —la pantalla de la
+          pared—, ése manda: el guardado en la tableta no lo pisa.
         */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('hubi-tema');if(t==='claro'||t==='oscuro')document.documentElement.dataset.tema=t}catch(e){}",
+              "try{if(!document.documentElement.dataset.tema){var t=localStorage.getItem('hubi-tema');if(t==='claro'||t==='oscuro')document.documentElement.dataset.tema=t}}catch(e){}",
           }}
         />
       </head>

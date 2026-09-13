@@ -32,9 +32,24 @@ export function deducirTipo(titulo: string): string {
   return 'tarea'
 }
 
+/*
+  EL DIBUJO DE UNA TAREA CUALQUIERA NO PUEDE SER UN VISTO VERDE.
+
+  Era `✅`, y se vio en la pantalla de la cocina: «Presentación del cole
+  de Paula», pendiente, con un cuadro verde y un tic al lado. A dos
+  metros de distancia eso no dice «tarea»: dice **hecho**. Y decía lo
+  contrario de la verdad.
+
+  Es la regla 3 de `reglas-de-pantalla.md` otra vez —un icono que no
+  significa lo que dice es peor que ninguno—, y aparece siempre igual:
+  se coge lo más parecido que hay a mano en vez de elegir el que toca.
+
+  `📌` es el del tablón desde el planteamiento. Dice «esto está
+  apuntado», que es exactamente lo que es, y no dice nada del estado.
+*/
 export function iconoDe(tipo: string): string {
   for (const [, t, icono] of PISTAS) if (t === tipo) return icono
-  return '✅'
+  return '📌'
 }
 
 /*

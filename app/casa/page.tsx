@@ -107,8 +107,26 @@ export default async function LaPared() {
   const deHoy = todas.filter((r) => r.fecha === hoy)
   const luego = todas.filter((r) => r.fecha !== hoy).slice(0, 6)
 
+  /* Para saber cuándo hace falta escribir el año. `hoy` es «2026-09-13». */
+  const anoDeHoy = Number(hoy.slice(0, 4))
+
+  /*
+    ── DOS COLUMNAS CUANDO LA PARED ES ANCHA ──
+
+    Una tableta de cocina en horizontal, o un televisor, son 1280 px o
+    más. Con una sola columna, «Hoy» y «Después» bajaban pegados al
+    borde izquierdo y los otros dos tercios de la pantalla se quedaban
+    en negro: lo que se ve desde la puerta es un cartel pequeño en la
+    esquina de un rectángulo vacío.
+
+    Se parte en dos a partir de 1280 y solo cuando hay las dos cosas.
+    Si no hay nada después, «Hoy» se queda ancho — media pantalla vacía
+    a la derecha sería el mismo fallo con otra forma.
+  */
+  const enDos = luego.length > 0
+
   return (
-    <main className="min-h-screen px-10 py-8" id="la-pared">
+    <main className="min-h-screen px-10 py-8 xl:px-14" id="la-pared">
       {/* ── Dónde y cuándo ── */}
       <header className="flex items-end justify-between gap-8">
         <div className="min-w-0">
@@ -119,6 +137,7 @@ export default async function LaPared() {
         </div>
       </header>
 
+      <div className={enDos ? 'xl:grid xl:grid-cols-2 xl:items-start xl:gap-20' : undefined}>
       {/* ── HOY ── */}
       <section className="mt-10">
         <h2 className="text-[22px] font-extrabold uppercase tracking-[0.18em] text-tenue">Hoy</h2>
@@ -151,15 +170,18 @@ export default async function LaPared() {
 
       {/* ── LO QUE VIENE ── */}
       {luego.length > 0 && (
-        <section className="mt-12">
+        <section className="mt-12 xl:mt-10">
           <h2 className="text-[22px] font-extrabold uppercase tracking-[0.18em] text-tenue">
             Después
           </h2>
           <ul className="mt-5 space-y-3">
             {luego.map((r) => (
               <li key={r.id} className="flex items-baseline gap-5">
-                <span className="w-[130px] shrink-0 text-[24px] font-extrabold tabular-nums text-tenue">
-                  {diaCorto(r.fecha)}
+                {/* 210 y no 130: con el año escrito, «mar 10 ago 2027» no
+                    cabía y partía por la mitad, dejando un «ago» solo en
+                    la línea de abajo. */}
+                <span className="w-[210px] shrink-0 whitespace-nowrap text-[24px] font-extrabold tabular-nums text-tenue">
+                  {diaCorto(r.fecha, anoDeHoy)}
                 </span>
                 <span className="text-[26px] leading-none" aria-hidden>
                   {iconoDe(r.tipo)}
@@ -172,6 +194,7 @@ export default async function LaPared() {
           </ul>
         </section>
       )}
+      </div>
     </main>
   )
 }
@@ -179,12 +202,28 @@ export default async function LaPared() {
 const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
-/** «mar 16 sep». Corto porque va en una columna estrecha y a dos metros. */
-function diaCorto(fecha: string | null): string {
+/**
+ * «mar 16 sep», y «mar 10 ago 2027» cuando no es de este año.
+ *
+ * El año no estaba, y en la pantalla de la cocina salió esto:
+ *
+ *     lun 14 sep   Presentación del cole de Paula
+ *     mar 10 ago   Último día para cancelar: IONOS
+ *     jue  9 sep   Se renueva: IONOS
+ *
+ * Todo correcto por dentro —las dos de IONOS son de 2027 y van
+ * ordenadas— y todo equivocado por fuera: puesto debajo del 14 de
+ * septiembre, un «10 de agosto» sin año se lee como una fecha pasada, y
+ * una pantalla que enseña cosas caducadas deja de creerse.
+ *
+ * Corto es bueno, pero no a costa de decir algo que no es.
+ */
+function diaCorto(fecha: string | null, anoDeHoy: number): string {
   if (!fecha) return ''
   const [a, m, d] = fecha.split('-').map(Number)
   /* Mediodía y no medianoche: con la hora a cero, un desfase de zona de
      una hora hacia atrás cambia el día. */
   const f = new Date(a, m - 1, d, 12)
-  return `${DIAS[f.getDay()]} ${d} ${MESES[m - 1]}`
+  const base = `${DIAS[f.getDay()]} ${d} ${MESES[m - 1]}`
+  return a === anoDeHoy ? base : `${base} ${a}`
 }
