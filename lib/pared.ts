@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { elEspacioO } from '@/lib/espacio'
+import { aqui } from '@/lib/enlaces'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -50,7 +51,25 @@ export async function laPared(): Promise<{
     supabase.from('hogares').select('nombre').eq('id', casa).maybeSingle(),
   ])
 
-  if ((mio?.clase as string | null) !== 'dispositivo') redirect('/')
+  /*
+    ── Y SI NO ES UNA PANTALLA, SE LE DICE ──
+
+    Aquí ponía `redirect('/')`, sin una palabra. Costó una tarde: se
+    publicaron tres funciones nuevas de la pared, Haris la abrió con su
+    cuenta, aterrizó en la aplicación de siempre y la conclusión
+    razonable fue «no se ha subido nada». Se revisó el despliegue, el
+    commit, el service worker y la base de datos. Todo estaba bien.
+
+    Una redirección silenciosa es una mentira educada: te lleva a un
+    sitio correcto sin decirte que no llegaste a donde ibas, y entonces
+    lo que ves —que es cierto— contesta a una pregunta que no hiciste.
+
+    El porqué largo, y cómo se entra de verdad, en
+    `app/en-la-cocina/page.tsx`.
+  */
+  if ((mio?.clase as string | null) !== 'dispositivo') {
+    redirect(await aqui('/en-la-cocina'))
+  }
 
   return {
     supabase: supabase as unknown as SupabaseClient,

@@ -198,7 +198,25 @@ export default function Dictar() {
     }
   }
 
-  if (!hayMicro) return null
+  /*
+    ── SIN MICRÓFONO SE DICE, NO SE CALLA ──
+
+    Aquí ponía `return null`: si la tableta no tiene micrófono o el
+    navegador no sabe grabar, no salía nada. Y «no sale nada» es
+    indistinguible de «esto no está publicado todavía» — que es
+    exactamente la confusión que nos costó una tarde con `/casa`.
+
+    Una línea gris, sin botón. No invita a tocar nada, y contesta sola
+    la pregunta «¿por qué no veo el micrófono?».
+  */
+  if (!hayMicro) {
+    return (
+      <p className="mt-5 text-[18px] font-bold leading-snug text-tenue">
+        Esta pantalla no puede grabar: o no tiene micrófono, o su navegador es demasiado antiguo.
+        Se puede seguir apuntando escribiendo o con los botones de abajo.
+      </p>
+    )
+  }
 
   // ── Lo entendido, para leerlo antes de guardarlo ──
   if (estado === 'leyendo') {
