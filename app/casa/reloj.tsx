@@ -95,7 +95,7 @@ export default function Reloj() {
         104 en grande, 84 en pequeño. Sigue leyéndose desde la puerta y
         deja de mandar.
       */}
-      <p className="mt-1.5 text-[84px] font-extrabold leading-none tabular-nums tracking-tight text-tinta xl:text-[104px]">
+      <p className="mt-1.5 text-[62px] font-extrabold leading-none tabular-nums tracking-tight text-tinta xl:text-[74px]">
         {hh}:{mm}
       </p>
       {/*
@@ -103,7 +103,7 @@ export default function Reloj() {
         «Domingo 13 De Septiembre». En español la mayúscula es solo la
         primera, y ni los días ni los meses la llevan.
       */}
-      <p className="mt-2 text-[24px] font-extrabold text-tinta-suave xl:text-[26px]">
+      <p className="mt-1.5 text-[20px] font-extrabold text-tinta-suave xl:text-[22px]">
         {enMayuscula(
           `${DIAS[ahora.getDay()]} ${ahora.getDate()} de ${MESES[ahora.getMonth()]}`
         )}

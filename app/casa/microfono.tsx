@@ -290,18 +290,73 @@ export default function Microfono() {
           setAbierto(true)
           if (hayMicro) empezar()
         }}
+        aria-label="Hablar con HUBI"
         /*
-          Abajo a la derecha y fijo. En el teléfono el micrófono vive en
-          la barra de abajo; aquí no hay barra, así que se queda en la
-          esquina donde cae la mano de quien está de pie delante — y en
-          las cinco pestañas en el mismo sitio, que es lo que hace que
-          no haya que buscarlo.
+          ═══════════════════════════════════════════════════════
+          ⚠️  ESTE BOTÓN ESTABA MAL, Y DE TRES MANERAS
+          ═══════════════════════════════════════════════════════
+
+          Haris: *«el botón de hablar lo veo enorme… y sin los
+          colores que debe llevar. Mírate bien el documento de
+          identidad de HUBI, el último»*. Me lo he mirado
+          —`sistema-visual-actual.md`, 10 de septiembre— y tenía
+          razón en todo.
+
+          **1 · El color.** Lo puse en azul de noche plano. El
+          documento dice literalmente, sobre el degradado:
+
+              «Hay UNO SOLO en todo HUBI y significa una cosa:
+               aquí hay inteligencia. Botón de hablar, aro del
+               micrófono, línea de arranque.»
+
+          O sea que el degradado no es que ENCAJE en este botón:
+          **este botón es uno de los tres sitios para los que el
+          degradado existe.** Ponerlo plano fue quitarle a HUBI su
+          única marca donde más significa.
+
+          El azul de noche sí es correcto — pero para el FONDO de
+          la ventana de hablar, que es lo que hace el móvil en
+          `/hablar` y en `/entrar`. Lo tenía cambiado de sitio.
+
+          **2 · El dibujo.** Ponía un micrófono. El símbolo de la
+          voz en HUBI es la **onda** —cinco barras—, y lo es desde
+          el rediseño de agosto. Un micrófono es el aparato; la
+          onda es la voz. El móvil lleva la onda.
+
+          **3 · El tamaño.** 96 px de alto con letra de 26. El del
+          móvil es un círculo de 52. Aquí, con la regla de ×1,45
+          de `escala.ts`, salen 76 — y la palabra debajo, pequeña,
+          como en el teléfono. No al lado y enorme.
+
+          ─────────────────────────────────────────────────────
+          Y LA PALABRA SE QUEDA
+
+          El punto 5 del planteamiento: los iconos van siempre
+          acompañados de texto. La onda la entiende quien ya la
+          conoce; Conchita necesita leerla una vez.
         */
-        className="tocable fixed bottom-9 right-9 z-40 flex h-[96px] items-center gap-4 rounded-full px-9 text-[26px] font-extrabold text-white shadow-lg"
-        style={{ background: NOCHE }}
+        className="tocable fixed bottom-8 right-8 z-40 flex flex-col items-center gap-2"
       >
-        <Ico nombre="micro" tam={32} grosor={2.3} />
-        Hablar
+        <span className="relative flex h-[76px] w-[76px] items-center justify-center">
+          {/* Los dos anillos que laten, los mismos de la barra del
+              móvil. Respetan `prefers-reduced-motion`. */}
+          <span className="pulso" />
+          <span className="pulso pulso-b" />
+          <span
+            className="relative flex h-[76px] w-[76px] items-center justify-center rounded-full text-white"
+            style={{
+              background: DEGRADADO,
+              boxShadow:
+                '0 10px 26px rgba(20,184,166,.45), inset 0 1px 0 rgba(255,255,255,.35)',
+            }}
+          >
+            <Ico nombre="onda" tam={34} grosor={2.4} />
+          </span>
+        </span>
+
+        <span className="text-[15px] font-extrabold uppercase tracking-[0.18em] text-tinta-suave">
+          Hablar
+        </span>
       </button>
     )
   }
@@ -316,10 +371,10 @@ export default function Microfono() {
         type="button"
         onClick={cerrar}
         aria-label="Cerrar"
-        className="tocable absolute right-9 top-9 flex h-[72px] items-center gap-3 rounded-full border-2 px-7 text-[20px] font-extrabold"
+        className="tocable absolute right-8 top-8 flex h-[64px] items-center gap-3 rounded-full border-2 px-6 text-[18px] font-extrabold"
         style={{ borderColor: 'rgba(255,255,255,.28)', color: '#FFFFFF' }}
       >
-        <Ico nombre="mas" tam={24} grosor={2.6} className="rotate-45" />
+        <Ico nombre="mas" tam={22} grosor={2.6} className="rotate-45" />
         Cerrar
       </button>
 
@@ -334,8 +389,8 @@ export default function Microfono() {
 
         {hayMicro && paso.que === 'oyendo' && (
           <div className="text-center">
-            <p className="text-[52px] font-extrabold leading-tight">Te escucho</p>
-            <p className="mt-3 text-[24px] font-bold" style={{ color: 'rgba(255,255,255,.62)' }}>
+            <p className="text-[39px] font-extrabold leading-tight">Te escucho</p>
+            <p className="mt-3 text-[22px] font-bold" style={{ color: 'rgba(255,255,255,.62)' }}>
               Di lo que quieras apuntar. Cuando termines, toca.
             </p>
 
@@ -358,23 +413,23 @@ export default function Microfono() {
             <button
               type="button"
               onClick={() => grabando.current?.parar()}
-              className="tocable mx-auto mt-10 flex h-[96px] items-center gap-4 rounded-full px-12 text-[26px] font-extrabold text-white"
+              className="tocable mx-auto mt-10 flex h-[76px] items-center gap-4 rounded-full px-11 text-[22px] font-extrabold text-white"
               style={{ background: DEGRADADO }}
             >
-              <Ico nombre="check" tam={30} grosor={2.6} />
+              <Ico nombre="check" tam={26} grosor={2.6} />
               Ya está
             </button>
           </div>
         )}
 
         {paso.que === 'pensando' && (
-          <p className="text-center text-[44px] font-extrabold">Un momento…</p>
+          <p className="text-center text-[36px] font-extrabold">Un momento…</p>
         )}
 
         {paso.que === 'hecho' && (
           <div className="text-center">
-            <p className="text-[52px] font-extrabold leading-tight">Hecho</p>
-            <p className="mt-3 text-[26px] font-bold" style={{ color: 'rgba(255,255,255,.62)' }}>
+            <p className="text-[39px] font-extrabold leading-tight">Hecho</p>
+            <p className="mt-3 text-[22px] font-bold" style={{ color: 'rgba(255,255,255,.62)' }}>
               {paso.texto}
             </p>
           </div>
@@ -435,16 +490,16 @@ export default function Microfono() {
 
         {fallo && (
           <div className="mt-8 text-center">
-            <p className="text-[26px] font-extrabold" style={{ color: '#FFB4B0' }}>
+            <p className="text-[22px] font-extrabold" style={{ color: '#FFB4B0' }}>
               {fallo}
             </p>
             <button
               type="button"
               onClick={empezar}
-              className="tocable mx-auto mt-6 flex h-[84px] items-center gap-3 rounded-full px-10 text-[24px] font-extrabold text-white"
+              className="tocable mx-auto mt-6 flex h-[72px] items-center gap-3 rounded-full px-9 text-[21px] font-extrabold text-white"
               style={{ background: DEGRADADO }}
             >
-              <Ico nombre="micro" tam={28} grosor={2.3} />
+              <Ico nombre="onda" tam={26} grosor={2.4} />
               Probar otra vez
             </button>
           </div>
@@ -475,7 +530,7 @@ function Entendido({
   return (
     <div>
       <p
-        className="flex items-center gap-3 text-[21px] font-extrabold uppercase tracking-[0.16em]"
+        className="flex items-center gap-3 text-[18px] font-extrabold uppercase tracking-[0.16em]"
         style={{ color: 'rgba(255,255,255,.58)' }}
       >
         <span
@@ -489,7 +544,7 @@ function Entendido({
         {lineas.map((l, i) => (
           <li
             key={`${l}-${i}`}
-            className="rounded-[24px] px-7 py-5 text-[34px] font-extrabold leading-tight"
+            className="rounded-[24px] px-6 py-4 text-[28px] font-extrabold leading-tight"
             style={{
               background: 'rgba(255,255,255,.06)',
               borderLeft: `6px solid ${TURQUESA}`,
@@ -504,17 +559,17 @@ function Entendido({
         <button
           type="button"
           onClick={alGuardar}
-          className="tocable flex h-[96px] flex-1 items-center justify-center gap-4 rounded-[28px] text-[28px] font-extrabold text-white"
+          className="tocable flex h-[76px] flex-1 items-center justify-center gap-4 rounded-[24px] text-[24px] font-extrabold text-white"
           style={{ background: DEGRADADO }}
         >
-          <Ico nombre="check" tam={32} grosor={2.6} />
+          <Ico nombre="check" tam={28} grosor={2.6} />
           {boton}
         </button>
 
         <button
           type="button"
           onClick={alDejarlo}
-          className="tocable h-[96px] rounded-[28px] border-2 px-12 text-[24px] font-extrabold"
+          className="tocable h-[76px] rounded-[24px] border-2 px-10 text-[22px] font-extrabold"
           style={{ borderColor: 'rgba(255,255,255,.28)', color: '#FFFFFF' }}
         >
           Dejarlo
@@ -533,9 +588,9 @@ function Entendido({
 function Cartel({ titulo, texto }: { titulo: string; texto: string }) {
   return (
     <div className="text-center">
-      <p className="text-[46px] font-extrabold leading-tight">{titulo}</p>
+      <p className="text-[39px] font-extrabold leading-tight">{titulo}</p>
       <p
-        className="mx-auto mt-5 max-w-[760px] text-[26px] font-bold leading-snug"
+        className="mx-auto mt-5 max-w-[720px] text-[22px] font-bold leading-snug"
         style={{ color: 'rgba(255,255,255,.66)' }}
       >
         {texto}

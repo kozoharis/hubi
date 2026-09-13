@@ -85,14 +85,14 @@ export default async function Tiempo() {
               color,
             }}
           >
-            <Ico nombre={DIBUJO[cieloHoy]} tam={44} grosor={2} />
+            <Ico nombre={DIBUJO[cieloHoy]} tam={38} grosor={2} />
           </span>
 
           <div className="min-w-0 flex-1">
-            <p className="text-[48px] font-extrabold leading-none tabular-nums tracking-tight text-tinta">
+            <p className="text-[40px] font-extrabold leading-none tabular-nums tracking-tight text-tinta">
               {t.ahora}°
             </p>
-            <p className="mt-1.5 text-[20px] font-extrabold leading-tight text-tinta-suave">
+            <p className="mt-1.5 text-[18px] font-extrabold leading-tight text-tinta-suave">
               {COMO_SE_LLAMA[cieloHoy]}
               <span className="text-tenue">
                 {' · '}
@@ -109,7 +109,7 @@ export default async function Tiempo() {
         */}
         {hoy.lluvia >= 50 && (
           <p
-            className="mt-4 flex items-center gap-2.5 text-[19px] font-extrabold"
+            className="mt-4 flex items-center gap-2.5 text-[17px] font-extrabold"
             style={{ color: AMBITO.azul }}
           >
             <Ico nombre="lluvia" tam={22} grosor={2.2} />
@@ -127,9 +127,9 @@ export default async function Tiempo() {
                   {DIAS[new Date(`${d.fecha}T12:00:00`).getDay()]}
                 </span>
                 <span style={{ color: COLOR[cielo] }}>
-                  <Ico nombre={DIBUJO[cielo]} tam={30} grosor={2} />
+                  <Ico nombre={DIBUJO[cielo]} tam={26} grosor={2} />
                 </span>
-                <span className="text-[19px] font-extrabold tabular-nums text-tinta">
+                <span className="text-[17px] font-extrabold tabular-nums text-tinta">
                   {d.maxima}°
                   <span className="ml-1.5 font-bold text-tenue">{d.minima}°</span>
                 </span>

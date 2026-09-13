@@ -423,6 +423,13 @@ const PASTILLA: Record<number, { radio: number; icono: number }> = {
   40: { radio: 13, icono: 20 },
   44: { radio: 14, icono: 22 },
   48: { radio: 16, icono: 24 },
+  /* 56 y 36 los pide la pared: con la escala ×1,45 de
+     `app/casa/escala.ts`, la pastilla de una tarjeta de Hoy cae en 56 y
+     la de una columna de la semana en 36. Mismo salto de radio e icono
+     que el resto de la tabla — no son medidas inventadas para un sitio,
+     son dos peldaños que faltaban en la escalera. */
+  36: { radio: 12, icono: 18 },
+  56: { radio: 18, icono: 28 },
   64: { radio: 21, icono: 32 },
   80: { radio: 26, icono: 40 },
 }
@@ -434,7 +441,7 @@ export function PastillaAmbito({
 }: {
   icono: Icono
   ambito?: Ambito
-  tam?: 24 | 40 | 44 | 48 | 64 | 80
+  tam?: 24 | 36 | 40 | 44 | 48 | 56 | 64 | 80
 }) {
   const color = AMBITO[ambito]
   const m = PASTILLA[tam]

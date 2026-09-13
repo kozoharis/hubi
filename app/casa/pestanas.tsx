@@ -90,7 +90,7 @@ export default function Pestanas() {
             key={s.href}
             href={s.href}
             aria-current={aqui ? 'page' : undefined}
-            className="flex h-[88px] min-w-[164px] flex-col items-center justify-center gap-1.5 rounded-[24px] border transition-colors"
+            className="flex h-[72px] min-w-[142px] flex-col items-center justify-center gap-1.5 rounded-[24px] border transition-colors"
             style={
               aqui
                 ? {
@@ -112,10 +112,10 @@ export default function Pestanas() {
             }
           >
             <span style={{ color: aqui ? color : 'var(--t-apagado)' }}>
-              <Ico nombre={s.icono} tam={30} grosor={2.1} />
+              <Ico nombre={s.icono} tam={26} grosor={2.1} />
             </span>
             {/* El dibujo NUNCA va solo: punto 5 del planteamiento. */}
-            <span className="text-[19px] font-extrabold tracking-tight">{s.texto}</span>
+            <span className="text-[17px] font-extrabold tracking-tight">{s.texto}</span>
           </Link>
         )
       })}

@@ -22,7 +22,7 @@ export function Rotulo({ children }: { children: ReactNode }) {
 export function Nada({ children }: { children: ReactNode }) {
   return (
     <div className="mt-6 rounded-[28px] border border-borde bg-superficie px-8 py-10">
-      <p className="text-[30px] font-extrabold leading-snug text-tinta-suave">{children}</p>
+      <p className="text-[25px] font-extrabold leading-snug text-tinta-suave">{children}</p>
     </div>
   )
 }

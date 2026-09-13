@@ -117,9 +117,9 @@ export default function Cosa({
 
   const marco =
     talla === 'hoy'
-      ? 'gap-7 px-7 py-6'
+      ? 'gap-6 px-6 py-5'
       : talla === 'lista'
-        ? 'gap-5 px-6 py-4'
+        ? 'gap-4 px-5 py-3.5'
         : 'gap-3.5 px-4 py-3'
 
   const dentro = (
@@ -140,8 +140,8 @@ export default function Cosa({
         <span
           className={`shrink-0 whitespace-nowrap font-extrabold tabular-nums tracking-tight ${
             talla === 'hoy'
-              ? 'w-[132px] text-[40px] text-tinta xl:w-[150px] xl:text-[48px]'
-              : 'w-[275px] text-[26px] text-tinta-suave'
+              ? 'w-[112px] text-[34px] text-tinta xl:w-[128px] xl:text-[40px]'
+              : 'w-[240px] text-[23px] text-tinta-suave'
           }`}
         >
           {cuando ?? ''}
@@ -151,7 +151,7 @@ export default function Cosa({
       <PastillaAmbito
         icono={p.icono}
         ambito={p.ambito}
-        tam={talla === 'hoy' ? 64 : talla === 'lista' ? 48 : 40}
+        tam={talla === 'hoy' ? 56 : talla === 'lista' ? 44 : 36}
       />
 
       <span className="min-w-0 flex-1">
@@ -164,10 +164,10 @@ export default function Cosa({
         <span
           className={`block font-extrabold leading-tight text-tinta ${
             talla === 'hoy'
-              ? 'text-[34px] xl:text-[38px]'
+              ? 'text-[28px] xl:text-[31px]'
               : talla === 'lista'
-                ? 'text-[27px]'
-                : 'text-[18px]'
+                ? 'text-[24px]'
+                : 'text-[17px]'
           } ${marcada ? 'line-through' : ''}`}
         >
           {titulo}
