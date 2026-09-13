@@ -78,6 +78,51 @@ export type CosaDeLaPared = {
   fecha: string | null
   hora: string | null
   estado: 'pendiente' | 'hecho'
+  grupo_id?: string | null
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  ⚠️  UNA COSA PARA DOS PERSONAS SE ENSEÑA UNA VEZ
+  ═══════════════════════════════════════════════════════════════
+
+  Lo vio Haris en la pared: «Presentación del cole de Paula» salía DOS
+  VECES, el mismo día y a la misma hora. Parecía un duplicado en la base
+  y no lo era.
+
+  En HUBI, **una tarea para dos personas SON dos filas**. Está decidido
+  y bien decidido (`app/api/recordatorios/route.ts`): cada uno marca la
+  suya, porque que Juan Miguel firme los papeles no los firma por
+  Conchita. Nacen con el mismo `grupo_id` para saber que se apuntaron
+  juntas.
+
+  En el teléfono eso se lee sin problema: cada fila lleva el nombre de
+  su dueño al lado, así que dos filas son dos personas.
+
+  **En la pared no.** La pared no dice de quién es nada —a propósito:
+  lo ve cualquiera que entre en la casa— así que las dos filas se ven
+  idénticas y parecen un fallo.
+
+  Se junta aquí, en el sitio por donde pasan las cinco pantallas, y no
+  en cada una. Y se junta por `grupo_id`, no por título: dos recados que
+  se llamen igual el mismo día son dos recados de verdad y tienen que
+  salir los dos.
+
+      LA CLAVE ES `grupo_id ?? id` — las filas antiguas no tienen
+      grupo, y ésas cada una es la suya.
+*/
+function unaSolaVez(cosas: CosaDeLaPared[]): CosaDeLaPared[] {
+  const vistos = new Set<string>()
+  const salida: CosaDeLaPared[] = []
+
+  for (const c of cosas) {
+    const clave = c.grupo_id ?? c.id
+    if (vistos.has(clave)) continue
+    vistos.add(clave)
+    salida.push(c)
+  }
+
+  return salida
 }
 
 /** Lo apuntado entre dos fechas, ambas incluidas. */
@@ -89,7 +134,7 @@ export async function loApuntado(
 ): Promise<CosaDeLaPared[]> {
   const { data } = await supabase
     .from('recordatorios')
-    .select('id, titulo, fecha, hora, estado')
+    .select('id, titulo, fecha, hora, estado, grupo_id')
     .eq('hogar_id', casa)
     .is('eliminado_en', null)
     .gte('fecha', desde)
@@ -98,7 +143,7 @@ export async function loApuntado(
     .order('hora', { ascending: true, nullsFirst: true })
     .limit(200)
 
-  return (data ?? []) as CosaDeLaPared[]
+  return unaSolaVez((data ?? []) as CosaDeLaPared[])
 }
 
 /*
@@ -121,16 +166,16 @@ export async function loDestacado(
   try {
     const { data, error } = await supabase
       .from('recordatorios')
-      .select('id, titulo, fecha, hora, estado')
+      .select('id, titulo, fecha, hora, estado, grupo_id')
       .eq('hogar_id', casa)
       .is('eliminado_en', null)
       .eq('destacado', true)
       .neq('estado', 'hecho')
       .order('fecha', { ascending: true, nullsFirst: false })
-      .limit(8)
+      .limit(12)
 
     if (error) return []
-    return (data ?? []) as CosaDeLaPared[]
+    return unaSolaVez((data ?? []) as CosaDeLaPared[])
   } catch {
     return []
   }

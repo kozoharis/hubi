@@ -1,7 +1,8 @@
+import Link from '@/app/enlace'
 import { hoyAqui } from '@/lib/tablon'
-import { elLunesDe, laSemanaDe, comoSeLlamaLaSemana } from '@/lib/menus'
+import { elLunesDe, laSemanaDe, comoSeLlamaLaSemana, otraSemana } from '@/lib/menus'
 import { laPared, loApuntado, loDestacado, losMenus } from '@/lib/pared'
-import { Ico } from '../../iconos'
+import { Ico, type Icono } from '../../iconos'
 import { AMBITO, PastillaAmbito } from '../../piezas'
 import { pintaDe } from '../../iconos'
 import { Renglon } from '../cosa'
@@ -63,15 +64,39 @@ export const dynamic = 'force-dynamic'
   para decir «ésta, entre sus vecinas».
 */
 
-export default async function Calendario() {
+export default async function Calendario({
+  searchParams,
+}: {
+  searchParams: Promise<{ lunes?: string }>
+}) {
   const { supabase, casa } = await laPared()
 
   const hoy = hoyAqui()
-  const lunes = elLunesDe(hoy)
+
+  /*
+    ── QUÉ SEMANA SE ESTÁ MIRANDO ──
+
+    Va en la dirección y no en un `useState`, por lo mismo que las cinco
+    pestañas: así la vuelta automática a Hoy se lleva por delante también
+    la semana en la que alguien dejó la pantalla, sin que haya que
+    acordarse de reiniciar nada.
+
+    Y se valida la forma antes de usarla. Una fecha que llegue torcida
+    —a mano, o por un enlace viejo— se ignora y se enseña esta semana,
+    que es lo único que nunca está mal.
+  */
+  const pedida = (await searchParams).lunes ?? ''
+  const lunes = /^\d{4}-\d{2}-\d{2}$/.test(pedida) ? elLunesDe(pedida) : elLunesDe(hoy)
   const dias = laSemanaDe(lunes)
 
-  /* El mes entero, para los puntitos del calendario pequeño. */
-  const [ano, mes] = hoy.split('-').map(Number)
+  const estaSemana = lunes === elLunesDe(hoy)
+
+  /*
+    El mes que se enseña abajo es el de la semana que se está mirando, y
+    no siempre el de hoy: mirando la semana del 29 de septiembre al 5 de
+    octubre, un calendario de septiembre no ayuda a nada.
+  */
+  const [ano, mes] = lunes.split('-').map(Number)
   const delMes = `${ano}-${String(mes).padStart(2, '0')}`
   const ultimo = String(new Date(ano, mes, 0).getDate()).padStart(2, '0')
 
@@ -87,11 +112,37 @@ export default async function Calendario() {
   return (
     <>
     <section className="mt-12">
-      <div className="flex items-baseline gap-5">
-        <Rotulo>La semana</Rotulo>
-        <p className="text-[20px] font-extrabold text-tinta-suave">
-          {comoSeLlamaLaSemana(lunes)}
-        </p>
+      <div className="flex items-center justify-between gap-8">
+        <div className="flex items-baseline gap-5">
+          <Rotulo>{estaSemana ? 'Esta semana' : 'La semana'}</Rotulo>
+          <p className="text-[20px] font-extrabold text-tinta-suave">
+            {comoSeLlamaLaSemana(lunes)}
+          </p>
+        </div>
+
+        {/*
+          ── ADELANTE Y ATRÁS ──
+
+          Botones de 60 px y no de 44. En un calendario de pared, «la
+          semana que viene» se mira de pie y de paso, muchas veces con
+          una mano ocupada.
+
+          Y el del medio solo sale cuando hace falta. Un «Esta semana»
+          encendido estando ya en esta semana es un botón que no hace
+          nada, y en una pared eso lo prueba todo el mundo una vez.
+        */}
+        <div className="flex shrink-0 items-center gap-3">
+          <Flecha hacia={otraSemana(lunes, -1)} icono="atras" que="Semana anterior" />
+          {!estaSemana && (
+            <a
+              href="/casa/calendario"
+              className="flex h-[60px] items-center rounded-full border border-borde bg-superficie px-6 text-[18px] font-extrabold text-tinta"
+            >
+              Esta semana
+            </a>
+          )}
+          <Flecha hacia={otraSemana(lunes, 1)} icono="flecha" que="Semana siguiente" />
+        </div>
       </div>
 
       {/*
@@ -108,9 +159,15 @@ export default async function Calendario() {
           const cena = menus.find((m) => m.fecha === dia && m.momento === 'cena')?.que ?? null
 
           return (
-            <div
+            /*
+              La columna entera es un enlace al día. Y entera, no un
+              «ver más» al final: en una pared, el sitio donde hay que
+              dar es el mismo sitio donde está lo que se quiere mirar.
+            */
+            <Link
               key={dia}
-              className="rounded-[28px] border px-3.5 py-4"
+              href={`/casa/dia/${dia}`}
+              className="tocable block rounded-[28px] border px-3.5 py-4"
               style={{
                 background: esHoy
                   ? `color-mix(in srgb, ${AMBITO.verde} 6%, var(--t-superficie))`
@@ -162,7 +219,7 @@ export default async function Calendario() {
                   Nada apuntado
                 </p>
               )}
-            </div>
+            </Link>
           )
         })}
       </div>
@@ -272,4 +329,24 @@ const CORTO = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
 
 function nombreCorto(iso: string): string {
   return CORTO[new Date(`${iso}T12:00:00`).getDay()]
+}
+
+/*
+  Una flecha de semana. 60 px de alto, el dibujo solo —es la única
+  excepción a «un dibujo nunca va solo», y se paga con el `aria-label`:
+  dos flechas a los lados de una fecha son el idioma universal de
+  cualquier calendario, y escribir «Semana anterior» al lado de cada una
+  robaría a la fecha el sitio que necesita.
+*/
+function Flecha({ hacia, icono, que }: { hacia: string; icono: Icono; que: string }) {
+  return (
+    <Link
+      href={`/casa/calendario?lunes=${hacia}`}
+      aria-label={que}
+      title={que}
+      className="tocable flex h-[60px] w-[60px] items-center justify-center rounded-full border border-borde bg-superficie text-tinta"
+    >
+      <Ico nombre={icono} tam={26} grosor={2.3} />
+    </Link>
+  )
 }

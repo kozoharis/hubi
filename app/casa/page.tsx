@@ -1,7 +1,8 @@
 import { hoyAqui } from '@/lib/tablon'
-import { laPared, loApuntado, losMenus } from '@/lib/pared'
+import { laPared, loApuntado, loDestacado, losMenus } from '@/lib/pared'
 import { Ico } from '../iconos'
-import { AMBITO } from '../piezas'
+import { pintaDe } from '../iconos'
+import { AMBITO, PastillaAmbito } from '../piezas'
 import Cosa from './cosa'
 import { Nada, Rotulo } from './rotulo'
 
@@ -16,18 +17,32 @@ export const dynamic = 'force-dynamic'
   concreto y la pared vuelve sola aquí a los tres minutos
   (`vuelve-a-hoy.tsx`).
 
-  Así que ésta no puede ser una lista más: tiene que contestar de un
-  vistazo, desde la puerta, las tres preguntas de una casa.
+  Así que ésta no puede ser una lista más. Es el resumen de la casa, y
+  contesta de un vistazo —desde la puerta— las cinco preguntas que se
+  hacen todos los días:
 
-      ¿Qué hay hoy?          → lo apuntado, con su hora
-      ¿Qué se come?          → la comida y la cena de hoy
-      ¿Y lo que viene?       → los próximos días, en pequeño
+      ¿Qué hay hoy?        → lo apuntado, con su hora
+      ¿Y lo importante?    → lo que alguien dejó a la vista
+      ¿Qué se come?        → la comida y la cena de hoy
+      ¿Falta algo?         → la lista de la compra
+      ¿Y lo que viene?     → los próximos días, en pequeño
+
+  ─────────────────────────────────────────────────────────────
+  DOS COLUMNAS, Y NO POR SIMETRÍA
+
+  A la izquierda lo de HOY y lo destacado: son las dos cosas que llevan
+  frases largas y que hay que leer enteras. A la derecha lo que se
+  contesta con tres palabras — qué se come, qué falta, qué viene.
+
+  El reparto es 1,4 a 1 y no la mitad y la mitad: una lista de tareas
+  con títulos de diez palabras necesita sitio; «Lentejas con chorizo»,
+  no.
 
   ─────────────────────────────────────────────────────────────
   LO QUE SE PIDE, Y LO QUE NO SE FILTRA
 
-  Los recordatorios se piden sin una sola condición de visibilidad, a
-  propósito: lo pone la base. Está explicado en `lib/pared.ts`.
+  Todo se pide sin una sola condición de visibilidad, a propósito: la
+  que filtra es la base. Está explicado en `lib/pared.ts`.
 */
 
 export default async function Hoy() {
@@ -37,47 +52,109 @@ export default async function Hoy() {
   /* Hasta dentro de dos semanas: de ahí sale «después». */
   const dentroDeDos = sumarDias(hoy, 14)
 
-  const [cosas, menus] = await Promise.all([
+  const [cosas, menus, destacado, laCompra] = await Promise.all([
     loApuntado(supabase, casa, hoy, dentroDeDos),
     losMenus(supabase, casa, hoy, hoy),
+    loDestacado(supabase, casa),
+    /*
+      La compra. Envuelta, como todo lo que puede no estar: una casa que
+      tenga la compra apagada (`hogares.usa_compra`) no debe romper la
+      pantalla de la cocina, que es donde más falta hace que no se rompa
+      nada.
+    */
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('compra')
+          .select('id, que')
+          .eq('hogar_id', casa)
+          .eq('comprado', false)
+          .is('archivado_en', null)
+          .order('creado_en', { ascending: true })
+          .limit(30)
+        if (error) return []
+        return (data ?? []) as { id: string; que: string }[]
+      } catch {
+        return []
+      }
+    })(),
   ])
 
   const pendientes = cosas.filter((c) => c.estado !== 'hecho')
   const deHoy = pendientes.filter((c) => c.fecha === hoy)
-  const luego = pendientes.filter((c) => c.fecha !== hoy).slice(0, 5)
+  const luego = pendientes.filter((c) => c.fecha !== hoy).slice(0, 4)
 
   const comida = menus.find((m) => m.momento === 'comida')?.que ?? null
   const cena = menus.find((m) => m.momento === 'cena')?.que ?? null
 
   return (
     <div className="mt-12 xl:grid xl:grid-cols-[1.4fr_1fr] xl:items-start xl:gap-14">
-      {/* ── Lo de hoy ── */}
-      <section>
-        <Rotulo>Hoy</Rotulo>
+      {/* ── IZQUIERDA · lo que hay que leer ── */}
+      <div>
+        <section>
+          <Rotulo>Hoy</Rotulo>
 
-        {deHoy.length === 0 ? (
-          <Nada>Hoy no hay nada apuntado.</Nada>
-        ) : (
-          <ul className="mt-6 space-y-4">
-            {deHoy.map((c) => (
-              <Cosa
-                key={c.id}
-                titulo={c.titulo}
-                cuando={c.hora ? c.hora.slice(0, 5) : ''}
-                talla="hoy"
-              />
-            ))}
-          </ul>
-        )}
-      </section>
+          {deHoy.length === 0 ? (
+            <Nada>Hoy no hay nada apuntado.</Nada>
+          ) : (
+            <ul className="mt-6 space-y-4">
+              {deHoy.map((c) => (
+                <Cosa
+                  key={c.id}
+                  titulo={c.titulo}
+                  cuando={c.hora ? c.hora.slice(0, 5) : ''}
+                  talla="hoy"
+                />
+              ))}
+            </ul>
+          )}
+        </section>
 
-      <div className="mt-12 xl:mt-0">
-        {/* ── Qué se come ── */}
         {/*
-          La comida y la cena de hoy, y solo eso. El menú de la semana
-          entera tiene su pestaña; aquí, la pregunta es «¿qué hay para
-          comer?», y se contesta con dos líneas o con ninguna.
+          Lo destacado sale también aquí, y no solo en el Calendario. Es
+          justamente lo que no se puede quedar a dos toques de
+          distancia: si algo merece estar «a la vista», tiene que estar a
+          la vista en la pantalla que se ve el 95 % del tiempo.
         */}
+        {destacado.length > 0 && (
+          <section className="mt-11">
+            <Rotulo>A la vista</Rotulo>
+            <ul className="mt-6 space-y-3">
+              {destacado.slice(0, 4).map((c) => {
+                const p = pintaDe(c.titulo)
+                return (
+                  <li
+                    key={c.id}
+                    className="flex items-center gap-5 rounded-[28px] border bg-superficie px-6 py-4"
+                    style={{
+                      borderColor: 'var(--t-borde)',
+                      borderLeft: `6px solid ${AMBITO[p.ambito]}`,
+                    }}
+                  >
+                    <PastillaAmbito icono={p.icono} ambito={p.ambito} tam={48} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[24px] font-extrabold leading-tight text-tinta">
+                        {c.titulo}
+                      </span>
+                      {c.fecha && (
+                        <span className="mt-0.5 block text-[17px] font-bold text-tenue">
+                          {enPalabras(c.fecha, c.hora)}
+                        </span>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-apagado">
+                      <Ico nombre="chincheta" tam={22} grosor={2.1} />
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
+      </div>
+
+      {/* ── DERECHA · lo que se contesta con tres palabras ── */}
+      <div className="mt-12 xl:mt-0">
         <section>
           <Rotulo>Qué se come</Rotulo>
 
@@ -91,9 +168,59 @@ export default async function Hoy() {
           )}
         </section>
 
-        {/* ── Lo que viene ── */}
+        {/*
+          ── LA COMPRA ──
+
+          Aquí sí tiene sentido, y es la única de las cinco cosas de esta
+          pantalla que un aparato PUEDE tocar: su nivel en `compra` es
+          `anadir`, a propósito, porque una tableta colgada en la cocina
+          existe sobre todo para apuntar que se ha acabado la leche.
+
+          Hoy solo se enseña. Apuntar desde la pared es lo siguiente que
+          tiene sentido añadir, y necesita un teclado de pantalla bien
+          resuelto — que es otra conversación.
+        */}
+        {laCompra.length > 0 && (
+          <section className="mt-11">
+            <div className="flex items-baseline gap-4">
+              <Rotulo>Falta en casa</Rotulo>
+              <p className="text-[19px] font-extrabold text-tinta-suave">
+                {laCompra.length === 1 ? '1 cosa' : `${laCompra.length} cosas`}
+              </p>
+            </div>
+
+            <div
+              className="mt-6 rounded-[28px] border bg-superficie px-6 py-5"
+              style={{ borderColor: 'var(--t-borde)', borderLeft: `6px solid ${AMBITO.oliva}` }}
+            >
+              {/* En dos columnas: una lista de la compra son palabras de
+                  dos sílabas, y en una columna deja media tarjeta vacía. */}
+              <ul className="columns-2 gap-6 [&>*]:mb-1.5 [&>*]:break-inside-avoid">
+                {laCompra.slice(0, 12).map((c) => (
+                  <li
+                    key={c.id}
+                    className="flex items-start gap-2.5 text-[20px] font-extrabold leading-snug text-tinta"
+                  >
+                    <span
+                      className="mt-[9px] block h-[7px] w-[7px] shrink-0 rounded-full"
+                      style={{ background: AMBITO.oliva }}
+                    />
+                    <span className="min-w-0">{c.que}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {laCompra.length > 12 && (
+                <p className="mt-3 text-[17px] font-bold text-tenue">
+                  y {laCompra.length - 12} más
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+
         {luego.length > 0 && (
-          <section className="mt-12">
+          <section className="mt-11">
             <Rotulo>Después</Rotulo>
             <ul className="mt-6 space-y-3">
               {luego.map((c) => (
@@ -119,8 +246,8 @@ export default async function Hoy() {
   Es lo contrario de lo que hace `Dato` en la aplicación —allí un valor
   vacío no pinta la fila—, y la diferencia es real. En una ficha, una
   etiqueta con un hueco al lado parece un dato que falta. Aquí, que la
-  cena esté sin poner es justamente lo que alguien necesita ver al
-  pasar por la cocina a las siete.
+  cena esté sin poner es justamente lo que alguien necesita ver al pasar
+  por la cocina a las siete.
 */
 function Plato({ momento, que }: { momento: string; que: string | null }) {
   return (
@@ -158,12 +285,24 @@ function Plato({ momento, que }: { momento: string; que: string | null }) {
 
 const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+const MESES_LARGOS = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+]
 
 /** «2026-09-13» + 14 → «2026-09-27». */
 function sumarDias(iso: string, cuantos: number): string {
   const d = new Date(`${iso}T12:00:00`)
   d.setDate(d.getDate() + cuantos)
   return d.toISOString().slice(0, 10)
+}
+
+/** «4 de octubre» · «4 de octubre · 12:00». Con el año si no es éste. */
+function enPalabras(iso: string, hora: string | null): string {
+  const [a, m, d] = iso.split('-').map(Number)
+  const ano = new Date().getFullYear()
+  const cuando = `${d} de ${MESES_LARGOS[m - 1]}${a === ano ? '' : ` de ${a}`}`
+  return hora ? `${cuando} · ${hora.slice(0, 5)}` : cuando
 }
 
 /**
