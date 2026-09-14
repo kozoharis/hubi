@@ -23,6 +23,7 @@ import {
   type Documento,
 } from '@/lib/carpetas'
 import { fechaBreve } from '@/lib/carpetas'
+import DeQuienEs from '../../carpeta/[id]/de-quien-es'
 import { euros } from '@/lib/periodos'
 import { elEspacioO } from '@/lib/espacio'
 import { entrarEn, confirmarVisto } from '@/lib/novedades'
@@ -139,6 +140,40 @@ export default async function Seccion({
 
   // ── Los grupos que se enseñan ──
   const hijas = hijosDe(todas, seccion.id)
+  /*
+    ── QUÉ CARPETAS SON DE ALGUIEN (paso 82) ──
+
+    En su propia consulta y envuelta, como todo lo nuevo: si esa
+    columna no existe todavía, Postgres rechazaría la consulta de
+    carpetas ENTERA y esta sección saldría vacía.
+
+    Lo que la base ya garantiza es que aquí solo llegan las carpetas
+    que se pueden ver: la de otra persona se cuela igual —a propósito,
+    para que no parezca borrada— pero con su candado. Quien no es de la
+    familia ni la ve.
+  */
+  const deAlguien = await (async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categorias')
+        .select('id, privada_de')
+        .eq('hogar_id', await elEspacioO(supabase))
+        .not('privada_de', 'is', null)
+      if (error) return new Map<string, string>()
+      return new Map(
+        ((data ?? []) as { id: string; privada_de: string }[]).map((c) => [c.id, c.privada_de])
+      )
+    } catch {
+      return new Map<string, string>()
+    }
+  })()
+
+  /* Los nombres de pila, para poder decir de quién es una carpeta
+     cerrada. Sin cruces: desde que existen los hogares hay dos caminos
+     de aquí a `perfiles` y la base se niega a elegir. */
+  const { data: gente } = await supabase.from('perfiles').select('id, nombre')
+  const quienEs = new Map((gente ?? []).map((g) => [g.id as string, g.nombre as string]))
+
   const grupos: { titulo: string | null; carpetas: Categoria[] }[] = []
   const sueltas: Categoria[] = []
 
@@ -159,6 +194,32 @@ export default async function Seccion({
     novedades siguen ahí la próxima vez, que es justo lo que se quería.
   */
   await confirmarVisto(supabase, espacio, ambito, sello, seccion.id)
+
+  /*
+    ── Y DE QUIÉN ES ESTA SECCIÓN ──
+
+    Una sección es una carpeta como las demás: `privada_de` vale igual
+    en Salud que en «Salud → Conchita». El control estaba solo en las
+    de segundo nivel y eso era un descuido mío —Haris entró en Papeles
+    → Salud y no encontró nada, con razón—.
+
+    Cerrar la sección entera cierra todo lo que cuelga, que es lo que
+    tiene sentido cuando la sección ya es de una persona.
+  */
+  const estaSeccion = await (async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categorias')
+        .select('privada_de')
+        .eq('hogar_id', espacio)
+        .eq('id', seccion.id)
+        .maybeSingle()
+      if (error) return { hay: false, de: null as string | null }
+      return { hay: true, de: (data?.privada_de as string | null) ?? null }
+    } catch {
+      return { hay: false, de: null as string | null }
+    }
+  })()
 
   const base = `/documentos/seccion/${seccion.id}`
   const conFiltro = (a: number | null, t: number | null) => {
@@ -260,8 +321,26 @@ export default async function Seccion({
                     >
                       <div className="flex items-center gap-3">
                         <div className="min-w-0 flex-1">
-                          <p className="t-tarjeta truncate">{c.nombre}</p>
+                          <p className="t-tarjeta flex items-center gap-2">
+                            {deAlguien.has(c.id) && (
+                              <span className="shrink-0 text-tenue">
+                                <Ico nombre="candado" tam={17} grosor={2.2} />
+                              </span>
+                            )}
+                            <span className="truncate">{c.nombre}</span>
+                          </p>
                           <p className="t-apoyo">
+                            {/* De quién es, antes que el recuento: es lo
+                                primero que explica por qué esta carpeta
+                                se ve distinta. */}
+                            {deAlguien.has(c.id) ? (
+                              <span className="font-extrabold">
+                                {deAlguien.get(c.id) === user.id
+                                  ? 'Solo tuya'
+                                  : `De ${(quienEs.get(deAlguien.get(c.id)!) ?? 'otra persona').split(' ')[0]}`}
+                                {' · '}
+                              </span>
+                            ) : null}
                             {n === 0 ? 'vacía' : `${n} ${n === 1 ? 'papel' : 'papeles'}`}
                             {/* Y lo que ha llegado desde la última vez.
                                 En la misma línea: es un matiz del
@@ -368,6 +447,21 @@ export default async function Seccion({
         <div className="lg:hidden">
           <Anadir texto="Añadir documento aquí" />
         </div>
+
+        {/* Al final, igual que dentro de una carpeta: se entra aquí a
+            buscar un papel, no a repartir permisos. */}
+        {estaSeccion.hay && (
+          <DeQuienEs
+            carpetaId={seccion.id}
+            nombre={seccion.nombre}
+            mia={estaSeccion.de === user.id}
+            deOtro={
+              estaSeccion.de && estaSeccion.de !== user.id
+                ? ((quienEs.get(estaSeccion.de) ?? 'otra persona').split(' ')[0])
+                : null
+            }
+          />
+        )}
       </div>
 
       <Barra activa="documentos" />

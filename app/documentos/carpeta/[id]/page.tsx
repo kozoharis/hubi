@@ -9,6 +9,7 @@ import Encabezado from '../../../encabezado'
 import { Ico, Volver } from '../../../iconos'
 import { Aviso, PastillaAmbito, Vacio, seccionPintada } from '../../../piezas'
 import { caminoDe, ramaDe, fechaCorta, type Categoria } from '@/lib/carpetas'
+import DeQuienEs from './de-quien-es'
 import { euros } from '@/lib/periodos'
 import { elEspacioO } from '@/lib/espacio'
 
@@ -48,6 +49,33 @@ export default async function Carpeta({
   const todas = (cats ?? []) as Categoria[]
   const carpeta = todas.find((c) => c.id === id)
   if (!carpeta) notFound()
+
+  /*
+    ── DE QUIÉN ES ESTA CARPETA (paso 82) ──
+
+    En su propia consulta y envuelta. `privada_de` puede no existir
+    todavía, y Postgres rechaza la consulta ENTERA cuando falta una
+    columna — o sea que pedirla arriba dejaría esta pantalla sin
+    carpeta, diciendo «no existe» sobre una que sí está.
+
+    Va la cuarta vez que esta red hace falta, y por lo mismo de
+    siempre: **una columna nueva nunca puede ser obligatoria para lo
+    que ya funcionaba.**
+  */
+  const suya = await (async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categorias')
+        .select('privada_de')
+        .eq('hogar_id', await elEspacioO(supabase))
+        .eq('id', id)
+        .maybeSingle()
+      if (error) return { hay: false, de: null as string | null }
+      return { hay: true, de: (data?.privada_de as string | null) ?? null }
+    } catch {
+      return { hay: false, de: null as string | null }
+    }
+  })()
 
   const camino = caminoDe(todas, carpeta.id)
   const seccion = camino[0]
@@ -201,6 +229,27 @@ export default async function Carpeta({
         )}
 
         <Anadir carpetaId={carpeta.id as string} />
+
+        {/*
+          Al final y no arriba. Se entra aquí a buscar un papel, no a
+          repartir permisos: arriba sería una decisión por delante de
+          lo que se venía a hacer, que es lo contrario del punto 5.
+
+          Solo sale si el paso 82 está dado. Un control que no puede
+          guardar nada es peor que no tenerlo.
+        */}
+        {suya.hay && (
+          <DeQuienEs
+            carpetaId={carpeta.id as string}
+            nombre={carpeta.nombre}
+            mia={suya.de === user.id}
+            deOtro={
+              suya.de && suya.de !== user.id
+                ? ((quienEs.get(suya.de) ?? 'otra persona').split(' ')[0])
+                : null
+            }
+          />
+        )}
       </div>
 
       <Barra activa="documentos" />
