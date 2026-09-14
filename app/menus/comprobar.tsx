@@ -1,10 +1,15 @@
 'use client'
 
-import { useState } from 'react'
 import { Ico } from '../iconos'
 import { Aviso, BotonPrincipal, BotonSecundario, BotonTerciario } from '../piezas'
-import { api } from '@/lib/api'
-import { comoSeLlamaElDia, type Momento } from '@/lib/menus'
+import { comoSeLlamaElDia } from '@/lib/menus'
+import {
+  useComprobacion,
+  type ListaDeCompra,
+  type MenuQueSeComprueba,
+} from '@/lib/comprobar-menu'
+
+export type { ListaDeCompra }
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -40,30 +45,6 @@ import { comoSeLlamaElDia, type Momento } from '@/lib/menus'
   cosas que ya están en la despensa se deja de mirar en dos semanas.
 */
 
-export type MenuParaComprobar = {
-  id: string
-  fecha: string
-  momento: Momento
-  que: string
-  comprobado_en?: string | null
-  faltan?: string[] | null
-}
-
-export type ListaDeCompra = {
-  id: string
-  nombre: string
-  fecha: string | null
-  hora: string | null
-  asignado_a: string | null
-}
-
-/** El día antes del menú: lo que falta tiene que estar para entonces. */
-function elDiaDeAntes(fecha: string): string {
-  const d = new Date(`${fecha}T12:00:00`)
-  d.setDate(d.getDate() - 1)
-  return d.toISOString().slice(0, 10)
-}
-
 export default function Comprobar({
   menu,
   ingredientes,
@@ -71,100 +52,29 @@ export default function Comprobar({
   alGuardar,
   cerrar,
 }: {
-  menu: MenuParaComprobar
+  menu: MenuQueSeComprueba
   ingredientes: string[]
   listas: ListaDeCompra[]
   alGuardar: (faltan: string[]) => void
   cerrar: () => void
 }) {
-  const [paso, setPaso] = useState<'pregunta' | 'marcar' | 'hecho'>('pregunta')
-  const [marcados, setMarcados] = useState<string[]>([])
-  const [lista, setLista] = useState<string>(listas[0]?.id ?? '')
-  const [trabajando, setTrabajando] = useState(false)
-  const [aviso, setAviso] = useState<string | null>(null)
-  const [apuntados, setApuntados] = useState(0)
-  const [diaPuesto, setDiaPuesto] = useState(false)
-
-  const laLista = listas.find((l) => l.id === lista) ?? null
-  const tope = elDiaDeAntes(menu.fecha)
-
-  /*
-    ¿Avisa a tiempo esa lista? Avisa si tiene día y ese día no es
-    después del menú. Sin día no avisa de nada: la tarea de la Agenda
-    nace de la fecha de la lista (paso 23).
-  */
-  const avisaATiempo = Boolean(laLista?.fecha && laLista.fecha <= menu.fecha)
-
-  async function mandar(faltan: string[]) {
-    setTrabajando(true)
-    setAviso(null)
-
-    const r = await fetch(api('/api/menus'), {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: menu.id,
-        faltan,
-        lista_id: faltan.length > 0 ? lista || null : null,
-      }),
-    })
-    const d = (await r.json().catch(() => ({}))) as {
-      apuntados?: number
-      sinPaso81?: boolean
-      error?: string
-      detalle?: string
-    }
-    setTrabajando(false)
-
-    if (!r.ok) {
-      setAviso(d.detalle ?? d.error ?? 'No se ha podido guardar.')
-      return
-    }
-
-    setApuntados(d.apuntados ?? 0)
-    alGuardar(faltan)
-
-    /* Si no hay nada que comprar, se cierra sin más ceremonia: la
-       respuesta a «¿tienes todo?» era SÍ y no hay nada que contar. */
-    if (faltan.length === 0) {
-      cerrar()
-      return
-    }
-    setPaso('hecho')
-  }
-
-  /*
-    Ponerle día a la lista.
-
-    Se manda `fecha`, `hora` y `asignado_a` tal y como estaban, porque
-    esa ruta gobierna las tres cosas A LA VEZ junto con la tarea de la
-    Agenda: un campo que no viaja se entiende como «quítalo», y poner
-    el día borraría la hora y a quien le tocaba.
-  */
-  async function ponerleDia() {
-    if (!laLista) return
-    setTrabajando(true)
-
-    const r = await fetch(api('/api/compra/listas'), {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: laLista.id,
-        fecha: tope,
-        hora: laLista.hora,
-        asignado_a: laLista.asignado_a,
-      }),
-    })
-    setTrabajando(false)
-
-    if (!r.ok) {
-      const d = (await r.json().catch(() => ({}))) as { error?: string; detalle?: string }
-      setAviso(d.detalle ?? d.error ?? 'No se ha podido poner el día.')
-      return
-    }
-    setDiaPuesto(true)
-  }
-
+  const {
+    paso,
+    setPaso,
+    marcados,
+    alternar,
+    lista,
+    setLista,
+    laLista,
+    trabajando,
+    aviso,
+    apuntados,
+    diaPuesto,
+    tope,
+    avisaATiempo,
+    mandar,
+    ponerleDia,
+  } = useComprobacion({ menu, listas, alGuardar, cerrar })
   // ═══════════════════════════════════════════════════════════
   return (
     <div className="mt-2.5 rounded-[20px] border border-borde bg-fondo px-4 py-4">
@@ -210,9 +120,7 @@ export default function Comprobar({
               return (
                 <li key={i}>
                   <button
-                    onClick={() =>
-                      setMarcados((m) => (puesto ? m.filter((x) => x !== i) : [...m, i]))
-                    }
+                    onClick={() => alternar(i)}
                     aria-pressed={puesto}
                     className="tocable flex w-full items-center gap-3 rounded-[16px] border px-3 text-left"
                     style={{

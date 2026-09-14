@@ -234,7 +234,18 @@ export async function loSinFecha(
   return unaSolaVez((data ?? []) as CosaDeLaPared[])
 }
 
-export type MenuDelDia = { fecha: string; momento: string; que: string | null }
+export type MenuDelDia = {
+  fecha: string
+  momento: string
+  que: string | null
+  /* Desde que la cocina también comprueba los ingredientes hace falta
+     saber CUÁL es el menú y de qué receta sale. Pueden no venir: si el
+     paso 81 no está dado, se piden sin ellos. */
+  id?: string
+  receta_id?: string | null
+  comprobado_en?: string | null
+  faltan?: string[] | null
+}
 
 /** Los menús de una semana. Vacío y sin ruido si el sql/48 no está. */
 export async function losMenus(
@@ -243,15 +254,67 @@ export async function losMenus(
   desde: string,
   hasta: string
 ): Promise<MenuDelDia[]> {
+  /*
+    LA RED DE SIEMPRE, Y VAN CUATRO.
+
+    Postgres rechaza la consulta ENTERA cuando falta una columna, no esa
+    columna. O sea que pedir `comprobado_en` antes de dar el paso 81 no
+    dejaría la pared sin esa casilla: la dejaría **sin menús**, y encima
+    en silencio, porque el fallo se recoge en un `data` nulo que la
+    pantalla lee como «no hay nada puesto».
+  */
+  const CON = 'id, fecha, momento, que, receta_id, comprobado_en, faltan'
+  const SIN = 'fecha, momento, que'
+
   try {
     const { data, error } = await supabase
       .from('menus')
-      .select('fecha, momento, que')
+      .select(CON)
       .eq('hogar_id', casa)
       .gte('fecha', desde)
       .lte('fecha', hasta)
+
+    if (!error) return (data ?? []) as MenuDelDia[]
+
+    const segunda = await supabase
+      .from('menus')
+      .select(SIN)
+      .eq('hogar_id', casa)
+      .gte('fecha', desde)
+      .lte('fecha', hasta)
+
+    if (segunda.error) return []
+    return (segunda.data ?? []) as MenuDelDia[]
+  } catch {
+    return []
+  }
+}
+
+/** Las listas de la compra abiertas de la casa, para poder mandarles
+    lo que falte de un menú desde la propia cocina. */
+export async function lasListasDeCompra(
+  supabase: SupabaseClient,
+  casa: string
+): Promise<{ id: string; nombre: string; fecha: string | null; hora: string | null; asignado_a: string | null }[]> {
+  try {
+    const { data, error } = await supabase
+      .from('listas_compra')
+      /* `hora` y `asignado_a` viajan aunque no se pinten: si desde aquí
+         se le pone día a la lista, hay que devolverle a su API TODO lo
+         que ya tenía — gobierna las tres cosas a la vez. */
+      .select('id, nombre, fecha, hora, asignado_a')
+      .eq('hogar_id', casa)
+      .is('archivada_en', null)
+      .order('creada_en', { ascending: true })
+      .limit(30)
     if (error) return []
-    return (data ?? []) as MenuDelDia[]
+    return (data ?? []) as {
+      id: string
+      nombre: string
+      fecha: string | null
+      hora: string | null
+      asignado_a: string | null
+    }[]
   } catch {
     return []
   }

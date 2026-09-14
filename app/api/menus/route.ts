@@ -35,7 +35,8 @@ export async function GET(peticion: NextRequest) {
     Postgres rechaza la consulta ENTERA cuando falta una columna, no
     esa columna. Sin la red, un paso sin dar deja la semana en blanco.
   */
-  const MENU_CON = 'id, fecha, momento, que, receta_id, grupo_id, cada_semanas, comprobado_en, faltan'
+  const MENU_CON =
+    'id, fecha, momento, que, receta_id, grupo_id, cada_semanas, repite_hasta, comprobado_en, faltan'
   const MENU_SIN = 'id, fecha, momento, que, receta_id'
 
   let { data, error } = await supabase

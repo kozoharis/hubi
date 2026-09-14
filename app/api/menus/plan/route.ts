@@ -290,6 +290,24 @@ export async function PATCH(peticion: NextRequest) {
     )
   }
 
+  /*
+    ── Y LOS VIEJOS APRENDEN LA FECHA NUEVA ──
+
+    `repite_hasta` se escribe en TODAS las filas de la tanda, y sirve
+    para un aviso: «la lasaña de los viernes se acaba el 12 de
+    diciembre». Si al alargar solo lo supieran las filas nuevas, las
+    viejas seguirían diciendo la fecha vieja y el aviso saldría para
+    siempre, sobre una tanda que ya se alargó.
+
+    Es el tipo de fallo que no rompe nada y acaba enseñando a la gente
+    a no leer los avisos.
+  */
+  await supabase
+    .from('menus')
+    .update({ repite_hasta: hasta })
+    .eq('hogar_id', casa)
+    .eq('grupo_id', grupo)
+
   return NextResponse.json({
     bien: true,
     puestos: data.length,

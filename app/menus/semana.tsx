@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Ico } from '../iconos'
-import { Aviso, BotonPrincipal, BotonSecundario, Vacio } from '../piezas'
+import { Aviso, BotonDestructivo, BotonPrincipal, BotonSecundario, Vacio } from '../piezas'
 import { api } from '@/lib/api'
 import Comprobar, { type ListaDeCompra } from './comprobar'
 import RepetirPlato from './repetir-plato'
@@ -40,6 +40,7 @@ type Menu = {
      todavía no los tiene, vuelve a pedir sin ellos. */
   grupo_id?: string | null
   cada_semanas?: number | null
+  repite_hasta?: string | null
   comprobado_en?: string | null
   faltan?: string[] | null
 }
@@ -67,6 +68,9 @@ export default function Semana() {
      de teléfono es no saber cuál contestas. */
   const [comprobando, setComprobando] = useState<string | null>(null)
   const [repitiendo, setRepitiendo] = useState<string | null>(null)
+  /* Qué tanda se está tocando, por su `grupo_id`. */
+  const [laTanda, setLaTanda] = useState<string | null>(null)
+  const [conLaTanda, setConLaTanda] = useState(false)
 
   // ── El cajón de ideas ──
   const [abierto, setAbierto] = useState(false)
@@ -195,6 +199,59 @@ export default function Semana() {
     )
   }
 
+  /*
+    ══════════════════════════════════════════════════════════════
+    LA TANDA · quitarla y alargarla
+    ══════════════════════════════════════════════════════════════
+
+    Los dos botones viven DEBAJO DEL DÍA y no en una pantalla de
+    ajustes, y eso es la decisión que importa.
+
+    Una tanda no es un objeto que nadie vaya a buscar: es una lasaña
+    que aparece los viernes. Y el momento en que alguien quiere quitarla
+    es exactamente el momento en que la ve puesta un viernes y piensa
+    «otra vez lasaña». Si para quitarla hay que acordarse de dónde se
+    creó, no se quita: se borra el texto de ese día, y a la semana
+    siguiente vuelve a estar.
+
+    **Quitar solo borra de hoy en adelante.** Lo de atrás es lo que se
+    comió, y reescribir la historia para arreglar el futuro no lo pide
+    nadie.
+  */
+  async function quitarLaTanda(grupo: string) {
+    setConLaTanda(true)
+    setAviso(null)
+    const r = await fetch(api(`/api/menus/plan?grupo=${grupo}`), { method: 'DELETE' })
+    setConLaTanda(false)
+    setLaTanda(null)
+
+    if (!r.ok) {
+      const d = (await r.json().catch(() => ({}))) as { error?: string; detalle?: string }
+      setAviso(d.detalle ?? d.error ?? 'No se ha podido quitar.')
+      return
+    }
+    traer(lunes ?? undefined)
+  }
+
+  async function alargarLaTanda(grupo: string) {
+    setConLaTanda(true)
+    setAviso(null)
+    const r = await fetch(api('/api/menus/plan'), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grupo }),
+    })
+    setConLaTanda(false)
+    setLaTanda(null)
+
+    if (!r.ok) {
+      const d = (await r.json().catch(() => ({}))) as { error?: string; detalle?: string }
+      setAviso(d.detalle ?? d.error ?? 'No se ha podido alargar.')
+      return
+    }
+    traer(lunes ?? undefined)
+  }
+
   async function nuevaIdea() {
     if (titulo.trim().length < 2) return
     setGuardando(true)
@@ -238,6 +295,34 @@ export default function Semana() {
     await fetch(api(`/api/menus?receta=${id}`), { method: 'DELETE' })
   }
 
+  /*
+    ══════════════════════════════════════════════════════════════
+    LAS TANDAS QUE SE ESTÁN ACABANDO
+    ══════════════════════════════════════════════════════════════
+
+    Y esto es lo que convierte «alargar» en algo que funciona.
+
+    Un botón de alargar escondido en una ficha es un botón que nadie
+    toca: nadie entra a mirar si su plan se está acabando. Lo que pasa
+    en la vida real es que un viernes la lasaña deja de aparecer y
+    nadie sabe por qué — ni siquiera se echa en falta, simplemente ya
+    no está.
+
+    Así que la tanda lo dice ella. Tres semanas antes, arriba, con su
+    botón al lado. Es la misma idea que gobierna lo que vence: **si
+    algo se va a acabar, lo tiene que decir quien lo sabe.**
+  */
+  const hoy = new Date()
+  const dentroDeTres = new Date(hoy.getTime() + 21 * 86_400_000).toISOString().slice(0, 10)
+
+  const seAcaban = [
+    ...new Map(
+      menus
+        .filter((m) => m.grupo_id && m.repite_hasta && m.repite_hasta <= dentroDeTres)
+        .map((m) => [m.grupo_id!, m])
+    ).values(),
+  ]
+
   return (
     <div>
       {/* ── La semana que se está mirando ── */}
@@ -272,6 +357,23 @@ export default function Semana() {
           />
         </div>
       )}
+
+      {seAcaban.map((m) => (
+        <div key={m.grupo_id} className="mt-3 rounded-[20px] border border-borde bg-superficie px-4 py-3.5">
+          <p className="t-cuerpo leading-snug">
+            <strong className="text-tinta">{m.que}</strong> deja de repetirse el{' '}
+            {comoSeLlamaElDia(m.repite_hasta!)}.
+          </p>
+          <div className="mt-2.5">
+            <BotonSecundario
+              onClick={() => alargarLaTanda(m.grupo_id!)}
+              desactivado={conLaTanda}
+            >
+              {conLaTanda ? 'Un momento…' : 'Alargar tres meses más'}
+            </BotonSecundario>
+          </div>
+        </div>
+      ))}
 
       {/* ── Los siete días ── */}
       <ul className="mt-4 space-y-2.5">
@@ -393,6 +495,59 @@ export default function Semana() {
                             ? `Faltan ${faltan.length} ${faltan.length === 1 ? 'cosa' : 'cosas'}`
                             : 'Está todo para hacerlo'}
                       </button>
+                    )}
+
+                    {/*
+                      ── ESTE PLATO SE REPITE ──
+
+                      Solo sale si el menú nació de una tanda. Dice cada
+                      cuánto vuelve —que es la pregunta de quien se
+                      extraña de verlo— y abre las dos únicas cosas que
+                      se pueden hacer con ella.
+                    */}
+                    {puesto?.grupo_id && comprobando !== puesto.id && (
+                      <div className="ml-[72px]">
+                        <button
+                          onClick={() =>
+                            setLaTanda((g) => (g === puesto.grupo_id ? null : puesto.grupo_id!))
+                          }
+                          className="t-apoyo flex h-12 items-center gap-1.5 font-extrabold"
+                        >
+                          <Ico nombre="refrescar" tam={16} grosor={2.4} />
+                          {puesto.cada_semanas === 2
+                            ? 'Se repite cada dos semanas'
+                            : puesto.cada_semanas === 3
+                              ? 'Se repite cada tres semanas'
+                              : 'Se repite cada semana'}
+                        </button>
+
+                        {laTanda === puesto.grupo_id && (
+                          <div className="mb-1 rounded-[20px] border border-borde bg-fondo px-4 py-3.5">
+                            {puesto.repite_hasta && (
+                              <p className="t-apoyo leading-snug">
+                                Está puesto hasta el {comoSeLlamaElDia(puesto.repite_hasta)}.
+                              </p>
+                            )}
+                            <div className="mt-2.5 space-y-2">
+                              <BotonSecundario
+                                onClick={() => alargarLaTanda(puesto.grupo_id!)}
+                                desactivado={conLaTanda}
+                              >
+                                {conLaTanda ? 'Un momento…' : 'Alargar tres meses más'}
+                              </BotonSecundario>
+                              <BotonDestructivo
+                                onClick={() => quitarLaTanda(puesto.grupo_id!)}
+                                desactivado={conLaTanda}
+                              >
+                                Quitar los que vienen
+                              </BotonDestructivo>
+                            </div>
+                            <p className="t-apoyo mt-2 leading-snug">
+                              Lo de días pasados se queda: es lo que se comió.
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     {comprobando === puesto?.id && (

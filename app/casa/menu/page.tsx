@@ -1,10 +1,10 @@
 import { hoyAqui } from '@/lib/tablon'
 import { elLunesDe, laSemanaDe, comoSeLlamaLaSemana } from '@/lib/menus'
-import { laPared, losMenus } from '@/lib/pared'
-import { Ico } from '../../iconos'
+import { laPared, lasListasDeCompra, losMenus } from '@/lib/pared'
 import { AMBITO } from '../../piezas'
 import { Nada, Rotulo } from '../rotulo'
 import Recetas, { type Receta } from './recetas'
+import Plato from './plato'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +45,7 @@ export default async function Menu() {
   const lunes = elLunesDe(hoy)
   const dias = laSemanaDe(lunes)
 
-  const [menus, lasRecetas] = await Promise.all([
+  const [menus, lasRecetas, listas] = await Promise.all([
     losMenus(supabase, casa, dias[0], dias[6]),
     /*
       El cajón de recetas de la casa. Envuelto como todo lo que puede no
@@ -85,7 +85,16 @@ export default async function Menu() {
         return []
       }
     })(),
+    /* Las listas de la compra, para poder mandarles lo que falte sin
+       salir de la cocina. Envuelto: sin el sql/23 devuelve vacío y el
+       paso de «¿a qué lista?» lo dice con palabras. */
+    lasListasDeCompra(supabase, casa),
   ])
+
+  /* Lo que lleva cada receta, para poder preguntarlo en su día. */
+  const loQueLleva = new Map(
+    lasRecetas.map((r) => [r.id, (r.ingredientes ?? []).filter((i) => (i ?? '').trim().length > 1)])
+  )
 
   const hayAlguno = menus.some((m) => (m.que ?? '').trim().length > 0)
 
@@ -109,13 +118,13 @@ export default async function Menu() {
           {dias.map((dia) => {
             const esHoy = dia === hoy
             const pasado = dia < hoy
-            const comida = menus.find((m) => m.fecha === dia && m.momento === 'comida')?.que ?? null
-            const cena = menus.find((m) => m.fecha === dia && m.momento === 'cena')?.que ?? null
+            const comida = menus.find((m) => m.fecha === dia && m.momento === 'comida')
+            const cena = menus.find((m) => m.fecha === dia && m.momento === 'cena')
 
             return (
               <li
                 key={dia}
-                className={`flex items-center gap-7 rounded-[28px] border px-7 py-5 ${
+                className={`flex items-start gap-7 rounded-[28px] border px-7 py-5 ${
                   pasado ? 'opacity-45' : ''
                 }`}
                 style={{
@@ -137,8 +146,34 @@ export default async function Menu() {
                   </span>
                 </span>
 
-                <Plato etiqueta="Comida" que={comida} />
-                <Plato etiqueta="Cena" que={cena} />
+                <Plato
+                  etiqueta="Comida"
+                  plato={{
+                    id: comida?.id,
+                    que: comida?.que ?? null,
+                    momento: 'comida',
+                    fecha: dia,
+                    comprobado_en: comida?.comprobado_en ?? null,
+                    faltan: comida?.faltan ?? null,
+                  }}
+                  ingredientes={loQueLleva.get(comida?.receta_id ?? '') ?? []}
+                  listas={listas}
+                  apagado={pasado}
+                />
+                <Plato
+                  etiqueta="Cena"
+                  plato={{
+                    id: cena?.id,
+                    que: cena?.que ?? null,
+                    momento: 'cena',
+                    fecha: dia,
+                    comprobado_en: cena?.comprobado_en ?? null,
+                    faltan: cena?.faltan ?? null,
+                  }}
+                  ingredientes={loQueLleva.get(cena?.receta_id ?? '') ?? []}
+                  listas={listas}
+                  apagado={pasado}
+                />
               </li>
             )
           })}
@@ -166,37 +201,6 @@ export default async function Menu() {
       </div>
       </div>
     </section>
-  )
-}
-
-function Plato({ etiqueta, que }: { etiqueta: string; que: string | null }) {
-  return (
-    <span className="flex min-w-0 flex-1 items-center gap-3.5">
-      <span
-        className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px]"
-        style={{
-          background: `color-mix(in srgb, ${AMBITO.arena} 16%, var(--t-superficie))`,
-          color: AMBITO.arena,
-        }}
-      >
-        <Ico nombre="taza" tam={22} grosor={2.1} />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[13.5px] font-extrabold uppercase tracking-wider text-tenue">
-          {etiqueta}
-        </span>
-        {/* Sin plato puesto se dice, no se esconde: que la cena esté sin
-            poner es justamente lo que hace falta ver al pasar por la
-            cocina a las siete. */}
-        <span
-          className={`block text-[23px] font-extrabold leading-tight ${
-            que ? 'text-tinta' : 'text-apagado'
-          }`}
-        >
-          {que ?? 'Sin poner'}
-        </span>
-      </span>
-    </span>
   )
 }
 

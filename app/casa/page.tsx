@@ -5,6 +5,7 @@ import { loDeHoy } from '@/lib/rutinas'
 import { Ico } from '../iconos'
 import { pintaDe } from '../iconos'
 import { AMBITO, PastillaAmbito } from '../piezas'
+import Link from '@/app/enlace'
 import Cosa from './cosa'
 import Mes from './calendario/mes'
 import Rutinas from './rutinas'
@@ -130,8 +131,40 @@ export default async function Hoy() {
   const deHoy = pendientes.filter((c) => c.fecha === hoy)
   const luego = pendientes.filter((c) => c.fecha !== hoy).slice(0, 4)
 
-  const comida = menus.find((m) => m.momento === 'comida')?.que ?? null
-  const cena = menus.find((m) => m.momento === 'cena')?.que ?? null
+  const comida = menus.find((m) => m.momento === 'comida') ?? null
+  const cena = menus.find((m) => m.momento === 'cena') ?? null
+
+  /*
+    ── Y SI LO DE HOY SE PUEDE HACER ──
+
+    Se piden solo los ingredientes de las DOS recetas de hoy, no el
+    cajón entero. Aquí no hace falta elegir nada: hace falta saber si
+    falta algo, y eso son dos filas.
+
+    Envuelto como todo lo del paso 80: sin esa columna, Postgres
+    rechazaría la consulta entera y esta pantalla se quedaría sin
+    menús por una casilla que no existe.
+  */
+  const conReceta = [comida?.receta_id, cena?.receta_id].filter(Boolean) as string[]
+  const loQueLleva = await (async () => {
+    if (conReceta.length === 0) return new Map<string, string[]>()
+    try {
+      const { data, error } = await supabase
+        .from('recetas')
+        .select('id, ingredientes')
+        .eq('hogar_id', casa)
+        .in('id', conReceta)
+      if (error) return new Map<string, string[]>()
+      return new Map(
+        ((data ?? []) as { id: string; ingredientes: string[] | null }[]).map((r) => [
+          r.id,
+          (r.ingredientes ?? []).filter((i) => (i ?? '').trim().length > 1),
+        ])
+      )
+    } catch {
+      return new Map<string, string[]>()
+    }
+  })()
 
   /*
     ── LO DESTACADO VA DENTRO DE HOY, NO EN SU PROPIA SECCIÓN ──
@@ -244,8 +277,20 @@ export default async function Hoy() {
           <Nada>Hoy no hay menú puesto.</Nada>
         ) : (
           <div className="shrink-0 space-y-2.5">
-            <Plato momento="Comida" que={comida} />
-            <Plato momento="Cena" que={cena} />
+            <Plato
+              momento="Comida"
+              que={comida?.que ?? null}
+              lleva={loQueLleva.get(comida?.receta_id ?? '')?.length ?? 0}
+              mirado={Boolean(comida?.comprobado_en)}
+              faltan={comida?.faltan?.length ?? 0}
+            />
+            <Plato
+              momento="Cena"
+              que={cena?.que ?? null}
+              lleva={loQueLleva.get(cena?.receta_id ?? '')?.length ?? 0}
+              mirado={Boolean(cena?.comprobado_en)}
+              faltan={cena?.faltan?.length ?? 0}
+            />
           </div>
         )}
 
@@ -399,10 +444,37 @@ function ALaVista({
   cena esté sin poner es justamente lo que alguien necesita ver al pasar
   por la cocina a las siete.
 */
-function Plato({ momento, que }: { momento: string; que: string | null }) {
-  return (
+function Plato({
+  momento,
+  que,
+  lleva = 0,
+  mirado = false,
+  faltan = 0,
+}: {
+  momento: string
+  que: string | null
+  /** Cuántos ingredientes tiene su receta. Cero = no hay nada que comprobar. */
+  lleva?: number
+  mirado?: boolean
+  faltan?: number
+}) {
+  /*
+    ── AQUÍ SE ENSEÑA, EN EL MENÚ SE CONTESTA ──
+
+    Esta pantalla tiene que caber entera, así que no abre el panel de
+    «¿tienes todo esto?»: dice el estado y lleva a la pestaña del Menú,
+    donde hay sitio para preguntarlo bien.
+
+    Y no es una redirección escondida: es un toque explícito sobre el
+    plato, con su renglón diciendo adónde va. La regla de
+    `en-la-cocina/page.tsx` sigue en pie — lo que no puede pasar es que
+    una pantalla te lleve a otra sin que tú se lo pidas.
+  */
+  const hayQueComprobar = lleva > 0
+
+  const cuerpo = (
     <div
-      className="flex items-center gap-4 rounded-[24px] border bg-superficie px-5 py-4"
+      className="flex items-center gap-4 rounded-[24px] border bg-superficie px-5 py-3.5"
       style={{
         borderColor: 'var(--t-borde)',
         borderLeft: `6px solid ${AMBITO.arena}`,
@@ -428,8 +500,35 @@ function Plato({ momento, que }: { momento: string; que: string | null }) {
         >
           {que ?? 'Sin poner'}
         </span>
+
+        {hayQueComprobar && (
+          <span
+            className="mt-0.5 block text-[16px] font-extrabold"
+            style={{
+              color: !mirado
+                ? 'var(--t-tenue)'
+                : faltan > 0
+                  ? 'var(--t-alerta)'
+                  : 'var(--t-bien)',
+            }}
+          >
+            {!mirado
+              ? `¿Tienes lo que lleva? · ${lleva}`
+              : faltan > 0
+                ? `Faltan ${faltan} ${faltan === 1 ? 'cosa' : 'cosas'}`
+                : 'Está todo para hacerlo'}
+          </span>
+        )}
       </span>
     </div>
+  )
+
+  if (!hayQueComprobar) return cuerpo
+
+  return (
+    <Link href="/casa/menu" className="tocable block">
+      {cuerpo}
+    </Link>
   )
 }
 
