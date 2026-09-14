@@ -22,7 +22,7 @@ export type Cuenta = {
   Tres decisiones de forma, y las tres salen de las reglas del
   proyecto:
 
-  **No se guarda al tocar cada interruptor.** En el resto de HUBI sí
+  **No se guarda al tocar cada interruptor.** En el resto de MAPPEL sí
   —las carpetas, los avisos— porque ahí cada interruptor es una cosa
   independiente. Aquí los siete son UNA decisión, y aplicarla toca
   filas de verdad. Se mira la lista entera, se cuenta lo que va a
@@ -149,7 +149,7 @@ export default function Decidir({
       </p>
 
       <p className="t-apoyo leading-relaxed">
-        Lo que no salga sigue estando en HUBI igual que ahora. Tú y quien viva aquí lo
+        Lo que no salga sigue estando en MAPPEL igual que ahora. Tú y quien viva aquí lo
         seguís viendo todo desde vuestro móvil.
       </p>
 
@@ -235,7 +235,7 @@ export default function Decidir({
 
       {sinDecidir && (
         <p className="t-apoyo px-1 leading-snug">
-          Esto todavía no está guardado: es lo que HUBI propone. Mientras no lo guardes, la
+          Esto todavía no está guardado: es lo que MAPPEL propone. Mientras no lo guardes, la
           pantalla de la cocina no enseñaría <strong className="text-tinta">nada</strong>.
         </p>
       )}

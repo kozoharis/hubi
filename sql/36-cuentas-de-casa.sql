@@ -10,7 +10,7 @@
 -- Y hay un motivo de fondo, que es lo que arregla este archivo:
 --
 --   Las carpetas base de una casa nueva nacen con `naturaleza` a
---   'neutro'. O sea: aunque HUBI lea «127,43 €» en la factura de la
+--   'neutro'. O sea: aunque MAPPEL lea «127,43 €» en la factura de la
 --   luz, NO apunta ningún gasto. El importe se queda en el papel.
 --
 -- En la casa de Juan Miguel no se nota porque el SQL 15 puso a mano
@@ -47,7 +47,7 @@
 --   «si ya tienes casa, te devuelvo la tuya y no toco nada». Eso era
 --   verdad cuando cada persona pertenecía a una sola; desde el SQL 34
 --   ya no, y esa línea dejaba a medias la decisión que se tomó: quien
---   tiene su HUBI puede además llevar el de sus padres, y también al
+--   tiene su MAPPEL puede además llevar el de sus padres, y también al
 --   revés. Ahora solo protege del doble toque: dos casas con el MISMO
 --   nombre, de la misma persona, no se crean.
 --
@@ -134,7 +134,7 @@ begin
 
     Ésta es la línea que faltaba. Una casa nueva nacía con todo a
     'neutro' y por tanto sin cuentas posibles: guardabas la factura de
-    la luz, HUBI leía el importe, y no lo apuntaba en ninguna parte.
+    la luz, MAPPEL leía el importe, y no lo apuntaba en ninguna parte.
   */
   insert into categorias (hogar_id, padre_id, nombre, segmento_drive, orden, naturaleza)
   select casa, c.id, v.nombre, v.segmento, v.orden, v.natura

@@ -116,7 +116,7 @@ export async function POST(peticion: NextRequest) {
       Sólo se leía en el camino del texto, y eso dejaba fuera justo el
       teléfono donde importaba: el iPhone no transcribe, manda el
       audio, así que al pulsar «esto es para la compra» la pista se
-      perdía por el camino y HUBI volvía a adivinar lo mismo que
+      perdía por el camino y MAPPEL volvía a adivinar lo mismo que
       acababa de fallar.
 
       Y es lo que le permite a la pantalla de la cocina tener micrófono
@@ -166,7 +166,7 @@ export async function POST(peticion: NextRequest) {
     ninguna parte: una consulta por voz no escribe nada, y un
     recordatorio dictado es idéntico a uno escrito a mano. Sin esto,
     la tarjeta del Inicio le diría a alguien que no ha hablado con
-    HUBI después de haberlo hecho diez veces.
+    MAPPEL después de haberlo hecho diez veces.
 
     Va sin `await` a propósito y con el fallo tragado: apuntar un
     paso jamás puede retrasar ni tumbar lo que la persona ha pedido.
@@ -247,7 +247,7 @@ export async function POST(peticion: NextRequest) {
     }
 
     /*
-      Gemini primero; si no, HUBI se apaña.
+      Gemini primero; si no, MAPPEL se apaña.
 
       Mientras Gemini responda se usa Gemini: entiende mejor y aguanta
       frases enrevesadas. Cuando no responde —se acabó el cupo del día,
@@ -256,7 +256,7 @@ export async function POST(peticion: NextRequest) {
       La clave está en que las palabras YA ESTÁN: el teléfono las ha
       transcrito y se ven en la pantalla. Perderlas porque un servidor
       está ocupado, delante de alguien que acaba de hablar treinta
-      segundos, es lo que consigue que deje de usar la voz. Que HUBI
+      segundos, es lo que consigue que deje de usar la voz. Que MAPPEL
       acierte un poco menos es un incordio; hacerle repetir la frase
       entera, no.
 
@@ -280,7 +280,7 @@ export async function POST(peticion: NextRequest) {
       if (!texto) throw fallo
 
       console.warn(
-        '[HUBI] Gemini no ha podido; interpretando aquí:',
+        '[MAPPEL] Gemini no ha podido; interpretando aquí:',
         fallo instanceof Error ? fallo.message : fallo
       )
 
@@ -705,7 +705,7 @@ export async function POST(peticion: NextRequest) {
     /*
       ── Qué hay que hacer un día ─────────────────────────────
 
-      "¿Qué tengo mañana?". Se juntan las tareas de HUBI y las citas
+      "¿Qué tengo mañana?". Se juntan las tareas de MAPPEL y las citas
       del Google de quien pregunta, porque para quien lo dice son la
       misma cosa —el punto 18: todo es "cosas que tengo que recordar"—
       y separarlas al contestar sería devolverle una distinción que no
@@ -922,7 +922,7 @@ export async function POST(peticion: NextRequest) {
     })
   } catch (e) {
     const motivo = e instanceof Error ? e.message : ''
-    console.error('[HUBI] Fallo escuchando:', e)
+    console.error('[MAPPEL] Fallo escuchando:', e)
 
     if (motivo === 'SIN_CLAVE_OCR') {
       return NextResponse.json({ error: 'La voz no está configurada todavía.' }, { status: 503 })

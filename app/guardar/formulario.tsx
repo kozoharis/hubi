@@ -353,7 +353,7 @@ export default function Formulario({
 
       Antes un PDF no enseñaba nada: pantalla en blanco mientras se
       leía. Y ahí, con un archivo que además fallaba, era imposible
-      saber si HUBI lo había cogido siquiera.
+      saber si MAPPEL lo había cogido siquiera.
 
       Se dibuja su primera página, que es lo que uno reconoce de un
       vistazo. Va sin esperar a nadie: si tarda o falla, la lectura
@@ -433,7 +433,7 @@ export default function Formulario({
           textoDelMovil = pdf.texto
           digital = pdf.digital
         } catch (e) {
-          console.error('[HUBI] El PDF no se ha podido leer aquí:', e)
+          console.error('[MAPPEL] El PDF no se ha podido leer aquí:', e)
           /* Se sigue: abajo va al modelo como cualquier otro papel. */
         }
       }
@@ -490,7 +490,7 @@ export default function Formulario({
       }
 
       /* Y si no cabe ni así, se dice. Antes este caso era mudo y se
-         vivía como que HUBI «leía mal» por capricho. */
+         vivía como que MAPPEL «leía mal» por capricho. */
       if (!digital && !archivoSirve(paraElModelo)) {
         falloDelModelo = `La foto pesa ${Math.round(paraElModelo.size / 1024 / 1024 * 10) / 10} MB y no he podido reducirla lo suficiente para mandarla al lector bueno.`
       }
@@ -898,7 +898,7 @@ export default function Formulario({
         <div className="columna-formulario">
           <Hecho titulo="Documento guardado" explicacion={resultado.ruta}>
             {resultado.repetida && (
-              /* Esto NO es un error: es que HUBI ha sabido que ese
+              /* Esto NO es un error: es que MAPPEL ha sabido que ese
                  ingreso ya estaba y no lo ha contado dos veces. Iba en
                  coral, que lo leía como un fallo. */
               <Aviso
@@ -1184,7 +1184,7 @@ export default function Formulario({
               {/* El IGIC o el IVA, si el papel lo dice. Solo sale
                   cuando se ha leído: una línea que pone «no lo has
                   dicho» en todos los tickets del súper sería ruido en
-                  la pantalla que más se mira de HUBI. */}
+                  la pantalla que más se mira de MAPPEL. */}
               {datos.impuestoTipo !== '' && (
                 <Dato
                   etiqueta="IGIC / IVA"
@@ -1265,7 +1265,7 @@ export default function Formulario({
                   Este motivo se calculaba y se TIRABA: solo se enseñaba
                   cuando no se conseguía leer nada. Si el respaldo sí
                   leía —peor, pero leía— el porqué se perdía, y desde
-                  fuera parecía que HUBI leía mal por capricho.
+                  fuera parecía que MAPPEL leía mal por capricho.
 
                   Es lo mismo que nos pasó con el índice de los avisos:
                   la respuesta exacta valía más que tres rondas de
@@ -1449,7 +1449,7 @@ export default function Formulario({
 }
 
 /*
-  Lo que HUBI ha leído del papel, plegado.
+  Lo que MAPPEL ha leído del papel, plegado.
 
   No es una pantalla de programador: es la respuesta a "¿por qué no ha
   reconocido nada?". Si el texto sale entero y aun así falta el
@@ -1550,7 +1550,7 @@ function bastante(l: {
     tienda: eran los dibujos del mantel leídos como letras. "Ef» Po
     Pi".
 
-    Con los tres campos "llenos", HUBI se creía que había leído el
+    Con los tres campos "llenos", MAPPEL se creía que había leído el
     papel y no pedía ayuda. El dato inventado tapaba el fallo entero.
 
     Ahora solo cuenta un proveedor RECONOCIDO: uno que ya habéis

@@ -23,7 +23,7 @@ import { hoyAqui } from './tablon'
 
   A propósito, y por seguridad, no por rendimiento.
 
-  Todo HUBI está atado a UNA casa: las políticas preguntan «¿esta fila
+  Todo MAPPEL está atado a UNA casa: las políticas preguntan «¿esta fila
   es de la casa que estás mirando?». Traer aquí quince casas habría
   significado aflojar eso — y una política mal escrita no da error:
   enseña lo que no debía.
@@ -71,7 +71,7 @@ export async function laMesa(supabase: Cliente): Promise<CasaEnLaMesa[] | null> 
     })
 
     if (error) {
-      console.error('[HUBI] El escritorio no ha podido leerse:', error.message)
+      console.error('[MAPPEL] El escritorio no ha podido leerse:', error.message)
       return null
     }
 
@@ -106,7 +106,7 @@ export async function laMesa(supabase: Cliente): Promise<CasaEnLaMesa[] | null> 
       }
     })
   } catch (e) {
-    console.error('[HUBI] El escritorio ha fallado:', e)
+    console.error('[MAPPEL] El escritorio ha fallado:', e)
     return null
   }
 }

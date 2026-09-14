@@ -31,7 +31,7 @@
 --
 -- Esto es deliberado y conviene entenderlo antes de tocarlo.
 --
--- Las fotos **no las sube el navegador**: las sube el servidor de HUBI,
+-- Las fotos **no las sube el navegador**: las sube el servidor de MAPPEL,
 -- que primero comprueba con la sesión de quien pregunta que es de esta
 -- casa, y solo entonces las escribe con la llave de servicio. Y para
 -- enseñarlas, el servidor firma una dirección que caduca.
@@ -66,7 +66,7 @@
 -- Y LA PARED SUBE, PERO NO BORRA
 --
 -- Subir es la mitad de lo que se pidió, así que un `dispositivo` puede
--- insertar aquí — es la ÚNICA tabla de HUBI donde puede escribir algo
+-- insertar aquí — es la ÚNICA tabla de MAPPEL donde puede escribir algo
 -- que no sea la lista de la compra.
 --
 -- Borrar no. Una pantalla colgada en una pared, a la que llega
@@ -189,7 +189,7 @@ create policy "fotos_leer" on fotos_casa for select to authenticated
   using ( de_casa_o_pared(hogar_id) );
 
 /* La pared SÍ sube: es la mitad de lo que se pidió, y la única tabla
-   de HUBI donde un aparato escribe algo que no es la compra.
+   de MAPPEL donde un aparato escribe algo que no es la compra.
    `subida_por = auth.uid()` para que nadie suba a nombre de otro. */
 drop policy if exists "fotos_subir" on fotos_casa;
 create policy "fotos_subir" on fotos_casa for insert to authenticated

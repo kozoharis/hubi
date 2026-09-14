@@ -77,7 +77,7 @@ export default async function Documento({
   }
 
   if (averia) {
-    console.error('[HUBI] No se ha podido leer el documento:', averia.message)
+    console.error('[MAPPEL] No se ha podido leer el documento:', averia.message)
     return <NoSeHaPodido />
   }
   if (!data) notFound()
@@ -222,7 +222,7 @@ export default async function Documento({
           se desliza, se leen los datos. En un monitor esa misma
           columna deja la foto en 288 px de alto con medio metro de
           papel blanco al lado, y obliga a deslizar para comparar lo
-          que pone el papel con lo que HUBI ha entendido — que es
+          que pone el papel con lo que MAPPEL ha entendido — que es
           exactamente lo que se viene a hacer aquí.
 
           El papel se queda PEGADO al desplazarse (`sticky`): se leen
@@ -375,7 +375,7 @@ export default async function Documento({
               {/*
                 ── Y CÓMO SE REPARTE ──
 
-                Faltaba esto, y por eso parecía que HUBI «no separaba el
+                Faltaba esto, y por eso parecía que MAPPEL «no separaba el
                 IGIC»: lo separaba y lo guardaba, pero no lo enseñaba en
                 ningún sitio. Un dato que existe y no se ve, para quien
                 mira la pantalla no existe.
@@ -429,7 +429,7 @@ export default async function Documento({
           Era `bg-verde` con texto BLANCO, 62 px de alto y radio 18.
           Ahora es el botón principal del sistema, con `externo` porque
           abre el archivo en otra pestaña en vez de navegar dentro de
-          HUBI — que es la razón por la que en la primera migración
+          MAPPEL — que es la razón por la que en la primera migración
           tuve que repetir sus estilos a mano.
         */}
         <div className="mt-4 lg:hidden">

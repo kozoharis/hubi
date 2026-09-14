@@ -3,7 +3,7 @@
   LOS COLORES DE LA VOZ
   ═══════════════════════════════════════════════════════════════
 
-  HUBI tiene dos lenguajes visuales y conviene no confundirlos.
+  MAPPEL tiene dos lenguajes visuales y conviene no confundirlos.
 
   **El papel.** Crema, tarjetas blancas, tinta casi negra, un color por
   ámbito usado con cuentagotas. Es todo lo demás: la agenda, la compra,
@@ -11,11 +11,11 @@
 
   **La voz.** Azul de noche `#01071B` y un degradado de turquesa a
   azul. Es la parte que ESCUCHA y ENTIENDE, y se distingue a propósito:
-  cuando algo se pone de este color, HUBI no está enseñando lo que hay
+  cuando algo se pone de este color, MAPPEL no está enseñando lo que hay
   guardado — está interpretando lo que acabas de decir.
 
   Haris, viéndolo en la pared: *«usa los colores de la voz (la parte
-  inteligente) de HUBI como en el móvil… queda muy bien»*.
+  inteligente) de MAPPEL como en el móvil… queda muy bien»*.
 
   ─────────────────────────────────────────────────────────────
   POR QUÉ ESTO ES UN ARCHIVO Y NO UNA CADENA COPIADA
@@ -31,7 +31,7 @@
 /** El azul de noche. El fondo de todo lo que escucha. */
 export const NOCHE = '#01071B'
 
-/** Turquesa → azul. La marca de que HUBI está entendiendo algo. */
+/** Turquesa → azul. La marca de que MAPPEL está entendiendo algo. */
 export const DEGRADADO = 'linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)'
 
 /** El turquesa suelto, para una raya, un punto o un icono. */

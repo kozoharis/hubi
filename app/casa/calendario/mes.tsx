@@ -27,7 +27,7 @@ import { AMBITO } from '../../piezas'
   ─────────────────────────────────────────────────────────────
   EMPIEZA EN LUNES
 
-  Como el resto de HUBI y como cualquier calendario de pared en España.
+  Como el resto de MAPPEL y como cualquier calendario de pared en España.
   `getDay()` devuelve 0 para el domingo, así que aquí se convierte con
   `(d + 6) % 7` — la misma cuenta que hace `lib/menus.ts`.
 */

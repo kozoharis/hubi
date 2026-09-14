@@ -7,7 +7,7 @@ import { clienteNavegador } from '@/lib/supabase/navegador'
 import { Ico, Logo } from '../iconos'
 import ColorDeBarra from '../color-barra'
 import { api } from '@/lib/api'
-import { NOCHE } from '@/lib/voz-hubi'
+import { NOCHE } from '@/lib/voz-mappel'
 
 /*
   Tres pasos, no dos.
@@ -67,7 +67,7 @@ export default function Entrar() {
   /*
     Crear la cuenta y, acto seguido, pedir el número.
 
-    Son dos pasos para HUBI y uno solo para quien se apunta: escribe su
+    Son dos pasos para MAPPEL y uno solo para quien se apunta: escribe su
     correo y su palabra, y lo siguiente que ve es la pantalla del
     número, igual que quien ya tenía cuenta. Cuantas menos pantallas
     distintas, menos sitios donde perderse.
@@ -115,7 +115,7 @@ export default function Entrar() {
           ? [d.error ?? 'No se ha podido crear la cuenta.', d.detalle]
               .filter(Boolean)
               .join(' · ')
-          : 'HUBI no ha llegado a intentar crear la cuenta. No es cosa tuya: avisa a quien lo mantiene.'
+          : 'MAPPEL no ha llegado a intentar crear la cuenta. No es cosa tuya: avisa a quien lo mantiene.'
       )
       return
     }
@@ -180,7 +180,7 @@ export default function Entrar() {
         ═══════════════════════════════════════════════════════
 
         Eran turquesa, NARANJA, ROSA y azul. Y durante mucho tiempo no
-        cantaba: HUBI era gris azulado por dentro y esto azul noche, así
+        cantaba: MAPPEL era gris azulado por dentro y esto azul noche, así
         que pegaban.
 
         Al pasar el producto a papel cálido (Fase 3) se cambió la casa y
@@ -195,7 +195,7 @@ export default function Entrar() {
 
         Ahora las cuatro existen dentro:
 
-            turquesa  el color de acción, y el del degradado de HUBI
+            turquesa  el color de acción, y el del degradado de MAPPEL
             azul      el otro extremo de ese mismo degradado
             arena     el ámbito de la Casa — y lo que anuncia el papel
                       cálido que hay al entrar
@@ -225,7 +225,7 @@ export default function Entrar() {
           </span>
         </div>
         <h1 className="mt-5 text-center text-[34px] font-extrabold tracking-[0.09em] text-white">
-          HUBI
+          MAPPEL
         </h1>
         <p className="mt-1.5 text-center text-[16.5px] font-semibold text-apagado">
           Todo lo importante, en un mismo lugar.
@@ -297,7 +297,7 @@ export default function Entrar() {
           ) : paso === 'alta' ? (
             <form onSubmit={crearCuenta}>
               <p className="text-[16.5px] font-semibold leading-snug text-apagado">
-                HUBI todavía no está abierto a todo el mundo. Para crear tu casa hace
+                MAPPEL todavía no está abierto a todo el mundo. Para crear tu casa hace
                 falta la palabra que te haya dado quien te invitó.
               </p>
 
@@ -448,7 +448,7 @@ function segundosDeEspera(original: string): number | null {
   tragaba también el «Invalid API key» que devuelve Supabase cuando la
   aplicación está mal configurada.
 
-  Resultado: alguien escribía su correo, pulsaba Continuar, y HUBI le
+  Resultado: alguien escribía su correo, pulsaba Continuar, y MAPPEL le
   contestaba «ese número no es correcto» — hablándole de un código que
   aún no había escrito. Con eso, la persona se pone a mirar su bandeja
   de entrada y a copiar números durante media hora, buscando un fallo
@@ -475,7 +475,7 @@ function mensajeClaro(original: string, paso: Paso): string {
      bien configurada. Decirlo así evita que alguien se pase la tarde
      probando códigos buenos. */
   if (e.includes('api key') || e.includes('anon key') || e.includes('jwt')) {
-    return 'HUBI no está bien conectado con su base de datos. No es cosa tuya: avisa a quien lo mantiene.'
+    return 'MAPPEL no está bien conectado con su base de datos. No es cosa tuya: avisa a quien lo mantiene.'
   }
   /*
     «Signups not allowed for otp» significa UNA cosa: Supabase no
@@ -489,8 +489,8 @@ function mensajeClaro(original: string, paso: Paso): string {
   */
   if (e.includes('signups not allowed') || e.includes('not authorized')) {
     return paso === 'alta'
-      ? 'La cuenta se ha creado pero HUBI no ha podido mandarte el número. No es cosa tuya: hay que mirar los ajustes de registro en Supabase.'
-      : 'Este correo no tiene acceso a HUBI. Revisa que esté bien escrito, o crea tu cuenta ahí abajo.'
+      ? 'La cuenta se ha creado pero MAPPEL no ha podido mandarte el número. No es cosa tuya: hay que mirar los ajustes de registro en Supabase.'
+      : 'Este correo no tiene acceso a MAPPEL. Revisa que esté bien escrito, o crea tu cuenta ahí abajo.'
   }
   if (e.includes('rate limit') || e.includes('too many')) {
     return 'Se han pedido demasiados códigos en poco rato. Espera unos minutos y vuelve a intentarlo.'

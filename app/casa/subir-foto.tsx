@@ -10,7 +10,7 @@ import { Ico } from '../iconos'
   HACER UNA FOTO DESDE LA PROPIA PARED
   ═══════════════════════════════════════════════════════════════
 
-  Es **lo único que una pantalla de cocina puede escribir en todo HUBI**
+  Es **lo único que una pantalla de cocina puede escribir en todo MAPPEL**
   aparte de la lista de la compra. Su nivel es `nada` en casi todo, y la
   excepción está escrita a mano en la base (paso 73): un aparato puede
   insertar en `fotos_casa`, y solo ahí.

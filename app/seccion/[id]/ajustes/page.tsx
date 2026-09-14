@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic'
   ═══════════════════════════════════════════════════════════════
 
   Aquí caben las dos cosas que definen una actividad, y son las dos
-  que hacen que HUBI sirva para algo más que para esta casa:
+  que hacen que MAPPEL sirva para algo más que para esta casa:
 
   · **Las partes** —las unidades—: de quién es el gasto.
       Obra Manuel · Helechos 2 · la huerta de arriba
@@ -47,7 +47,7 @@ export const dynamic = 'force-dynamic'
 
   Porque esto es de ESTA actividad, no de la aplicación. Con una
   familia que tenga cinco, Ajustes se convertiría en una lista
-  interminable de cosas que no son ajustes de HUBI sino de su finca.
+  interminable de cosas que no son ajustes de MAPPEL sino de su finca.
   Cada actividad guarda lo suyo dentro.
 */
 

@@ -6,7 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
   ═══════════════════════════════════════════════════════════════
 
   Casi todo el mundo tendrá una y no verá nada de esto nunca. Pero el
-  hijo que tiene su HUBI y además ayuda con el de sus padres tiene dos,
+  hijo que tiene su MAPPEL y además ayuda con el de sus padres tiene dos,
   y necesita saber cuál está mirando y poder cambiar.
 
   ─────────────────────────────────────────────────────────────

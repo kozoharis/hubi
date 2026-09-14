@@ -316,7 +316,7 @@ export async function POST(peticion: NextRequest) {
   /* Con seguridad por filas, un INSERT sin permiso no falla: no crea
      nada y no dice nada. El `.select()` es lo que lo delata. */
   if (error || !creada?.id) {
-    console.error('[HUBI] No se ha podido crear la actividad:', error)
+    console.error('[MAPPEL] No se ha podido crear la actividad:', error)
     return NextResponse.json(
       { error: 'No se ha podido crear la actividad.', detalle: error?.message },
       { status: 500 }
@@ -442,7 +442,7 @@ export async function POST(peticion: NextRequest) {
         .insert(partidas.map((x) => ({ ...x, hogar_id: espacioActividad })))
     }
   } catch (e) {
-    console.error('[HUBI] Actividad creada, partidas a medias:', e)
+    console.error('[MAPPEL] Actividad creada, partidas a medias:', e)
   }
 
   return NextResponse.json({ bien: true, id: raiz })
@@ -588,7 +588,7 @@ export async function DELETE(peticion: NextRequest) {
     .select('id')
 
   if (error || !data || data.length === 0) {
-    console.error('[HUBI] No se ha podido borrar la actividad:', error)
+    console.error('[MAPPEL] No se ha podido borrar la actividad:', error)
     return NextResponse.json(
       {
         error: 'No se ha podido borrar.',

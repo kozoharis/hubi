@@ -13,10 +13,10 @@ export const dynamic = 'force-dynamic'
 
 /*
   ═══════════════════════════════════════════════════════════════
-  CÓMO SE USA HUBI
+  CÓMO SE USA MAPPEL
   ═══════════════════════════════════════════════════════════════
 
-  La guía de dentro de HUBI. Es lo primero de «Tú» en Ajustes, y se
+  La guía de dentro de MAPPEL. Es lo primero de «Tú» en Ajustes, y se
   llega también desde la nota de «Primeros pasos» del Inicio.
 
   ─────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ export default async function ComoSeHace({
         <Volver href="/ajustes" />
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono="ojo" ambito="azul" tam={44} />
-          <h1 className="t-titulo">Cómo se usa HUBI</h1>
+          <h1 className="t-titulo">Cómo se usa MAPPEL</h1>
         </div>
       </Cabecera>
 
@@ -79,16 +79,16 @@ export default async function ComoSeHace({
               El vídeo de arriba no explica nada: enseña QUÉ HAY. En
               treinta segundos alguien que acaba de entrar ve las
               siete cosas seguidas y ya sabe qué puede pedirle a
-              HUBI. Aprender es entrar después en la que le interese.
+              MAPPEL. Aprender es entrar después en la que le interese.
             */}
             <video
-              src="/guia/hubi-todo.mp4"
+              src="/guia/mappel-todo.mp4"
               muted
               loop
               playsInline
               autoPlay
               preload="auto"
-              aria-label="Todo lo que hace HUBI"
+              aria-label="Todo lo que hace MAPPEL"
               className="w-full rounded-[20px] border border-borde bg-fondo"
             />
             <p className="t-apoyo mt-3">

@@ -6,7 +6,7 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { Ico, type Icono } from './iconos'
 import { useCasa } from './actividades-contexto'
 import { pestanasDe, puedeHablar } from './pestanas'
-import { DEGRADADO } from '@/lib/voz-hubi'
+import { DEGRADADO } from '@/lib/voz-mappel'
 
 /*
   La barra de abajo.
@@ -118,7 +118,7 @@ export default function Barra({
 
     Esto arregla un fallo, no es un pulido.
 
-    Todas las pantallas de HUBI son `force-dynamic`: al pulsar una
+    Todas las pantallas de MAPPEL son `force-dynamic`: al pulsar una
     pestaña hay un viaje al servidor, y en un móvil con cobertura
     regular eso son entre 400 y 1500 ms. Durante todo ese rato la
     barra seguía señalando la pestaña ANTERIOR.
@@ -183,7 +183,7 @@ export default function Barra({
         {voz && sePuedeHablar && (
           <Link
             href="/hablar"
-            aria-label="Hablar con HUBI"
+            aria-label="Hablar con MAPPEL"
             className="tocable pointer-events-auto absolute bottom-[10px] right-4 flex flex-col items-center"
           >
             <span className="relative flex h-[52px] w-[52px] items-center justify-center">

@@ -96,7 +96,7 @@ end $$;
 
       tarea · recado · vencimiento · coche · papeles · cita · farmacia
 
-  No lleva `check` con esa lista a propósito. El día que HUBI reconozca
+  No lleva `check` con esa lista a propósito. El día que MAPPEL reconozca
   un tipo nuevo, un `check` haría fallar el guardado con un error que
   no diría esto; sin él, un tipo desconocido en la lista simplemente no
   encuentra filas y no hace nada.
@@ -125,7 +125,7 @@ comment on column hogares.notas_en_casa is
       id, nombre, creado_en, usa_compra, impuesto
 
   `id` es la clave que referencian catorce tablas, y `creado_en` no lo
-  cambia nadie nunca. Ninguna de las dos la escribe HUBI.
+  cambia nadie nunca. Ninguna de las dos la escribe MAPPEL.
 
   Y las dos nuevas tampoco: las escribe `poner_al_dia_la_cocina`, que
   es `security definer` y por tanto no pasa por estos permisos. Si la

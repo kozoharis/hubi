@@ -71,7 +71,7 @@ comment on column miembros.color is
   casa hay dos del mismo papel, el segundo coge el siguiente de la
   lista. Nadie acaba con el color de otro.
 
-  La paleta es la de HUBI y son colores que se leen igual en claro y
+  La paleta es la de MAPPEL y son colores que se leen igual en claro y
   en oscuro. Nada de pasteles: a 14 píxeles un pastel es gris.
 */
 with paleta as (

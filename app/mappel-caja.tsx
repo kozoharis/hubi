@@ -3,16 +3,16 @@
 import { useEffect, useState } from 'react'
 import { useIr } from '@/app/enlace'
 import Link from '@/app/enlace'
-import HubiInput, { type EstadoHubi } from './hubi-input'
+import MappelInput, { type EstadoMappel } from './mappel-input'
 import { esUnaOrden } from '@/lib/entender-voz'
 import { api } from '@/lib/api'
 
 /*
   ═══════════════════════════════════════════════════════════════
-  LA CAJA DE HUBI, CONECTADA
+  LA CAJA DE MAPPEL, CONECTADA
   ═══════════════════════════════════════════════════════════════
 
-  `hubi-input.tsx` era la pieza —los estados, el degradado, el
+  `mappel-input.tsx` era la pieza —los estados, el degradado, el
   medidor— definida en Fase 1 y sin usar. Esto es lo que la enchufa.
 
   ─────────────────────────────────────────────────────────────
@@ -21,9 +21,9 @@ import { api } from '@/lib/api'
   En Papeles había un buscador —«¿Qué estás buscando?»— y en la barra
   un botón de voz. Dos cajas que hacen la MISMA pregunta con dos
   motores distintos, y la persona teniendo que saber a cuál acudir.
-  Eso es exactamente lo contrario de «no busques, pregunta a HUBI».
+  Eso es exactamente lo contrario de «no busques, pregunta a MAPPEL».
 
-  Ahora es una. Escribes lo que sea y HUBI decide qué era.
+  Ahora es una. Escribes lo que sea y MAPPEL decide qué era.
 
   ─────────────────────────────────────────────────────────────
   Y DECIDE AQUÍ, GRATIS, SIN LLAMAR A NADIE
@@ -31,7 +31,7 @@ import { api } from '@/lib/api'
   `esUnaOrden()` corre en el propio móvil: son expresiones regulares,
   no un modelo. Así que escribir «facturas agua 2026» busca al
   instante, igual que antes — no hay ni un viaje de más ni un céntimo
-  de más por haber puesto a HUBI en medio.
+  de más por haber puesto a MAPPEL en medio.
 
   Solo cuando hay una señal de que es una ORDEN o una PREGUNTA se va a
   `/hablar`, que es donde vive la confirmación de siempre.
@@ -41,7 +41,7 @@ import { api } from '@/lib/api'
 
   Y es la regla que hace que esto se pueda soltar en una pantalla que
   antes era un buscador: buscar es instantáneo, gratis y NO CAMBIA
-  NADA. Apuntar sí. Si HUBI se equivoca hacia buscar, te salen unos
+  NADA. Apuntar sí. Si MAPPEL se equivoca hacia buscar, te salen unos
   papeles y vuelves a escribir; si se equivoca hacia apuntar, te deja
   una tarea inventada en la agenda que hay que ir a borrar.
 
@@ -61,10 +61,10 @@ import { api } from '@/lib/api'
 
   Apuntar un gasto, dejar un recado o borrar una cita SÍ tocan algo, y
   eso no se hace nunca sin que lo veas antes. Ahí está bien que se
-  lleve la pantalla: es el sitio donde HUBI enseña lo que ha entendido
+  lleve la pantalla: es el sitio donde MAPPEL enseña lo que ha entendido
   y tú dices que sí.
 
-  Dicho al revés: **desde esta caja HUBI no puede cambiar nada de tus
+  Dicho al revés: **desde esta caja MAPPEL no puede cambiar nada de tus
   cosas sin enseñártelo primero.**
 
   ─────────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ import { api } from '@/lib/api'
   estás mirando la pantalla — y un móvil que se pone a hablar solo en
   mitad del salón cuando nadie le ha hablado asusta.
 */
-export default function HubiCaja({
+export default function MappelCaja({
   donde,
   valor = '',
   /** A dónde va una búsqueda desde esta pantalla. */
@@ -95,7 +95,7 @@ export default function HubiCaja({
 }) {
   const router = useIr()
   const [texto, setTexto] = useState(valor)
-  const [estado, setEstado] = useState<EstadoHubi>('reposo')
+  const [estado, setEstado] = useState<EstadoMappel>('reposo')
   const [cual, setCual] = useState(0)
   const [respuesta, setRespuesta] = useState<string | null>(null)
   const [papel, setPapel] = useState<string | null>(null)
@@ -151,7 +151,7 @@ export default function HubiCaja({
       }
 
       if (!r.ok || !d.respuesta) {
-        if (d.error) console.error('[HUBI] La consulta no ha salido:', d.error)
+        if (d.error) console.error('[MAPPEL] La consulta no ha salido:', d.error)
         setEstado('no_entendido')
         return
       }
@@ -165,7 +165,7 @@ export default function HubiCaja({
   }
 
   return (
-    <HubiInput
+    <MappelInput
       donde={donde}
       sugerencia={rotando && !quieto ? rotando[cual] : undefined}
       estado={estado}
@@ -196,7 +196,7 @@ export default function HubiCaja({
               onClick={() => router.push(`/hablar?dicho=${encodeURIComponent(texto.trim())}`)}
               className="r-campo flex h-[48px] items-center border border-borde px-4 text-[15px] font-extrabold text-tinta"
             >
-              Que lo intente HUBI
+              Que lo intente MAPPEL
             </button>
             <button
               onClick={() => router.push(`${buscarEn}?q=${encodeURIComponent(texto.trim())}`)}

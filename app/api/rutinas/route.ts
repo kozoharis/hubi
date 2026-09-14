@@ -93,7 +93,7 @@ export async function POST(peticion: NextRequest) {
   const { error: alBorrar } = await borrar
 
   if (alBorrar) {
-    console.error('[HUBI] No se ha podido rehacer el plan:', alBorrar)
+    console.error('[MAPPEL] No se ha podido rehacer el plan:', alBorrar)
     return NextResponse.json(
       {
         error: 'No se ha podido guardar el plan.',
@@ -123,7 +123,7 @@ export async function POST(peticion: NextRequest) {
   /* El `.select()`: sin él, un insert que las políticas no permitan
      mete cero filas y contesta que todo ha ido bien. */
   if (error || !data || data.length === 0) {
-    console.error('[HUBI] El plan no ha entrado:', error)
+    console.error('[MAPPEL] El plan no ha entrado:', error)
     return NextResponse.json(
       {
         error: 'No se ha podido guardar el plan.',
@@ -182,7 +182,7 @@ export async function PATCH(peticion: NextRequest) {
       .eq('fecha', fecha)
 
     if (error) {
-      console.error('[HUBI] No se ha podido desmarcar:', error)
+      console.error('[MAPPEL] No se ha podido desmarcar:', error)
       return NextResponse.json(
         { error: 'No se ha podido desmarcar.', detalle: error.message },
         { status: 500 }
@@ -204,7 +204,7 @@ export async function PATCH(peticion: NextRequest) {
     .select('rutina_id')
 
   if (error || !data || data.length === 0) {
-    console.error('[HUBI] No se ha podido marcar:', error)
+    console.error('[MAPPEL] No se ha podido marcar:', error)
     return NextResponse.json(
       {
         error: 'No se ha podido marcar.',

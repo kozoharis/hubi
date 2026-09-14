@@ -23,7 +23,7 @@ import { api } from '@/lib/api'
   ─────────────────────────────────────────────────────────────
   SE DICE LO QUE PASA DE VERDAD AL INVITAR
 
-  Sin adornos: esa persona verá todo. En HUBI no hay documentos
+  Sin adornos: esa persona verá todo. En MAPPEL no hay documentos
   privados todavía —todo lo que se guarda es de la casa— y quien
   invita tiene que saberlo ANTES de escribir un correo, no después.
 */
@@ -115,7 +115,7 @@ export default function Gente({
       setFallo(
         d
           ? [d.error ?? 'No se ha podido invitar.', d.detalle].filter(Boolean).join(' · ')
-          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }
@@ -129,7 +129,7 @@ export default function Gente({
       No es una comodidad: es el único momento en que quien invita está
       pensando en eso. Dejarlo para «entra luego en su ficha y
       prográmaselo» es dejarlo sin montar — y entonces ella entra el
-      primer día y su HUBI está vacío, que es justo lo que no puede
+      primer día y su MAPPEL está vacío, que es justo lo que no puede
       pasar.
 
       Se puede cerrar sin tocar nada, y volver cuando quiera desde el
@@ -163,7 +163,7 @@ export default function Gente({
       setFallo(
         d
           ? [d.error ?? 'No se ha podido.', d.detalle].filter(Boolean).join(' · ')
-          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }
@@ -198,7 +198,7 @@ export default function Gente({
           ? [d.error ?? 'No se ha podido cambiar el color.', d.detalle]
               .filter(Boolean)
               .join(' · ')
-          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }
@@ -299,7 +299,7 @@ export default function Gente({
 
               Se leen como las pestañas de abajo —el dibujo arriba, la
               palabra debajo— que es el idioma que ya habla toda la
-              navegación de HUBI.
+              navegación de MAPPEL.
             */}
             {puedoInvitar && !v.manda && (
               <div className="mt-3 flex gap-1.5 border-t border-borde pt-2.5">
@@ -592,7 +592,7 @@ export default function Gente({
             </p>
 
             <p className="mt-4 text-[14.5px] font-semibold leading-snug text-tenue">
-              No le llega ningún correo de nuestra parte. Dile tú que entre en HUBI con ese
+              No le llega ningún correo de nuestra parte. Dile tú que entre en MAPPEL con ese
               correo y le llegará su número, como a ti.
             </p>
 
@@ -629,9 +629,9 @@ export default function Gente({
 
       {hecho && (
         <p className="rounded-[16px] border border-borde px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
-          Listo. Dile a <strong className="text-tinta">{hecho.nombre}</strong> que entre en HUBI
+          Listo. Dile a <strong className="text-tinta">{hecho.nombre}</strong> que entre en MAPPEL
           con <strong className="text-tinta">{hecho.correo}</strong>: le llegará su número y verá
-          tu invitación nada más entrar, y tiene que aceptarla desde su HUBI.
+          tu invitación nada más entrar, y tiene que aceptarla desde su MAPPEL.
         </p>
       )}
 
@@ -651,7 +651,7 @@ export default function Gente({
   ═══════════════════════════════════════════════════════════════
 
   El dibujo arriba y la palabra debajo, como las pestañas de la barra.
-  Es el idioma que ya habla toda la navegación de HUBI, y repetirlo
+  Es el idioma que ya habla toda la navegación de MAPPEL, y repetirlo
   aquí ahorra tener que aprenderse nada nuevo.
 
   ─────────────────────────────────────────────────────────────

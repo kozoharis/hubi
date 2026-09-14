@@ -92,7 +92,7 @@ export async function avisarDeCompra(quienLoApunta: string, cuantas: number): Pr
   const admin = clienteServidor()
 
   /* Solo los de SU casa. Con la clave de servidor no hay políticas
-     que filtren: «todos los perfiles» son todos los de HUBI, de todas
+     que filtren: «todos los perfiles» son todos los de MAPPEL, de todas
      las familias. */
   const casa = await hogarDe(admin, quienLoApunta)
   if (!casa) return

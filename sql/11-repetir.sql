@@ -11,7 +11,7 @@
 --  `repite` guarda cada cuánto vuelve. `repite_hasta` guarda hasta
 --  cuándo, o nada si es para siempre.
 --
---  Al marcar una como HECHA, HUBI crea la siguiente en ese momento
+--  Al marcar una como HECHA, MAPPEL crea la siguiente en ese momento
 --  y la enlaza con `nace_de`. No se generan las doce del año por
 --  adelantado.
 --

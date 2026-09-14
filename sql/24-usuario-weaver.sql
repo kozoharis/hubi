@@ -1,7 +1,7 @@
 -- ───────────────────────────────────────────────────────────
 --  UN TERCER USUARIO PARA MANTENIMIENTO
 --
---  Haris entra en HUBI con su propio correo para poder comprobar que
+--  Haris entra en MAPPEL con su propio correo para poder comprobar que
 --  todo funciona y arreglar lo que no, sin tener que pedirle prestada
 --  la sesión a Juan Miguel.
 --
@@ -20,7 +20,7 @@
 --
 --  Ser miembro del hogar es ver TODO lo del hogar: las facturas, las
 --  cuentas, la agenda — y los papeles de Salud de Juan Miguel y de
---  Conchita. HUBI no tiene permisos finos: o eres de la casa o no
+--  Conchita. MAPPEL no tiene permisos finos: o eres de la casa o no
 --  eres. Esto no es un usuario "de solo lectura técnica", es un
 --  tercer miembro con acceso completo.
 --
@@ -99,7 +99,7 @@ end $$;
 /*
   Tienen que salir TRES filas, y las tres con su casa puesta. Si
   alguna sale sin hogar, esa persona no verá absolutamente nada al
-  entrar — que es el fallo más desconcertante que puede dar HUBI.
+  entrar — que es el fallo más desconcertante que puede dar MAPPEL.
 */
 select
   p.nombre,

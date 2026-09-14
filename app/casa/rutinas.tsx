@@ -14,7 +14,7 @@ import { AMBITO } from '../piezas'
   Regar, sacar la basura, las pastillas de la mañana. Lo que se repite
   cada semana y no hace falta apuntar porque ya está apuntado.
 
-  Esto ya existía en HUBI —las tablas `rutinas` y `rutinas_hechas`, con
+  Esto ya existía en MAPPEL —las tablas `rutinas` y `rutinas_hechas`, con
   su plan semanal— y no salía en la pared. Era de lo que más falta hacía
   ahí: es exactamente lo que se mira al pasar por la cocina.
 

@@ -66,7 +66,7 @@ function archivos(dir: string, sacos: string[] = []): string[] {
   que los números de renglón sigan siendo los del archivo: un aviso que
   señala el renglón 58 tiene que poder abrirse en el 58.
 
-  Hace falta porque en HUBI los `.select()` largos llevan escrito al
+  Hace falta porque en MAPPEL los `.select()` largos llevan escrito al
   lado por qué piden lo que piden, y un comentario de cuatro renglones
   en medio de una consulta hacía que el rastreador la diera por
   terminada antes de tiempo. El aviso salía en una consulta que SÍ
@@ -123,7 +123,7 @@ function laConsulta(lineas: string[], desde: number): string {
       l.startsWith("'") || l.startsWith('`') || l.startsWith('{') ||
       /^[\w'"]+:/.test(l) || l === '' ||
       /* Un comentario dentro del argumento tampoco corta la consulta.
-         En HUBI eso pasa a menudo: la mitad de los `.select()` largos
+         En MAPPEL eso pasa a menudo: la mitad de los `.select()` largos
          llevan escrito al lado por qué piden lo que piden. */
       l.startsWith('/*') || l.startsWith('*') || l.startsWith('//')
 

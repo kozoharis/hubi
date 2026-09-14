@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
   La compra.
 
   Es la nota de la nevera, y probablemente lo que más se va a usar de
-  todo HUBI: un papel se guarda una vez por semana, la compra es todos
+  todo MAPPEL: un papel se guarda una vez por semana, la compra es todos
   los días.
 
   NO TIENE PESTAÑA PROPIA, y es a propósito. Cinco es el tope: con seis
@@ -169,7 +169,7 @@ export default async function Compra() {
     vacía" — con la compra perfectamente guardada por debajo.
 
     Alguien apunta seis cosas, las ve desaparecer una detrás de otra y
-    concluye, con toda la razón, que HUBI no guarda nada.
+    concluye, con toda la razón, que MAPPEL no guarda nada.
 
     LA REGLA, POR TERCERA VEZ: una columna nueva nunca puede ser
     obligatoria para lo que ya funcionaba. Se pide con ella; si la base
@@ -199,7 +199,7 @@ export default async function Compra() {
   let falloCompra = primera.error
 
   if (falloCompra) {
-    console.error('[HUBI] La compra no ha cargado con lista_id:', falloCompra.message)
+    console.error('[MAPPEL] La compra no ha cargado con lista_id:', falloCompra.message)
     const segunda = await supabase
       .from('compra')
       .select(columnas)
@@ -211,7 +211,7 @@ export default async function Compra() {
     data = segunda.data as Fila[] | null
     falloCompra = segunda.error
     if (falloCompra) {
-      console.error('[HUBI] La compra tampoco ha cargado sin lista_id:', falloCompra.message)
+      console.error('[MAPPEL] La compra tampoco ha cargado sin lista_id:', falloCompra.message)
     }
   }
 
@@ -220,7 +220,7 @@ export default async function Compra() {
 
     Sale de lo ya archivado: si la leche ha entrado seis veces, no hay
     que volver a escribirla nunca. Es la misma idea que con los
-    proveedores de las facturas — HUBI no se vuelve más listo porque le
+    proveedores de las facturas — MAPPEL no se vuelve más listo porque le
     pongamos un modelo mejor, sino porque lo usáis.
   */
   const { data: historia } = await supabase
@@ -258,20 +258,20 @@ export default async function Compra() {
 
       <div className="columna pt-1">
         {/*
-          ── AQUÍ NO VA LA CAJA DE HUBI, Y ES A PROPÓSITO ──
+          ── AQUÍ NO VA LA CAJA DE MAPPEL, Y ES A PROPÓSITO ──
 
           Se puso, y al probarla salió el motivo para quitarla: esta
           pantalla YA tiene su campo —«Leche, pan, huevos…»— y es mejor
-          que HUBI para lo que se hace aquí. Apuntas tres cosas
+          que MAPPEL para lo que se hace aquí. Apuntas tres cosas
           seguidas sin salir, sin esperar y sin confirmar nada.
 
-          Poner encima la caja de HUBI sería volver a tener dos cajas
+          Poner encima la caja de MAPPEL sería volver a tener dos cajas
           haciendo la misma pregunta con dos motores distintos — que es
           exactamente lo que se acaba de quitar de Papeles. Una
           pantalla que ya resuelve lo suyo no necesita un asistente
           delante.
 
-          HUBI sigue estando: el botón de voz de la barra de abajo.
+          MAPPEL sigue estando: el botón de voz de la barra de abajo.
         */}
         {/* Si ni siquiera así se pueden leer, SE DICE. Un "no hay
             nada" cuando lo que pasa es que no se ha podido leer es

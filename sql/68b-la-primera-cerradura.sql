@@ -40,7 +40,7 @@
 -- ─────────────────────────────────────────────────────────────
 -- POR QUÉ SE PUEDE QUITAR SIN ROMPER LA ENTRADA
 --
--- Ésta era la pregunta que faltaba: **¿HUBI llama a algo con la clave
+-- Ésta era la pregunta que faltaba: **¿MAPPEL llama a algo con la clave
 -- pública antes de que exista la sesión?** Se ha ido a mirar al código,
 -- y la respuesta es que no.
 --
@@ -158,7 +158,7 @@ end $$;
 -- 2 · LAS TABLAS
 -- ═══════════════════════════════════════════════════════════════
 /*
-  Aquí `anon` no necesita NADA: no hay una sola consulta de HUBI que
+  Aquí `anon` no necesita NADA: no hay una sola consulta de MAPPEL que
   toque una tabla de `public` sin sesión (el porqué, arriba).
 
   Esto no sustituye a la RLS ni la debilita: es la puerta de antes. Con

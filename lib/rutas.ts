@@ -41,7 +41,7 @@ export function esReservado(camino: { segmento_drive: string }[]): boolean {
 }
 
 /**
- * Construye la ruta de carpetas dentro de la carpeta HUBI del Drive.
+ * Construye la ruta de carpetas dentro de la carpeta MAPPEL del Drive.
  *
  *   Finca → Gastos → Luz    →   FINCA/GASTOS/2026/T3/LUZ
  *   Vehículos → Seguro      →   VEHICULOS/SEGURO/2026

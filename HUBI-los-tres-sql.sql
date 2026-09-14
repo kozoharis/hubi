@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════
--- HUBI · LOS TRES QUE FALTAN
+-- MAPPEL · LOS TRES QUE FALTAN
 -- ═══════════════════════════════════════════════════════════════
 --
 -- 10 de septiembre de 2026. Los tres seguidos, en orden, para pegarlos
@@ -57,7 +57,7 @@
 -- uno escrito a mano.
 --
 -- Se podría haber cambiado el paso por otro que sí se supiera. Pero
--- hablar es la mitad de lo que HUBI promete —hablar, fotografiar,
+-- hablar es la mitad de lo que MAPPEL promete —hablar, fotografiar,
 -- consultar— y dejarlo fuera de los primeros pasos sería enseñar el
 -- producto sin su mejor parte.
 --
@@ -78,7 +78,7 @@ create table if not exists pasos_dados (
 alter table pasos_dados enable row level security;
 
 -- Cada uno los suyos, y solo los suyos. Aquí no hay nada que
--- compartir: que Conchita haya hablado con HUBI no es asunto de nadie
+-- compartir: que Conchita haya hablado con MAPPEL no es asunto de nadie
 -- más, y desde luego no del asesor.
 drop policy if exists pasos_leer on pasos_dados;
 create policy pasos_leer on pasos_dados
@@ -205,7 +205,7 @@ create index if not exists idx_recordatorios_grupo
 -- ─────────────────────────────────────────────────────────────
 -- POR QUÉ UNA FUNCIÓN Y NO CAMBIAR LAS POLÍTICAS
 --
--- Todo HUBI está atado a UNA casa: `mi_hogar()` dice cuál estás
+-- Todo MAPPEL está atado a UNA casa: `mi_hogar()` dice cuál estás
 -- mirando, y todas las políticas de todas las tablas preguntan «¿esta
 -- fila es de esa casa?». Es lo que hace que la finca de una familia no
 -- aparezca jamás en la de otra.
@@ -294,7 +294,7 @@ as $$
 
        `hondura < 12` — un padre que apunte a su propio nieto haría que
        esto girara para siempre, y una consulta infinita en una función
-       que llama la pantalla al abrirla se ve como que HUBI no arranca.
+       que llama la pantalla al abrirla se ve como que MAPPEL no arranca.
        Doce niveles son cuatro veces lo más hondo que tiene nadie. */
     where c.hogar_id = a.hogar_id
       and a.hondura < 12
@@ -362,7 +362,7 @@ comment on function mi_escritorio(date, date) is
 
   Que devuelva filas sin sesión SÍ sería el fallo.
 
-  La prueba de verdad se hace desde HUBI: entra, ve a Ajustes → El
+  La prueba de verdad se hace desde MAPPEL: entra, ve a Ajustes → El
   escritorio, y comprueba que salen tus casas y solo las tuyas.
 */
 select * from mi_escritorio(date_trunc('quarter', current_date)::date,

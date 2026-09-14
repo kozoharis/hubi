@@ -171,7 +171,7 @@ export async function POST(peticion: NextRequest) {
     )
   } catch (e) {
     const motivo = e instanceof Error ? e.message : ''
-    console.error('[HUBI] Fallo subiendo a Drive:', e)
+    console.error('[MAPPEL] Fallo subiendo a Drive:', e)
 
     if (motivo === 'DRIVE_SIN_CONECTAR') {
       return NextResponse.json(
@@ -219,7 +219,7 @@ export async function POST(peticion: NextRequest) {
       /*
         EL TEXTO LEÍDO NO SE GUARDA EN SALUD NI EN PERSONAL.
 
-        Los archivos nunca están en HUBI: están en el Drive de la
+        Los archivos nunca están en MAPPEL: están en el Drive de la
         familia. Pero el TEXTO leído sí se guardaba aquí —1.200
         caracteres, para poder buscar—. Y en un informe médico, ese
         texto ES el dato de salud. Era el único sitio donde información
@@ -227,7 +227,7 @@ export async function POST(peticion: NextRequest) {
 
         Se pierde poder buscar por lo que pone DENTRO de un informe: se
         sigue archivando, viendo y abriendo igual, y se encuentra por
-        su título, su fecha y su carpeta. A cambio, HUBI se queda fuera
+        su título, su fecha y su carpeta. A cambio, MAPPEL se queda fuera
         del artículo 9 del RGPD por construcción y no por promesa — que
         con familias de fuera deja de ser un detalle.
 
@@ -246,7 +246,7 @@ export async function POST(peticion: NextRequest) {
     .single()
 
   if (error) {
-    console.error('[HUBI] Subido a Drive pero no registrado:', error)
+    console.error('[MAPPEL] Subido a Drive pero no registrado:', error)
     return NextResponse.json(
       {
         error:
@@ -327,7 +327,7 @@ export async function POST(peticion: NextRequest) {
        eso hay que DECIRLO — es la diferencia entre "ya lo tenías" y
        un ingreso que se pierde en silencio. */
     if (fallo) {
-      console.error('[HUBI] Documento guardado sin apunte:', fallo)
+      console.error('[MAPPEL] Documento guardado sin apunte:', fallo)
       if (fallo.code === '23505' && referencia) repetida = referencia
     } else {
       apuntado = true

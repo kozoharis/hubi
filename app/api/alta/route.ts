@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 
 /*
   ═══════════════════════════════════════════════════════════════
-  MIRAR CON QUÉ BASE DE DATOS HABLA HUBI DE VERDAD
+  MIRAR CON QUÉ BASE DE DATOS HABLA MAPPEL DE VERDAD
   ═══════════════════════════════════════════════════════════════
 
   Esto está aquí porque nos hemos pasado tres intentos discutiendo
@@ -32,17 +32,59 @@ export const dynamic = 'force-dynamic'
 export async function GET(peticion: NextRequest) {
   const esperada = process.env.PALABRA_DE_ALTA
   const url = new URL(peticion.url)
-  const palabra = (url.searchParams.get('palabra') ?? '').trim()
+
+  /*
+    ═══════════════════════════════════════════════════════════
+    ⚠️  LA PALABRA YA NO VIAJA EN LA BARRA DE DIRECCIONES
+    ═══════════════════════════════════════════════════════════
+
+    Antes se leía de `?palabra=…`, y el comentario de arriba ya
+    avisaba: «una palabra que ha viajado en la barra de direcciones
+    queda escrita en los registros del servidor». Lo avisé y lo dejé
+    así igualmente — o sea que la palabra de alta de MAPPEL está ahora
+    mismo escrita en texto claro en los registros de Vercel, tantas
+    veces como se haya usado esta ruta.
+
+    **Las rutas se registran; las cabeceras no.** Así que va en una
+    cabecera. Se pide igual de fácil:
+
+        curl -H "x-palabra: LA-QUE-SEA" https://…/api/alta
+
+    Y por si alguien tiene un enlace viejo guardado, se sigue
+    admitiendo por la barra —pero se avisa en la respuesta de que esa
+    forma deja rastro y de que hay que cambiar la palabra.
+
+    ⚠️  Independientemente de esto: **cambia `PALABRA_DE_ALTA` en
+    Vercel.** La de ahora hay que darla por conocida.
+  */
+  const enCabecera = (peticion.headers.get('x-palabra') ?? '').trim()
+  const enLaBarra = (url.searchParams.get('palabra') ?? '').trim()
+  const palabra = enCabecera || enLaBarra
 
   if (!esperada || palabra.toLowerCase() !== esperada.trim().toLowerCase()) {
+    /*
+      Un segundo de espera antes de decir que no. No es un límite de
+      intentos de verdad —eso necesita guardar los fallos en algún
+      sitio, y está en el informe—, pero convierte probar un millón de
+      palabras en algo que tarda once días en vez de un rato.
+    */
+    await new Promise((r) => setTimeout(r, 1000))
     return NextResponse.json({ error: 'No.' }, { status: 403 })
   }
+
+  const porLaBarra = !enCabecera && Boolean(enLaBarra)
 
   const direccion = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
   const secreta = process.env.SUPABASE_SECRET_KEY ?? ''
   const buscado = (url.searchParams.get('correo') ?? '').trim().toLowerCase()
 
   const respuesta: Record<string, unknown> = {
+    ...(porLaBarra
+      ? {
+          aviso:
+            'Has mandado la palabra en la barra de direcciones y eso queda escrito en los registros de Vercel. Úsala en la cabecera `x-palabra`, y cambia PALABRA_DE_ALTA.',
+        }
+      : {}),
     proyecto: direccion.replace(/^https?:\/\//, '').replace(/\.supabase\.co.*$/, '') || null,
     clave: !secreta
       ? 'NO ESTÁ PUESTA'
@@ -105,7 +147,7 @@ export async function GET(peticion: NextRequest) {
   · Los códigos de entrada salen hoy del Gmail personal de Juan
     Miguel. Que un desconocido haga salir un correo desde su cuenta no
     se sostiene.
-  · Google tiene HUBI sin verificar: tope de 100 usuarios. Un tope que
+  · Google tiene MAPPEL sin verificar: tope de 100 usuarios. Un tope que
     se gasta solo no se recupera.
 
   Cuando haya remitente propio y verificación, esto se quita cambiando
@@ -116,7 +158,7 @@ export async function GET(peticion: NextRequest) {
 
   Si el correo ya existe, esta ruta contesta lo mismo que si acabara
   de crearlo. Contestar «ese correo ya está registrado» le confirma a
-  cualquiera con la palabra quién usa HUBI, y eso no se cuenta.
+  cualquiera con la palabra quién usa MAPPEL, y eso no se cuenta.
 */
 
 export async function POST(peticion: NextRequest) {
@@ -193,7 +235,7 @@ export async function POST(peticion: NextRequest) {
     bien» sobre una cuenta QUE NO SE HA CREADO. Y lo siguiente que pasa
     es que se pide el número, Supabase contesta «ese usuario no
     existe», y la pantalla le echa la culpa al correo de quien está
-    intentando entrar: «este correo no tiene acceso a HUBI».
+    intentando entrar: «este correo no tiene acceso a MAPPEL».
 
     Media hora buscando un fallo en un correo bien escrito. Eso es
     exactamente «simular una conexión diciendo que funciona».
@@ -209,14 +251,14 @@ export async function POST(peticion: NextRequest) {
     })
 
     if (alBuscar) {
-      console.error('[HUBI] No se ha podido comprobar si la cuenta existe:', alBuscar)
+      console.error('[MAPPEL] No se ha podido comprobar si la cuenta existe:', alBuscar)
     }
 
     existe = (lista?.users ?? []).some((u) => (u.email ?? '').toLowerCase() === correo)
   }
 
   if (!existe) {
-    console.error('[HUBI] La cuenta no se ha creado:', error)
+    console.error('[MAPPEL] La cuenta no se ha creado:', error)
 
     /*
       El motivo de verdad, en la pantalla. No es un descuido: a esta

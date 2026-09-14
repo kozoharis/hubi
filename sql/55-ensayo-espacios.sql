@@ -385,7 +385,7 @@ create policy permisos_mandar on public.permisos_carpeta
 -- equivocado sin un solo error.
 --
 -- Es el último sitio donde `casa_activa` podía decidir dónde va un
--- papel. Hoy no muerde: las diecisiete inserciones de HUBI escriben el
+-- papel. Hoy no muerde: las diecisiete inserciones de MAPPEL escriben el
 -- espacio a mano (eso lo dejó comprobado el paso 1, y `probar-espacio`
 -- lo vigila). Pero un defecto que solo es inofensivo mientras nadie se
 -- despiste no es una garantía, es una casualidad.
@@ -673,7 +673,7 @@ reset role;
 
 -- ── G4 · lo que hoy NO impide el rol de asesor ────────────────
 /*
-  ESTO NO ES UN FALLO DE LA MIGRACIÓN. Es cómo funciona HUBI hoy, y la
+  ESTO NO ES UN FALLO DE LA MIGRACIÓN. Es cómo funciona MAPPEL hoy, y la
   migración lo deja exactamente igual — que es justo lo que se le pide.
 
   El SQL 39 dice, escrito: «el asesor mira las cuentas, no las

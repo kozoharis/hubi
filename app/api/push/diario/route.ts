@@ -41,7 +41,7 @@ export async function GET(peticion: NextRequest) {
     Aquí estaba el aviso que cruzaba familias. Una tarea sin persona
     asignada —«recoger la medicación», para quien pueda— se le mandaba
     a `todos`, y `todos` era, con la clave de servidor, TODOS los
-    usuarios de HUBI. La segunda familia habría hecho sonar el
+    usuarios de MAPPEL. La segunda familia habría hecho sonar el
     teléfono de Juan Miguel y Conchita con sus recados.
 
     Se agrupa por hogar y cada tarea avisa solo a los suyos.
@@ -190,7 +190,7 @@ export async function GET(peticion: NextRequest) {
     }
   } catch (e) {
     /* Sin el sql/47 esto no existe todavía. No es una avería. */
-    console.warn('[HUBI] Pagos fijos: no se han podido poner al día:', e)
+    console.warn('[MAPPEL] Pagos fijos: no se han podido poner al día:', e)
   }
 
   return NextResponse.json({

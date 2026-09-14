@@ -130,7 +130,7 @@ export async function PATCH(peticion: NextRequest) {
       .select('id')
 
     if (error || !data || data.length === 0) {
-      console.error('[HUBI] No se ha podido enganchar el ticket:', error)
+      console.error('[MAPPEL] No se ha podido enganchar el ticket:', error)
       return NextResponse.json(
         {
           error: 'No se ha podido guardar el ticket en la lista.',
@@ -242,7 +242,7 @@ export async function PATCH(peticion: NextRequest) {
       titulo,
       /* El mismo que pondría la ruta de tareas: lo deduce del título
          para que en la Agenda salga con su icono, como todo lo demás.
-         `'compra'` no es un tipo que HUBI conozca. */
+         `'compra'` no es un tipo que MAPPEL conozca. */
       tipo: deducirTipo(titulo),
       asignado_a: asignado,
       fecha,
@@ -274,7 +274,7 @@ export async function PATCH(peticion: NextRequest) {
         .maybeSingle()
 
       if (alCrear || !creada?.id) {
-        console.error('[HUBI] No se ha podido poner la compra en la Agenda:', alCrear)
+        console.error('[MAPPEL] No se ha podido poner la compra en la Agenda:', alCrear)
         return NextResponse.json(
           {
             error: 'No se ha podido poner la compra en la Agenda.',
@@ -299,7 +299,7 @@ export async function PATCH(peticion: NextRequest) {
         titulo: 'La compra',
         cuerpo: `${titulo} · ${cuandoEnPalabras(fecha, hora)}`,
         url: '/compra',
-      }).catch((e) => console.error('[HUBI] Programada sin avisar:', e))
+      }).catch((e) => console.error('[MAPPEL] Programada sin avisar:', e))
     }
   }
 

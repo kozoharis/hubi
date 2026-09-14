@@ -32,7 +32,7 @@ export async function POST(peticion: NextRequest) {
     TEXTO — el móvil ya ha leído el papel él solo. Entonces la foto no
     ha salido del teléfono: aquí solo llega el texto, y lo único que
     queda es entenderlo. Sin servicios externos, sin cuentas, sin
-    cupos. Es lo que se usa desde que HUBI lee en el propio móvil.
+    cupos. Es lo que se usa desde que MAPPEL lee en el propio móvil.
 
     ARCHIVO — la foto entera, para los caminos que todavía la mandan
     (un PDF, o un móvil que no pueda leer por su cuenta).
@@ -107,7 +107,7 @@ export async function POST(peticion: NextRequest) {
     /*
       Dos maneras de leer un papel.
 
-      LA BUENA — Cloud Vision saca el texto, y HUBI lo entiende aquí
+      LA BUENA — Cloud Vision saca el texto, y MAPPEL lo entiende aquí
       mismo, en su propio servidor. Mil documentos al mes gratis, y el
       contenido no se usa para entrenar nada. Es la que se usa si está
       configurada.
@@ -181,7 +181,7 @@ export async function POST(peticion: NextRequest) {
 
         De aquí sale el proveedor y su carpeta: si ENDESA lleva doce
         veces en Finca → Gastos → Luz, no hay nada que adivinar. Esta
-        es la parte que hace que HUBI mejore usándolo, sin cambiar de
+        es la parte que hace que MAPPEL mejore usándolo, sin cambiar de
         modelo ni pagar más.
       */
       const { data: historia } = await supabase
@@ -215,7 +215,7 @@ export async function POST(peticion: NextRequest) {
         Ahora el modelo lo intenta también con texto, que además es más
         rápido y más barato que con una foto. Las reglas se quedan
         DEBAJO, de respaldo, que es para lo que se escribieron: sin
-        cupo, sin conexión o sin clave, HUBI sigue leyendo.
+        cupo, sin conexión o sin clave, MAPPEL sigue leyendo.
       */
       const conocidos = [...cuenta.values()]
 
@@ -225,7 +225,7 @@ export async function POST(peticion: NextRequest) {
           comoSeLeyo = 'modelo'
         } catch (e) {
           porQueReglas = e instanceof Error ? e.message : 'El modelo no ha respondido.'
-          console.warn('[HUBI] El modelo no ha podido con el texto, van las reglas:', e)
+          console.warn('[MAPPEL] El modelo no ha podido con el texto, van las reglas:', e)
         }
       }
 
@@ -265,7 +265,7 @@ export async function POST(peticion: NextRequest) {
     })
   } catch (e) {
     const motivo = e instanceof Error ? e.message : ''
-    console.error('[HUBI] Fallo leyendo el documento:', e)
+    console.error('[MAPPEL] Fallo leyendo el documento:', e)
 
     if (motivo === 'SIN_CLAVE_OCR') {
       return NextResponse.json(

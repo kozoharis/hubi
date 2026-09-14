@@ -44,7 +44,7 @@ import { AMBITO, type Ambito } from '@/lib/ambitos'
   ─────────────────────────────────────────────────────────────
   Y EL TAMAÑO
 
-  Son 88 px de alto. El suelo de HUBI para lo que se pulsa son 48, y
+  Son 88 px de alto. El suelo de MAPPEL para lo que se pulsa son 48, y
   eso es para un dedo que apunta a un teléfono que sostiene. Esto se
   toca de pie, de lado, a veces con las manos ocupadas y casi siempre
   sin mirar dónde se está dando.

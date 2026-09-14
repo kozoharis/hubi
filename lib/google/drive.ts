@@ -6,13 +6,13 @@ const API = 'https://www.googleapis.com/drive/v3'
 const SUBIDA = 'https://www.googleapis.com/upload/drive/v3'
 const CARPETA = 'application/vnd.google-apps.folder'
 
-export const NOMBRE_RAIZ = 'HUBI'
+export const NOMBRE_RAIZ = 'MAPPEL'
 
 /*
   Cómo se llamaba antes.
 
   El producto se llamaba «J+C · Family Hub» y la carpeta también. Al
-  pasar a HUBI, la carpeta se quedó con el nombre viejo — que además
+  pasar a MAPPEL, la carpeta se quedó con el nombre viejo — que además
   lleva las iniciales de una familia concreta dentro del Drive de
   cualquier otra, que es directamente un error.
 
@@ -164,19 +164,19 @@ async function buscarPorNombre(acceso: string, nombre: string): Promise<string |
 }
 
 /**
- * La carpeta raíz de HUBI: la que ya existe, o una nueva.
+ * La carpeta raíz de MAPPEL: la que ya existe, o una nueva.
  *
  * ─────────────────────────────────────────────────────────────
  * OJO CON EL CAMBIO DE NOMBRE
  *
  * La carpeta se llamaba «J+C · FAMILY HUB». Cambiar la constante y ya
  * habría sido un desastre silencioso: al reconectar Google, esta
- * función no habría encontrado ninguna carpeta llamada «HUBI» y
+ * función no habría encontrado ninguna carpeta llamada «MAPPEL» y
  * habría CREADO UNA NUEVA, vacía, al lado de la que tiene todos los
- * papeles. Los documentos viejos seguirían ahí, pero HUBI empezaría a
+ * papeles. Los documentos viejos seguirían ahí, pero MAPPEL empezaría a
  * guardar en la otra, y nadie entendería por qué faltan cosas.
  *
- * Así que si no hay ninguna «HUBI», se busca la del nombre viejo y se
+ * Así que si no hay ninguna «MAPPEL», se busca la del nombre viejo y se
  * le CAMBIA EL NOMBRE. Misma carpeta, mismo identificador, mismos
  * documentos dentro: solo el rótulo.
  */
@@ -198,7 +198,7 @@ export async function asegurarRaiz(acceso: string): Promise<string> {
     /* Si Google no deja renombrarla, se sigue usando la de siempre con
        su nombre viejo. Un rótulo que no cambia es un detalle; crear
        una carpeta nueva y partir los documentos en dos, no. */
-    if (!r.ok) console.error('[HUBI] Carpeta encontrada pero no renombrada:', await r.text())
+    if (!r.ok) console.error('[MAPPEL] Carpeta encontrada pero no renombrada:', await r.text())
 
     return antigua
   }
@@ -287,7 +287,7 @@ export async function idDeCarpeta(
          que pasa es que la próxima vez habrá que volver a buscar la
          carpeta en Drive. Pero que quede dicho en el registro, porque
          una memoria que nunca guarda nada se nota solo en la lentitud. */
-      if (fallo) console.error('[HUBI] Carpeta creada pero no recordada:', fallo)
+      if (fallo) console.error('[MAPPEL] Carpeta creada pero no recordada:', fallo)
     }
 
     padre = id
@@ -349,7 +349,7 @@ export async function descargarArchivo(
 
   Hace falta para corregir un documento mal archivado. Y es la parte
   que de verdad importa: si solo se cambiara la carpeta en NUESTRA base
-  de datos, HUBI diría una cosa y el Drive de la familia tendría otra.
+  de datos, MAPPEL diría una cosa y el Drive de la familia tendría otra.
   A los dos días nadie sabría cuál de los dos tiene razón.
 
   Google lo hace en una sola llamada: `addParents` mete el archivo en

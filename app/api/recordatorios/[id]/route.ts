@@ -48,7 +48,7 @@ export async function PATCH(
       .select('id')
 
     if (error) {
-      console.error('[HUBI] Fallo destacando recordatorio:', error)
+      console.error('[MAPPEL] Fallo destacando recordatorio:', error)
       return NextResponse.json(
         {
           error: 'No se ha podido destacar.',
@@ -83,7 +83,7 @@ export async function PATCH(
     .maybeSingle()
 
   if (error) {
-    console.error('[HUBI] Fallo actualizando recordatorio:', error)
+    console.error('[MAPPEL] Fallo actualizando recordatorio:', error)
     return NextResponse.json(
       { error: 'No se ha podido cambiar.', detalle: error.message },
       { status: 500 }
@@ -205,7 +205,7 @@ export async function PATCH(
             .eq('id', id)
         }
       } catch (e) {
-        console.error('[HUBI] No se ha podido actualizar el calendario:', e)
+        console.error('[MAPPEL] No se ha podido actualizar el calendario:', e)
       }
     }
 
@@ -213,10 +213,10 @@ export async function PATCH(
       Y LA SIGUIENTE DE UNA TAREA QUE SE REPITE, TAMBIÉN.
 
       Aquí faltaba entera. Al marcar hecha "pagar el agua, mensual"
-      nacía la del mes siguiente en HUBI y NADIE la ponía en Google:
+      nacía la del mes siguiente en MAPPEL y NADIE la ponía en Google:
       solo la primera de la serie llegaba al calendario y las demás
       no existían allí. Quien mira el móvil ve una cosa y quien mira
-      HUBI ve otra, que es la peor manera de tener dos sitios.
+      MAPPEL ve otra, que es la peor manera de tener dos sitios.
     */
     if (siguiente && proximaFecha && r) {
       try {
@@ -238,7 +238,7 @@ export async function PATCH(
             .eq('id', siguiente)
         }
       } catch (e) {
-        console.error('[HUBI] La siguiente repetición se ha quedado sin cita:', e)
+        console.error('[MAPPEL] La siguiente repetición se ha quedado sin cita:', e)
       }
     }
   })
@@ -371,7 +371,7 @@ export async function PUT(
     .maybeSingle()
 
   if (error) {
-    console.error('[HUBI] Fallo editando recordatorio:', error)
+    console.error('[MAPPEL] Fallo editando recordatorio:', error)
     return NextResponse.json(
       { error: 'No se ha podido guardar el cambio.', detalle: error.message },
       { status: 500 }
@@ -389,12 +389,12 @@ export async function PUT(
   }
 
   /*
-    Que el calendario de Google diga lo mismo que HUBI.
+    Que el calendario de Google diga lo mismo que MAPPEL.
 
     Y CUANDO SE LE QUITA LA FECHA, QUE SE QUITE DEL CALENDARIO. Esto
     faltaba: una tarea a la que se le borraba el día seguía ocupando su
     hueco en Google para siempre. En el móvil salía una cita que en
-    HUBI ya no tenía fecha, y no había forma de quitarla desde aquí.
+    MAPPEL ya no tenía fecha, y no había forma de quitarla desde aquí.
   */
   /* La casa, mientras todavía hay sesión. */
   const casa = await elEspacio(supabase)
@@ -414,7 +414,7 @@ export async function PUT(
             .eq('hogar_id', casa)
             .eq('id', id)
         } catch (e) {
-          console.error('[HUBI] La cita se ha quedado en Google sin fecha en HUBI:', e)
+          console.error('[MAPPEL] La cita se ha quedado en Google sin fecha en MAPPEL:', e)
         }
       }
       return
@@ -440,7 +440,7 @@ export async function PUT(
           .eq('id', id)
       }
     } catch (e) {
-      console.error('[HUBI] Cambio guardado sin actualizar Google:', e)
+      console.error('[MAPPEL] Cambio guardado sin actualizar Google:', e)
     }
   })
 
@@ -496,7 +496,7 @@ export async function DELETE(
     .select('id')
 
   if (error) {
-    console.error('[HUBI] Fallo borrando recordatorio:', error)
+    console.error('[MAPPEL] Fallo borrando recordatorio:', error)
 
     /* 23503: otra fila apunta a ésta. Le pasa a las tareas repetidas,
        porque la siguiente guarda de cuál nació. */
@@ -529,7 +529,7 @@ export async function DELETE(
 
   /* Después de contestar, pero terminándolo: sin `after`, en Vercel la
      función se congela al devolver la respuesta y la cita se quedaba
-     en el calendario de Google para siempre, borrada en HUBI y viva en
+     en el calendario de Google para siempre, borrada en MAPPEL y viva en
      el móvil. */
   const donde = await elEspacio(supabase)
 
@@ -539,7 +539,7 @@ export async function DELETE(
       try {
         await quitarCita(evento, donde)
       } catch (e) {
-        console.error('[HUBI] Borrado en HUBI pero no en Google:', e)
+        console.error('[MAPPEL] Borrado en MAPPEL pero no en Google:', e)
       }
     })
   }

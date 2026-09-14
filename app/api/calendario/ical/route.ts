@@ -4,7 +4,7 @@ import { clienteServidor } from '@/lib/supabase/servidor'
 import { quien } from '@/lib/supabase/quien'
 import { cifrar } from '@/lib/cifrado'
 import { esDireccionDeCalendario, leerICS } from '@/lib/ical'
-import { idCalendarioHubi } from '@/lib/google/calendario'
+import { idCalendarioMappel } from '@/lib/google/calendario'
 import { elEspacio } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
@@ -34,7 +34,7 @@ export const maxDuration = 30
   Y SOLO DIRECCIONES DE GOOGLE, POR HTTPS.
 
   No es cerrazón. Es una dirección que va a pedir NUESTRO SERVIDOR: si
-  se aceptara cualquiera, HUBI se convertiría en un recadero que va a
+  se aceptara cualquiera, MAPPEL se convertiría en un recadero que va a
   donde le manden —a la red interna de Vercel, por ejemplo, donde viven
   cosas que no debe tocar nadie desde fuera—.
 */
@@ -71,11 +71,11 @@ export async function POST(peticion: NextRequest) {
   }
 
   /*
-    ── Y QUE NO SEA EL PROPIO CALENDARIO HUBI ──
+    ── Y QUE NO SEA EL PROPIO CALENDARIO MAPPEL ──
 
     Es el error fácil de cometer: entrar en Google, ver el calendario
-    llamado HUBI y copiar SU dirección secreta. Parecería lo correcto y
-    sería justo lo contrario: todas las tareas de HUBI volverían por
+    llamado MAPPEL y copiar SU dirección secreta. Parecería lo correcto y
+    sería justo lo contrario: todas las tareas de MAPPEL volverían por
     aquí como si fueran citas de Google y saldrían dos veces en la
     Agenda, una tocable y otra no.
 
@@ -84,12 +84,12 @@ export async function POST(peticion: NextRequest) {
     la que hay que pegar es la del calendario PERSONAL.
   */
   const casa = await elEspacio(supabase)
-  const hubi = casa ? await idCalendarioHubi(casa) : null
-  if (hubi && decodeURIComponent(url).includes(hubi)) {
+  const mappel = casa ? await idCalendarioMappel(casa) : null
+  if (mappel && decodeURIComponent(url).includes(mappel)) {
     return NextResponse.json(
       {
         error:
-          'Esa es la dirección del calendario HUBI, y ése ya lo llenamos nosotros. Lo que hay que pegar aquí es la dirección de tu calendario PERSONAL, el que usas tú, para que sus citas se vean también en HUBI.',
+          'Esa es la dirección del calendario MAPPEL, y ése ya lo llenamos nosotros. Lo que hay que pegar aquí es la dirección de tu calendario PERSONAL, el que usas tú, para que sus citas se vean también en MAPPEL.',
       },
       { status: 400 }
     )
@@ -127,7 +127,7 @@ export async function POST(peticion: NextRequest) {
     dentroDeUnAnio.setFullYear(hoy.getFullYear() + 1)
     cuantas = leerICS(texto, dia(hoy), dia(dentroDeUnAnio)).length
   } catch (e) {
-    console.error('[HUBI] No se ha podido probar el calendario:', e)
+    console.error('[MAPPEL] No se ha podido probar el calendario:', e)
     return NextResponse.json(
       { error: 'No se ha podido conectar con esa dirección. Inténtalo de nuevo.' },
       { status: 502 }

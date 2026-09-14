@@ -4,7 +4,7 @@
   ═══════════════════════════════════════════════════════════════
 
   Coge el CSV que devuelve `sql/sacar-el-esquema.sql` y levanta con él
-  una copia de HUBI en un Postgres cualquiera. Sin datos: solo la forma.
+  una copia de MAPPEL en un Postgres cualquiera. Sin datos: solo la forma.
 
   ─────────────────────────────────────────────────────────────
   POR QUÉ NO VALE EJECUTARLO TAL CUAL
@@ -29,7 +29,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 
-const [csv, base = 'hubi'] = process.argv.slice(2)
+const [csv, base = 'mappel'] = process.argv.slice(2)
 if (!csv) {
   console.error('Falta el CSV.\n  node pruebas/montar-esquema.mjs <el.csv> [base]')
   process.exit(1)
@@ -62,7 +62,7 @@ const guion =
   ORDEN.map((s) => `-- ══ ${s} ══\n${trozos[s]}`).join('\n') +
   '\nreset check_function_bodies;\n'
 
-writeFileSync('/tmp/hubi-esquema-ordenado.sql', guion)
+writeFileSync('/tmp/mappel-esquema-ordenado.sql', guion)
 
 const psql = (args, entrada) =>
   execFileSync('psql', args, { encoding: 'utf8', input: entrada, stdio: ['pipe', 'pipe', 'pipe'] })
@@ -70,7 +70,7 @@ const psql = (args, entrada) =>
 psql(['-q', '-d', 'postgres', '-c', `drop database if exists ${base}`])
 psql(['-q', '-d', 'postgres', '-c', `create database ${base}`])
 psql(['-q', '-v', 'ON_ERROR_STOP=1', '-d', base, '-f', 'pruebas/supabase-de-mentira.sql'])
-psql(['-q', '-v', 'ON_ERROR_STOP=1', '-d', base, '-f', '/tmp/hubi-esquema-ordenado.sql'])
+psql(['-q', '-v', 'ON_ERROR_STOP=1', '-d', base, '-f', '/tmp/mappel-esquema-ordenado.sql'])
 
 const cuenta = (q) => psql(['-At', '-d', base, '-c', q]).trim()
 console.log(`

@@ -1,6 +1,6 @@
-# HUBI · brief de identidad visual
+# MAPPEL · brief de identidad visual
 
-Este documento es la **fuente de verdad** del lenguaje visual de HUBI.
+Este documento es la **fuente de verdad** del lenguaje visual de MAPPEL.
 Está sacado del código del producto (commit `c9f3d98`), no de un manual.
 
 **Aplícalo literalmente.** Donde diga un hexadecimal, usa ese hexadecimal.
@@ -8,7 +8,7 @@ Si algo no está aquí, pregúntalo antes de inventarlo.
 
 ---
 
-## 0 · Qué es HUBI
+## 0 · Qué es MAPPEL
 
 Un asistente familiar digital privado. Centraliza los papeles, el dinero,
 las citas y los recados de una casa. Está pensado para personas mayores
@@ -108,13 +108,13 @@ por `#000`, `#111827` ni ningún gris de sistema.
 linear-gradient(140deg, #2DD4BF, #14B8A6 45%, #3B82F6)
 ```
 
-**Hay UNO SOLO en todo HUBI y significa una cosa concreta: aquí hay
-inteligencia.** Aparece donde HUBI escucha, entiende o responde: el botón de
+**Hay UNO SOLO en todo MAPPEL y significa una cosa concreta: aquí hay
+inteligencia.** Aparece donde MAPPEL escucha, entiende o responde: el botón de
 voz, el aro del micrófono, la línea de arranque.
 
 **NO lo uses como decoración.** Un degradado bonito en una cabecera hace que
 el símbolo deje de querer decir nada. Si lo pones en la web, que sea en la
-sección donde se habla de la voz o de lo que HUBI hace solo.
+sección donde se habla de la voz o de lo que MAPPEL hace solo.
 
 ---
 
@@ -137,7 +137,7 @@ icono al 100 %. Ése es el par que se repite en toda la aplicación.
 
 ## 5 · PROHIBIDO · siete colores retirados
 
-Estos colores estuvieron en HUBI y se retiraron. Tienen **cero usos** en el
+Estos colores estuvieron en MAPPEL y se retiraron. Tienen **cero usos** en el
 producto. Si aparece uno, la web y la aplicación dejan de leerse como la
 misma marca.
 
@@ -196,7 +196,7 @@ y `tabular-nums` en cualquier cifra que se alinee en columna.
 
 ## 8 · Movimiento
 
-HUBI se mueve por **tres razones y ninguna más**. Lo que no confirma algo,
+MAPPEL se mueve por **tres razones y ninguna más**. Lo que no confirma algo,
 no se mueve.
 
 1. **Te he oído** — al pulsar: escala `0.985` + opacidad `0.92`. Ida 120 ms,
@@ -236,7 +236,7 @@ otro público.
 
 **Puede respirar:** la escala tipográfica, la densidad (una web puede contar
 más cosas seguidas), y la **fotografía** — la aplicación no tiene imágenes, y
-la web probablemente deba tenerlas, porque lo que vende HUBI no es una
+la web probablemente deba tenerlas, porque lo que vende MAPPEL no es una
 interfaz sino una escena doméstica: una factura encima de la mesa, un móvil
 en la mano de alguien mayor, una casa.
 

@@ -9,7 +9,7 @@ import { elEspacio } from '@/lib/espacio'
 export const dynamic = 'force-dynamic'
 
 /*
-  Poner en marcha el calendario HUBI.
+  Poner en marcha el calendario MAPPEL.
 
   Crea el calendario dentro de la cuenta de Juan Miguel —si no existía—
   y lo comparte con la otra persona. Solo lo puede lanzar él: es su
@@ -56,7 +56,7 @@ export async function POST() {
     LOS CORREOS DE LOS DE SU CASA. SOLO LOS DE SU CASA.
 
     Aquí había una fuga esperando a la segunda familia: se leían TODOS
-    los usuarios de HUBI y se compartía el calendario con todos. Con
+    los usuarios de MAPPEL y se compartía el calendario con todos. Con
     dos personas era correcto; con dos familias, la casa nueva habría
     invitado a Juan Miguel y a Conchita a su calendario sin querer, y
     ellos habrían visto sus citas médicas en el móvil.
@@ -76,7 +76,7 @@ export async function POST() {
 
   if (error) {
     return NextResponse.json(
-      { error: 'No se ha podido leer quién más usa HUBI.' },
+      { error: 'No se ha podido leer quién más usa MAPPEL.' },
       { status: 500 }
     )
   }

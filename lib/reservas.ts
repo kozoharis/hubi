@@ -2,7 +2,7 @@
   Leer una reserva de una captura de pantalla.
 
   El caso real: Juan Miguel abre Airbnb en el móvil, hace una captura
-  de la reserva y la guarda en HUBI. De ahí tiene que salir el ingreso
+  de la reserva y la guarda en MAPPEL. De ahí tiene que salir el ingreso
   entero — importe, noches, personas y a nombre de quién— sin teclear
   nada.
 

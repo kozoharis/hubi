@@ -19,7 +19,7 @@ import {
   CREAR TU CASA · dos preguntas, una por pantalla
   ═══════════════════════════════════════════════════════════════
 
-  Es lo primero que ve alguien que acaba de entrar en HUBI por primera
+  Es lo primero que ve alguien que acaba de entrar en MAPPEL por primera
   vez, y por tanto lo que decide si se queda. Dos reglas del
   planteamiento mandan aquí más que en ningún otro sitio:
 
@@ -48,12 +48,12 @@ type Actividad = 'finca' | 'obra' | 'alquileres' | 'ninguna'
   Iconos de trazo, no emojis.
 
   Esta es la PRIMERA pantalla que ve alguien, y con emojis prometía un
-  producto que no es el que hay detrás: dentro de HUBI todo son iconos
+  producto que no es el que hay detrás: dentro de MAPPEL todo son iconos
   de trazo. Además cada teléfono pinta el suyo —el 🧱 de Apple y el de
   Android no se parecen—, así que ni siquiera era una decisión nuestra.
 
   Y son EXACTAMENTE los mismos icono y color con los que va a salir
-  esa actividad dos minutos después, cuando entre en su HUBI. Elegir
+  esa actividad dos minutos después, cuando entre en su MAPPEL. Elegir
   «Una finca» y que aparezca una hoja verde es la primera vez que el
   producto le confirma que le ha entendido.
 */
@@ -124,7 +124,7 @@ export default function Empezar({ nombre }: { nombre: string }) {
 
     /* `refresh` antes de moverse: el inicio se pinta en el servidor y
        tiene que volver a leer que ahora sí hay casa. Sin esto se
-       entraría a un HUBI que todavía cree que no existe. */
+       entraría a un MAPPEL que todavía cree que no existe. */
     router.refresh()
     /* espacio: a propósito — al entrar todavía no hay espacio elegido.
        Va al Inicio a secas, y allí `casa_activa` decide cuál se enseña
@@ -143,7 +143,7 @@ export default function Empezar({ nombre }: { nombre: string }) {
           <>
             <h1 className="t-titulo mt-7">Hola, {nombre}</h1>
             <p className="t-cuerpo mt-2 text-tenue">
-              Vamos a crear tu espacio en HUBI. Son dos preguntas y ya está.
+              Vamos a crear tu espacio en MAPPEL. Son dos preguntas y ya está.
             </p>
 
             <Campo
@@ -181,7 +181,7 @@ export default function Empezar({ nombre }: { nombre: string }) {
           <>
             <h1 className="t-titulo mt-7">¿Llevas cuentas de algo?</h1>
             <p className="t-cuerpo mt-2 text-tenue">
-              Si tienes gastos e ingresos de algo concreto, HUBI te lleva las cuentas
+              Si tienes gastos e ingresos de algo concreto, MAPPEL te lleva las cuentas
               solo con fotografiar las facturas.
             </p>
 
@@ -211,12 +211,12 @@ export default function Empezar({ nombre }: { nombre: string }) {
 
               Las cinco carpetas se crean solas. Se pensó en enseñarlas
               aquí con casillas para desmarcar las que no use, y se
-              descartó: en este momento todavía no sabe qué es HUBI, y
+              descartó: en este momento todavía no sabe qué es MAPPEL, y
               pedirle que decida sobre cinco cosas que no ha visto
               nunca es la peor decisión posible en el peor momento.
 
               Se le AVISA en dos líneas —para que reconozca lo que
-              aparece luego en su HUBI y en su Drive— y se le dice
+              aparece luego en su MAPPEL y en su Drive— y se le dice
               dónde se toca. Apagar «Vehículos» cuando descubra que no
               tiene coche cuesta un toque y lo hará entendiendo lo que
               hace.

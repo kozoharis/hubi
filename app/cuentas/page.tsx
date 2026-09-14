@@ -4,7 +4,7 @@ import { quien } from '@/lib/supabase/quien'
 import { actividadesDe } from '@/lib/actividades'
 import { gastadoEnCasa } from '@/lib/gastos-casa'
 import Barra from '../barra'
-import HubiCaja from '../hubi-caja'
+import MappelCaja from '../mappel-caja'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
 import { Ico } from '../iconos'
@@ -126,20 +126,20 @@ export default async function Cuentas() {
           ambito="pizarra"
           titulo="Cuentas"
           pie={`Todo el dinero de la casa · ${nombreMes}`}
-          caja={<HubiCaja donde="cuentas" />}
+          caja={<MappelCaja donde="cuentas" />}
         />
       </Cabecera>
 
       <div className="columna pt-1">
         {/*
-          La caja de HUBI. La misma que en Inicio y en Papeles, con la
+          La caja de MAPPEL. La misma que en Inicio y en Papeles, con la
           sugerencia de aquí: lo que cambia entre pantallas es lo que
           se propone, no lo que hace.
         */}
         {/* En grande la caja sube a la banda de arriba, con el resto
             de las acciones. */}
         <div className="mb-4 lg:hidden">
-          <HubiCaja donde="cuentas" />
+          <MappelCaja donde="cuentas" />
         </div>
 
         {/*

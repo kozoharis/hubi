@@ -415,7 +415,7 @@ export default async function Cuentas({
             Cómo se lleva esta actividad: si va por partes, cómo se
             llama cada una, y sus partidas. Va aquí, al lado de su
             nombre, y no escondido en los Ajustes de la aplicación:
-            esto es de ESTA finca, no de HUBI.
+            esto es de ESTA finca, no de MAPPEL.
 
             Solo sale en las que tienen ficha propia —las que vienen
             de la base de datos—, no en el respaldo antiguo.
@@ -433,7 +433,7 @@ export default async function Cuentas({
         </div>
 
         {/*
-          En grande, la banda común de HUBI: el nombre de la actividad
+          En grande, la banda común de MAPPEL: el nombre de la actividad
           a la izquierda con su pastilla, los segmentos debajo y a su
           tamaño, y a la derecha lo único que se viene a HACER aquí —
           apuntar un movimiento— junto al lápiz de cómo se lleva.

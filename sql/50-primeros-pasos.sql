@@ -20,7 +20,7 @@
 -- uno escrito a mano.
 --
 -- Se podría haber cambiado el paso por otro que sí se supiera. Pero
--- hablar es la mitad de lo que HUBI promete —hablar, fotografiar,
+-- hablar es la mitad de lo que MAPPEL promete —hablar, fotografiar,
 -- consultar— y dejarlo fuera de los primeros pasos sería enseñar el
 -- producto sin su mejor parte.
 --
@@ -41,7 +41,7 @@ create table if not exists pasos_dados (
 alter table pasos_dados enable row level security;
 
 -- Cada uno los suyos, y solo los suyos. Aquí no hay nada que
--- compartir: que Conchita haya hablado con HUBI no es asunto de nadie
+-- compartir: que Conchita haya hablado con MAPPEL no es asunto de nadie
 -- más, y desde luego no del asesor.
 drop policy if exists pasos_leer on pasos_dados;
 create policy pasos_leer on pasos_dados

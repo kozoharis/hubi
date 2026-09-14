@@ -32,7 +32,7 @@ export async function aqui(camino: string): Promise<string> {
  * ─────────────────────────────────────────────────────────────
  * POR QUÉ HACE FALTA
  *
- * A la casa propia no se entra nunca por la puerta: al abrir HUBI se
+ * A la casa propia no se entra nunca por la puerta: al abrir MAPPEL se
  * aterriza en `/` a secas y `casa_activa` decide cuál se enseña. Sin
  * espacio en la barra no hay espacio que conservar, así que los
  * enlaces siguen sin él y esa pestaña vuelve a obedecer al dato

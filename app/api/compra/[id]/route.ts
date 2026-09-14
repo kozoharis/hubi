@@ -34,7 +34,7 @@ export async function PATCH(
     .maybeSingle()
 
   if (error) {
-    console.error('[HUBI] Fallo tachando en la compra:', error)
+    console.error('[MAPPEL] Fallo tachando en la compra:', error)
     return NextResponse.json(
       { error: 'No se ha podido cambiar.', detalle: error.message },
       { status: 500 }
@@ -72,7 +72,7 @@ export async function DELETE(
     .select('id')
 
   if (error) {
-    console.error('[HUBI] Fallo quitando de la compra:', error)
+    console.error('[MAPPEL] Fallo quitando de la compra:', error)
     return NextResponse.json(
       { error: 'No se ha podido quitar.', detalle: error.message },
       { status: 500 }

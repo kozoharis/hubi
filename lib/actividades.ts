@@ -12,7 +12,7 @@ import { elEspacioO } from './espacio'
 
   Antes esto eran dos archivos —`app/finca/page.tsx` y
   `app/helechos/page.tsx`— que hacían lo mismo con otro nombre y otro
-  color. Ahora es un dato, y por eso HUBI ya no necesita a nadie que
+  color. Ahora es un dato, y por eso MAPPEL ya no necesita a nadie que
   escriba código cuando una familia tiene una actividad que no
   habíamos previsto.
 
@@ -49,7 +49,7 @@ type Cliente = SupabaseClient<any, any, any>
   Decía: «si esto falla, devuelve La Finca y Los Helechos escritas a
   mano, y así la barra de abajo sigue funcionando». Y el propio
   comentario avisaba de su fecha de caducidad: «desaparece cuando la
-  primera familia distinta entre en HUBI».
+  primera familia distinta entre en MAPPEL».
 
   Esa familia entró, y pasó exactamente lo previsto. Una casa recién
   creada no tiene ninguna actividad con cuentas, así que la consulta

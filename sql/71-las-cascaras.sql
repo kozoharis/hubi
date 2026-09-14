@@ -14,7 +14,7 @@
 -- ─────────────────────────────────────────────────────────────
 -- QUÉ ARREGLA
 --
--- HUBI tiene un modelo de permisos —`nivel_por_rol` → `nivel_en` →
+-- MAPPEL tiene un modelo de permisos —`nivel_por_rol` → `nivel_en` →
 -- `puede`— y tiene cuatro funciones ANTERIORES a ese modelo que no
 -- pasan por él:
 --
@@ -22,7 +22,7 @@
 --     puedo_escribir      ·  puedo_en_agenda
 --
 -- Esas cuatro gobiernan 32 políticas. O sea que hoy, en la mayor parte
--- de HUBI, el reparto de niveles **no manda**: manda `papel <> 'lector'`
+-- de MAPPEL, el reparto de niveles **no manda**: manda `papel <> 'lector'`
 -- y los dos atajos viejos, `ve_todo` y `escribe_todo`.
 --
 -- Este paso las convierte en cáscaras del modelo. A partir de aquí hay
@@ -81,7 +81,7 @@
 -- ─────────────────────────────────────────────────────────────
 -- LO QUE CAMBIA DE VERDAD · MEDIDO ANTES, EN LA BASE REAL
 --
--- Con `71a-bis` sobre la base de HUBI, 10 personas y 23 carpetas raíz.
+-- Con `71a-bis` sobre la base de MAPPEL, 10 personas y 23 carpetas raíz.
 -- Salieron SIETE filas, y ni una es de la familia:
 --
 --     La cocina   · carpeta Casa ................ deja de verla
@@ -96,7 +96,7 @@
 -- ayuda escribe en tablas de dinero donde su nivel dice `nada`.
 --
 -- ⚠️  Y LA DE ROSANA EN LA AGENDA HAY QUE DECIDIRLA APARTE.
---     Hoy apunta, y HUBI le enseña el botón «Apuntar algo». Con este
+--     Hoy apunta, y MAPPEL le enseña el botón «Apuntar algo». Con este
 --     paso deja de poder y el botón le fallaría. Está en el
 --     `71b`, que es opcional y va después. Léelo antes de dar por
 --     cerrado el 71.
@@ -156,7 +156,7 @@ end $$;
 -- ═══════════════════════════════════════════════════════════════
 /*
   Antes de tocar nada se anota, persona a persona y carpeta a carpeta,
-  qué contesta HUBI hoy. Al final del paso se vuelve a preguntar lo
+  qué contesta MAPPEL hoy. Al final del paso se vuelve a preguntar lo
   mismo y se comparan las dos fotos.
 
   Va en una tabla temporal dentro de la misma transacción: si el paso
@@ -443,7 +443,7 @@ create policy "categorias_crear" on categorias for insert to authenticated
 
   Se borran también las versiones de un solo argumento —`puedo_ver_carpeta(cat)`,
   `puedo_guardar_en(cat)`, `puedo_escribir()`, `puedo_en_agenda()`—, que
-  son de cuando HUBI tenía una casa y ninguna las usa ya. Se comprobó:
+  son de cuando MAPPEL tenía una casa y ninguna las usa ya. Se comprobó:
   ninguna política las nombra y ninguna otra función las llama.
 
   Antes de borrar, la comprobación. Si quedara una sola política

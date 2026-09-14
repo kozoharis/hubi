@@ -22,7 +22,7 @@
   ─────────────────────────────────────────────────────────────
   Y LO QUE MÁS CAMBIA NO ES LO QUE VE: ES LO QUE SE ENCUENTRA
 
-  A quien ayuda en casa, HUBI no le abre en «Cuentas de casa» y
+  A quien ayuda en casa, MAPPEL no le abre en «Cuentas de casa» y
   «Papeles». Le abre en lo de hoy y la compra. El permiso evita que
   vea algo; la pantalla hace que encuentre lo suyo en un segundo, que
   es lo que de verdad se agradece.

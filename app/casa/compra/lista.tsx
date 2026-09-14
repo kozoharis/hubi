@@ -38,7 +38,7 @@ import { AMBITO } from '../../piezas'
   ─────────────────────────────────────────────────────────────
   VARIAS LISTAS, Y SOLO LAS QUE SE HAYAN QUERIDO
 
-  La compra de HUBI son varias listas: la del sábado, la de la
+  La compra de MAPPEL son varias listas: la del sábado, la de la
   ferretería, la de la finca. La pared las enseñaba todas revueltas en
   una montonera.
 

@@ -66,7 +66,7 @@ export default async function EditarDocumento({
   }
 
   if (error) {
-    console.error('[HUBI] No se ha podido abrir para corregir:', error.message)
+    console.error('[MAPPEL] No se ha podido abrir para corregir:', error.message)
     return (
       <main className="min-h-screen pb-40">
         <Cabecera formulario>

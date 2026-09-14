@@ -2,7 +2,7 @@
   El árbol de carpetas.
 
   En Drive la ruta es profunda: FINCA / GASTOS / 2026 / T3 / LUZ.
-  En HUBI solo se enseñan dos niveles —la sección y el concepto— y el
+  En MAPPEL solo se enseñan dos niveles —la sección y el concepto— y el
   año y el trimestre pasan a ser un filtro arriba. La profundidad la
   lleva el sistema, no Juan Miguel ni Conchita.
 */

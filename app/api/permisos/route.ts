@@ -126,7 +126,7 @@ export async function POST(peticion: NextRequest) {
     .select('perfil_id')
 
   if (alMarcar || !cambiado || cambiado.length === 0) {
-    console.error('[HUBI] No se han podido guardar los permisos:', alMarcar)
+    console.error('[MAPPEL] No se han podido guardar los permisos:', alMarcar)
     return NextResponse.json(
       {
         error: 'No se han podido guardar los permisos.',
@@ -150,7 +150,7 @@ export async function POST(peticion: NextRequest) {
   if (filas.length > 0) {
     const { error: alConceder } = await admin.from('permisos_carpeta').insert(filas)
     if (alConceder) {
-      console.error('[HUBI] Permisos a medias:', alConceder)
+      console.error('[MAPPEL] Permisos a medias:', alConceder)
       return NextResponse.json(
         {
           error: 'Los permisos se han guardado a medias. Vuelve a repasarlos.',

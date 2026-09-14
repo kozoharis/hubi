@@ -9,7 +9,7 @@
 -- Hoy, quien entra en una casa lo ve TODO. Para Juan Miguel y
 -- Conchita, que se lo comparten todo, no es un problema. Para un hijo,
 -- un gestor o un cuidador invitado, sí — y es la razón por la que
--- HUBI no se le puede enseñar todavía a según quién.
+-- MAPPEL no se le puede enseñar todavía a según quién.
 --
 -- ─────────────────────────────────────────────────────────────
 -- LA IDEA, EN UNA FRASE

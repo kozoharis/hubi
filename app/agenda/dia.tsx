@@ -96,7 +96,7 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
   const dueno = de && calendarios.some((c) => c.id === de) ? de : null
   const citas = await citasDeLaFamilia(user.id, fecha, fecha, dueno)
 
-  /* Todo junto: lo de HUBI y lo de Google son «cosas que tengo que
+  /* Todo junto: lo de MAPPEL y lo de Google son «cosas que tengo que
      recordar», y en un día se miran igual. */
   const conHora: Bloque[] = []
   const sinHora: Bloque[] = []
@@ -129,7 +129,7 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
         .filter(Boolean)
         .join(' · ') || null,
       /* Las citas de Google no se pueden tocar: viven en su calendario
-         y HUBI solo las enseña. Un enlace que no lleva a nada es peor
+         y MAPPEL solo las enseña. Un enlace que no lleva a nada es peor
          que ningún enlace. */
       href: null,
       hecha: false,
@@ -333,7 +333,7 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
 }
 
 /* Un enlace solo si lleva a algún sitio. Las citas de Google no se
-   pueden abrir: viven en su calendario y HUBI solo las enseña. */
+   pueden abrir: viven en su calendario y MAPPEL solo las enseña. */
 function Enlace({ href, children }: { href: string | null; children: React.ReactNode }) {
   if (!href) return <span className="block">{children}</span>
   return (

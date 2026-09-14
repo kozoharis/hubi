@@ -34,7 +34,7 @@ export type Carpeta = {
 }
 
 /*
-  Los iconos que se pueden poner. Son los que HUBI sabe dibujar como
+  Los iconos que se pueden poner. Son los que MAPPEL sabe dibujar como
   línea: cualquier otro emoji acabaría pintado como una carpeta
   genérica y quien lo eligiera no entendería por qué. Es la misma
   lista que valida la ruta.
@@ -100,7 +100,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
       setFallo(
         d
           ? [d.error ?? 'No se ha podido crear.', d.detalle].filter(Boolean).join(' · ')
-          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }
@@ -213,7 +213,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
 
       <p className="px-1 text-[14.5px] font-semibold leading-snug text-tenue">
         Apagar una carpeta la esconde: deja de salir al guardar papeles. Lo que ya tenga dentro
-        <strong className="text-tinta"> no se borra</strong>, ni en HUBI ni en tu Drive, y vuelve
+        <strong className="text-tinta"> no se borra</strong>, ni en MAPPEL ni en tu Drive, y vuelve
         a aparecer si la enciendes.
       </p>
 

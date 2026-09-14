@@ -105,7 +105,7 @@ async function carpetaDeLaUnidad(
   hogarId: string | null
 ): Promise<string | null> {
   /* Sin saber de qué casa es, no se abre ningún Drive. La unidad se
-     crea igual en HUBI y su carpeta aparecerá con el primer documento
+     crea igual en MAPPEL y su carpeta aparecerá con el primer documento
      que se guarde dentro; abrir «el» Drive a ciegas sería abrir el de
      otra familia. */
   if (!hogarId) return null
@@ -120,7 +120,7 @@ async function carpetaDeLaUnidad(
 
     return await idDeCarpeta(acceso, donde, [segmentoSeccion, limpiar(nombreUnidad)], hogarId)
   } catch (e) {
-    console.error('[HUBI] No se ha podido crear la carpeta de la unidad:', e)
+    console.error('[MAPPEL] No se ha podido crear la carpeta de la unidad:', e)
     return null
   }
 }
@@ -300,7 +300,7 @@ export async function PATCH(peticion: NextRequest) {
 
     Va después de contestar —con `after`, que en Vercel es la única
     forma de que un trabajo lanzado al final se termine de verdad— y
-    NO puede tumbar el cambio: el nombre en HUBI ya está guardado. Si
+    NO puede tumbar el cambio: el nombre en MAPPEL ya está guardado. Si
     Google falla, quedan la carpeta con el nombre viejo y la unidad
     con el nuevo, que es feo pero no pierde nada. Abortar el cambio
     porque Google no contesta sí sería perderlo.
@@ -317,7 +317,7 @@ export async function PATCH(peticion: NextRequest) {
            padres distintos aquí dejaría la carpeta suelta en el Drive. */
         await moverYRenombrar(acceso, carpeta, limpiar(nuevoNombre), carpeta, carpeta)
       } catch (e) {
-        console.error('[HUBI] Unidad renombrada, carpeta de Drive no:', e)
+        console.error('[MAPPEL] Unidad renombrada, carpeta de Drive no:', e)
       }
     })
   }

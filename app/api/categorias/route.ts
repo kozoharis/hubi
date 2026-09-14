@@ -65,7 +65,7 @@ function elNombre(v: unknown): string {
   El grupo GASTOS, INGRESOS o DOCUMENTOS de una actividad, creándolo
   si falta.
 
-  El árbol de HUBI es siempre el mismo —actividad → GASTOS → partida—
+  El árbol de MAPPEL es siempre el mismo —actividad → GASTOS → partida—
   y esa forma es la que hace que las cuentas cuadren y que las
   carpetas de Drive salgan ordenadas. Una actividad recién creada
   todavía no tiene esos grupos, así que se hacen aquí la primera
@@ -269,7 +269,7 @@ export async function POST(peticion: NextRequest) {
   Google, y a medio camino un fallo dejaría media docena con el
   nombre viejo y otra media con el nuevo.
 
-  Lo que se ve en HUBI cambia al momento. Las carpetas antiguas se
+  Lo que se ve en MAPPEL cambia al momento. Las carpetas antiguas se
   quedan con el nombre con el que nacieron, que además es lo honesto:
   aquellos papeles se guardaron llamándose así.
 */

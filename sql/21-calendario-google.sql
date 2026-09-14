@@ -1,16 +1,16 @@
 -- ───────────────────────────────────────────────────────────
---  VOLCAR EL CALENDARIO DE GOOGLE EN HUBI
+--  VOLCAR EL CALENDARIO DE GOOGLE EN MAPPEL
 --
 --  Cada persona puede pegar la "dirección secreta en formato iCal" de
---  su calendario de Google. HUBI la lee desde el servidor y enseña sus
---  citas en la Agenda, junto a las de HUBI.
+--  su calendario de Google. MAPPEL la lee desde el servidor y enseña sus
+--  citas en la Agenda, junto a las de MAPPEL.
 --
 --  POR QUÉ ASÍ Y NO CON UN PERMISO DE GOOGLE
 --
 --  Para leer un calendario, Google exige el permiso `calendar.readonly`
 --  y ése es SENSIBLE: justificación por escrito, verificación del
 --  dominio y un vídeo demostrativo. Nos sacaría de la casilla de "no
---  sensible" justo cuando el plan es abrir HUBI a más familias.
+--  sensible" justo cuando el plan es abrir MAPPEL a más familias.
 --
 --  La dirección iCal no necesita nada de eso: es un archivo de texto
 --  que Google publica en una dirección larguísima e impredecible.

@@ -33,7 +33,7 @@ export const dynamic = 'force-dynamic'
   HOY SE SEÑALA, Y CON LA MISMA MARCA DE SIEMPRE
 
   La columna de hoy va teñida al 6 % de su ámbito, que es el `tinte` de
-  `Fila`. No un borde de color ni una sombra: la manera que HUBI ya usa
+  `Fila`. No un borde de color ni una sombra: la manera que MAPPEL ya usa
   para decir «ésta, entre sus vecinas».
 */
 

@@ -51,7 +51,7 @@ export type Quien = {
 
   · `#14B8A6` — el turquesa que ahora significa ACCIÓN. Con él, la
     primera persona de la casa llevaba en la cara exactamente el color
-    que en el resto de HUBI quiere decir «pulsa esto». Un color no
+    que en el resto de MAPPEL quiere decir «pulsa esto». Un color no
     puede significar dos cosas.
 
   · `#0EA5E9` — un cian que no estaba declarado en ninguna paleta y
@@ -61,7 +61,7 @@ export type Quien = {
   para IDENTIFICAR, que es justo el trabajo de los apagados.
 
   Así que las personas pasan a los ocho colores de ámbito. No es
-  ahorro: es que HUBI tiene UNA paleta que identifica y otra que
+  ahorro: es que MAPPEL tiene UNA paleta que identifica y otra que
   avisa, y una persona se identifica. No se confunden con las
   secciones porque no se parecen en nada más: una persona es un
   círculo con su cara o sus iniciales, siempre al lado de su nombre;
@@ -72,7 +72,7 @@ export type Quien = {
 
   `miembros.color` guarda el hexadecimal, no un nombre. Los que ya
   están puestos son los de antes, y no se puede pedir que alguien
-  entre en Ajustes a recolocar a los suyos para que HUBI se vea bien.
+  entre en Ajustes a recolocar a los suyos para que MAPPEL se vea bien.
   Se traducen al leer, uno a uno, al apagado que más se le parece.
 */
 export const COLORES = [

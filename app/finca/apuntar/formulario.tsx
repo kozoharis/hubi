@@ -170,7 +170,7 @@ export default function Apuntar({
             {/* Lo primero, porque es lo que menos trabajo da */}
             {/*
               Ésta SÍ se tiñe, y es la excepción controlada: es la
-              opción que queremos que se elija —una foto y HUBI hace lo
+              opción que queremos que se elija —una foto y MAPPEL hace lo
               demás— y el tinte es lo que la separa de las dos de
               abajo. Al 12 % era relleno; al 5 % es un matiz.
             */}
@@ -258,7 +258,7 @@ export default function Apuntar({
               que ya se sabe.
 
               Y la frase del desglose se actualiza mientras se escribe:
-              es la prueba de que HUBI ha entendido, sin tener que
+              es la prueba de que MAPPEL ha entendido, sin tener que
               guardar para comprobarlo.
             */}
             {impuesto !== 'ninguno' && (

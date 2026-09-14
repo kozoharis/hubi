@@ -53,7 +53,7 @@ import { api } from '@/lib/api'
   Y SE DICE LO QUE ES, EN LA PANTALLA
 
   «Apuntes para cuadrar el mes», no un registro de jornada. Un
-  registro de jornada tiene requisitos legales que HUBI no cumple, y
+  registro de jornada tiene requisitos legales que MAPPEL no cumple, y
   dejar que alguien crea que sí los cumple sería lo peor que podemos
   hacer aquí.
 */
@@ -121,7 +121,7 @@ export default function Parte({
       setFallo(
         d
           ? [d.error ?? 'No se ha podido guardar.', d.detalle].filter(Boolean).join(' · ')
-          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }

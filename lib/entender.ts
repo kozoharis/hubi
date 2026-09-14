@@ -16,7 +16,7 @@ import { leerReserva } from '@/lib/reservas'
     Finca → Gastos → Luz, no hay nada que deducir: ya está decidido.
 
   Eso significa que la primera factura de cada empresa la clasificas
-  tú, y a partir de esa, sola. HUBI no se vuelve más listo porque le
+  tú, y a partir de esa, sola. MAPPEL no se vuelve más listo porque le
   pongamos un modelo mejor: se vuelve más listo porque vosotros lo
   usáis. Y nada de esto sale del servidor.
 
@@ -78,7 +78,7 @@ function limpio(t: string): string {
 
   Antes se usaba `includes` a secas, y eso busca trozos. Con un billete
   de barco de verdad, "digi" —la compañía de teléfono— apareció dentro
-  de "digital", y HUBI dijo que el proveedor del billete era Digi. Lo
+  de "digital", y MAPPEL dijo que el proveedor del billete era Digi. Lo
   mismo hacía "prima" dentro de "primera", que convertía cualquier
   papel en una póliza de seguros.
 
@@ -149,7 +149,7 @@ function elImporte(texto: string, plano: string): number | null {
     "importe". Con un billete de barco eso falló feo: el papel decía
     "Importe 16,34 €" y también "El importe de las tasas es de
     26,98 €". Los dos llevaban la palabra "importe" al lado, así que
-    ganaba el más grande — y HUBI apuntó las tasas como si fuera lo
+    ganaba el más grande — y MAPPEL apuntó las tasas como si fuera lo
     pagado.
 
     Ahora cada cifra suma o resta según lo que tiene escrito JUSTO
@@ -179,7 +179,7 @@ function elImporte(texto: string, plano: string): number | null {
 
 // ── El IGIC o el IVA, que viene ESCRITO en el papel ───────
 /*
-  Hasta ahora HUBI aplicaba el tipo general de la casa y calculaba el
+  Hasta ahora MAPPEL aplicaba el tipo general de la casa y calculaba el
   desglose hacia atrás. Acierta casi siempre y es exactamente lo que
   hace falta cuando el papel no dice nada… pero es una suposición, y la
   factura normalmente LO PONE:
@@ -351,9 +351,9 @@ function elProveedor(plano: string, conocidos: Conocido[]): string | null {
   empresa y no de etiqueta.
 
   Esto importa más de lo que parece, porque es la PRIMERA factura de
-  cada proveedor: la vez que la persona le enseña a HUBI dónde va. Si
+  cada proveedor: la vez que la persona le enseña a MAPPEL dónde va. Si
   el nombre ya viene puesto, solo tiene que elegir carpeta. Y desde la
-  segunda, HUBI lo reconoce por su cuenta.
+  segunda, MAPPEL lo reconoce por su cuenta.
 */
 const NO_ES_EMPRESA = [
   'factura', 'fecha', 'original', 'copia', 'codigo', 'descripcion',
@@ -418,7 +418,7 @@ function elQueLoEmite(texto: string): string | null {
       como el nombre de la tienda.
 
       Y lo grave no era el nombre feo: era que, con un proveedor
-      "encontrado", HUBI se creía que había leído bien el papel y NO
+      "encontrado", MAPPEL se creía que había leído bien el papel y NO
       pedía ayuda. Un dato inventado tapaba el fallo entero.
 
       Un nombre de verdad tiene una palabra seguida de cuatro letras
@@ -539,7 +539,7 @@ export function entenderPapel(
     encima de un mantel — de ahí salió "Ef» Po Pi".
 
     La diferencia se guarda, porque de ella depende algo importante:
-    con un nombre deducido, HUBI no puede fiarse de su propia lectura
+    con un nombre deducido, MAPPEL no puede fiarse de su propia lectura
     y tiene que pedir ayuda. Un dato inventado que tapa un fallo es
     peor que un hueco vacío.
   */
@@ -550,7 +550,7 @@ export function entenderPapel(
 
   /* La carpeta: la que más veces ha usado ese mismo proveedor. Sin
      historia todavía, se queda vacía y la elige la persona — que es
-     justo la vez que enseña a HUBI dónde va. */
+     justo la vez que enseña a MAPPEL dónde va. */
   /* En una reserva el "proveedor" es la plataforma: es lo que se
      repite reserva tras reserva, y por tanto lo que enseña la carpeta.
      La primera de Airbnb la clasificáis vosotros; de la segunda en

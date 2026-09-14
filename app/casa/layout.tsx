@@ -9,16 +9,16 @@ export const dynamic = 'force-dynamic'
 
 /*
   ═══════════════════════════════════════════════════════════════
-  HUBI CASA · el armazón de la pared
+  MAPPEL CASA · el armazón de la pared
   ═══════════════════════════════════════════════════════════════
 
   La pregunta que contesta la pared: **¿qué pasa en esta casa?**
-  Lo que NO es: el HUBI de una persona puesto en horizontal.
+  Lo que NO es: el MAPPEL de una persona puesto en horizontal.
 
   ─────────────────────────────────────────────────────────────
   LA LECCIÓN QUE PAGÓ ESTA PANTALLA, Y HAY QUE DEJARLA ESCRITA
 
-  La primera versión no hablaba el idioma de HUBI: texto suelto sobre
+  La primera versión no hablaba el idioma de MAPPEL: texto suelto sobre
   fondo liso, emojis por iconos, fondo negro heredado del sistema. Un
   panel de administrador, que es exactamente lo que descarta el punto
   28 del planteamiento.
@@ -63,7 +63,7 @@ export const dynamic = 'force-dynamic'
   todas las paredes desde hace doscientos años.
 
   **Las cinco pestañas.** Hoy, Semana, Menú, Tareas y Notas. A 88 px,
-  casi el doble del suelo de HUBI: esto se toca de pie, de lado y con
+  casi el doble del suelo de MAPPEL: esto se toca de pie, de lado y con
   las manos ocupadas.
 
   ─────────────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
         <div className="flex shrink-0 flex-col items-end gap-5">
           <p className="flex items-center gap-3.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-hubi.png" alt="HUBI" className="block h-[30px] w-auto" />
+            <img src="/logo-mappel.png" alt="MAPPEL" className="block h-[30px] w-auto" />
             <span className="truncate text-[19px] font-extrabold uppercase tracking-[0.22em] text-tenue">
               {nombre}
             </span>

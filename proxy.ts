@@ -167,7 +167,7 @@ export async function proxy(peticion: NextRequest) {
     Las galletas de la sesión las ha ido dejando Supabase en
     `respuesta` mientras se renovaba el testigo. Si se devolviera una
     respuesta nueva sin copiarlas, la sesión se perdería cada vez que
-    tocara renovarla — y eso son unas horas, así que parecería que HUBI
+    tocara renovarla — y eso son unas horas, así que parecería que MAPPEL
     echa a la gente sola de vez en cuando.
   */
   const destino = peticion.nextUrl.clone()

@@ -11,7 +11,7 @@
 --  reformista no tiene unidades: tiene OBRAS.
 --
 --  Así que cada sección guarda cómo se llama cada una de las suyas, y
---  HUBI construye las frases con esa palabra:
+--  MAPPEL construye las frases con esa palabra:
 --
 --      «+ Nueva obra»      «Cada obra»      «¿De qué obra es?»
 --      «+ Nuevo apartamento»               «¿De qué apartamento es?»
@@ -37,7 +37,7 @@
 --  es de ninguna.
 --
 --  Aquí se guarda el identificador de esa carpeta, para poder
---  renombrarla en Drive cuando se renombre la unidad en HUBI.
+--  renombrarla en Drive cuando se renombre la unidad en MAPPEL.
 --
 --  ─────────────────────────────────────────────────────────
 --  LOS PAPELES QUE YA ESTÁN GUARDADOS NO SE MUEVEN.
@@ -45,7 +45,7 @@
 --  Se quedan en HELECHOS/GASTOS/... y los nuevos irán a
 --  HELECHOS/HELECHOS 2/GASTOS/... Mover los archivos que ya están
 --  significaría tocar el Drive de Juan Miguel por nuestra cuenta, y
---  eso no se hace sin que lo pida. En HUBI se siguen viendo todos
+--  eso no se hace sin que lo pida. En MAPPEL se siguen viendo todos
 --  juntos igual: lo que cambia es la estantería, no la lista.
 --
 --  Se puede ejecutar más de una vez sin estropear nada.

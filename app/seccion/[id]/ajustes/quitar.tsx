@@ -71,7 +71,7 @@ export default function Quitar({
       setFallo(
         d
           ? [d.error ?? 'No se ha podido quitar.', d.detalle].filter(Boolean).join(' · ')
-          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }
@@ -123,7 +123,7 @@ export default function Quitar({
       <div className="mt-3.5 space-y-2">
         {/*
           Iba relleno de `#E11D48`, un rojo que NO EXISTE en la paleta
-          de HUBI — ni como color de marca ni como color de estado. Y
+          de MAPPEL — ni como color de marca ni como color de estado. Y
           un botón rojo grande invita a pulsarlo tanto como cualquier
           otro botón grande: lo que hace falta es que se distinga y que
           cueste un poco más, no que grite.

@@ -39,7 +39,7 @@ export async function POST(peticion: NextRequest) {
   )
 
   if (error) {
-    console.error('[HUBI] Fallo guardando suscripción:', error)
+    console.error('[MAPPEL] Fallo guardando suscripción:', error)
     return NextResponse.json({ error: 'No se ha podido activar.' }, { status: 500 })
   }
 

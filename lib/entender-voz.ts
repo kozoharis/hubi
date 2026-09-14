@@ -13,7 +13,7 @@ import type { Entendido, Tarea } from '@/lib/voz'
   Por qué hacía falta: las palabras YA ESTÁN. El teléfono las ha
   transcrito, se ven en la pantalla. Perderlas porque un servidor de
   Google está ocupado, delante de alguien que acaba de hablar treinta
-  segundos, es el peor fallo que puede tener esta función. Que HUBI
+  segundos, es el peor fallo que puede tener esta función. Que MAPPEL
   acierte un poco menos es un incordio; que le haga repetir la frase
   entera es lo que consigue que deje de usarla.
 
@@ -231,12 +231,12 @@ function queSeñalPega(plano: string): Entendido['accion'] | null {
 
   `queQuiere` acaba en «recordatorio» cuando no reconoce nada, y eso
   es correcto DENTRO de la pantalla de voz: allí ya has decidido
-  hablarle a HUBI, así que ante la duda apuntar algo y enseñarte la
+  hablarle a MAPPEL, así que ante la duda apuntar algo y enseñarte la
   confirmación es lo que menos daño hace.
 
-  Pero la caja de HUBI vive dentro de Papeles, donde antes había un
+  Pero la caja de MAPPEL vive dentro de Papeles, donde antes había un
   buscador. Ahí esa misma caída es lo peor que puede pasar: escribes
-  «seguro coche» buscando tu póliza y HUBI te apunta una tarea que se
+  «seguro coche» buscando tu póliza y MAPPEL te apunta una tarea que se
   llama «seguro coche». Buscar no tiene efectos; apuntar sí.
 
   Así que aquí se pregunta al revés: no «qué es esto», sino «¿hay
@@ -271,7 +271,7 @@ export function esUnaOrden(frase: string): Entendido['accion'] | null {
 
     Dentro de la pantalla de voz daba igual —caían en recordatorio por
     descarte y funcionaban— pero desde la caja, sin señal, se irían a
-    buscar. Escribir «recuérdale a Juan Miguel que…» y que HUBI te
+    buscar. Escribir «recuérdale a Juan Miguel que…» y que MAPPEL te
     enseñe una lista de papeles sería el peor fallo de esta caja.
 
     Así que lo que era una caída se escribe: los verbos con los que la
@@ -515,7 +515,7 @@ function laRepeticion(plano: string): Tarea['repite'] {
   verbos, los artículos y el relleno, y queda lo que de verdad estaría
   escrito en el título de la tarea.
 
-  Si no queda nada con sustancia, se devuelve vacío — y entonces HUBI
+  Si no queda nada con sustancia, se devuelve vacío — y entonces MAPPEL
   pregunta cuál en vez de adivinar. Borrar la tarea equivocada es peor
   que no borrar ninguna.
 */
@@ -981,7 +981,7 @@ function paraQuien(plano: string, personas: { nombre: string }[]): string | null
   «apúntame para el viernes lo del banco» como «Para lo del banco».
   Los dos salieron a la primera al probar frases de verdad, que es lo
   que pasa cuando la lista se escribe de memoria en vez de dictándole
-  cosas a HUBI.
+  cosas a MAPPEL.
 
   Van todas las personas del verbo —me, le, nos— porque las tres se
   usan: uno se lo apunta a sí mismo, se lo deja al otro, o lo apunta
@@ -1135,14 +1135,14 @@ export function entenderFrase(opciones: {
 
     Es el peor fallo posible de esta pantalla y estaba pasando: "dime
     los ingresos previstos de Los Helechos tres" no encajaba en ninguna
-    señal de consulta, se caía a "recordatorio" y HUBI APUNTABA LA
+    señal de consulta, se caía a "recordatorio" y MAPPEL APUNTABA LA
     PREGUNTA EN EL CALENDARIO. No solo no contestaba: ensuciaba la
     agenda con una cita que nadie había pedido y que hay que borrar a
     mano.
 
     La regla es sencilla y no necesita listar cada frase posible: si
     empieza pidiendo información —dime, dame, cuánto, cuál, qué— y
-    nombra algo que HUBI guarda —ingresos, gastos, balance, facturas,
+    nombra algo que MAPPEL guarda —ingresos, gastos, balance, facturas,
     la compra, la agenda—, es una pregunta. Nunca una tarea.
   */
   if (!opciones.pista && ES_UNA_PREGUNTA.test(plano)) accion = 'consulta'

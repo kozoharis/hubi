@@ -139,7 +139,7 @@ export default function Semana({
       setFallo(
         d
           ? [d.error ?? 'No se ha podido guardar.', d.detalle].filter(Boolean).join(' · ')
-          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }

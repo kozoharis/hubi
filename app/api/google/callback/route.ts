@@ -80,7 +80,7 @@ export async function GET(peticion: NextRequest) {
     respuesta.cookies.delete('fh_estado')
     return respuesta
   } catch (e) {
-    console.error('[HUBI] Fallo conectando Drive:', e)
+    console.error('[MAPPEL] Fallo conectando Drive:', e)
     return volver('error')
   }
 }

@@ -14,7 +14,7 @@ import type { Icono } from './iconos'
   el mismo sitio:
 
       ┌──────────────────────────────────────────────────────────┐
-      │ ⬤ Título                    [ caja de HUBI ] [ ACCIÓN ]  │
+      │ ⬤ Título                    [ caja de MAPPEL ] [ ACCIÓN ]  │
       │                                                          │
       │ [ Mes · Trimestre · Año ]                                │
       └──────────────────────────────────────────────────────────┘
@@ -42,7 +42,7 @@ import type { Icono } from './iconos'
   qué puedes hacer.
 
   Es exactamente lo que ya hace el Inicio —el saludo a la izquierda,
-  la caja de HUBI y «Guardar documento» a la derecha—, así que esto no
+  la caja de MAPPEL y «Guardar documento» a la derecha—, así que esto no
   inventa una regla: extiende a las demás la que ya estaba aprobada.
 
   Y de paso resuelve un problema de verdad: «Apuntar un movimiento»
@@ -117,7 +117,7 @@ export default function Encabezado({
   volver?: string
   /** Los segmentos de la pantalla: Mes/Trimestre/Año, Semana/Mes. */
   controles?: ReactNode
-  /** La caja de HUBI de esta pantalla, si la tiene. */
+  /** La caja de MAPPEL de esta pantalla, si la tiene. */
   caja?: ReactNode
   /** Lo que se viene a hacer aquí. Uno solo. */
   accion?: AccionDeEncabezado

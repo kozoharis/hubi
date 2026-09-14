@@ -6,16 +6,16 @@ import { Ico } from './iconos'
 
 /*
   ═══════════════════════════════════════════════════════════════
-  CUANDO HUBI NO PUEDE AVISAR, HAY QUE DECIRLO
+  CUANDO MAPPEL NO PUEDE AVISAR, HAY QUE DECIRLO
   ═══════════════════════════════════════════════════════════════
 
   Éste era el agujero más serio que tenía la aplicación, y no daba
   ningún error.
 
-  En el iPhone los avisos SOLO existen si HUBI está añadida a la
+  En el iPhone los avisos SOLO existen si MAPPEL está añadida a la
   pantalla de inicio. Abierta desde Safari como una página normal, la
   función de avisar ni siquiera está disponible. Así que alguien podía
-  usar HUBI durante meses —dejar tareas, poner recordatorios, esperar
+  usar MAPPEL durante meses —dejar tareas, poner recordatorios, esperar
   que sonara el teléfono— y no recibir absolutamente nada, sin que
   nada se lo dijera nunca.
 
@@ -34,7 +34,7 @@ import { Ico } from './iconos'
   · No está en la pantalla de inicio → en iPhone no puede avisar.
   · Está, pero nunca se encendieron  → tampoco avisa.
 
-  Los dos se viven igual —«HUBI no me avisa»— así que los dos salen
+  Los dos se viven igual —«MAPPEL no me avisa»— así que los dos salen
   aquí, cada uno con su frase.
 
   ─────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ import { Ico } from './iconos'
 
 type Falta = 'instalar' | 'encender' | null
 
-const APARTADO = 'hubi:avisos-apartados'
+const APARTADO = 'mappel:avisos-apartados'
 const UN_MES = 30 * 24 * 60 * 60 * 1000
 
 export default function SinAvisos() {
@@ -126,7 +126,7 @@ export default function SinAvisos() {
     <section
       className="mt-4 rounded-[20px] border px-4 py-4"
       /* Iba con `#F59E0B`, el ámbar que salió de la paleta en la
-         Fase 1. Y lo que dice esta caja —«ahora mismo HUBI no puede
+         Fase 1. Y lo que dice esta caja —«ahora mismo MAPPEL no puede
          avisarte»— es literalmente el estado ATENCIÓN: no está roto,
          falta un paso. Ahora lleva su token, que además está medido
          para leerse en claro y en oscuro. */
@@ -141,7 +141,7 @@ export default function SinAvisos() {
         </span>
         <div className="min-w-0">
           <p className="text-[17.5px] font-extrabold leading-snug">
-            Ahora mismo HUBI no puede avisarte
+            Ahora mismo MAPPEL no puede avisarte
           </p>
           <p className="mt-1.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
             {falta === 'instalar'

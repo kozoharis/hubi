@@ -1,13 +1,13 @@
-<title>HUBI Design System v1</title>
+<title>MAPPEL Design System v1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
 
 <style>
 /* ══════════════════════════════════════════════════════════
-   La página del sistema. Usa la tipografía de HUBI y sigue el
+   La página del sistema. Usa la tipografía de MAPPEL y sigue el
    tema de quien la mire. Los especímenes de dentro llevan sus
-   propios tokens (.hubi.claro / .hubi.oscuro) para poder ver
+   propios tokens (.mappel.claro / .mappel.oscuro) para poder ver
    las dos apariencias a la vez.
    ══════════════════════════════════════════════════════════ */
 :root{
@@ -96,28 +96,28 @@ li::before{content:"";position:absolute;left:2px;top:.72em;width:7px;height:2px;
 }
 .lienzo{padding:20px 18px}
 
-/* ── TOKENS DE HUBI, con sus dos apariencias ── */
-.hubi{
+/* ── TOKENS DE MAPPEL, con sus dos apariencias ── */
+.mappel{
   font-family:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;
   background:var(--h-fondo);color:var(--h-tinta);
 }
-.hubi.claro{
+.mappel.claro{
   --h-fondo:#F1F5F9; --h-superficie:#FFFFFF; --h-borde:#E2E8F0;
   --h-tinta:#0F172A; --h-tinta-suave:#334155; --h-tenue:#64748B; --h-apagado:#94A3B8;
   --h-accion:#14B8A6; --h-accion-tinta:#04211D;
   --h-bien:#0E9C8B; --h-atencion:#C77A05; --h-alerta:#E0453F;
   --h-bien-velo:#DFF7F3; --h-atencion-velo:#FDF1DC; --h-alerta-velo:#FDE8E7;
 }
-.hubi.oscuro{
+.mappel.oscuro{
   --h-fondo:#0B1220; --h-superficie:#182133; --h-borde:#253148;
   --h-tinta:#F1F5F9; --h-tinta-suave:#CBD5E1; --h-tenue:#94A3B8; --h-apagado:#64748B;
   --h-accion:#14B8A6; --h-accion-tinta:#04211D;
   --h-bien:#2DD4BF; --h-atencion:#F0B440; --h-alerta:#FF7B75;
   --h-bien-velo:#10322F; --h-atencion-velo:#33270F; --h-alerta-velo:#3A1D22;
 }
-.hubi.calido{--h-fondo:#F7F5F1;--h-borde:#E7E2DA}
+.mappel.calido{--h-fondo:#F7F5F1;--h-borde:#E7E2DA}
 
-/* ── PIEZAS HUBI ── */
+/* ── PIEZAS MAPPEL ── */
 .h-tit{font-size:27px;font-weight:800;letter-spacing:-.025em;line-height:1.15;margin:0}
 .h-sec{font-size:21px;font-weight:800;letter-spacing:-.02em;line-height:1.2;margin:0}
 .h-tar{font-size:19px;font-weight:800;letter-spacing:-.012em;line-height:1.25;margin:0}
@@ -167,11 +167,11 @@ li::before{content:"";position:absolute;left:2px;top:.72em;width:7px;height:2px;
 .h-inp:focus{border-color:var(--h-accion);box-shadow:0 0 0 1px var(--h-accion)}
 .h-ta{height:auto;min-height:92px;padding:14px 16px;font-size:17px;font-weight:600;line-height:1.45;resize:none}
 
-.h-hubi{
+.h-mappel{
   display:flex;align-items:center;gap:12px;width:100%;height:64px;
   border-radius:18px;border:1px solid var(--h-borde);background:var(--h-superficie);padding:0 8px 0 14px;
 }
-.h-hubi .txt{flex:1;min-width:0;font-size:17px;font-weight:600;color:var(--h-tenue)}
+.h-mappel .txt{flex:1;min-width:0;font-size:17px;font-weight:600;color:var(--h-tenue)}
 .h-mic{
   display:flex;align-items:center;justify-content:center;flex:none;width:48px;height:48px;border-radius:14px;color:#fff;
   background:linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6);
@@ -246,9 +246,9 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 <div class="pag">
 
 <header>
-  <div class="kicker"><span>HUBI Design System</span><span>v1 · propuesta</span><span>Fase 1</span><span>9 sept 2026</span></div>
-  <h1>Las pocas reglas que HUBI necesita<br><em>para dejar de reinventarse en cada pantalla</em></h1>
-  <p class="lead">Tokens, componentes base y lógica de color, sacados de lo que ya funciona en la aplicación actual. Todo se ve aquí en claro y en oscuro, con piezas reales de HUBI.</p>
+  <div class="kicker"><span>MAPPEL Design System</span><span>v1 · propuesta</span><span>Fase 1</span><span>9 sept 2026</span></div>
+  <h1>Las pocas reglas que MAPPEL necesita<br><em>para dejar de reinventarse en cada pantalla</em></h1>
+  <p class="lead">Tokens, componentes base y lógica de color, sacados de lo que ya funciona en la aplicación actual. Todo se ve aquí en claro y en oscuro, con piezas reales de MAPPEL.</p>
 
   <div class="aviso">
     <p><b>Esto es una propuesta. No se ha modificado ninguna pantalla.</b></p>
@@ -263,7 +263,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
       <li><a href="#s4"><span class="n">04</span>Botones</a></li>
       <li><a href="#s5"><span class="n">05</span>Tarjetas y filas</a></li>
       <li><a href="#s6"><span class="n">06</span>Campos</a></li>
-      <li><a href="#s7"><span class="n">07</span>HUBI Input</a></li>
+      <li><a href="#s7"><span class="n">07</span>MAPPEL Input</a></li>
       <li><a href="#s8"><span class="n">08</span>Píldoras y filtros</a></li>
       <li><a href="#s9"><span class="n">09</span>Estados</a></li>
       <li><a href="#s10"><span class="n">10</span>Cabecera y barra</a></li>
@@ -301,7 +301,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   </div>
 
   <div class="par">
-    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo mappel claro">
       <p class="h-rot">Rótulo de sección</p>
       <p class="h-tit" style="margin-top:8px">Título de pantalla</p>
       <p class="h-sec" style="margin-top:16px">Un bloque dentro</p>
@@ -311,7 +311,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
       <p class="h-cif" style="margin-top:18px">3.350 €</p>
       <p class="h-cif2" style="margin-top:12px">11.780 €</p>
     </div></div>
-    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro">
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo mappel oscuro">
       <p class="h-rot">Rótulo de sección</p>
       <p class="h-tit" style="margin-top:8px">Título de pantalla</p>
       <p class="h-sec" style="margin-top:16px">Un bloque dentro</p>
@@ -341,9 +341,9 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   <p>Ése es el mecanismo que hace que una interfaz se vuelva premium sin perder personalidad: no usar menos colores, sino <strong>bajar la saturación de los que solo dicen «esto es de aquí»</strong> y reservar el color vivo para lo que de verdad pide algo. Hoy todos los colores gritan igual, y por eso ninguno se oye.</p>
 
   <h3>A · Color de marca</h3>
-  <p>Un solo degradado HUBI. El de la voz, que ya es el que la gente asocia al producto.</p>
+  <p>Un solo degradado MAPPEL. El de la voz, que ya es el que la gente asocia al producto.</p>
   <div class="paleta">
-    <div class="chip"><div class="col" style="background:linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)"></div><div class="txt"><b>Degradado HUBI</b><span>#2DD4BF → #14B8A6 → #3B82F6</span><em>Botón de HUBI, aro del micro, arranque, logo. Y nada más.</em></div></div>
+    <div class="chip"><div class="col" style="background:linear-gradient(140deg,#2DD4BF,#14B8A6 45%,#3B82F6)"></div><div class="txt"><b>Degradado MAPPEL</b><span>#2DD4BF → #14B8A6 → #3B82F6</span><em>Botón de MAPPEL, aro del micro, arranque, logo. Y nada más.</em></div></div>
   </div>
   <p><strong>Se retiran:</strong> el degradado cian-violeta del botón de Ajustes (<code>#00F4FC → #628BFC → #AE62F7</code>, tres colores que no existen en ninguna otra parte del producto) y el degradado violeta de las tarjetas de balance y horas.</p>
 
@@ -382,7 +382,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
     <li><strong>Los números son tinta.</strong> Verde o coral solo cuando el color <em>es</em> el signo: un balance, un ingreso frente a un gasto. Las horas de más son tinta, no una tarjeta violeta.</li>
     <li><strong>El tinte de fondo se reserva para lo que reclama atención hoy</strong> — un vencimiento, un papel que falta — y como máximo al 10 %.</li>
     <li><strong>Ningún estado se comunica solo con color.</strong> Siempre con forma o texto: relleno frente a hueco, tachado, una palabra.</li>
-    <li><strong>La sombra es solo del botón de HUBI.</strong> Es la única pieza que flota, y por eso significa algo.</li>
+    <li><strong>La sombra es solo del botón de MAPPEL.</strong> Es la única pieza que flota, y por eso significa algo.</li>
   </ul>
 </section>
 
@@ -393,12 +393,12 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 
   <h4>Radios · tres, y ni uno más</h4>
   <div class="par">
-    <div class="marco"><div class="et">Los tres</div><div class="lienzo hubi claro" style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
+    <div class="marco"><div class="et">Los tres</div><div class="lienzo mappel claro" style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
       <div style="text-align:center"><div style="width:96px;height:66px;background:var(--h-superficie);border:1px solid var(--h-borde);border-radius:20px"></div><p class="h-apo" style="margin-top:7px">tarjeta · 20</p></div>
       <div style="text-align:center"><div style="width:96px;height:58px;background:var(--h-superficie);border:1px solid var(--h-borde);border-radius:16px"></div><p class="h-apo" style="margin-top:7px">campo y botón · 16</p></div>
       <div style="text-align:center"><div style="width:96px;height:48px;background:var(--h-superficie);border:1px solid var(--h-borde);border-radius:999px"></div><p class="h-apo" style="margin-top:7px">píldora · 999</p></div>
     </div></div>
-    <div class="marco"><div class="et">Lo que hay hoy</div><div class="lienzo hubi claro">
+    <div class="marco"><div class="et">Lo que hay hoy</div><div class="lienzo mappel claro">
       <p class="h-cue" style="margin-bottom:12px">Once radios distintos para el mismo objeto:</p>
       <p class="mono" style="font-size:13px;color:var(--h-tenue);line-height:1.9">9 · 12 · 13 · 14 · 15 · 16 · 18 · 20 · 22 · 24 · 32<br>+ rounded-2xl · rounded-3xl · rounded-full</p>
       <p class="h-apo" style="margin-top:14px">En <code>cuentas.tsx</code> conviven tarjetas hermanas a 20 y a 18.</p>
@@ -429,7 +429,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   <p class="regla">Una altura, un radio, un color de acción. El botón principal es el mismo en Papeles, en la Compra y en la Finca — no toma el color de la sección, porque entonces deja de reconocerse.</p>
 
   <div class="par">
-    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:10px">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo mappel claro" style="display:grid;gap:10px">
       <button class="h-btn h-p">Guardar</button>
       <button class="h-btn h-s">Dejarlo</button>
       <button class="h-btn h-t">Ver todo</button>
@@ -437,7 +437,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
       <button class="h-btn h-off" disabled>Guardar</button>
       <p class="h-apo" style="margin-top:-2px">Dime en qué carpeta va y lo guardo.</p>
     </div></div>
-    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:10px">
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo mappel oscuro" style="display:grid;gap:10px">
       <button class="h-btn h-p">Guardar</button>
       <button class="h-btn h-s">Dejarlo</button>
       <button class="h-btn h-t">Ver todo</button>
@@ -477,7 +477,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 
   <h4>1 · Tarjeta de acción — lleva a algún sitio</h4>
   <div class="par">
-    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:10px">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo mappel claro" style="display:grid;gap:10px">
       <a class="h-card h-acc">
         <span class="h-past" style="background:#DFF7F3;color:#0E9C8B"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
         <span style="flex:1;min-width:0"><span class="h-tar" style="display:block">Guardar documento</span><span class="h-apo" style="display:block;margin-top:2px">34 guardados · el último, hoy</span></span>
@@ -489,7 +489,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
         <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-apagado)"><path d="m9 5 7 7-7 7"/></svg>
       </a>
     </div></div>
-    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:10px">
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo mappel oscuro" style="display:grid;gap:10px">
       <a class="h-card h-acc">
         <span class="h-past" style="background:#10322F;color:#2DD4BF"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
         <span style="flex:1;min-width:0"><span class="h-tar" style="display:block">Guardar documento</span><span class="h-apo" style="display:block;margin-top:2px">34 guardados · el último, hoy</span></span>
@@ -507,7 +507,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   <h4>2 · Tarjeta informativa — contiene datos, no navega</h4>
   <h4 style="margin-top:0">3 · Tarjeta de resumen — la cifra es la protagonista</h4>
   <div class="par">
-    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:12px">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo mappel claro" style="display:grid;gap:12px">
       <div class="h-card" style="padding:18px 20px">
         <p class="h-rot">Balance del trimestre</p>
         <p class="h-cif" style="margin-top:8px;color:var(--h-bien)">+3.350 €</p>
@@ -524,7 +524,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
           <span class="h-apo">Vence</span><span class="h-cue" style="font-weight:800">12 de noviembre</span></div>
       </div>
     </div></div>
-    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:12px">
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo mappel oscuro" style="display:grid;gap:12px">
       <div class="h-card" style="padding:18px 20px">
         <p class="h-rot">Balance del trimestre</p>
         <p class="h-cif" style="margin-top:8px;color:var(--h-bien)">+3.350 €</p>
@@ -546,7 +546,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 
   <h4>4 · Fila — dentro de una lista</h4>
   <div class="par">
-    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:8px">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo mappel claro" style="display:grid;gap:8px">
       <div class="h-card h-fila">
         <span class="h-past sm" style="background:color-mix(in srgb,#C09A62 18%,transparent);color:#96733F"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/></svg></span>
         <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Factura Endesa · agosto</span><span class="h-apo" style="display:block">14 ago · Finca › Luz</span></span>
@@ -563,7 +563,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
         <svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-bien)"><path d="m4 12 5.5 5.5L20 7"/></svg>
       </div>
     </div></div>
-    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:8px">
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo mappel oscuro" style="display:grid;gap:8px">
       <div class="h-card h-fila">
         <span class="h-past sm" style="background:color-mix(in srgb,#C09A62 24%,transparent);color:#DCBB86"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/></svg></span>
         <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Factura Endesa · agosto</span><span class="h-apo" style="display:block">14 ago · Finca › Luz</span></span>
@@ -591,14 +591,14 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   <p class="regla">La clase <code>.entrada</code> que ya existe es correcta —58 px de alto y letra de 19— y se convierte en la base de todos. Lo que falta es que la usen todos.</p>
 
   <div class="par">
-    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:14px">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo mappel claro" style="display:grid;gap:14px">
       <div><p class="h-rot" style="margin-bottom:7px">¿Qué hay que recordar?</p><input class="h-inp" value="Recoger la medicación"></div>
       <div><p class="h-rot" style="margin-bottom:7px">Nota</p><textarea class="h-inp h-ta" placeholder="Lo que haga falta añadir"></textarea></div>
       <div><p class="h-rot" style="margin-bottom:7px">¿Dónde lo guardo?</p>
         <div class="h-inp" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span>Finca › Gastos › Luz</span><svg class="ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--h-tenue)"><path d="m6 9 6 6 6-6"/></svg></div></div>
       <div><p class="h-rot" style="margin-bottom:7px">Importe</p><input class="h-inp" value="127,43 €" style="border-color:var(--h-accion);box-shadow:0 0 0 1px var(--h-accion)"><p class="h-apo" style="margin-top:7px">Con foco: el borde toma el color de acción.</p></div>
     </div></div>
-    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:14px">
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo mappel oscuro" style="display:grid;gap:14px">
       <div><p class="h-rot" style="margin-bottom:7px">¿Qué hay que recordar?</p><input class="h-inp" value="Recoger la medicación"></div>
       <div><p class="h-rot" style="margin-bottom:7px">Nota</p><textarea class="h-inp h-ta" placeholder="Lo que haga falta añadir"></textarea></div>
       <div><p class="h-rot" style="margin-bottom:7px">¿Dónde lo guardo?</p>
@@ -616,30 +616,30 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 </section>
 
 
-<!-- ═══════ 07 HUBI INPUT ═══════ -->
+<!-- ═══════ 07 MAPPEL INPUT ═══════ -->
 <section id="s7">
-  <div class="cab"><span class="num">07</span><h2>HUBI Input</h2></div>
+  <div class="cab"><span class="num">07</span><h2>MAPPEL Input</h2></div>
   <p class="regla">El componente que prepara la Fase 2. <strong>Voz y texto en la misma caja</strong>, presente en cualquier pantalla, sabiendo dónde está. No se construye ahora: se deja definido para que nada de lo que hagamos entretanto lo contradiga.</p>
 
-  <p>Es la pieza que convierte «HUBI» de pantalla en capacidad. La caja es la misma en todas partes; lo único que cambia es <strong>la sugerencia</strong>, que enseña qué se puede pedir <em>aquí</em>. Escribas o digas lo que digas, funciona igual.</p>
+  <p>Es la pieza que convierte «MAPPEL» de pantalla en capacidad. La caja es la misma en todas partes; lo único que cambia es <strong>la sugerencia</strong>, que enseña qué se puede pedir <em>aquí</em>. Escribas o digas lo que digas, funciona igual.</p>
 
   <div class="par">
-    <div class="marco"><div class="et">Claro · en reposo, por pantalla</div><div class="lienzo hubi claro" style="display:grid;gap:10px">
-      <div class="h-hubi"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">Pregunta o di lo que necesitas</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
-      <div class="h-hubi"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">«La última póliza del coche»</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
-      <div class="h-hubi"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">«Añade leche»</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
+    <div class="marco"><div class="et">Claro · en reposo, por pantalla</div><div class="lienzo mappel claro" style="display:grid;gap:10px">
+      <div class="h-mappel"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">Pregunta o di lo que necesitas</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
+      <div class="h-mappel"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">«La última póliza del coche»</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
+      <div class="h-mappel"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">«Añade leche»</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
       <p class="h-apo">Inicio · Papeles · La compra. Misma caja, distinta sugerencia.</p>
     </div></div>
-    <div class="marco"><div class="et">Oscuro · los cuatro estados</div><div class="lienzo hubi oscuro" style="display:grid;gap:10px">
-      <div class="h-hubi"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">«¿Qué tengo mañana?»</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
-      <div class="h-hubi" style="border-color:var(--h-accion)"><span style="display:flex;gap:3px;align-items:center;height:24px">
+    <div class="marco"><div class="et">Oscuro · los cuatro estados</div><div class="lienzo mappel oscuro" style="display:grid;gap:10px">
+      <div class="h-mappel"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--h-tenue)"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg><span class="txt">«¿Qué tengo mañana?»</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
+      <div class="h-mappel" style="border-color:var(--h-accion)"><span style="display:flex;gap:3px;align-items:center;height:24px">
         <i style="width:4px;height:9px;border-radius:2px;background:var(--h-accion);display:block"></i>
         <i style="width:4px;height:17px;border-radius:2px;background:var(--h-accion);display:block"></i>
         <i style="width:4px;height:23px;border-radius:2px;background:var(--h-accion);display:block"></i>
         <i style="width:4px;height:14px;border-radius:2px;background:var(--h-accion);display:block"></i>
         <i style="width:4px;height:8px;border-radius:2px;background:var(--h-accion);display:block"></i>
       </span><span class="txt" style="color:var(--h-tinta);font-weight:700">Te escucho · 4 s</span><span class="h-mic"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"/></svg></span></div>
-      <div class="h-hubi"><span style="width:22px;height:22px;border-radius:50%;border:2.5px solid var(--h-borde);border-top-color:var(--h-accion);display:block"></span><span class="txt" style="color:var(--h-tinta);font-weight:700">Un momento…</span></div>
+      <div class="h-mappel"><span style="width:22px;height:22px;border-radius:50%;border:2.5px solid var(--h-borde);border-top-color:var(--h-accion);display:block"></span><span class="txt" style="color:var(--h-tinta);font-weight:700">Un momento…</span></div>
       <div class="h-card" style="padding:16px 18px">
         <p class="h-apo">«¿Qué tengo mañana?»</p>
         <p class="h-cue" style="margin-top:8px;font-weight:700">Mañana tienes el médico a las 10:30 y hay que llevar los papeles del seguro.</p>
@@ -652,7 +652,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   <table class="tab">
     <thead><tr><th>Estado</th><th>Qué se ve</th><th>Regla</th></tr></thead>
     <tbody>
-      <tr><td>Reposo</td><td>Caja de 64 px, icono de onda, sugerencia contextual, botón de micro con el degradado HUBI</td><td>Se puede escribir sin tocar el micro</td></tr>
+      <tr><td>Reposo</td><td>Caja de 64 px, icono de onda, sugerencia contextual, botón de micro con el degradado MAPPEL</td><td>Se puede escribir sin tocar el micro</td></tr>
       <tr><td>Escuchando</td><td>Borde de acción, medidor de nivel, «Te escucho · N s»</td><td>El aro y el medidor comparten el color de acción</td></tr>
       <tr><td>Pensando</td><td>Aro girando, «Un momento…»</td><td>Un solo texto de espera en todo el producto</td></tr>
       <tr><td>Respondiendo</td><td>Tarjeta con la pregunta en apoyo, la respuesta en cuerpo y hasta dos píldoras de acción</td><td>Responde <strong>en el sitio</strong>; solo navega si hay que ver algo</td></tr>
@@ -662,7 +662,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   </table>
   </div>
 
-  <p class="porque"><b>Lo que este componente obliga a decidir ya:</b> el degradado HUBI solo vive aquí y en el botón flotante; la sombra teal solo vive aquí; y el color de acción y el aro del micro son el mismo teal, porque «HUBI está haciendo algo» y «pulsa esto» son la misma idea.</p>
+  <p class="porque"><b>Lo que este componente obliga a decidir ya:</b> el degradado MAPPEL solo vive aquí y en el botón flotante; la sombra teal solo vive aquí; y el color de acción y el aro del micro son el mismo teal, porque «MAPPEL está haciendo algo» y «pulsa esto» son la misma idea.</p>
 </section>
 
 
@@ -672,7 +672,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   <p class="regla">Un solo lenguaje para Semana/Mes/Día, Por hacer/Hechas, los filtros y las categorías. Hoy hay cuatro alturas distintas (44, 46, 48, 52) y tres tratamientos.</p>
 
   <div class="par">
-    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:14px">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo mappel claro" style="display:grid;gap:14px">
       <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="h-pil on">Semana</span><span class="h-pil">Mes</span><span class="h-pil">El día</span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="h-pil on">Por hacer · 6</span><span class="h-pil">Hechas</span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -681,7 +681,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
       </div>
       <p class="h-apo">Selección · filtro con contador · categorías con marca de ámbito.</p>
     </div></div>
-    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:14px">
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo mappel oscuro" style="display:grid;gap:14px">
       <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="h-pil on">Semana</span><span class="h-pil">Mes</span><span class="h-pil">El día</span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="h-pil on">Por hacer · 6</span><span class="h-pil">Hechas</span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -707,7 +707,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   <p class="regla">Una caja para cada situación. Hoy hay cinco redacciones distintas de «aquí no hay nada» y cinco mensajes distintos para el mismo error.</p>
 
   <div class="par">
-    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="display:grid;gap:12px">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo mappel claro" style="display:grid;gap:12px">
       <div class="h-vacio">
         <p class="h-tar">Todavía no hay papeles aquí</p>
         <p class="h-apo" style="margin-top:6px">Haz una foto y yo lo archivo donde toca.</p>
@@ -730,7 +730,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
         <span style="flex:1"><span style="display:block;height:13px;width:65%;border-radius:5px;background:var(--h-borde)"></span><span style="display:block;height:11px;width:40%;border-radius:5px;background:var(--h-borde);margin-top:7px"></span></span>
       </div>
     </div></div>
-    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="display:grid;gap:12px">
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo mappel oscuro" style="display:grid;gap:12px">
       <div class="h-vacio">
         <p class="h-tar">Todavía no hay papeles aquí</p>
         <p class="h-apo" style="margin-top:6px">Haz una foto y yo lo archivo donde toca.</p>
@@ -772,7 +772,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   <p class="regla">Solo el aspecto. <strong>La arquitectura de navegación no se toca en esta fase</strong> — las pestañas siguen siendo exactamente las de hoy.</p>
 
   <div class="par">
-    <div class="marco"><div class="et">Claro</div><div class="lienzo hubi claro" style="padding:0">
+    <div class="marco"><div class="et">Claro</div><div class="lienzo mappel claro" style="padding:0">
       <div style="padding:16px 18px 14px;border-bottom:1px solid var(--h-borde)">
         <span class="h-pil" style="height:44px;padding:0 14px;margin-bottom:12px"><svg class="ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>Volver</span>
         <p class="h-tit">Papeles</p>
@@ -785,7 +785,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
         <span class="h-tab"><svg class="ico" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg>Finca</span>
       </div>
     </div></div>
-    <div class="marco"><div class="et">Oscuro</div><div class="lienzo hubi oscuro" style="padding:0">
+    <div class="marco"><div class="et">Oscuro</div><div class="lienzo mappel oscuro" style="padding:0">
       <div style="padding:16px 18px 14px;border-bottom:1px solid var(--h-borde)">
         <span class="h-pil" style="height:44px;padding:0 14px;margin-bottom:12px"><svg class="ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>Volver</span>
         <p class="h-tit">Papeles</p>
@@ -805,7 +805,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
     <li><strong>Volver es una píldora de 44</strong>, con icono y con la palabra. Un solo componente: hoy hay cuatro implementaciones distintas, una de ellas recargando la aplicación entera.</li>
     <li><strong>Y vuelve a donde venías</strong>, conservando la vista y los filtros. Hoy no.</li>
     <li><strong>Barra:</strong> 68 px + área segura, borde superior de 1 px, superficie. Activa en color de acción y trazo 2.1; inactiva apagada y trazo 1.9. Texto 12/700. Igual que hoy, ya está bien.</li>
-    <li><strong>El botón de HUBI</strong> es el único elemento con sombra en toda la aplicación.</li>
+    <li><strong>El botón de MAPPEL</strong> es el único elemento con sombra en toda la aplicación.</li>
   </ul>
 </section>
 
@@ -813,18 +813,18 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 <!-- ═══════ 11 ACTUAL → PROPUESTA ═══════ -->
 <section id="s11">
   <div class="cab"><span class="num">11</span><h2>Actual → Propuesta</h2></div>
-  <p>Piezas reales de HUBI, tal como están hoy y como quedarían con el sistema. Nada de esto se ha aplicado.</p>
+  <p>Piezas reales de MAPPEL, tal como están hoy y como quedarían con el sistema. Nada de esto se ha aplicado.</p>
 
   <h3>Tarjeta «Guardar documento»</h3>
   <div class="vs">
-    <div class="col"><div class="et et-a">Actual</div><div class="lienzo hubi claro">
+    <div class="col"><div class="et et-a">Actual</div><div class="lienzo mappel claro">
       <div style="display:flex;align-items:center;gap:14px;height:76px;padding:0 14px;border-radius:22px;background:color-mix(in srgb,#14B8A6 12%,transparent);border:1px solid color-mix(in srgb,#14B8A6 30%,transparent)">
         <span style="width:48px;height:48px;border-radius:15px;background:#14B8A6;display:flex;align-items:center;justify-content:center;flex:none;color:#fff"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
         <span style="flex:1;min-width:0"><span style="display:block;font-size:19px;font-weight:800">Guardar documento</span><span style="display:block;font-size:14.5px;font-weight:700;color:var(--h-tenue)">34 guardados · el último, hoy</span></span>
         <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>
       </div>
     </div></div>
-    <div class="col"><div class="et et-b">Propuesta</div><div class="lienzo hubi claro">
+    <div class="col"><div class="et et-b">Propuesta</div><div class="lienzo mappel claro">
       <a class="h-card h-acc">
         <span class="h-past" style="background:#DFF7F3;color:#0E9C8B"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
         <span style="flex:1;min-width:0"><span class="h-tar" style="display:block">Guardar documento</span><span class="h-apo" style="display:block;margin-top:2px">34 guardados · el último, hoy</span></span>
@@ -836,7 +836,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 
   <h3>Cuadros «La compra» y «Notas»</h3>
   <div class="vs">
-    <div class="col"><div class="et et-a">Actual · dos cuadrados de 152 px teñidos</div><div class="lienzo hubi claro">
+    <div class="col"><div class="et et-a">Actual · dos cuadrados de 152 px teñidos</div><div class="lienzo mappel claro">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div style="min-height:126px;border-radius:22px;padding:14px;background:color-mix(in srgb,#0EA5E9 12%,transparent);border:1px solid color-mix(in srgb,#0EA5E9 30%,transparent);display:flex;flex-direction:column;justify-content:space-between">
           <span style="width:48px;height:48px;border-radius:15px;background:#0EA5E9;display:flex;align-items:center;justify-content:center;color:#fff"><svg class="ico" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l2 10H6L4 7Z"/><circle cx="9" cy="20" r="1.3"/><circle cx="16" cy="20" r="1.3"/></svg></span>
@@ -848,7 +848,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
         </div>
       </div>
     </div></div>
-    <div class="col"><div class="et et-b">Propuesta · dos filas, y el aviso donde importa</div><div class="lienzo hubi claro">
+    <div class="col"><div class="et et-b">Propuesta · dos filas, y el aviso donde importa</div><div class="lienzo mappel claro">
       <div style="display:grid;gap:8px">
         <a class="h-card h-acc" style="height:68px">
           <span class="h-past sm" style="background:color-mix(in srgb,#6B93D6 16%,transparent);color:#4A76BE"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l2 10H6L4 7Z"/><circle cx="9" cy="20" r="1.3"/><circle cx="16" cy="20" r="1.3"/></svg></span>
@@ -867,7 +867,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 
   <h3>Fila de Agenda</h3>
   <div class="vs">
-    <div class="col"><div class="et et-a">Actual</div><div class="lienzo hubi claro">
+    <div class="col"><div class="et et-a">Actual</div><div class="lienzo mappel claro">
       <div style="display:flex;align-items:center;gap:10px;border-radius:14px;padding:10px 12px;background:var(--h-superficie);border:1px solid var(--h-borde)">
         <span style="width:40px;flex:none;font-size:13px;font-weight:800;color:var(--h-tenue)">10:30</span>
         <span style="width:3px;height:30px;border-radius:2px;background:#F59E0B;flex:none"></span>
@@ -875,7 +875,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
       </div>
       <p class="h-apo" style="margin-top:9px">231 px para el título · sin señal de estado salvo el color</p>
     </div></div>
-    <div class="col"><div class="et et-b">Propuesta</div><div class="lienzo hubi claro">
+    <div class="col"><div class="et et-b">Propuesta</div><div class="lienzo mappel claro">
       <div class="h-card h-fila" style="border-left:3px solid #D07E97;min-height:60px">
         <span style="width:44px;flex:none;text-align:right"><span class="h-apo" style="font-weight:800;font-variant-numeric:tabular-nums">10:30</span></span>
         <span style="flex:1;min-width:0"><span class="h-cue" style="display:block;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Recoger la medicación en la farmacia</span></span>
@@ -888,11 +888,11 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 
   <h3>Botón «Guardar» · el mismo, en dos pantallas</h3>
   <div class="vs">
-    <div class="col"><div class="et et-a">Actual · dos colores y dos alturas</div><div class="lienzo hubi claro" style="display:grid;gap:10px">
+    <div class="col"><div class="et et-a">Actual · dos colores y dos alturas</div><div class="lienzo mappel claro" style="display:grid;gap:10px">
       <button class="h-btn" style="background:#0F172A;color:#fff;height:62px;border-radius:18px;font-size:18px">Guardar <span style="font-size:12px;opacity:.7;font-weight:600">· notas, asesor, carpetas</span></button>
       <button class="h-btn" style="background:#14B8A6;color:#fff;height:58px;border-radius:16px;font-size:17px">Guardar <span style="font-size:12px;opacity:.8;font-weight:600">· menús, pagos, finca</span></button>
     </div></div>
-    <div class="col"><div class="et et-b">Propuesta · uno</div><div class="lienzo hubi claro" style="display:grid;gap:10px">
+    <div class="col"><div class="et et-b">Propuesta · uno</div><div class="lienzo mappel claro" style="display:grid;gap:10px">
       <button class="h-btn h-p">Guardar</button>
       <button class="h-btn h-s">Dejarlo</button>
     </div></div>
@@ -901,12 +901,12 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 
   <h3>Estado vacío</h3>
   <div class="vs">
-    <div class="col"><div class="et et-a">Actual · cinco variantes en seis pantallas</div><div class="lienzo hubi claro" style="display:grid;gap:8px">
+    <div class="col"><div class="et et-a">Actual · cinco variantes en seis pantallas</div><div class="lienzo mappel claro" style="display:grid;gap:8px">
       <div style="border-radius:22px;background:var(--h-superficie);border:1px solid var(--h-borde);padding:32px 24px;text-align:center;font-size:18px;font-weight:800">Todavía no hay papeles</div>
       <div style="border-radius:20px;background:var(--h-superficie);padding:32px 24px;text-align:center;font-size:17px;font-weight:500">Esta sección todavía no tiene carpetas dentro.</div>
       <div style="border-radius:20px;background:var(--h-superficie);padding:24px;text-align:center;font-size:16.5px;font-weight:500">Ese día no hay nada.</div>
     </div></div>
-    <div class="col"><div class="et et-b">Propuesta · una</div><div class="lienzo hubi claro">
+    <div class="col"><div class="et et-b">Propuesta · una</div><div class="lienzo mappel claro">
       <div class="h-vacio">
         <p class="h-tar">Todavía no hay papeles aquí</p>
         <p class="h-apo" style="margin-top:6px">Haz una foto y yo lo archivo donde toca.</p>
@@ -924,7 +924,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   <p>No he cambiado nada. Aquí están los dos, con la misma tarjeta encima, para poder decidirlo mirándolo.</p>
 
   <div class="vs">
-    <div class="col"><div class="et et-a">Actual · #F1F5F9</div><div class="lienzo hubi claro" style="padding:22px 18px">
+    <div class="col"><div class="et et-a">Actual · #F1F5F9</div><div class="lienzo mappel claro" style="padding:22px 18px">
       <p class="h-rot">Hoy</p>
       <div class="h-card h-acc" style="margin-top:10px">
         <span class="h-past" style="background:#DFF7F3;color:#0E9C8B"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
@@ -933,7 +933,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
       <div class="h-card h-fila" style="margin-top:8px"><span class="h-past sm" style="background:color-mix(in srgb,#C09A62 18%,transparent);color:#96733F"><svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/></svg></span><span class="h-cue" style="font-weight:800">Factura Endesa</span></div>
       <button class="h-btn h-p" style="margin-top:12px">Guardar</button>
     </div></div>
-    <div class="col"><div class="et et-b">Propuesta · #F7F5F1</div><div class="lienzo hubi claro calido" style="padding:22px 18px">
+    <div class="col"><div class="et et-b">Propuesta · #F7F5F1</div><div class="lienzo mappel claro calido" style="padding:22px 18px">
       <p class="h-rot">Hoy</p>
       <div class="h-card h-acc" style="margin-top:10px">
         <span class="h-past" style="background:#DFF7F3;color:#0E9C8B"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h3l1.5-2h5L16 6h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></span>
@@ -944,7 +944,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
     </div></div>
   </div>
 
-  <p><strong>Mi lectura, y es una opinión, no un dato:</strong> el cálido funciona mejor con la identidad que has descrito. El <code>#F1F5F9</code> es <em>slate-100</em>, el gris azulado por defecto de Tailwind, y arrastra el producto entero hacia lo administrativo: es el fondo de una herramienta de trabajo. El <code>#F7F5F1</code> hace que la tarjeta blanca <strong>parezca papel sobre una mesa</strong> en vez de un panel sobre un lienzo, que es literalmente la metáfora de HUBI.</p>
+  <p><strong>Mi lectura, y es una opinión, no un dato:</strong> el cálido funciona mejor con la identidad que has descrito. El <code>#F1F5F9</code> es <em>slate-100</em>, el gris azulado por defecto de Tailwind, y arrastra el producto entero hacia lo administrativo: es el fondo de una herramienta de trabajo. El <code>#F7F5F1</code> hace que la tarjeta blanca <strong>parezca papel sobre una mesa</strong> en vez de un panel sobre un lienzo, que es literalmente la metáfora de MAPPEL.</p>
   <p>Hay un coste real y hay que decirlo: <strong>el cálido y el teal se llevan peor.</strong> El teal es frío y sobre fondo cálido gana un punto de estridencia. Se compensa bajando su saturación entre un 6 y un 10 %, y eso además ayuda al problema de que hoy los cinco colores son valores por defecto de la herramienta.</p>
   <p class="regla">Recomendación: <strong>sí al cálido, pero en la Fase 3</strong> junto con el ajuste de la paleta. Cambiarlo ahora, con los colores actuales sin retocar, deja el teal desafinado durante toda la migración.</p>
 </section>
@@ -957,9 +957,9 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 
   <div class="dec">
     <h5>D1 · Color del botón principal <span class="tag">clave</span></h5>
-    <p><strong>A · Teal en los dos modos</strong>, con tinta oscura encima. Un solo color, es lo más reconocible, y hace que la acción y el asistente compartan color — «HUBI hace algo». Cambia el aspecto del modo claro, donde hoy el botón es marino.</p>
+    <p><strong>A · Teal en los dos modos</strong>, con tinta oscura encima. Un solo color, es lo más reconocible, y hace que la acción y el asistente compartan color — «MAPPEL hace algo». Cambia el aspecto del modo claro, donde hoy el botón es marino.</p>
     <p><strong>B · Tinta que invierte</strong>: casi negro en claro, casi blanco en oscuro. No cambia nada de lo que ves hoy en claro, siempre el máximo contraste, y deja el teal libre para significar solo «bien». Menos identidad.</p>
-    <p class="rec">Recomiendo A. El botón teal <em>es</em> la marca, y es la decisión que más hace que HUBI parezca HUBI en cualquier pantalla.</p>
+    <p class="rec">Recomiendo A. El botón teal <em>es</em> la marca, y es la decisión que más hace que MAPPEL parezca MAPPEL en cualquier pantalla.</p>
   </div>
 
   <div class="dec">
@@ -1012,7 +1012,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   <div class="cab"><span class="num">14</span><h2>P0 / P1 · corregir antes de seguir</h2></div>
   <p><strong>Ninguno está arreglado.</strong> P0 son los que rompen una función o enseñan tripas al usuario. P1 son visibles y molestos pero no rompen nada.</p>
 
-  <div class="bug"><span class="sev s0">P0</span><div><b>El asistente desaparece si Drive no está conectado</b><p>Inicio pasa <code>voz={false}</code> a la barra porque la invitación ya lleva el botón — pero la invitación solo se pinta si <code>conectado</code>. Casa nueva o permiso caducado = pantalla principal sin ninguna entrada a HUBI.</p><p class="ruta">app/page.tsx</p></div></div>
+  <div class="bug"><span class="sev s0">P0</span><div><b>El asistente desaparece si Drive no está conectado</b><p>Inicio pasa <code>voz={false}</code> a la barra porque la invitación ya lleva el botón — pero la invitación solo se pinta si <code>conectado</code>. Casa nueva o permiso caducado = pantalla principal sin ninguna entrada a MAPPEL.</p><p class="ruta">app/page.tsx</p></div></div>
 
   <div class="bug"><span class="sev s0">P0</span><div><b>El asistente no acepta texto: si falla el micro, no hay camino</b><p>Cero <code>&lt;input&gt;</code> en toda la carpeta. El único mensaje es «Este navegador no puede grabar» y ahí acaba.</p><p class="ruta">app/hablar/</p></div></div>
 
@@ -1040,11 +1040,11 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 
   <div class="bug"><span class="sev s1">P1</span><div><b>Botón principal apagado y mudo al guardar un papel</b><p>Si el lector no acertó la carpeta, «Guardar» aparece gris sin decir por qué. Se lee como que la aplicación está rota.</p><p class="ruta">app/guardar/formulario.tsx</p></div></div>
 
-  <div class="bug"><span class="sev s1">P1</span><div><b>HUBI sigue hablando después de salir de la pantalla</b><p><code>callar</code> está importado y no se usa en ninguna parte.</p><p class="ruta">app/hablar/grabar.tsx:8</p></div></div>
+  <div class="bug"><span class="sev s1">P1</span><div><b>MAPPEL sigue hablando después de salir de la pantalla</b><p><code>callar</code> está importado y no se usa en ninguna parte.</p><p class="ruta">app/hablar/grabar.tsx:8</p></div></div>
 
   <div class="bug"><span class="sev s1">P1</span><div><b>El diagnóstico del asistente se guarda y no se pinta</b><p><code>const [, setDetalle]</code>: se escribe en la línea 272 y no se muestra nunca. Con lo útil que fue esa línea gris en el lector de documentos, aquí falta.</p><p class="ruta">app/hablar/grabar.tsx:91, 272</p></div></div>
 
-  <div class="bug"><span class="sev s1">P1</span><div><b><code>/comprobacion</code> huérfana, con textos técnicos y sin modo oscuro</b><p>406 líneas, cero enlaces entrantes, paleta propia. «Cruzar tablas YA NO FUNCIONA», «falta GEMINI_API_KEY». Ella misma dice «esta pantalla no forma parte de HUBI».</p></div></div>
+  <div class="bug"><span class="sev s1">P1</span><div><b><code>/comprobacion</code> huérfana, con textos técnicos y sin modo oscuro</b><p>406 líneas, cero enlaces entrantes, paleta propia. «Cruzar tablas YA NO FUNCIONA», «falta GEMINI_API_KEY». Ella misma dice «esta pantalla no forma parte de MAPPEL».</p></div></div>
 
   <div class="bug"><span class="sev s1">P1</span><div><b>Pestaña de abajo incorrecta en dos pantallas</b><p>Menús enciende «Inicio»; Pagos usa la clave <code>"finca"</code>, que ya no existe porque las actividades se identifican por UUID.</p><p class="ruta">app/menus/page.tsx:42 · app/pagos/page.tsx:95</p></div></div>
 
@@ -1079,9 +1079,9 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 
   <h3>Lo que NO se toca — es Fase 2</h3>
   <ul>
-    <li><strong>La navegación.</strong> Las pestañas siguen exactamente como están, Weaver y Alquileres incluidos. El cuarto concepto lo estudiamos con calma: tienes razón en que «La casa» se queda corto si HUBI también organiza propiedades, vehículos, actividades y personas.</li>
+    <li><strong>La navegación.</strong> Las pestañas siguen exactamente como están, Weaver y Alquileres incluidos. El cuarto concepto lo estudiamos con calma: tienes razón en que «La casa» se queda corto si MAPPEL también organiza propiedades, vehículos, actividades y personas.</li>
     <li><strong>Inicio.</strong> Ni se reordena ni se vacía la pila de tarjetas.</li>
-    <li><strong>La arquitectura del asistente.</strong> HUBI Input queda definido, no construido.</li>
+    <li><strong>La arquitectura del asistente.</strong> MAPPEL Input queda definido, no construido.</li>
     <li><strong>Agenda.</strong> El colapso de los diecisiete controles a cinco es rediseño, no sistema. (Los <em>bugs</em> de Agenda sí son P0 y van aparte.)</li>
     <li><strong>«Papeles» frente a «Documentos»</strong> y el resto del vocabulario.</li>
     <li><strong>Partir Ajustes</strong> en tres y sacar el bloque de IGIC de la primera pantalla de cuentas.</li>
@@ -1090,7 +1090,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
   <h3>Lo que sería Fase 3</h3>
   <ul>
     <li>El fondo cálido y el ajuste de saturación de los cinco colores de marca.</li>
-    <li>Que la voz tenga carácter también con la luz encendida — hoy la única forma que tiene HUBI de sentirse especial es apagarla.</li>
+    <li>Que la voz tenga carácter también con la luz encendida — hoy la única forma que tiene MAPPEL de sentirse especial es apagarla.</li>
     <li>Que la pantalla de entrar deje de ser oscura fija y no contradiga lo que viene después.</li>
     <li>Microinteracciones y el detalle final de la identidad.</li>
   </ul>
@@ -1102,7 +1102,7 @@ footer{margin-top:64px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 </section>
 
 <footer>
-  HUBI Design System v1 · propuesta de la Fase 1. Todas las cifras del estado actual —tamaños, radios, alturas, rutas y números de línea— están verificadas leyendo el código de producción.<br><br>
+  MAPPEL Design System v1 · propuesta de la Fase 1. Todas las cifras del estado actual —tamaños, radios, alturas, rutas y números de línea— están verificadas leyendo el código de producción.<br><br>
   <strong>No se ha modificado ningún fichero de la aplicación.</strong>
 </footer>
 

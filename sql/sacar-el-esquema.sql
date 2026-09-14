@@ -8,7 +8,7 @@
 -- ─────────────────────────────────────────────────────────────
 -- PARA QUÉ
 --
--- Para poder levantar HUBI entero en un Postgres de mentira y ENSAYAR
+-- Para poder levantar MAPPEL entero en un Postgres de mentira y ENSAYAR
 -- allí la migración de las 52 políticas antes de que la vea la base de
 -- datos buena.
 --

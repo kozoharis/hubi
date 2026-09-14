@@ -12,7 +12,7 @@ import { api } from '@/lib/api'
 
   Una lista de la compra sin fecha es un papel en la nevera: está ahí,
   y se acuerda uno cuando ya está en el súper por otra cosa. Ponerle
-  día la convierte en algo que HUBI puede recordar — que es la mitad
+  día la convierte en algo que MAPPEL puede recordar — que es la mitad
   de para qué existe.
 
   Se crea una tarea normal en la Agenda, no un invento aparte. Sale en

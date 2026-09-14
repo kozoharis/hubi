@@ -32,7 +32,7 @@ import { api } from '@/lib/api'
   ─────────────────────────────────────────────────────────────
   Y SE DICE LO DE LA CARPETA
 
-  Al crear una, HUBI le hace su carpeta en el Drive de la casa. Eso
+  Al crear una, MAPPEL le hace su carpeta en el Drive de la casa. Eso
   se cuenta en una línea, en cristiano, porque es exactamente lo que
   hace que alguien entienda de una vez dónde vive todo esto. Y si la
   carpeta NO se ha podido crear, también se dice — callarlo sería

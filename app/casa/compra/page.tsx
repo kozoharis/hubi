@@ -35,7 +35,7 @@ export const dynamic = 'force-dynamic'
   ─────────────────────────────────────────────────────────────
   SIN SECCIÓN Y SIN LISTA
 
-  La compra de HUBI sabe de secciones —la casa, la finca, Los
+  La compra de MAPPEL sabe de secciones —la casa, la finca, Los
   Helechos— y de listas por semana. Aquí no se pregunta nada de eso: se
   apunta en la lista de siempre de la casa, que es donde va la leche.
 

@@ -67,10 +67,10 @@ export default function Comprobacion() {
           dentro del mismo armazón —con el rail delante— y centrada
           flotaba como las demás. La medida de texto le sirve. */}
       <div className="columna-texto">
-        <p className="rotulo tracking-[0.2em]">HUBI</p>
+        <p className="rotulo tracking-[0.2em]">MAPPEL</p>
         <h1 className="t-titulo mt-3">Comprobación del sistema</h1>
         <p className="t-cuerpo mt-3">
-          Esta pantalla no forma parte de HUBI. Solo sirve para verificar
+          Esta pantalla no forma parte de MAPPEL. Solo sirve para verificar
           que las piezas están realmente conectadas.
         </p>
 
@@ -287,7 +287,7 @@ export default function Comprobacion() {
             )}
 
             {datos.calendario && (
-              <Bloque titulo="7 · El calendario HUBI">
+              <Bloque titulo="7 · El calendario MAPPEL">
                 <Linea
                   ok={datos.calendario.existeEnGoogle === true && datos.calendario.enLaLista === true}
                   texto={datos.calendario.diagnostico ?? '—'}
@@ -379,7 +379,7 @@ function todoOk(d: Resultado) {
 }
 
 function Bloque({ titulo, children }: { titulo: string; children: React.ReactNode }) {
-  /* Sin sombra: en HUBI la única pieza que flota es el botón del
+  /* Sin sombra: en MAPPEL la única pieza que flota es el botón del
      asistente, y por eso significa algo. */
   return (
     <section className="rounded-[20px] border border-borde bg-superficie p-5">

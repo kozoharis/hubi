@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
-  HUBI — lenguaje visual
+  MAPPEL — lenguaje visual
 
   Manual de marca: un color por sección, tipografía Plus Jakarta Sans.
 
@@ -46,7 +46,7 @@
 
   /*
     ═════════════════════════════════════════════════════════
-    HUBI DESIGN SYSTEM v1
+    MAPPEL DESIGN SYSTEM v1
     ═════════════════════════════════════════════════════════
 
     Se AÑADE a lo de arriba, no lo sustituye. Las 44 pantallas
@@ -62,7 +62,7 @@
 
     ── A · MARCA ────────────────────────────────────────────
     Un solo degradado, el de la voz, y significa una cosa:
-    HUBI está escuchando, entendiendo o respondiendo. No es
+    MAPPEL está escuchando, entendiendo o respondiendo. No es
     decoración: donde aparece, hay inteligencia.
 
     ── B · ACCIÓN ───────────────────────────────────────────
@@ -346,7 +346,7 @@ body {
 
 /* ── La columna de contenido ───────────────────────────────
    Estaba escrita a mano en cada pantalla —`mx-auto w-full max-w-md
-   px-5`— y con eso, en un ordenador, HUBI era una tira de 448 px
+   px-5`— y con eso, en un ordenador, MAPPEL era una tira de 448 px
    centrada con medio metro de papel a los lados.
 
    Aquí está una sola vez, y con su otra medida:
@@ -622,7 +622,7 @@ input, textarea, select {
 
    Con todas las pantallas en `force-dynamic`, entre el dedo y la
    pantalla nueva hay un viaje al servidor. En un móvil con cobertura
-   regular eso es medio segundo largo en el que HUBI no decía
+   regular eso es medio segundo largo en el que MAPPEL no decía
    absolutamente nada. Y quien no recibe respuesta vuelve a pulsar —
    que es exactamente el comportamiento que hay que evitar en dos
    personas mayores que además desconfían de haberlo hecho mal.
@@ -695,7 +695,7 @@ input, textarea, select {
    «ESTO HA CAMBIADO» · lo hecho, lo que llega
    ═══════════════════════════════════════════════════════════
 
-   El tercer motivo por el que HUBI se mueve. Los otros dos confirman
+   El tercer motivo por el que MAPPEL se mueve. Los otros dos confirman
    que te ha oído; éste cuenta QUÉ ha pasado.
 
    ── EL CÍRCULO, Y NO EL TEXTO ──
@@ -964,7 +964,7 @@ input[type='datetime-local'] {
 
 /*
   ═══════════════════════════════════════════════════════════
-  LA ESCALA TIPOGRÁFICA · HUBI DESIGN SYSTEM v1
+  LA ESCALA TIPOGRÁFICA · MAPPEL DESIGN SYSTEM v1
   ═══════════════════════════════════════════════════════════
 
   Ocho papeles y DOS PESOS. Antes había diecisiete tamaños solo en
@@ -1017,15 +1017,15 @@ input[type='datetime-local'] {
   Ahora arranca en el mismo papel en el que vas a estar. La única
   vez que sale el degradado es en la raya, que es la firma.
 */
-.hubi-marca   { animation: hubi-marca   620ms cubic-bezier(.22,.61,.36,1)  180ms both; }
-.hubi-linea   { animation: hubi-linea   680ms cubic-bezier(.22,.61,.36,1)  620ms both; }
-.hubi-palabra { animation: hubi-palabra 520ms cubic-bezier(.22,.61,.36,1) 1080ms both; }
+.mappel-marca   { animation: mappel-marca   620ms cubic-bezier(.22,.61,.36,1)  180ms both; }
+.mappel-linea   { animation: mappel-linea   680ms cubic-bezier(.22,.61,.36,1)  620ms both; }
+.mappel-palabra { animation: mappel-palabra 520ms cubic-bezier(.22,.61,.36,1) 1080ms both; }
 
-@keyframes hubi-marca   { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
-@keyframes hubi-linea   { from { transform: scaleX(0) } to { transform: scaleX(1) } }
-@keyframes hubi-palabra { from { opacity: 0 } to { opacity: 1 } }
+@keyframes mappel-marca   { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
+@keyframes mappel-linea   { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+@keyframes mappel-palabra { from { opacity: 0 } to { opacity: 1 } }
 
 /* Movimiento reducido: no se quita la respuesta, se quita el viaje. */
 @media (prefers-reduced-motion: reduce) {
-  .hubi-marca, .hubi-linea, .hubi-palabra { animation-duration: 0.01ms !important; }
+  .mappel-marca, .mappel-linea, .mappel-palabra { animation-duration: 0.01ms !important; }
 }

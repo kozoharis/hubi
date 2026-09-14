@@ -1,7 +1,7 @@
 'use client'
 
 /*
-  Que HUBI hable.
+  Que MAPPEL hable.
 
   El navegador lleva un sintetizador de voz dentro. No hay que instalar
   nada ni pagar nada.
@@ -45,7 +45,7 @@ export function decir(frase: string) {
 
     window.speechSynthesis.speak(voz)
   } catch {
-    // Que HUBI no hable nunca es motivo para romper nada.
+    // Que MAPPEL no hable nunca es motivo para romper nada.
   }
 }
 

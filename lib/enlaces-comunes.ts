@@ -10,7 +10,7 @@
     · `/escritorio` — es precisamente donde se ven TODOS los espacios.
       Meterlo dentro de uno sería guardar el llavero dentro de una de
       las casas.
-    · `/privacidad` y `/terminos` — son de HUBI, no de nadie.
+    · `/privacidad` y `/terminos` — son de MAPPEL, no de nadie.
     · `/api/…` — de eso se encarga `api()`, que mira la barra de
       direcciones. Si además lo hiciera el enlazador, saldría dos veces.
 */

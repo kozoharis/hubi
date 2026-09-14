@@ -65,10 +65,10 @@
 -- Que no se lea depende ENTERAMENTE de que nadie añada nunca una
 -- política permisiva a esta tabla. Y añadir una política permisiva es
 -- lo más natural del mundo el día que alguien quiera enseñar en
--- Ajustes de qué cuenta es el Drive — que es, de hecho, algo que HUBI
+-- Ajustes de qué cuenta es el Drive — que es, de hecho, algo que MAPPEL
 -- ya enseña (con la llave de servicio).
 --
--- Las nueve lecturas de esta tabla en todo HUBI van con
+-- Las nueve lecturas de esta tabla en todo MAPPEL van con
 -- `clienteServidor()`. `authenticated` no necesita ni una columna.
 --
 -- ─────────────────────────────────────────────────────────────

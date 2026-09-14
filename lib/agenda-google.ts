@@ -15,7 +15,7 @@ import { leerICS, type CitaExterna } from '@/lib/ical'
   su dueño: dentro van cosas de terceros —con quién se ve, dónde, a qué
   hora— y esa no es una decisión que pueda tomar nadie por él.
 
-  REGLA DE ORO: SI GOOGLE FALLA, HUBI SIGUE.
+  REGLA DE ORO: SI GOOGLE FALLA, MAPPEL SIGUE.
 
   Si un archivo no se puede pedir, o llega roto, o tarda demasiado, esa
   persona se queda sin citas y las demás siguen saliendo. Un calendario
@@ -88,7 +88,7 @@ export function etiquetaIcal(perfilId: string): string {
   sitio—.
 
   No hacía falta nada raro para llegar: bastaba con que otra familia
-  usara HUBI y alguien de ella compartiera su calendario, que es
+  usara MAPPEL y alguien de ella compartiera su calendario, que es
   exactamente para lo que existe ese interruptor.
 
   ─────────────────────────────────────────────────────────────
@@ -236,23 +236,23 @@ async function deUnaPersona(
         : { next: { revalidate: CADA, tags: [etiquetaIcal(perfilId)] } }),
     })
     if (!respuesta.ok) {
-      console.error('[HUBI] El calendario de Google responde', respuesta.status)
+      console.error('[MAPPEL] El calendario de Google responde', respuesta.status)
       return []
     }
 
     /*
-      LO QUE PUSO HUBI NO VUELVE POR LA PUERTA DE ATRÁS.
+      LO QUE PUSO MAPPEL NO VUELVE POR LA PUERTA DE ATRÁS.
 
-      Si el calendario conectado es uno donde HUBI también escribe, sus
+      Si el calendario conectado es uno donde MAPPEL también escribe, sus
       propias tareas volverían aquí como si fueran citas de Google y
       saldrían DOS VECES en la Agenda: una como tarea, con su botón de
       "hecho", y otra como cita ajena que no se puede tocar. Se
-      reconocen por la firma que HUBI deja en cada evento y se
+      reconocen por la firma que MAPPEL deja en cada evento y se
       descartan.
     */
-    return leerICS(await respuesta.text(), desde, hasta).filter((c) => !c.deHubi)
+    return leerICS(await respuesta.text(), desde, hasta).filter((c) => !c.deMappel)
   } catch (e) {
-    console.error('[HUBI] No se ha podido leer el calendario de Google:', e)
+    console.error('[MAPPEL] No se ha podido leer el calendario de Google:', e)
     return []
   }
 }

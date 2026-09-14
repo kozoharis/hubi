@@ -6,7 +6,7 @@
 --
 -- Nadie puede darse de alta. Y aunque pudiera, entraría SIN HOGAR: no
 -- vería ni una actividad, ni un papel, ni una tarea. Parecería que
--- HUBI está roto, y en realidad sería la seguridad haciendo su
+-- MAPPEL está roto, y en realidad sería la seguridad haciendo su
 -- trabajo — todas las políticas dicen `hogar_id = mi_hogar()`, y si no
 -- hay hogar no hay nada.
 --
@@ -91,7 +91,7 @@ begin
   -- ── 3 · Las carpetas que tiene todo el mundo ─────────────
   /*
     Cinco, y ni una más. El punto 5 pide pocas decisiones por
-    pantalla, y quien abre HUBI por primera vez con veinte carpetas
+    pantalla, y quien abre MAPPEL por primera vez con veinte carpetas
     delante cierra la pestaña. Las que le falten se las crea él, que
     para eso existe la pantalla de partidas.
   */
@@ -136,7 +136,7 @@ begin
 
   -- ── 4 · Y su actividad, si lleva cuentas de algo ─────────
   /*
-    Esto es lo que hace que HUBI no sea «una aplicación para la finca
+    Esto es lo que hace que MAPPEL no sea «una aplicación para la finca
     de Juan Miguel». Uno tiene una finca, otro lleva obras, otro
     alquila pisos. Se le pregunta UNA vez, al principio, y a partir de
     ahí la aplicación habla su idioma: «la obra», «el piso», «la
@@ -243,7 +243,7 @@ grant execute on function crear_mi_casa(text, text) to authenticated;
       crear_mi_casa   definer     authenticated
 
   Esto NO crea ninguna casa: solo mira que la función esté puesta. La
-  primera casa nueva la creará quien se dé de alta desde HUBI.
+  primera casa nueva la creará quien se dé de alta desde MAPPEL.
 */
 select
   p.proname                                            as funcion,

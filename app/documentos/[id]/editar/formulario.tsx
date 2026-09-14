@@ -463,7 +463,7 @@ export default function Corregir({
               ANTES de tocar el botón rojo.
             */}
             <ul className="t-apoyo mt-2 space-y-1 text-tinta-suave">
-              <li>· Desaparece de HUBI.</li>
+              <li>· Desaparece de MAPPEL.</li>
               <li>· El archivo va a la papelera de tu Google Drive, donde se puede recuperar durante 30 días.</li>
               <li>· Si contaba como gasto o ingreso, deja de contar.</li>
               <li>· Los avisos que salieron de él se quedan, no se borran.</li>

@@ -61,7 +61,7 @@ export async function POST(peticion: NextRequest) {
   })
 
   if (error) {
-    console.error('[HUBI] No se ha podido crear la casa:', error)
+    console.error('[MAPPEL] No se ha podido crear la casa:', error)
 
     /* El caso concreto que va a pasar de verdad: el SQL 30 todavía no
        se ha ejecutado. Merece decirse con nombre y apellidos en vez de
@@ -73,7 +73,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: faltaLaFuncion
-          ? 'HUBI todavía no sabe crear casas nuevas. No es cosa tuya: avisa a quien lo mantiene.'
+          ? 'MAPPEL todavía no sabe crear casas nuevas. No es cosa tuya: avisa a quien lo mantiene.'
           : 'No se ha podido crear tu casa. Inténtalo en un minuto.',
       },
       { status: 500 }
@@ -147,7 +147,7 @@ export async function PATCH(peticion: NextRequest) {
     falta, para no mandar a nadie a buscar a ciegas.
   */
   if (error || !data || data.length === 0) {
-    console.error('[HUBI] No se ha podido cambiar la casa:', error)
+    console.error('[MAPPEL] No se ha podido cambiar la casa:', error)
     return NextResponse.json(
       {
         error: 'No se ha podido guardar el cambio.',

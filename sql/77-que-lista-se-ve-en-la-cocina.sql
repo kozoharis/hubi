@@ -2,7 +2,7 @@
 -- 77 · QUÉ LISTA SE VE EN LA COCINA
 -- ═══════════════════════════════════════════════════════════════
 --
--- La compra de HUBI no es una lista: son varias. `listas_compra` guarda
+-- La compra de MAPPEL no es una lista: son varias. `listas_compra` guarda
 -- la del sábado, la de la ferretería, la de la finca — cada una con su
 -- nombre, su fecha y a quién le toca ir.
 --

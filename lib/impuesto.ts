@@ -8,7 +8,7 @@
 
   El total es lo que pone la factura en grande, lo que sale del banco y
   lo que uno recuerda haber pagado. La base no la sabe nadie de memoria
-  y calcularla a mano es justo el trabajo que HUBI tiene que quitar.
+  y calcularla a mano es justo el trabajo que MAPPEL tiene que quitar.
 
   Así que se escribe 127,43 € —que es lo que ya se escribía— y de ahí
   salen la base y la cuota hacia atrás. Ni un campo más que antes.

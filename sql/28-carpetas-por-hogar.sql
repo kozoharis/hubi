@@ -21,10 +21,10 @@
 --       (1a2b3c es una carpeta del Drive DE JUAN MIGUEL).
 --
 --   2 · Otra familia guarda su factura de la luz. Su ruta se llama
---       igual, porque las rutas las escribe HUBI y son las mismas
+--       igual, porque las rutas las escribe MAPPEL y son las mismas
 --       palabras.
 --
---   3 · HUBI mira su memoria de carpetas, encuentra la fila, y sube
+--   3 · MAPPEL mira su memoria de carpetas, encuentra la fila, y sube
 --       el documento a 1a2b3c.
 --
 --       → La factura de una familia acaba dentro del Drive de otra.

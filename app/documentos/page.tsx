@@ -8,7 +8,7 @@ import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
 import { Ico } from '../iconos'
 import { Fila, Vacio, Aviso, PastillaAmbito, seccionPintada } from '../piezas'
-import HubiCaja from '../hubi-caja'
+import MappelCaja from '../mappel-caja'
 import { elEspacioO } from '@/lib/espacio'
 import { misMarcas, nuevosPorRaiz } from '@/lib/novedades'
 import {
@@ -72,7 +72,7 @@ export default async function Documentos({
       1 · POR CARPETA — el camino exacto.
 
       "Enséñame todas las facturas de la finca" no es una búsqueda de
-      texto: es una carpeta entera. HUBI sabe qué carpetas existen, así
+      texto: es una carpeta entera. MAPPEL sabe qué carpetas existen, así
       que cuando la voz reconoce una, no hay nada que adivinar — se
       piden TODOS los documentos que cuelgan de ella, sus subcarpetas
       incluidas. Ni uno de más ni uno de menos.
@@ -153,7 +153,7 @@ export default async function Documentos({
             icono="carpeta"
             ambito="azul"
             titulo="Papeles"
-            caja={<HubiCaja donde="papeles" valor={busqueda} buscarEn="/documentos" />}
+            caja={<MappelCaja donde="papeles" valor={busqueda} buscarEn="/documentos" />}
             accion={{ texto: 'Guardar un papel', href: '/guardar', icono: 'foto' }}
           />
         </Cabecera>
@@ -257,7 +257,7 @@ export default async function Documentos({
     ])
 
   const averia = falloCats?.message ?? falloDocs?.message ?? null
-  if (averia) console.error('[HUBI] Documentos no ha podido cargar:', averia)
+  if (averia) console.error('[MAPPEL] Documentos no ha podido cargar:', averia)
 
   const todas = (cats ?? []) as Categoria[]
   const papeles = (docs ?? []) as (Documento & {
@@ -332,7 +332,7 @@ export default async function Documentos({
     <main className="min-h-screen pb-40 lg:pb-16">
       {/*
         En el móvil, la cabecera de siempre: el título y debajo la caja
-        de HUBI a todo lo ancho, que es donde se busca con el pulgar.
+        de MAPPEL a todo lo ancho, que es donde se busca con el pulgar.
 
         En grande, la banda común: el título a la izquierda con su
         pastilla —como Agenda, Cuentas y El día a día, que la tenían y
@@ -348,7 +348,7 @@ export default async function Documentos({
           icono="carpeta"
           ambito="azul"
           titulo="Papeles"
-          caja={<HubiCaja donde="papeles" buscarEn="/documentos" />}
+          caja={<MappelCaja donde="papeles" buscarEn="/documentos" />}
           accion={{ texto: 'Guardar un papel', href: '/guardar', icono: 'foto' }}
         />
       </Cabecera>
@@ -501,7 +501,7 @@ export default async function Documentos({
 
   La pestaña de abajo dice Papeles, el rail dice Papeles, y dentro se
   cuentan «papeles guardados» y «1 papel». Esta cabecera era el único
-  sitio de HUBI donde esa sección se llamaba de otra manera.
+  sitio de MAPPEL donde esa sección se llamaba de otra manera.
 
   Una cosa con dos nombres obliga a traducir mentalmente cada vez, y
   con personas mayores delante eso no es un detalle: se toca «Papeles»
@@ -533,13 +533,13 @@ function Titulo() {
   Y ESTO ES LO QUE DECÍA LA FASE 1 QUE PASARÍA AQUÍ
 
   «Esta caja y el asistente hacen hoy la misma pregunta con dos
-  motores distintos. Aquí es donde entrará HUBI Input — no un buscador
+  motores distintos. Aquí es donde entrará MAPPEL Input — no un buscador
   Y un asistente, sino una sola caja que entiende.»
 
   Ya está. Escribes lo que sea:
 
     «facturas agua 2026»          → busca, al instante, como siempre
-    «apunta 85 euros de la finca» → lo entiende HUBI
+    «apunta 85 euros de la finca» → lo entiende MAPPEL
 
   Y lo decide EN EL MÓVIL, sin llamar a ningún modelo: buscar sigue
   costando exactamente lo mismo que antes.
@@ -547,7 +547,7 @@ function Titulo() {
 function Buscador({ valor }: { valor: string }) {
   return (
     <div className="mt-1">
-      <HubiCaja donde="papeles" valor={valor} buscarEn="/documentos" />
+      <MappelCaja donde="papeles" valor={valor} buscarEn="/documentos" />
     </div>
   )
 }

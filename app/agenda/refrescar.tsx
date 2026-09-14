@@ -14,7 +14,7 @@ import { api } from '@/lib/api'
 
   LO IMPORTANTE ES LO QUE DICE DESPUÉS.
 
-  Quitamos NUESTRO retraso —los quince minutos que HUBI guarda lo
+  Quitamos NUESTRO retraso —los quince minutos que MAPPEL guarda lo
   traído— pero no el de Google, que republica el archivo cuando le
   parece y puede tardar horas. Así que la respuesta nunca es
   "sincronizado": es cuántas citas hay ahora, y si no ha cambiado nada

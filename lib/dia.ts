@@ -26,7 +26,7 @@ import { hoyAqui } from './tablon'
   APUNTES PARA CUADRAR EL MES, NO UN REGISTRO DE JORNADA
 
   Se dice aquí y se dice en la pantalla. Un registro de jornada tiene
-  requisitos legales que HUBI no cumple, y fingir que los cumple sería
+  requisitos legales que MAPPEL no cumple, y fingir que los cumple sería
   peor que no tenerlo.
 
   ─────────────────────────────────────────────────────────────

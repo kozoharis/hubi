@@ -60,7 +60,7 @@ export const SIN_CASA =
   `aceptado_en` y `casa_activa` son columnas del SQL 34. Pedir una
   columna que no existe no devuelve «esa columna no existe»: Postgres
   rechaza la consulta ENTERA, y esta consulta la hacen casi todas las
-  pantallas. Si el SQL no se ha ejecutado todavía, HUBI se queda sin
+  pantallas. Si el SQL no se ha ejecutado todavía, MAPPEL se queda sin
   saber de quién es nada.
 
   Así que si el primer intento falla, se pregunta como antes.
@@ -119,7 +119,7 @@ export async function miHogar(
   Hay tres sitios que trabajan sin sesión —los avisos al móvil y la
   tarea diaria que los manda— y ésos NO tienen las políticas de la base
   de datos protegiéndolos: la clave de servidor se las salta. Ahí
-  «todos los perfiles» significa literalmente todos los de HUBI.
+  «todos los perfiles» significa literalmente todos los de MAPPEL.
 
   Con una familia eso era correcto. Con dos, un «recoger la medicación»
   sin persona asignada le habría sonado el teléfono a Juan Miguel, a
@@ -249,7 +249,7 @@ export async function hogarDe(
   Devuelve `true` cuando algo va mal a propósito. Ésta es la mitad
   bonita del permiso: si fallara hacia el otro lado, alguien con todo
   el derecho a apuntar se quedaría mirando una pantalla sin botones y
-  pensaría que HUBI está roto. Quien de verdad no puede se topa con
+  pensaría que MAPPEL está roto. Quien de verdad no puede se topa con
   la base de datos, que no falla nunca.
 */
 export async function puedeEscribir(

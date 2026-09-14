@@ -1,5 +1,5 @@
 /*
-  El trabajador de fondo de HUBI.
+  El trabajador de fondo de MAPPEL.
 
   ESTE ARCHIVO NO EXISTÍA, Y ÉSE ERA EL FALLO.
 
@@ -11,7 +11,7 @@
   tenía dónde aterrizar.
 
   Un trabajador de fondo es un trozo de código que el navegador guarda
-  y ejecuta aunque HUBI esté cerrado. Es la única forma de que suene un
+  y ejecuta aunque MAPPEL esté cerrado. Es la única forma de que suene un
   aviso cuando nadie está mirando la pantalla.
 
   DELIBERADAMENTE NO GUARDA COPIAS DE LAS PÁGINAS. Un service worker
@@ -23,7 +23,7 @@
 
 /* Al instalarse, que entre en servicio ya, sin esperar a que se
    cierren las pestañas abiertas. Si no, la primera activación de los
-   avisos no serviría hasta la siguiente vez que se abriera HUBI. */
+   avisos no serviría hasta la siguiente vez que se abriera MAPPEL. */
 self.addEventListener('install', () => self.skipWaiting())
 
 self.addEventListener('activate', (evento) => {
@@ -40,7 +40,7 @@ self.addEventListener('activate', (evento) => {
   muestra nada.
 */
 self.addEventListener('push', (evento) => {
-  let aviso = { titulo: 'HUBI', cuerpo: 'Tienes algo nuevo', url: '/', tag: 'hubi' }
+  let aviso = { titulo: 'MAPPEL', cuerpo: 'Tienes algo nuevo', url: '/', tag: 'mappel' }
 
   try {
     if (evento.data) aviso = { ...aviso, ...evento.data.json() }
@@ -54,13 +54,13 @@ self.addEventListener('push', (evento) => {
   }
 
   evento.waitUntil(
-    self.registration.showNotification(aviso.titulo || 'HUBI', {
+    self.registration.showNotification(aviso.titulo || 'MAPPEL', {
       body: aviso.cuerpo || '',
       icon: '/icono-192.png',
       badge: '/icono-192.png',
       /* La misma etiqueta sustituye el aviso anterior en vez de
          apilarlo. Tres avisos de la compra seguidos son uno. */
-      tag: aviso.tag || 'hubi',
+      tag: aviso.tag || 'mappel',
       renotify: false,
       /* Que no se vaya solo: una persona mayor puede tardar en mirar
          el teléfono, y un aviso que desaparece a los cinco segundos no
@@ -74,9 +74,9 @@ self.addEventListener('push', (evento) => {
 /*
   Se toca el aviso.
 
-  Si HUBI ya está abierto en alguna pestaña, se trae esa al frente y se
+  Si MAPPEL ya está abierto en alguna pestaña, se trae esa al frente y se
   la lleva a donde toca — en vez de abrir una segunda, que acaba con
-  cuatro HUBIs abiertos y la persona sin saber cuál es el bueno.
+  cuatro MAPPELs abiertos y la persona sin saber cuál es el bueno.
 */
 self.addEventListener('notificationclick', (evento) => {
   evento.notification.close()

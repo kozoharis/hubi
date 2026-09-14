@@ -18,7 +18,7 @@
 --   · el último día para cancelarlo   ← la que sirve
 --   · el día en que se renueva
 --
--- Y las dos salen del mismo papel. Con el índice como está, HUBI manda
+-- Y las dos salen del mismo papel. Con el índice como está, MAPPEL manda
 -- las dos filas juntas y chocan entre ellas: no es que haya un aviso
 -- viejo estorbando, es que las dos nuevas comparten documento.
 --
@@ -35,7 +35,7 @@
 --   ANTES  un documento → como mucho un aviso
 --   AHORA  un documento → como mucho un aviso DE CADA CLASE
 --
--- Y solo cuenta para los avisos que pone HUBI —los que llevan
+-- Y solo cuenta para los avisos que pone MAPPEL —los que llevan
 -- `motivo`—. Los que escribe una persona sobre el mismo papel («llamar
 -- a Silvia por lo del seguro», «pedir presupuesto a otra compañía») ya
 -- no están limitados a uno: nunca debieron estarlo, y esa limitación
@@ -97,17 +97,17 @@ end $$;
   Dos condiciones, y cada una evita un problema distinto.
 
   `motivo is not null` — la regla solo gobierna los avisos que genera
-  HUBI. Un papel puede tener su preaviso, su vencimiento, y encima los
+  MAPPEL. Un papel puede tener su preaviso, su vencimiento, y encima los
   recordatorios que escriba quien quiera.
 
   `estado = 'pendiente'` — y ésta es la que evita una avería dentro de
   un año. Cuando llegue el vencimiento y alguien lo marque como HECHO,
   ese aviso se queda ahí: es la prueba de que aquel año sí se avisó a
-  tiempo, y por eso HUBI no lo borra al rehacer. Sin esta condición, esa
+  tiempo, y por eso MAPPEL no lo borra al rehacer. Sin esta condición, esa
   prueba bloquearía el aviso del año siguiente — y el fallo aparecería
   doce meses después, cuando nadie se acuerde de esto.
 
-  Coincide exactamente con lo que borra HUBI antes de escribir: solo
+  Coincide exactamente con lo que borra MAPPEL antes de escribir: solo
   pendientes. La regla y el código dicen lo mismo, que es la única forma
   de que no se contradigan.
 */

@@ -125,7 +125,7 @@ export default function TuPerfil({
           ¿Cómo te llamas?
         </label>
         <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
-          Así te saluda HUBI y así te nombra el otro cuando te deja algo.
+          Así te saluda MAPPEL y así te nombra el otro cuando te deja algo.
         </p>
 
         <input
@@ -184,7 +184,7 @@ export default function TuPerfil({
           <div className="min-w-0 flex-1">
             <p className="truncate text-[19px] font-extrabold">{nombre || 'Tu perfil'}</p>
             <p className="text-[14.5px] font-semibold text-tenue">
-              {nombre ? 'Estás usando HUBI' : 'Pon tu nombre y tu foto'}
+              {nombre ? 'Estás usando MAPPEL' : 'Pon tu nombre y tu foto'}
             </p>
           </div>
         </div>

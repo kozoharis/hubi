@@ -7,7 +7,7 @@ import ColorDeBarra from '../color-barra'
 import { grabarVoz, sePuedeGrabar, type Grabando } from './grabadora'
 import { decir, callar } from './decir'
 import { api } from '@/lib/api'
-import { NOCHE, DEGRADADO } from '@/lib/voz-hubi'
+import { NOCHE, DEGRADADO } from '@/lib/voz-mappel'
 
 type Estado = 'listo' | 'grabando' | 'pensando' | 'buscando' | 'entendido' | 'guardando' | 'hecho'
 
@@ -108,7 +108,7 @@ export default function Grabar({
     existía —la usa el atajo de Siri— y entiende exactamente lo mismo.
     Solo faltaba una caja donde escribir.
 
-    HUBI no es un micrófono. La voz es la forma preferida de hablarle,
+    MAPPEL no es un micrófono. La voz es la forma preferida de hablarle,
     no la única.
   */
   const [escrito, setEscrito] = useState('')
@@ -176,7 +176,7 @@ export default function Grabar({
       salía por arriba sin que nadie lo recogiera: el botón se pulsaba
       y NO PASABA NADA. Ni error, ni aviso, ni aros girando. Una
       pantalla que no responde y no explica por qué es lo peor que
-      puede hacer HUBI.
+      puede hacer MAPPEL.
     */
     let g: Grabando | null = null
     try {
@@ -204,7 +204,7 @@ export default function Grabar({
 
         setAviso(
           motivo === 'sin-permiso'
-            ? 'HUBI necesita el micrófono para escucharte. Dale permiso cuando el teléfono lo pida.'
+            ? 'MAPPEL necesita el micrófono para escucharte. Dale permiso cuando el teléfono lo pida.'
             : motivo === 'sin-micro'
               ? 'Este navegador no puede grabar. Escríbelo aquí abajo y te entiendo igual.'
               : 'No he oído nada. Prueba a acercarte un poco al teléfono.'
@@ -214,7 +214,7 @@ export default function Grabar({
     } catch {
       setEstado('listo')
       setAviso(
-        'No he podido abrir el micrófono. Cierra HUBI del todo y vuelve a abrirla.'
+        'No he podido abrir el micrófono. Cierra MAPPEL del todo y vuelve a abrirla.'
       )
       return
     }
@@ -702,7 +702,7 @@ export default function Grabar({
           <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
             {estado === 'pensando' || estado === 'buscando' ? (
               <>
-                {/* El mismo aro, girando: sigue siendo HUBI pensando,
+                {/* El mismo aro, girando: sigue siendo MAPPEL pensando,
                     no una ruedecita cualquiera de navegador. */}
                 <div className="relative h-20 w-20">
                   <span aria-hidden className="orbita" />
@@ -731,7 +731,7 @@ export default function Grabar({
                   aria-label={estado === 'grabando' ? 'Terminar' : 'Empezar a hablar'}
                 >
                   {/*
-                    Los aros de HUBI.
+                    Los aros de MAPPEL.
 
                     Quietos y apagados en reposo: están ahí, no piden
                     nada. En cuanto escucha, se encienden y giran — el
@@ -758,7 +758,7 @@ export default function Grabar({
                     style={{
                       /* Mientras graba tiraba al morado `#8B5CF6`,
                          que salió de la paleta. Ahora el degradado es
-                         SIEMPRE el de HUBI y lo que cambia es el
+                         SIEMPRE el de MAPPEL y lo que cambia es el
                          icono: la onda en vez del micrófono. Que algo
                          cambie de color al pulsarlo no dice qué está
                          pasando; que cambie de dibujo, sí. */
@@ -782,7 +782,7 @@ export default function Grabar({
                   El botón de terminar solo aparece en la pausa.
 
                   Antes se cerraba al primer silencio y cortaba a mitad
-                  de idea. Ahora, al callarse, HUBI no da nada por
+                  de idea. Ahora, al callarse, MAPPEL no da nada por
                   terminado: pregunta. Si sigue hablando, sigue
                   escuchando; si toca aquí, se acabó; y si no hace ni
                   una cosa ni otra, se cierra solo a los pocos
@@ -1099,7 +1099,7 @@ export default function Grabar({
                 {/* Y EN QUÉ LISTA, con la palabra «nueva» cuando lo es.
 
                     Sin decirlo, alguien dicta «a la lista del súper» y
-                    no tiene forma de saber si HUBI encontró la suya o
+                    no tiene forma de saber si MAPPEL encontró la suya o
                     va a crear una segunda con el mismo nombre mal
                     escrito. Se ve antes de guardar, que es cuando aún
                     se puede repetir la frase. */}

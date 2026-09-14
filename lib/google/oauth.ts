@@ -1,7 +1,7 @@
 /**
  * Conexión con Google — solo el permiso imprescindible.
  *
- * drive.file  →  HUBI únicamente puede ver y modificar los archivos
+ * drive.file  →  MAPPEL únicamente puede ver y modificar los archivos
  *                que ella misma ha creado. No tiene acceso al resto del
  *                Drive de Juan Miguel: ni sus fotos, ni sus documentos
  *                anteriores, ni nada.

@@ -33,7 +33,7 @@
   fecha: dice lo que hay que hacer.
 
   ─────────────────────────────────────────────────────────────
-  Y SOLO SE BORRA LO QUE HUBI PUSO
+  Y SOLO SE BORRA LO QUE MAPPEL PUSO
 
   Los avisos que genera esto llevan `motivo`. Los que escribió una
   persona sobre el mismo papel —«llamar a Silvia por lo del seguro»— no
@@ -64,7 +64,7 @@ export function esAviso(v: unknown): v is Vencimiento['avisar_con'] {
   Restar días a una fecha sin que la zona horaria se meta.
 
   A mediodía a propósito. Con `new Date('2026-09-08')` JavaScript
-  entiende medianoche EN LONDRES, y el servidor de HUBI está allí: en
+  entiende medianoche EN LONDRES, y el servidor de MAPPEL está allí: en
   verano, restar treinta días desde medianoche cae en las 23:00 del día
   anterior y el aviso sale un día antes de lo que debería. A mediodía no
   hay hueco por el que se cuele ese fallo.
@@ -155,7 +155,7 @@ export async function rehacerAvisos(
     /*
       Si el papel vive en una sección reservada —Salud o Personal—.
 
-      Es el ÚNICO de los cinco caminos que crean recordatorios en HUBI
+      Es el ÚNICO de los cinco caminos que crean recordatorios en MAPPEL
       que sabe de qué carpeta viene la cosa: los demás (una tarea a
       mano, la voz, repetir una hecha, poner fecha a una lista de la
       compra) no tienen ni carpeta ni forma de saberla, porque
@@ -177,7 +177,7 @@ export async function rehacerAvisos(
   const { documentoId, espacio, titulo, creadoPor, hoy } = datos
 
   /*
-    Fuera los de antes. Solo los que puso HUBI (`motivo`) y solo los que
+    Fuera los de antes. Solo los que puso MAPPEL (`motivo`) y solo los que
     están pendientes: uno ya marcado como hecho es historia de lo que
     pasó, y reescribir la historia porque hoy se corrige una fecha
     borraría la prueba de que aquel año sí se avisó a tiempo.

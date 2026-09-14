@@ -87,7 +87,7 @@ function archivos(dir, sacos = []) {
   que los números de renglón sigan siendo los del archivo: un aviso que
   señala el renglón 58 tiene que poder abrirse en el 58.
 
-  Hace falta porque en HUBI los `.select()` largos llevan escrito al
+  Hace falta porque en MAPPEL los `.select()` largos llevan escrito al
   lado por qué piden lo que piden, y un comentario de cuatro renglones
   en medio de una consulta hacía que el rastreador la diera por
   terminada antes de tiempo. El aviso salía en una consulta que SÍ
@@ -398,7 +398,7 @@ for (const archivo of archivos('app')) {
     /* `import Link from 'next/link'` y también
        `import Link, { useLinkStatus } from 'next/link'`, que es como
        estaba escrita la barra de navegación — la pantalla con más
-       enlaces de HUBI— y se coló por no contemplar la coma. */
+       enlaces de MAPPEL— y se coló por no contemplar la coma. */
     if (/^import\s+Link\s*[,]?.*from 'next\/link'/.test(l.trim())) {
       sueltosDeNavegar.push(`${archivo}:${i + 1}  Link de next`)
     }

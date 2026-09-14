@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
   «SÍ, ESTE MES SE PAGÓ».
 
   Un apunte que nació de un pago programado está PREVISTO: cuenta en el
-  balance, pero marcado, porque HUBI no lo ha visto pagar — lo ha
+  balance, pero marcado, porque MAPPEL no lo ha visto pagar — lo ha
   supuesto porque tocaba. Esto lo confirma.
 
   Y también lo contrario: «este mes no se pagó» lo quita. Un recibo

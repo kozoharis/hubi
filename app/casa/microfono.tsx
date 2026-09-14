@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { grabarVoz, sePuedeGrabar, type Grabando } from '../hablar/grabadora'
-import { NOCHE, DEGRADADO, DEGRADADO_TUMBADO, TURQUESA } from '@/lib/voz-hubi'
+import { NOCHE, DEGRADADO, DEGRADADO_TUMBADO, TURQUESA } from '@/lib/voz-mappel'
 import { Ico } from '../iconos'
 
 /*
   ═══════════════════════════════════════════════════════════════
-  EL MICRÓFONO DE HUBI, EN LA PARED
+  EL MICRÓFONO DE MAPPEL, EN LA PARED
   ═══════════════════════════════════════════════════════════════
 
   Uno. En todos los sitios. Con la cara de siempre.
@@ -22,7 +22,7 @@ import { Ico } from '../iconos'
   «una pantalla de cocina no tiene permiso para guardar un gasto, así
   que ahí no pongo micrófono».
 
-  Haris: *«¿el micro de HUBI no debería estar en todos los sitios? ¿y
+  Haris: *«¿el micro de MAPPEL no debería estar en todos los sitios? ¿y
   con el mismo look and feel?»*. Sí. Y el punto 20 del planteamiento ya
   lo decía con todas las letras, desde el primer día:
 
@@ -167,7 +167,7 @@ export default function Microfono() {
     }
   }
 
-  /** De lo que HUBI ha entendido, a lo que esta pantalla enseña. */
+  /** De lo que MAPPEL ha entendido, a lo que esta pantalla enseña. */
   function repartir(d: Oido) {
     switch (d.accion) {
       case 'compra': {
@@ -218,7 +218,7 @@ export default function Microfono() {
           que: 'aqui-no',
           titulo: 'Los papeles se ven en el móvil',
           explica:
-            'Esta pantalla la ve cualquiera que entre en la casa, así que no enseña documentos. Búscalo en tu HUBI y sale en un momento.',
+            'Esta pantalla la ve cualquiera que entre en la casa, así que no enseña documentos. Búscalo en tu MAPPEL y sale en un momento.',
         })
 
       case 'consulta':
@@ -226,7 +226,7 @@ export default function Microfono() {
           que: 'aqui-no',
           titulo: 'Eso te lo contesto en el móvil',
           explica:
-            'Contestarlo aquí sería decirlo en voz alta en la cocina, y por la cocina pasa cualquiera. Pregúntaselo a tu HUBI y te lo dice sólo a ti.',
+            'Contestarlo aquí sería decirlo en voz alta en la cocina, y por la cocina pasa cualquiera. Pregúntaselo a tu MAPPEL y te lo dice sólo a ti.',
         })
 
       case 'cambiar':
@@ -290,7 +290,7 @@ export default function Microfono() {
           setAbierto(true)
           if (hayMicro) empezar()
         }}
-        aria-label="Hablar con HUBI"
+        aria-label="Hablar con MAPPEL"
         /*
           ═══════════════════════════════════════════════════════
           ⚠️  ESTE BOTÓN ESTABA MAL, Y DE TRES MANERAS
@@ -298,20 +298,20 @@ export default function Microfono() {
 
           Haris: *«el botón de hablar lo veo enorme… y sin los
           colores que debe llevar. Mírate bien el documento de
-          identidad de HUBI, el último»*. Me lo he mirado
+          identidad de MAPPEL, el último»*. Me lo he mirado
           —`sistema-visual-actual.md`, 10 de septiembre— y tenía
           razón en todo.
 
           **1 · El color.** Lo puse en azul de noche plano. El
           documento dice literalmente, sobre el degradado:
 
-              «Hay UNO SOLO en todo HUBI y significa una cosa:
+              «Hay UNO SOLO en todo MAPPEL y significa una cosa:
                aquí hay inteligencia. Botón de hablar, aro del
                micrófono, línea de arranque.»
 
           O sea que el degradado no es que ENCAJE en este botón:
           **este botón es uno de los tres sitios para los que el
-          degradado existe.** Ponerlo plano fue quitarle a HUBI su
+          degradado existe.** Ponerlo plano fue quitarle a MAPPEL su
           única marca donde más significa.
 
           El azul de noche sí es correcto — pero para el FONDO de
@@ -319,7 +319,7 @@ export default function Microfono() {
           `/hablar` y en `/entrar`. Lo tenía cambiado de sitio.
 
           **2 · El dibujo.** Ponía un micrófono. El símbolo de la
-          voz en HUBI es la **onda** —cinco barras—, y lo es desde
+          voz en MAPPEL es la **onda** —cinco barras—, y lo es desde
           el rediseño de agosto. Un micrófono es el aparato; la
           onda es la voz. El móvil lleva la onda.
 
@@ -361,7 +361,7 @@ export default function Microfono() {
     )
   }
 
-  // ── Y la ventana, con la cara de la voz de HUBI ──
+  // ── Y la ventana, con la cara de la voz de MAPPEL ──
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-10 py-10"
@@ -510,7 +510,7 @@ export default function Microfono() {
 }
 
 /*
-  Lo entendido, antes de guardarlo. La misma regla que en todo HUBI: se
+  Lo entendido, antes de guardarlo. La misma regla que en todo MAPPEL: se
   ve escrito y se confirma. Una pared que apunta sola lo que cree haber
   oído acaba llena de trozos de conversación.
 */

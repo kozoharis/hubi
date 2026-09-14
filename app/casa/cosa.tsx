@@ -88,7 +88,7 @@ export default function Cosa({
     La MISMA función que pinta esa tarea en el tablón y en la agenda.
     Esta pantalla llegó a tener su propia tabla de emojis, así que una
     cita médica era 🩺 aquí y un corazón rosa en el móvil: dos idiomas
-    para la misma cosa, y ninguno de los dos era el de HUBI.
+    para la misma cosa, y ninguno de los dos era el de MAPPEL.
   */
   const p = pintaDe(titulo)
 
@@ -277,7 +277,7 @@ export default function Cosa({
 
   Va a la papelera, y desde el móvil se recupera. El botón lo dice —«Se
   puede recuperar desde el móvil»— porque quien está delante de una
-  pared no tiene por qué saber qué hace HUBI por dentro, y sin esa
+  pared no tiene por qué saber qué hace MAPPEL por dentro, y sin esa
   frase «Quitar» da miedo y no se usa, o da igual y se usa de más.
 
   Lo que no lleva es un «¿estás seguro?». Una pregunta que sale siempre

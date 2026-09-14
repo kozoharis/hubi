@@ -16,7 +16,7 @@ const MESES = [
 
   Tres cosas que nadie prevé hasta que la pantalla está colgada:
 
-  **La hora, y del reloj de la casa.** El resto de HUBI calcula las
+  **La hora, y del reloj de la casa.** El resto de MAPPEL calcula las
   fechas en el servidor con `hoyAqui()`, porque el servidor de Vercel
   va en hora de Londres y a última hora de la tarde ya ha cambiado de
   día. Una hora no se puede pintar así: tiene que ser la del sitio

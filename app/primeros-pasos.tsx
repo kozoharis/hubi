@@ -11,7 +11,7 @@ import type { Accion } from '@/lib/guia'
   PRIMEROS PASOS · la nota del Inicio
   ═══════════════════════════════════════════════════════════════
 
-  Alguien entra en HUBI por primera vez y se encuentra una casa
+  Alguien entra en MAPPEL por primera vez y se encuentra una casa
   vacía: el balance a cero, la lista de la compra vacía, «todavía no
   hay nada apuntado». La aplicación que promete tenerlo todo en un
   mismo lugar se abre enseñando ninguna cosa, y quien no sabe por
@@ -22,7 +22,7 @@ import type { Accion } from '@/lib/guia'
 
   Y la diferencia no es de forma. Una lista de vídeos son deberes:
   hay que verlos todos y al terminar no has hecho nada. Una lista de
-  cosas hechas se completa USANDO HUBI, que es exactamente lo que se
+  cosas hechas se completa USANDO MAPPEL, que es exactamente lo que se
   quiere que pase. El vídeo deja de ser el objetivo y pasa a ser lo
   que hay al lado por si te atascas.
 
@@ -31,7 +31,7 @@ import type { Accion } from '@/lib/guia'
   Cuando las cuatro están hechas, la tarjeta se va y no vuelve —
   porque ya no tiene nada que decir.
 
-  Y está escrita en el idioma que ya se habla aquí: en HUBI se tacha
+  Y está escrita en el idioma que ya se habla aquí: en MAPPEL se tacha
   la compra, se marcan las rutinas, las tareas son pendiente o hecho.
   Una lista que se tacha no hay que explicarla.
 
@@ -50,11 +50,11 @@ import type { Accion } from '@/lib/guia'
   A propósito. Un modal encima del Inicio el primer día es una pared
   que hay que quitar antes de llegar a lo tuyo, con un botón de
   cerrar pequeño por definición. Esto no bloquea nada: quien quiere
-  usar HUBI baja y lo ignora; quien no sabe por dónde empezar lo
+  usar MAPPEL baja y lo ignora; quien no sabe por dónde empezar lo
   encuentra en el primer sitio donde mira.
 */
 
-const APARTADA = 'hubi.primeros-pasos.apartada'
+const APARTADA = 'mappel.primeros-pasos.apartada'
 const UNA_SEMANA = 7 * 24 * 60 * 60 * 1000
 
 export default function PrimerosPasos({
@@ -100,7 +100,7 @@ export default function PrimerosPasos({
   const cuantos = pasos.filter((p) => hecho.has(p.clave)).length
 
   /* Todo hecho: se va para siempre, sin felicitación y sin confeti.
-     HUBI no es esa clase de aplicación. */
+     MAPPEL no es esa clase de aplicación. */
   if (cuantos >= pasos.length) return null
   if (apartada) return null
 
@@ -167,7 +167,7 @@ export default function PrimerosPasos({
                   <span
                     className="shrink-0 rounded-full px-2.5 py-1 text-[13px] font-bold"
                     /* El velo del ámbito al 16%, igual que la
-                       pastilla del icono en el resto de HUBI. */
+                       pastilla del icono en el resto de MAPPEL. */
                     style={{
                       background: `${AMBITO[paso.ambito]}29`,
                       color: AMBITO[paso.ambito],
@@ -185,7 +185,7 @@ export default function PrimerosPasos({
       {/*
         Y la insinuación de que hay más.
 
-        Sin esto, alguien podría creer que HUBI hace cuatro cosas.
+        Sin esto, alguien podría creer que MAPPEL hace cuatro cosas.
         Con una lista de nueve, nadie lee ninguna. Cuatro delante y el
         resto a un toque es el reparto que funciona.
       */}

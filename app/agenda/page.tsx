@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Barra from '../barra'
-import HubiCaja from '../hubi-caja'
+import MappelCaja from '../mappel-caja'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
 import { PastillaAmbito, Pildora } from '../piezas'
@@ -160,20 +160,20 @@ export default async function Agenda({
           ambito="azul"
           titulo="Agenda"
           controles={segmentos}
-          caja={<HubiCaja donde="agenda" />}
+          caja={<MappelCaja donde="agenda" />}
           accion={{ texto: 'Apuntar algo', href: '/tablon/nuevo', icono: 'mas' }}
         />
       </Cabecera>
 
       <div className="columna pt-2">
-        {/* La caja de HUBI, con la sugerencia de aquí. Lo que cambia
+        {/* La caja de MAPPEL, con la sugerencia de aquí. Lo que cambia
             entre pantallas es lo que se propone, no lo que hace.
 
             En grande sube a la banda de arriba, con el botón de
             apuntar: las acciones van todas juntas y en el mismo sitio
             en todas las pantallas. */}
         <div className="mb-4 lg:hidden">
-          <HubiCaja donde="agenda" />
+          <MappelCaja donde="agenda" />
         </div>
         {enDia ? (
           <Dia dia={p.dia} de={p.de} />

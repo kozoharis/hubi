@@ -42,7 +42,7 @@ order by table_name, column_name;
 /*
   Aquí está el sospechoso número uno.
 
-  HUBI intenta escribir un aviso con `tipo = 'vencimiento'`,
+  MAPPEL intenta escribir un aviso con `tipo = 'vencimiento'`,
   `motivo = 'preaviso'` y `aviso_previo = '1_mes'`. Si alguna de esas
   columnas tiene una comprobación que no incluya alguno de esos tres
   valores, Postgres rechaza la fila entera — y el mensaje que llega

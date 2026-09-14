@@ -2,7 +2,7 @@
 -- 32 · LO QUE CADA CASA USA Y LO QUE NO
 -- ═══════════════════════════════════════════════════════════════
 --
--- Dos cosas pequeñas con el mismo fondo: HUBI trae de serie cosas que
+-- Dos cosas pequeñas con el mismo fondo: MAPPEL trae de serie cosas que
 -- no todas las casas quieren, y hasta ahora no había forma de decir
 -- que no.
 --

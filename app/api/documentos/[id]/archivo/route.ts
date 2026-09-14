@@ -59,7 +59,7 @@ export async function GET(
       },
     })
   } catch (e) {
-    console.error('[HUBI] Fallo descargando de Drive:', e)
+    console.error('[MAPPEL] Fallo descargando de Drive:', e)
     return new NextResponse('No se ha podido abrir el documento.', { status: 502 })
   }
 }

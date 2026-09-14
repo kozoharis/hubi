@@ -29,10 +29,10 @@ const origen = 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs'
 const destino = 'public/pdf.worker.min.mjs'
 
 if (!existsSync(origen)) {
-  console.warn('[HUBI] No se encuentra el ayudante del lector de PDF. ¿Falta npm install?')
+  console.warn('[MAPPEL] No se encuentra el ayudante del lector de PDF. ¿Falta npm install?')
   process.exit(0)
 }
 
 mkdirSync(dirname(destino), { recursive: true })
 copyFileSync(origen, destino)
-console.log('[HUBI] Ayudante del lector de PDF copiado a public/')
+console.log('[MAPPEL] Ayudante del lector de PDF copiado a public/')

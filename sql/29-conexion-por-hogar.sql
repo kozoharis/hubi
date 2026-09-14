@@ -15,11 +15,11 @@
 -- `check (id = 1)` significa: **esta tabla no puede tener más de una
 -- fila**. Nunca. Está escrito en la base de datos.
 --
--- Y en esa única fila vive TODO lo que conecta HUBI con Google:
+-- Y en esa única fila vive TODO lo que conecta MAPPEL con Google:
 --
 --   · el permiso cifrado de la cuenta,
 --   · la carpeta raíz del Drive,
---   · el identificador del calendario HUBI.
+--   · el identificador del calendario MAPPEL.
 --
 -- Así que hoy la segunda familia **no puede conectar su Drive**. No es
 -- que salga mal: es que no hay dónde guardarlo. Y su calendario

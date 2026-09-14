@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /*
-  Leer el perfil de quien está usando HUBI.
+  Leer el perfil de quien está usando MAPPEL.
 
   Parece de más tener esto en un archivo aparte, pero tiene un motivo
   concreto: la foto es un añadido reciente y su columna puede no existir

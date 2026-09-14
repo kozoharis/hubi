@@ -148,7 +148,7 @@ export default async function Hoy() {
           mira al pasar por la cocina —regar, la basura, las pastillas de
           la mañana— y lo único de esta pantalla que además se TACHA.
 
-          Y existía en HUBI desde hace tiempo sin salir por ninguna
+          Y existía en MAPPEL desde hace tiempo sin salir por ninguna
           parte de la pared, que es donde más falta hacía.
         */}
         {rutinas.length > 0 && (
@@ -226,7 +226,7 @@ export default async function Hoy() {
           todo lo demás fuera de la pantalla. Una pared no se desliza.
 
           `puedeSubir`: aquí sí, porque quien mira esto ES la pantalla de
-          la cocina, y es la única cosa que puede escribir en todo HUBI
+          la cocina, y es la única cosa que puede escribir en todo MAPPEL
           aparte de la compra.
         */}
         <section className="mt-11">

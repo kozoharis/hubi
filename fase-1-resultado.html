@@ -1,4 +1,4 @@
-<title>HUBI Fase 1 · antes y después</title>
+<title>MAPPEL Fase 1 · antes y después</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -73,13 +73,13 @@ pre.salida{font-family:"JetBrains Mono",monospace;font-size:12.5px;line-height:1
 .porque{font-size:14.5px;color:var(--pg-tinta2);margin:0 0 32px;max-width:78ch;font-weight:600;line-height:1.55}
 .porque b{color:var(--pg-tinta);font-weight:800}
 
-/* tokens de HUBI dentro de las maquetas */
-.hubi.claro{--h-fondo:#F1F5F9;--h-sup:#FFF;--h-borde:#E2E8F0;--h-tinta:#0F172A;--h-suave:#334155;--h-tenue:#64748B;--h-apagado:#94A3B8;
+/* tokens de MAPPEL dentro de las maquetas */
+.mappel.claro{--h-fondo:#F1F5F9;--h-sup:#FFF;--h-borde:#E2E8F0;--h-tinta:#0F172A;--h-suave:#334155;--h-tenue:#64748B;--h-apagado:#94A3B8;
   --h-accion:#14B8A6;--h-accion-tinta:#04211D;--h-bien:#0E9C8B;--h-alerta:#E0453F;--h-bien-velo:#DFF7F3;--h-alerta-velo:#FDE8E7}
-.hubi.oscuro{--h-fondo:#0B1220;--h-sup:#182133;--h-borde:#253148;--h-tinta:#F1F5F9;--h-suave:#CBD5E1;--h-tenue:#94A3B8;--h-apagado:#64748B;
+.mappel.oscuro{--h-fondo:#0B1220;--h-sup:#182133;--h-borde:#253148;--h-tinta:#F1F5F9;--h-suave:#CBD5E1;--h-tenue:#94A3B8;--h-apagado:#64748B;
   --h-accion:#14B8A6;--h-accion-tinta:#04211D;--h-bien:#2DD4BF;--h-alerta:#FF7B75;--h-bien-velo:#10322F;--h-alerta-velo:#3A1D22}
-.hubi{background:var(--h-fondo);color:var(--h-tinta)}
-.hubi *{box-sizing:border-box}
+.mappel{background:var(--h-fondo);color:var(--h-tinta)}
+.mappel *{box-sizing:border-box}
 
 .tt{font-size:27px;font-weight:800;letter-spacing:-.025em;line-height:1.15;margin:0}
 .tc{font-size:17px;font-weight:600;line-height:1.45;margin:0}
@@ -115,7 +115,7 @@ footer{margin-top:60px;padding-top:22px;border-top:2px solid var(--pg-tinta);fon
 <div class="pag">
 
 <header>
-  <div class="kick"><span>HUBI</span><span>Fase 1 · hecho</span><span>P0 + sistema + 3 pantallas</span><span>9 sept 2026</span></div>
+  <div class="kick"><span>MAPPEL</span><span>Fase 1 · hecho</span><span>P0 + sistema + 3 pantallas</span><span>9 sept 2026</span></div>
   <h1>Ocho fallos cerrados,<br>el sistema construido<br><em>y tres pantallas de prueba</em></h1>
   <p class="lead">Todo compila, pasa el comprobador de tipos y pasa el linter. Las otras cuarenta y una pantallas siguen exactamente como estaban: no se ha migrado ninguna más.</p>
 </header>
@@ -275,9 +275,9 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
   </table>
   </div>
 
-  <h3><span class="mono" style="font-size:.8em">app/hubi-input.tsx</span> · 237 líneas · la pieza, no todavía el asistente</h3>
+  <h3><span class="mono" style="font-size:.8em">app/mappel-input.tsx</span> · 237 líneas · la pieza, no todavía el asistente</h3>
   <p>Definida y sin conectar, como acordamos. Seis estados: <strong>reposo · escuchando · pensando · respondiendo · no entendido · sin micrófono</strong>. Voz y teclado en la misma caja; la sugerencia cambia según la pantalla y el comportamiento no.</p>
-  <p class="porque">Lo que esta pieza <b>fija desde ya</b>, aunque no se use: el degradado HUBI y la sombra teal viven solo aquí y en el botón flotante — donde aparecen, hay inteligencia detrás, y en ningún otro sitio. Es tu distinción entre <b>teal sólido = acción</b> y <b>degradado = HUBI</b>, hecha regla de código.</p>
+  <p class="porque">Lo que esta pieza <b>fija desde ya</b>, aunque no se use: el degradado MAPPEL y la sombra teal viven solo aquí y en el botón flotante — donde aparecen, hay inteligencia detrás, y en ningún otro sitio. Es tu distinción entre <b>teal sólido = acción</b> y <b>degradado = MAPPEL</b>, hecha regla de código.</p>
 </section>
 
 
@@ -286,7 +286,7 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
   <div class="cab"><span class="num">04</span><h2>Papeles · el listado</h2></div>
 
   <div class="vs">
-    <div class="tel"><div class="et et-a">Antes</div><div class="pantalla hubi claro">
+    <div class="tel"><div class="et et-a">Antes</div><div class="pantalla mappel claro">
       <p style="font-size:27px;font-weight:800;letter-spacing:-.025em;margin:0 0 10px">Documentos</p>
       <div style="display:flex;align-items:center;gap:12px;height:54px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px;margin-bottom:16px">
         <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-tenue)" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
@@ -329,7 +329,7 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
       <span class="med">buscador 54 · r16 &nbsp;·&nbsp; filas r20, pastillas 44 y 46 &nbsp;·&nbsp; títulos 17,5/700 y 18/800 &nbsp;·&nbsp; chevron en color de BORDE</span>
     </div></div>
 
-    <div class="tel"><div class="et et-b">Después</div><div class="pantalla hubi claro">
+    <div class="tel"><div class="et et-b">Después</div><div class="pantalla mappel claro">
       <p class="tt" style="margin-bottom:10px">Documentos</p>
       <div style="display:flex;align-items:center;gap:12px;height:58px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px;margin-bottom:16px">
         <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-tenue)" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
@@ -381,7 +381,7 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
   <div class="cab"><span class="num">05</span><h2>Papeles · la ficha de un documento</h2></div>
 
   <div class="vs">
-    <div class="tel"><div class="et et-a">Antes</div><div class="pantalla hubi claro">
+    <div class="tel"><div class="et et-a">Antes</div><div class="pantalla mappel claro">
       <span style="display:inline-flex;align-items:center;gap:6px;height:44px;border-radius:999px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px 0 12px;font-size:16.5px;font-weight:800;margin-bottom:16px">
         <svg class="ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>Volver</span>
       <div style="border-radius:20px;border:1px solid var(--h-borde);background:var(--h-sup);height:96px;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--h-suave);font-size:17px;font-weight:700;margin-bottom:14px">
@@ -407,7 +407,7 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
       <span class="med">el título vive en el CUERPO · importe en color de sección · botón blanco sobre teal (contraste 2,4:1) · 62 y 56 px</span>
     </div></div>
 
-    <div class="tel"><div class="et et-b">Después</div><div class="pantalla hubi claro">
+    <div class="tel"><div class="et et-b">Después</div><div class="pantalla mappel claro">
       <span style="display:inline-flex;align-items:center;gap:6px;height:44px;border-radius:999px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px 0 12px;font-size:16.5px;font-weight:800">
         <svg class="ico" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>Volver</span>
       <p class="tt" style="margin:10px 0 4px">Factura Endesa agosto</p>
@@ -444,7 +444,7 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
   <p>Es la pantalla de la generación más antigua: usaba <code>font-titulo</code> a 40 px —la única del producto—, <code>rounded-2xl border-2</code>, <code>text-xl</code> y un botón de 24 px de letra.</p>
 
   <div class="vs">
-    <div class="tel"><div class="et et-a">Antes</div><div class="pantalla hubi claro">
+    <div class="tel"><div class="et et-a">Antes</div><div class="pantalla mappel claro">
       <p style="font-size:40px;font-weight:700;line-height:1.15;letter-spacing:-.02em;margin:0 0 22px">Apuntar algo</p>
       <p style="font-size:20px;font-weight:500;margin:0 0 10px">¿Qué hay que recordar?</p>
       <div style="border-radius:16px;border:2px solid var(--h-borde);background:var(--h-fondo);padding:14px 18px;font-size:20px;font-weight:500;line-height:1.35;min-height:88px;margin-bottom:26px">Recoger la medicación en la farmacia</div>
@@ -461,7 +461,7 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
       <span class="med">título 40 · font-titulo · etiquetas 20 · opciones 62–66 px con «✓ » que DESPLAZA el texto · botón 24 px</span>
     </div></div>
 
-    <div class="tel"><div class="et et-b">Después</div><div class="pantalla hubi claro">
+    <div class="tel"><div class="et et-b">Después</div><div class="pantalla mappel claro">
       <p class="tt" style="margin:0 0 22px">Apuntar algo</p>
       <p class="tr" style="margin:0 0 8px">¿Qué hay que recordar?</p>
       <div style="border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);padding:14px 16px;font-size:19px;font-weight:700;line-height:1.35;min-height:92px;margin-bottom:26px">Recoger la medicación en la farmacia</div>
@@ -495,7 +495,7 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
   <p class="regla">Un sistema, dos apariencias. El único color que <strong>no</strong> cambia entre modos es el de acción: el botón principal es el mismo teal con la misma tinta oscura de día y de noche, que es lo que hace que se reconozca sin buscarlo.</p>
 
   <div class="vs" style="grid-template-columns:1fr 1fr 1fr">
-    <div class="tel"><div class="et" style="background:var(--pg-cod);color:var(--pg-tenue)">Papeles</div><div class="pantalla hubi oscuro">
+    <div class="tel"><div class="et" style="background:var(--pg-cod);color:var(--pg-tenue)">Papeles</div><div class="pantalla mappel oscuro">
       <p class="tt" style="margin-bottom:10px">Documentos</p>
       <div style="display:flex;align-items:center;gap:12px;height:58px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);padding:0 16px;margin-bottom:16px">
         <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--h-tenue)" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
@@ -513,7 +513,7 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
       </div>
     </div></div>
 
-    <div class="tel"><div class="et" style="background:var(--pg-cod);color:var(--pg-tenue)">Ficha</div><div class="pantalla hubi oscuro">
+    <div class="tel"><div class="et" style="background:var(--pg-cod);color:var(--pg-tenue)">Ficha</div><div class="pantalla mappel oscuro">
       <p class="tt" style="margin:0 0 14px">Factura Endesa</p>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <span class="past" style="width:24px;height:24px;border-radius:8px;background:color-mix(in srgb,#6FA88A 22%,var(--h-sup));color:#9DC7B2"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4-1-7-4-7-9 4 0 7 1 9 4 2-4 5-6 7-6 0 6-4 11-9 11Z"/></svg></span>
@@ -528,7 +528,7 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
       <button class="btn" style="height:60px;border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);color:var(--h-tinta);font-size:19px;font-weight:800;margin-top:10px">Corregir o borrar</button>
     </div></div>
 
-    <div class="tel"><div class="et" style="background:var(--pg-cod);color:var(--pg-tenue)">Apuntar</div><div class="pantalla hubi oscuro">
+    <div class="tel"><div class="et" style="background:var(--pg-cod);color:var(--pg-tenue)">Apuntar</div><div class="pantalla mappel oscuro">
       <p class="tt" style="margin:0 0 18px">Apuntar algo</p>
       <p class="tr" style="margin:0 0 8px">¿Qué hay que recordar?</p>
       <div style="border-radius:16px;border:1px solid var(--h-borde);background:var(--h-sup);padding:14px 16px;font-size:19px;font-weight:700;line-height:1.35;min-height:76px;margin-bottom:20px">Recoger la medicación</div>
@@ -588,7 +588,7 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
     <li><strong>Las otras 41 pantallas.</strong> Siguen exactamente como estaban, con sus tokens de siempre.</li>
     <li><strong>La navegación.</strong> Weaver y Alquileres siguen donde estaban. El cuarto concepto queda abierto para la Fase 2 — llevas razón en que «La casa» se queda corto.</li>
     <li><strong>Inicio.</strong> Ni reordenado ni vaciado.</li>
-    <li><strong>La arquitectura del asistente.</strong> Solo se arreglaron sus dos P0; <code>hubi-input.tsx</code> está definido y sin conectar.</li>
+    <li><strong>La arquitectura del asistente.</strong> Solo se arreglaron sus dos P0; <code>mappel-input.tsx</code> está definido y sin conectar.</li>
     <li><strong>Agenda</strong> más allá de sus P0: los 17 controles siguen siendo 17.</li>
     <li><strong>El fondo global</strong> sigue en <code>#F1F5F9</code>, como acordamos para la Fase 3.</li>
     <li><strong>«Papeles» frente a «Documentos»</strong>, la estructura de Ajustes y el resto del vocabulario.</li>
@@ -602,7 +602,7 @@ $ npx eslint (ficheros tocados) → 0 errores, 0 avisos</pre>
 <footer>
   Fase 1 · P0 corregidos, sistema construido y tres pantallas migradas.<br>
   <code>npx tsc --noEmit</code> sin errores · <code>npx next build</code> correcto · <code>eslint</code> sin avisos en los ficheros tocados · 21 pruebas automáticas en 4 zonas horarias.<br><br>
-  Las maquetas de esta página reproducen el marcado real de las tres pantallas, antes y después, con los tokens de HUBI.
+  Las maquetas de esta página reproducen el marcado real de las tres pantallas, antes y después, con los tokens de MAPPEL.
 </footer>
 
 </div>

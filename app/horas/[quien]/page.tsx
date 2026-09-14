@@ -147,7 +147,7 @@ export default async function HorasDeAlguien({
 
           Era una tarjeta con degradado morado y la letra en blanco, la
           gemela de la que llevaba el balance de la finca. Se retiró por
-          lo mismo: el degradado es de HUBI —lo que el asistente
+          lo mismo: el degradado es de MAPPEL —lo que el asistente
           entiende, lo que se dice con la voz— y usarlo aquí lo
           convierte en decoración.
 

@@ -1,7 +1,7 @@
 import Link from '@/app/enlace'
 import type { Ambito } from '@/lib/ambitos'
 /*
-  Los iconos de HUBI.
+  Los iconos de MAPPEL.
 
   Son de línea, dibujados a mano, y toman el color del texto que los
   rodea. Sustituyen a los emojis: un emoji se ve distinto en cada
@@ -184,7 +184,7 @@ export function Ico({
 
   No es un truco — es la única manera de tener las dos cosas. Un botón
   que se toca una vez al mes no debe pesar en la pantalla, y ninguna
-  pantalla de HUBI puede tener algo pulsable por debajo de 48 px.
+  pantalla de MAPPEL puede tener algo pulsable por debajo de 48 px.
 
   ─────────────────────────────────────────────────────────────
   EL DIBUJO ES SUYO · EL ARCHIVO YA NO
@@ -195,7 +195,7 @@ export function Ico({
   `public/ajustes-mando.png` está hecho de cian eléctrico —#00D8F0,
   #00C0F0, #00F0F0— derivando a violeta #7848F0. Son los MISMOS
   colores del degradado que quitamos del borde justamente por no ser
-  de HUBI. Quitamos el degradado y dejamos el icono hecho de él, así
+  de MAPPEL. Quitamos el degradado y dejamos el icono hecho de él, así
   que el cian se quedó igual, y con la cabecera vacía que dejó la
   Fase 2 pasó a ser lo único con color de toda la pantalla, a un
   centímetro del logotipo.
@@ -243,7 +243,7 @@ export function Ico({
   se apagan carpetas, se conecta o se desconecta Google. Cosas que se
   mueven de un lado a otro — que es lo que dibuja un mando, no un
   engranaje. Y la chispa dice la otra mitad: que ahí dentro hay cosas
-  que HUBI hace solo.
+  que MAPPEL hace solo.
 
   ─────────────────────────────────────────────────────────────
   DE UN BORDE QUE NO SE VEÍA A UN RELLENO QUE SÍ
@@ -317,7 +317,7 @@ export function BotonAjustes() {
 }
 
 /* ── El logotipo ─────────────────────────────────────────
-   Es el archivo de verdad: la H con el degradado de HUBI —turquesa,
+   Es el archivo de verdad: la H con el degradado de MAPPEL —turquesa,
    verde azulado y azul— y nada más.
 
    El anterior llevaba dentro rojo, naranja y rosa, tres de las siete
@@ -332,7 +332,7 @@ export function Logo({ tam = 30, oscuro = false }: { tam?: number; oscuro?: bool
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={oscuro ? '/logo-hubi-oscuro.png' : '/logo-hubi.png'}
+      src={oscuro ? '/logo-mappel-oscuro.png' : '/logo-mappel.png'}
       alt=""
       width={tam}
       height={tam}
@@ -534,7 +534,7 @@ export function Volver({
 }
 
 /*
-  El emoji de una sección, traducido al icono de línea que usa HUBI.
+  El emoji de una sección, traducido al icono de línea que usa MAPPEL.
 
   Las secciones guardan su icono como emoji porque es lo que se puede
   elegir desde una pantalla sin programar nada. Pero en la barra de

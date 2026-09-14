@@ -7,7 +7,7 @@ import { cuantasNotas } from '@/lib/notas'
 import { loDeHoy } from '@/lib/rutinas'
 import { hoyAqui } from '@/lib/tablon'
 import Barra from '../barra'
-import HubiCaja from '../hubi-caja'
+import MappelCaja from '../mappel-caja'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
 import { ambitoDeColor, PastillaAmbito, TarjetaAccion } from '../piezas'
@@ -161,20 +161,20 @@ export default async function DiaADia() {
           ambito="arena"
           titulo="El día a día"
           pie="La compra, la casa, los menús y el corcho"
-          caja={<HubiCaja donde="dia" />}
+          caja={<MappelCaja donde="dia" />}
         />
       </Cabecera>
 
       <div className="columna pt-1">
         {/*
-          La caja de HUBI. La misma que en Inicio y en Papeles, con la
+          La caja de MAPPEL. La misma que en Inicio y en Papeles, con la
           sugerencia de aquí: lo que cambia entre pantallas es lo que
           se propone, no lo que hace.
         */}
         {/* En grande sube a la banda de arriba, con el resto de las
-            acciones de HUBI. */}
+            acciones de MAPPEL. */}
         <div className="pb-1.5 lg:hidden">
-          <HubiCaja donde="dia" />
+          <MappelCaja donde="dia" />
         </div>
 
         {/*
@@ -202,7 +202,7 @@ export default async function DiaADia() {
         {/*
           ── LA COMPRA, LA PRIMERA ──
 
-          Es lo que más se usa de todo HUBI: un papel se guarda una vez
+          Es lo que más se usa de todo MAPPEL: un papel se guarda una vez
           por semana, la compra es todos los días. Y el estado va en el
           título, no en el pie: «3 cosas por coger» es la respuesta, no
           una etiqueta.

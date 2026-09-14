@@ -74,7 +74,7 @@ create index if not exists idx_categorias_padre on categorias(padre_id);
 
   Aquí sigue puesta la ruta a secas porque `hogar_id` no existía
   todavía —lo añade el 17— y este archivo es el primer día del
-  proyecto. Quien monte HUBI desde cero ejecuta 01 → 17 → 28 y acaba
+  proyecto. Quien monte MAPPEL desde cero ejecuta 01 → 17 → 28 y acaba
   con la clave correcta. Lo que NO se puede es dejar la clave así:
   con la ruta sola, "FINCA/GASTOS/2026/T3/LUZ" es una única fila para
   todas las familias, y los documentos de una acabarían en el Drive

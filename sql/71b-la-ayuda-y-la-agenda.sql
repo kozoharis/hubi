@@ -10,7 +10,7 @@
 -- QUÉ PASA SI NO SE EJECUTA
 --
 -- Rosana entra en la Agenda, ve el botón «Apuntar algo», lo pulsa,
--- rellena la tarea, le da a guardar y HUBI le dice que no.
+-- rellena la tarea, le da a guardar y MAPPEL le dice que no.
 --
 -- Hasta hoy podía apuntar, porque la puerta era `puedo_escribir`, que
 -- solo miraba si era lectora. Con el 71 la puerta es su nivel, y
@@ -92,7 +92,7 @@ begin
 
   select count(*) into quienes from miembros
    where rol = 'ayuda' and aceptado_en is not null;
-  raise notice 'Puerta pasada. Personas con rol `ayuda` en HUBI: %.', quienes;
+  raise notice 'Puerta pasada. Personas con rol `ayuda` en MAPPEL: %.', quienes;
 end $$;
 
 

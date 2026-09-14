@@ -178,7 +178,7 @@ export async function POST(peticion: NextRequest) {
   }
 
   if (error) {
-    console.error('[HUBI] Fallo apuntando en la compra:', error)
+    console.error('[MAPPEL] Fallo apuntando en la compra:', error)
     return NextResponse.json(
       { error: 'No se ha podido apuntar.', detalle: error.message },
       { status: 500 }
@@ -196,11 +196,11 @@ export async function POST(peticion: NextRequest) {
     Va sin esperar: si el aviso falla, la compra ya está apuntada.
   */
   avisarDeCompra(user.id, cosas.length).catch((e) =>
-    console.error('[HUBI] Apuntado sin avisar:', e)
+    console.error('[MAPPEL] Apuntado sin avisar:', e)
   )
 
     /* Si faltaba el SQL se dice, pero DESPUÉS de haber apuntado: el
-     aviso es para quien mantiene HUBI, no una excusa para no guardar. */
+     aviso es para quien mantiene MAPPEL, no una excusa para no guardar. */
   return NextResponse.json({
     ok: true,
     cuantas: data?.length ?? cosas.length,
@@ -280,7 +280,7 @@ export async function PATCH(peticion: NextRequest) {
   const { data, error } = await archivar.select('id')
 
   if (error) {
-    console.error('[HUBI] Fallo cerrando la compra:', error)
+    console.error('[MAPPEL] Fallo cerrando la compra:', error)
     return NextResponse.json(
       { error: 'No se ha podido guardar.', detalle: error.message },
       { status: 500 }
@@ -347,7 +347,7 @@ export async function PATCH(peticion: NextRequest) {
        lo tachado YA está archivado, que es lo que se pidió. Una
        función nueva a medio instalar no puede tumbar la que
        funcionaba. */
-    console.error('[HUBI] Compra archivada, lista sin cerrar:', e)
+    console.error('[MAPPEL] Compra archivada, lista sin cerrar:', e)
   }
 
   return NextResponse.json({ ok: true, cuantas, cerrada, nueva })

@@ -13,7 +13,7 @@
   **Lo vuestro primero.** Lo que ya se ha comprado en esta casa sale de
   `compra` archivada: si la leche ha entrado seis veces, no hay que
   volver a escribirla nunca más. Esto es lo que de verdad sirve, y
-  mejora solo con el uso — HUBI no se vuelve más listo porque le
+  mejora solo con el uso — MAPPEL no se vuelve más listo porque le
   pongamos un modelo mejor, sino porque lo usáis.
 
   **Y detrás, lo corriente.** El problema de lo anterior es el primer

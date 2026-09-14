@@ -3,7 +3,7 @@
 --
 --  Es la nota de la nevera. Conchita apunta "leche" desde la cocina y
 --  Juan Miguel lo ve en el súper. Nada más — y por eso es lo que más
---  se va a usar de todo HUBI: un papel se guarda una vez por semana,
+--  se va a usar de todo MAPPEL: un papel se guarda una vez por semana,
 --  la compra es todos los días.
 --
 --  TABLA PROPIA, Y ESTO ES LO IMPORTANTE.
@@ -27,7 +27,7 @@
 --
 --  NO SE BORRA AL COMPRARLO. Se marca. Así se puede destachar lo que
 --  se tachó sin querer —que con el móvil en una mano y el carro en la
---  otra pasa— y así HUBI sabe qué compráis a menudo para ofrecerlo
+--  otra pasa— y así MAPPEL sabe qué compráis a menudo para ofrecerlo
 --  luego sin que nadie lo escriba.
 --
 --  Se puede ejecutar más de una vez sin estropear nada.

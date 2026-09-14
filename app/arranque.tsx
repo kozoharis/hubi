@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { DEGRADADO } from '@/lib/voz-hubi'
+import { DEGRADADO } from '@/lib/voz-mappel'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -15,8 +15,8 @@ import { DEGRADADO } from '@/lib/voz-hubi'
   POR QUÉ YA NO ES AZUL MARINO
 
   Era el logotipo sobre `#01071B` con cuatro manchas de color yendo a
-  la deriva por detrás, y estuvo bien mientras HUBI fue oscuro. Pero
-  HUBI es de papel crema desde la Fase 1, y un arranque oscuro delante
+  la deriva por detrás, y estuvo bien mientras MAPPEL fue oscuro. Pero
+  MAPPEL es de papel crema desde la Fase 1, y un arranque oscuro delante
   de una aplicación clara produce un fogonazo justo en el momento en
   que se entra: cuatro segundos de noche y de golpe el día.
 
@@ -38,7 +38,7 @@ import { DEGRADADO } from '@/lib/voz-hubi'
 
   Con `sessionStorage`, al abrir la aplicación y no más. Antes cada
   llegada a Inicio la volvía a poner, porque cada toque en el menú
-  recargaba HUBI entera; ahora que la navegación es instantánea, esos
+  recargaba MAPPEL entera; ahora que la navegación es instantánea, esos
   segundos serían un peaje por volver a casa.
 
   Y un toque la salta en cualquier momento.
@@ -46,7 +46,7 @@ import { DEGRADADO } from '@/lib/voz-hubi'
 
 const VISIBLE = 2400
 const DESVANECE = 620
-const YAVISTA = 'hubi-arranque'
+const YAVISTA = 'mappel-arranque'
 
 /*
   En qué modo está la casa. Se mira una vez, al montar, y no en el
@@ -124,14 +124,14 @@ export default function Arranque() {
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={oscuro ? '/logo-hubi-oscuro.png' : '/logo-hubi.png'}
+        src={oscuro ? '/logo-mappel-oscuro.png' : '/logo-mappel.png'}
         alt=""
-        className="hubi-marca block"
+        className="mappel-marca block"
         style={{ width: 104, height: 'auto' }}
       />
 
       <span
-        className="hubi-linea mt-[26px] block h-[2px] w-[148px] rounded-sm"
+        className="mappel-linea mt-[26px] block h-[2px] w-[148px] rounded-sm"
         style={{
           transformOrigin: 'center',
           background: DEGRADADO,
@@ -139,10 +139,10 @@ export default function Arranque() {
       />
 
       <span
-        className="hubi-palabra mt-[26px] block text-[15px] font-extrabold text-tinta"
+        className="mappel-palabra mt-[26px] block text-[15px] font-extrabold text-tinta"
         style={{ letterSpacing: '0.3em', paddingLeft: '0.3em' }}
       >
-        HUBI
+        MAPPEL
       </span>
     </div>
   )

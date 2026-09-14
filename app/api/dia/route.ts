@@ -127,7 +127,7 @@ export async function POST(peticion: NextRequest) {
   /* El `.select()`: sin él, un guardado que las políticas no permitan
      afecta a cero filas y contesta que todo ha ido bien. */
   if (error || !data || data.length === 0) {
-    console.error('[HUBI] No se ha podido guardar el parte:', error)
+    console.error('[MAPPEL] No se ha podido guardar el parte:', error)
     return NextResponse.json(
       {
         error: 'No se ha podido guardar.',

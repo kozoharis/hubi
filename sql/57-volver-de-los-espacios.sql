@@ -22,7 +22,7 @@
 -- Si después del 56 algo no va: no se guarda, una pantalla sale vacía,
 -- las cuentas cambian de cifra.
 --
--- Se ejecuta entero y HUBI vuelve a estar como esta mañana. Después ya
+-- Se ejecuta entero y MAPPEL vuelve a estar como esta mañana. Después ya
 -- miramos qué pasó, con calma.
 --
 -- ─────────────────────────────────────────────────────────────

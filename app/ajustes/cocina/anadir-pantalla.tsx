@@ -15,7 +15,7 @@ import { Aviso, BotonPrincipal, BotonSecundario } from '../../piezas'
 
   Ésa es la parte que casi siempre falta en estas pantallas. Dar de
   alta el aparato es fácil; lo que nadie cuenta es que luego hay que ir
-  a la tableta, abrir HUBI, escribir ese correo y teclear un código de
+  a la tableta, abrir MAPPEL, escribir ese correo y teclear un código de
   seis cifras que llega al buzón. Si eso no está escrito aquí, hay que
   acordarse — y no se acuerda nadie.
 */
@@ -118,7 +118,7 @@ export default function AnadirPantalla({ pantallas }: { pantallas: Pantalla[] })
 
         <ol className="mt-3 space-y-2.5">
           {[
-            'Abre HUBI en su navegador.',
+            'Abre MAPPEL en su navegador.',
             <>
               Escribe este correo: <strong className="text-tinta">{lista}</strong>
             </>,
@@ -183,7 +183,7 @@ export default function AnadirPantalla({ pantallas }: { pantallas: Pantalla[] })
           Tiene que ser una dirección que no use ninguna persona. Si tu correo es
           <strong className="text-tinta"> nombre@gmail.com</strong>, vale
           <strong className="text-tinta"> nombre+cocina@gmail.com</strong>: es otra dirección
-          para HUBI y las cartas te llegan a ti igual.
+          para MAPPEL y las cartas te llegan a ti igual.
         </p>
 
         {fallo && (
@@ -229,7 +229,7 @@ export default function AnadirPantalla({ pantallas }: { pantallas: Pantalla[] })
       </p>
       <p className="t-apoyo mt-1.5 leading-relaxed">
         Una tableta vieja en la pared de la cocina, encendida todo el día, con lo que hay que
-        recordar. No hace falta instalar nada: se abre HUBI en su navegador y se queda.
+        recordar. No hace falta instalar nada: se abre MAPPEL en su navegador y se queda.
       </p>
 
       {pantallas.length > 0 && (

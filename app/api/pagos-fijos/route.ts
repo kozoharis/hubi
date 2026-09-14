@@ -67,7 +67,7 @@ export async function GET() {
     LO QUE ESTÁ APUNTADO PERO SIN CONFIRMAR.
 
     Cuenta en el balance —si no, las cuentas seguirían incompletas, que
-    es lo que veníamos a arreglar— pero HUBI no lo ha visto pagar: lo
+    es lo que veníamos a arreglar— pero MAPPEL no lo ha visto pagar: lo
     ha supuesto porque tocaba. Se enseña para que alguien diga sí o no,
     y hasta entonces se sabe que está sin confirmar.
   */
@@ -136,7 +136,7 @@ export async function POST(peticion: NextRequest) {
   /* Con `.select()`: un insert que la seguridad no permite contesta
      «todo bien» habiendo escrito cero filas. */
   if (error) {
-    console.error('[HUBI] No se ha podido crear el pago fijo:', error)
+    console.error('[MAPPEL] No se ha podido crear el pago fijo:', error)
     return NextResponse.json(
       { error: 'No se ha podido guardar.', detalle: error.message },
       { status: 500 }

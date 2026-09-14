@@ -24,7 +24,7 @@ import { api } from '@/lib/api'
   ─────────────────────────────────────────────────────────────
   «PARA QUIÉN» SOLO APARECE SI HAY ALGUIEN
 
-  Viviendo solo en HUBI, un desplegable de «¿para quién?» con una
+  Viviendo solo en MAPPEL, un desplegable de «¿para quién?» con una
   única opción —tú— es una decisión inventada. Sale cuando hay otra
   persona en la casa.
 
@@ -184,7 +184,7 @@ export default function Notas({
       setFallo(
         d
           ? [d.error ?? 'No se ha podido.', d.detalle].filter(Boolean).join(' · ')
-          : 'HUBI no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return false
     }
@@ -234,7 +234,7 @@ export default function Notas({
         personas en casa son seis pastillas, y una barra que se
         desliza esconde justo la que buscas. Envolver no esconde nada.
 
-        Solo salen si hay más gente: viviendo solo en HUBI, «De la
+        Solo salen si hay más gente: viviendo solo en MAPPEL, «De la
         casa» y «Para mí» son la misma cosa.
       */}
       {otros.length > 0 && (

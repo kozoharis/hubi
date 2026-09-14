@@ -79,7 +79,7 @@ export async function PATCH(peticion: NextRequest) {
     .maybeSingle()
 
   if (error) {
-    console.error('[HUBI] Fallo marcando una lista para la cocina:', error)
+    console.error('[MAPPEL] Fallo marcando una lista para la cocina:', error)
     return NextResponse.json(
       {
         error: /visible_en_casa/.test(error.message)

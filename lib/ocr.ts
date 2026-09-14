@@ -30,7 +30,7 @@ export type Lectura = {
   reserva?: import('@/lib/reservas').Reserva | null
   /* ¿El proveedor es un nombre RECONOCIDO —ya archivado antes, o una
      empresa conocida— o una suposición sacada de las primeras líneas?
-     De esto depende que HUBI se fíe de su lectura o pida ayuda. */
+     De esto depende que MAPPEL se fíe de su lectura o pida ayuda. */
   conocido?: boolean
   /* El tipo de IGIC o IVA que dice el papel. Nulo = no lo pone, o dice
      varios y ninguno cuadra con el total; entonces se aplica el general
@@ -285,7 +285,7 @@ export async function leerDocumento(opciones: {
     Y ese error saltaba ANTES de poder decir qué había contestado
     Gemini de verdad. Así que cualquier fallo del modelo —sin cupo,
     clave caducada, foto rechazada, lo que fuera— llegaba disfrazado
-    del mismo mensaje incomprensible, y HUBI se caía al lector de
+    del mismo mensaje incomprensible, y MAPPEL se caía al lector de
     respaldo sin que nadie pudiera saber por qué.
 
     Un manejador de errores que rompe al manejar el error es de lo peor
@@ -353,7 +353,7 @@ function fechaValida(valor: string | null | undefined): string | null {
 /*
   Distinguir "se ha llenado el minuto" de "se ha acabado el día".
 
-  Google devuelve un 429 para las dos cosas, y HUBI decía siempre "se
+  Google devuelve un 429 para las dos cosas, y MAPPEL decía siempre "se
   ha agotado por hoy". Casi siempre era mentira: lo normal al probar es
   pasarse del cupo POR MINUTO, que se arregla esperando treinta
   segundos. Mandar a alguien a esperar hasta mañana cuando bastaba con

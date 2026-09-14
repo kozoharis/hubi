@@ -15,7 +15,7 @@ import { api } from '@/lib/api'
   quedaría mirando el móvil buscando algo que allí no existe.
 
   Y no se pinta un icono de Google ni se imita su pantalla: esto es
-  HUBI pidiendo un dato, no Google pidiendo una contraseña. Nunca hay
+  MAPPEL pidiendo un dato, no Google pidiendo una contraseña. Nunca hay
   que dar pie a confundir las dos cosas.
 */
 export default function MiCalendario({

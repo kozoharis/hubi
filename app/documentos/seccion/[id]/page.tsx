@@ -70,7 +70,7 @@ export default async function Seccion({
     ])
 
   const averia = falloCats?.message ?? falloDocs?.message ?? null
-  if (averia) console.error('[HUBI] Sección no ha podido cargar:', averia)
+  if (averia) console.error('[MAPPEL] Sección no ha podido cargar:', averia)
 
   const todas = (cats ?? []) as Categoria[]
   const seccion = todas.find((c) => c.id === id)
@@ -85,7 +85,7 @@ export default async function Seccion({
     hubiera fallado, no se confirma y las novedades siguen ahí la
     próxima vez.
 
-    El ámbito se saca de la propia sección: lo pone HUBI al crear la
+    El ámbito se saca de la propia sección: lo pone MAPPEL al crear la
     estructura y es la clave canónica del paso 60. Nulo se lee como
     «otros», que también es un ámbito de carpeta y por tanto lleva su
     marca igual.

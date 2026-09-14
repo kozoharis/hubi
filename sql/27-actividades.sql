@@ -7,7 +7,7 @@
 --      app/helechos/page.tsx   ámbar, llave, /helechos
 --
 --  Hacen exactamente lo mismo con otro nombre y otro color. Y eso
---  significa que HUBI necesita un programador cada vez que alguien
+--  significa que MAPPEL necesita un programador cada vez que alguien
 --  tiene una actividad que no habíamos previsto: una familia podría
 --  crear «Obras» con sus categorías, sus unidades y sus carpetas en
 --  Drive… y no tendría ninguna pantalla donde verlas.

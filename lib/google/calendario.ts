@@ -2,10 +2,10 @@ import { clienteServidor } from '@/lib/supabase/servidor'
 import { descifrar } from '@/lib/cifrado'
 import { accesoDesdePermiso, tieneCalendario } from '@/lib/google/oauth'
 import { ZONA } from '@/lib/tablon'
-import { FIRMA_HUBI } from '@/lib/ical'
+import { FIRMA_MAPPEL } from '@/lib/ical'
 
 /*
-  El calendario HUBI dentro del Google de Juan Miguel.
+  El calendario MAPPEL dentro del Google de Juan Miguel.
 
   Por qué un calendario aparte y no el suyo personal:
 
@@ -21,7 +21,7 @@ import { FIRMA_HUBI } from '@/lib/ical'
   - Y si algún día se quiere quitar todo, se borra un calendario y ya.
     Nada queda mezclado con lo suyo.
 
-  Regla de oro de este archivo: **si Google falla, HUBI sigue**. Un
+  Regla de oro de este archivo: **si Google falla, MAPPEL sigue**. Un
   recordatorio se guarda en la base de datos aunque el calendario no
   responda. Perder el evento de Google es un incordio; perder lo que
   te acaban de dictar es un fallo grave.
@@ -29,7 +29,7 @@ import { FIRMA_HUBI } from '@/lib/ical'
 
 const API = 'https://www.googleapis.com/calendar/v3'
 
-export const NOMBRE_CALENDARIO = 'HUBI'
+export const NOMBRE_CALENDARIO = 'MAPPEL'
 /* La zona horaria se decide en UN solo sitio, `lib/tablon.ts`. Aquí
    estaba escrita a mano como Europe/Madrid: en Canarias eso mete cada
    cita en el calendario con una hora de más. */
@@ -39,7 +39,7 @@ const COLOR_MARCA = '#14B8A6'
   ─────────────────────────────────────────────────────────────
   TODO EN ESTE ARCHIVO PIDE EL HOGAR, Y LO PIDE OBLIGATORIO
 
-  El calendario HUBI vive dentro de la cuenta de Google de quien
+  El calendario MAPPEL vive dentro de la cuenta de Google de quien
   conectó Drive en SU casa. Sin el hogar, esto leía «la conexión» —la
   única que podía existir— y una segunda familia habría acabado
   escribiendo sus citas en el calendario de Juan Miguel.
@@ -91,11 +91,11 @@ async function pedir(
 }
 
 /**
- * El calendario HUBI, creándolo la primera vez.
+ * El calendario MAPPEL, creándolo la primera vez.
  *
  * Su identificador se guarda en la base de datos: sin eso se crearía
  * un calendario nuevo cada vez y Juan Miguel acabaría con veinte
- * calendarios llamados HUBI.
+ * calendarios llamados MAPPEL.
  */
 async function asegurarCalendario(
   acceso: string,
@@ -134,7 +134,7 @@ async function asegurarCalendario(
     method: 'POST',
     body: JSON.stringify({
       summary: NOMBRE_CALENDARIO,
-      description: 'Las citas y los vencimientos de HUBI. Se llena solo.',
+      description: 'Las citas y los vencimientos de MAPPEL. Se llena solo.',
       timeZone: ZONA,
     }),
   })
@@ -166,7 +166,7 @@ async function asegurarCalendario(
  * Para dos personas y un calendario que se comparte UNA vez en la
  * vida, eso es un precio absurdo. Así que se intenta —por si algún día
  * se añade el permiso— y, si Google dice que no, se devuelve
- * 'a-mano' y HUBI explica los tres pasos para hacerlo desde Google.
+ * 'a-mano' y MAPPEL explica los tres pasos para hacerlo desde Google.
  */
 export type Reparto = 'compartido' | 'a-mano' | 'fallo'
 
@@ -207,10 +207,10 @@ function cuerpoDelEvento(cita: Cita) {
     summary: cita.hecho ? `✓ ${cita.titulo}` : cita.titulo,
     /* La firma sale de `lib/ical.ts` y no está escrita a mano aquí a
        propósito: es la misma marca que se busca al LEER el calendario
-       para no enseñar dos veces lo que HUBI ya tiene. Si las dos se
+       para no enseñar dos veces lo que MAPPEL ya tiene. Si las dos se
        escribieran por separado, un día dejarían de coincidir y las
        citas empezarían a duplicarse sin que nadie supiera por qué. */
-    description: [cita.nota, FIRMA_HUBI].filter(Boolean).join('\n\n'),
+    description: [cita.nota, FIRMA_MAPPEL].filter(Boolean).join('\n\n'),
   }
 
   // Sin hora es un evento de día completo. Google quiere el día
@@ -233,7 +233,7 @@ function cuerpoDelEvento(cita: Cita) {
     hora final se calculaba con `(h + 1) % 24`, así que una cita a las
     23:30 terminaba a las 00:30 DEL MISMO DÍA — es decir, antes de
     empezar. Google rechaza eso con un 400, `ponerCita` devuelve null y
-    la tarea se queda en HUBI sin aparecer nunca en el calendario, sin
+    la tarea se queda en MAPPEL sin aparecer nunca en el calendario, sin
     que nadie vea un error por ninguna parte.
 
     Se pasa al día siguiente, que es lo que significa de verdad.
@@ -257,15 +257,15 @@ function sumarUnDia(iso: string): string {
 }
 
 /*
-  EL IDENTIFICADOR DEL CALENDARIO HUBI, SIN LLAMAR A GOOGLE.
+  EL IDENTIFICADOR DEL CALENDARIO MAPPEL, SIN LLAMAR A GOOGLE.
 
   Hace falta en un sitio muy concreto: cuando alguien va a conectar su
   calendario de Google por la dirección secreta, hay que comprobar que
-  no esté pegando LA DEL PROPIO CALENDARIO HUBI. Si lo hiciera, cada
-  tarea saldría dos veces en la Agenda —una como tarea de HUBI y otra
+  no esté pegando LA DEL PROPIO CALENDARIO MAPPEL. Si lo hiciera, cada
+  tarea saldría dos veces en la Agenda —una como tarea de MAPPEL y otra
   como cita traída de Google— y nadie entendería por qué.
 */
-export async function idCalendarioHubi(hogarId: string): Promise<string | null> {
+export async function idCalendarioMappel(hogarId: string): Promise<string | null> {
   try {
     const supa = clienteServidor()
     const { data } = await supa
@@ -284,7 +284,7 @@ export async function idCalendarioHubi(hogarId: string): Promise<string | null> 
  *
  * Si ya había uno, lo actualiza. Devuelve null cuando no se ha podido
  * —sin permiso, sin conexión, Google caído— y quien llama sigue como
- * si nada: la cita ya está guardada en HUBI, que es lo que importa.
+ * si nada: la cita ya está guardada en MAPPEL, que es lo que importa.
  */
 export async function ponerCita(
   cita: Cita,
@@ -336,7 +336,7 @@ export async function quitarCita(evento: string, hogarId: string): Promise<void>
       { method: 'DELETE' }
     )
   } catch {
-    // Da igual: en HUBI ya está borrado.
+    // Da igual: en MAPPEL ya está borrado.
   }
 }
 
@@ -386,7 +386,7 @@ export async function estadoCalendario(hogarId: string): Promise<{
 }
 
 /*
-  ¿EXISTE DE VERDAD EL CALENDARIO HUBI?
+  ¿EXISTE DE VERDAD EL CALENDARIO MAPPEL?
 
   `estadoGuardado()` solo mira si tenemos un identificador apuntado en
   nuestra base de datos. Eso no demuestra que el calendario exista:
@@ -422,7 +422,7 @@ export async function comprobarCalendario(hogarId: string): Promise<{
     return { ...nada, diagnostico: 'Google no está conectado, o falta el permiso del calendario.' }
   }
   if (!c.calendarioId) {
-    return { ...nada, diagnostico: 'Todavía no se ha creado el calendario HUBI.' }
+    return { ...nada, diagnostico: 'Todavía no se ha creado el calendario MAPPEL.' }
   }
 
   try {

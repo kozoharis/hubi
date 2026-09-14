@@ -37,7 +37,7 @@
 --
 --  3 · Lo del calendario.
 --      `es_propietario_drive` sale de esa misma lectura. Sin poder
---      leerla, HUBI daba por hecho que Juan Miguel NO es el dueño del
+--      leerla, MAPPEL daba por hecho que Juan Miguel NO es el dueño del
 --      Drive —ante la duda, no— y le escondía toda la parte de Google,
 --      calendario incluido.
 --

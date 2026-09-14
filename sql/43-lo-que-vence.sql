@@ -5,7 +5,7 @@
 -- QUÉ ESTABA MAL
 --
 -- Hasta hoy, cuando se guardaba un papel con fecha de vencimiento,
--- HUBI preguntaba «¿queréis que os avisemos?» y con la respuesta creaba
+-- MAPPEL preguntaba «¿queréis que os avisemos?» y con la respuesta creaba
 -- un recordatorio. Y ahí se acababa: EL PAPEL NO SE ACORDABA DE NADA.
 --
 -- Consecuencias, las tres reales:
@@ -14,7 +14,7 @@
 --    pantalla de corregir deja tocar el título, el importe y la
 --    carpeta, y esto no, porque no había dónde guardarlo.
 --  · Si el OCR no encontraba la fecha, no había forma de ponerla a
---    mano. La póliza que HUBI no supo leer no avisaba nunca.
+--    mano. La póliza que MAPPEL no supo leer no avisaba nunca.
 --  · Al corregir la fecha del documento, el aviso se quedaba con la
 --    vieja. Dos verdades distintas sobre el mismo papel.
 --
@@ -35,7 +35,7 @@
 -- llega puntual y no sirve absolutamente para nada.
 --
 -- Por eso se guardan tres cosas y no una: cuándo vence, si se renueva
--- solo, y con cuánto hay que avisar. Con eso HUBI calcula el último día
+-- solo, y con cuánto hay que avisar. Con eso MAPPEL calcula el último día
 -- útil y pone ESE en el calendario, escrito como lo que hay que hacer y
 -- no como una fecha: «Último día para cancelar el hosting».
 --
@@ -93,7 +93,7 @@ create index if not exists idx_documentos_vencen
 
   Los avisos de un papel se REHACEN cada vez que se corrige el papel:
   se borran los que había y se vuelven a crear con los datos nuevos. Sin
-  saber cuáles puso HUBI, ese borrado se llevaría por delante los
+  saber cuáles puso MAPPEL, ese borrado se llevaría por delante los
   recordatorios que hubiera puesto una persona sobre el mismo documento
   —«llamar a Silvia por lo del seguro»— y nadie sabría por qué han
   desaparecido.

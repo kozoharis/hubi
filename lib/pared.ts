@@ -24,7 +24,7 @@ import { aqui } from '@/lib/enlaces'
 
   Conviene decirlo porque se parece mucho a una. Que una persona no
   entre aquí no protege nada: esta pantalla no enseña nada que ella no
-  pueda ver en su HUBI. Lo que protege es la BASE, con el techo de la
+  pueda ver en su MAPPEL. Lo que protege es la BASE, con el techo de la
   clase `dispositivo` y las restrictivas de `visible_en_casa`.
 
   Esto es una comprobación de SITIO: quien tiene manos quiere la
@@ -112,7 +112,7 @@ export type CosaDeLaPared = {
   VECES, el mismo día y a la misma hora. Parecía un duplicado en la base
   y no lo era.
 
-  En HUBI, **una tarea para dos personas SON dos filas**. Está decidido
+  En MAPPEL, **una tarea para dos personas SON dos filas**. Está decidido
   y bien decidido (`app/api/recordatorios/route.ts`): cada uno marca la
   suya, porque que Juan Miguel firme los papeles no los firma por
   Conchita. Nacen con el mismo `grupo_id` para saber que se apuntaron

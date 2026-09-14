@@ -147,7 +147,7 @@ export async function POST(peticion: NextRequest) {
   }
 
   if (error || !data) {
-    console.error('[HUBI] Fallo creando recordatorio:', error)
+    console.error('[MAPPEL] Fallo creando recordatorio:', error)
     return NextResponse.json({ error: 'No se ha podido guardar.' }, { status: 500 })
   }
 
@@ -170,9 +170,9 @@ export async function POST(peticion: NextRequest) {
     congela. Lo que quedara a medias, ahí se queda: la cita no llega
     a crearse en Google, o se crea y no da tiempo a guardar su
     identificador. Y no salta ningún error en ninguna parte, porque
-    desde fuera todo ha ido bien: la tarea está guardada en HUBI.
+    desde fuera todo ha ido bien: la tarea está guardada en MAPPEL.
 
-    Resultado: tareas en HUBI que no aparecen en el calendario, unas
+    Resultado: tareas en MAPPEL que no aparecen en el calendario, unas
     sí y otras no, sin ningún patrón. Justo lo que se estaba viendo.
 
     `after` es la forma correcta de decir «esto va después de
@@ -200,7 +200,7 @@ export async function POST(peticion: NextRequest) {
           fila.hora
         )
       } catch (e) {
-        console.error('[HUBI] Recordatorio creado sin aviso:', e)
+        console.error('[MAPPEL] Recordatorio creado sin aviso:', e)
       }
     }
 
@@ -228,7 +228,7 @@ export async function POST(peticion: NextRequest) {
             .eq('id', fila.id)
         }
       } catch (e) {
-        console.error('[HUBI] Tarea guardada sin cita en Google:', e)
+        console.error('[MAPPEL] Tarea guardada sin cita en Google:', e)
       }
     }
   })

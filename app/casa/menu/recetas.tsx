@@ -209,8 +209,8 @@ export default function Recetas({ recetas }: { recetas: Receta[] }) {
 
                   `origin` manda SOLO el dominio —
                   `https://family-hub-…vercel.app` — y nunca la ruta. O
-                  sea: YouTube sabe que le incrusta HUBI, y no sabe qué
-                  pantalla de HUBI, ni de qué casa, ni qué receta. La
+                  sea: YouTube sabe que le incrusta MAPPEL, y no sabe qué
+                  pantalla de MAPPEL, ni de qué casa, ni qué receta. La
                   privacidad que se buscaba se mantiene entera; lo único
                   que se pierde es el error.
                 */

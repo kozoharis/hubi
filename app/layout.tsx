@@ -11,10 +11,29 @@ import Rail from './rail'
 const fuente = { variable: 'font-stub', className: 'font-stub' }
 
 export const metadata: Metadata = {
-  title: 'HUBI',
+  title: 'MAPPEL',
   description: 'Todo lo importante, en un mismo lugar.',
   manifest: '/manifest.webmanifest',
-  applicationName: 'HUBI',
+  applicationName: 'MAPPEL',
+
+  /*
+    ── FUERA DE LOS BUSCADORES ──
+
+    Faltaba, y MAPPEL estaba abierto a Google. Lo de dentro no se podía
+    leer —eso lo para el proxy— pero la puerta sí: buscando el nombre
+    podía salir la dirección de la casa digital de una familia y un
+    formulario donde escribir su correo.
+
+    No es una brecha. Es que una casa privada no tiene por qué estar
+    en la guía telefónica, y el punto 27 del planteamiento pide no
+    usar direcciones públicas sin necesidad.
+
+    Esto va junto con `app/robots.ts`, y hacen cosas distintas: el
+    `robots.txt` es una petición educada que los buscadores serios
+    respetan; esta cabecera la obedecen **también** cuando llegan a la
+    página por un enlace de fuera, que es el caso que el otro no cubre.
+  */
+  robots: { index: false, follow: false, nocache: true },
   /*
     ── LOS ICONOS ──
 
@@ -25,7 +44,7 @@ export const metadata: Metadata = {
        tocó, y como un favicon no da error, no se notó: simplemente
        había un triángulo negro en la pestaña.
     2. `/apple-touch-icon.png` no existía. Se declaraba un archivo que
-       no estaba, así que al añadir HUBI a la pantalla de inicio de un
+       no estaba, así que al añadir MAPPEL a la pantalla de inicio de un
        iPhone, Safari se inventaba el icono con una foto de la página.
 
     Ahora hay cuatro tamaños y cada uno es para algo:
@@ -59,7 +78,7 @@ export const metadata: Metadata = {
   // sin la barra del navegador.
   appleWebApp: {
     capable: true,
-    title: 'HUBI',
+    title: 'MAPPEL',
     statusBarStyle: 'default',
   },
 }
@@ -234,7 +253,7 @@ export default async function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{if(!document.documentElement.dataset.tema){var t=localStorage.getItem('hubi-tema');if(t==='claro'||t==='oscuro')document.documentElement.dataset.tema=t}}catch(e){}",
+              "try{if(!document.documentElement.dataset.tema){var t=localStorage.getItem('mappel-tema');if(t==='claro'||t==='oscuro')document.documentElement.dataset.tema=t}}catch(e){}",
           }}
         />
       </head>

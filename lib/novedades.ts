@@ -144,7 +144,7 @@ export async function misMarcas(
  * haría que el número no bajara nunca del todo.
  *
  * Sin marca —nunca he entrado ahí— **no sale nada como nuevo**. Si no,
- * el primer día HUBI enseñaría «47 nuevos» en todas las carpetas, que
+ * el primer día MAPPEL enseñaría «47 nuevos» en todas las carpetas, que
  * es la forma más rápida de que un rótulo deje de mirarse.
  */
 export function nuevosPorRaiz(

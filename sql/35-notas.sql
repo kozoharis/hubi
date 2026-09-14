@@ -150,7 +150,7 @@ create policy notas_borrar on notas
       que suele faltar es la de borrar.
   2 · La tabla vacía y con RLS puesto. `rls = true` no es un detalle:
       sin él, cualquiera con una sesión leería las notas de todas las
-      casas de HUBI.
+      casas de MAPPEL.
 */
 select
   policyname                                    as politica,

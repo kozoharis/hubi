@@ -9,7 +9,7 @@ import { api } from '@/lib/api'
 
   Muchos documentos no hay que fotografiarlos: llevan años en el Drive
   de Juan Miguel, sueltos, sin nombre y sin carpeta. Esto sirve para
-  traerlos a HUBI sin sacarles una foto a la pantalla.
+  traerlos a MAPPEL sin sacarles una foto a la pantalla.
 
   Cómo funciona por dentro, que tiene su gracia:
 
@@ -70,7 +70,7 @@ export default function BuscarEnDrive({
       const datos = await r.json()
       if (!r.ok || !datos.acceso) {
         /* El motivo al registro, no a la pantalla: aquí solo asusta. */
-        if (datos.error) console.error('[HUBI] El pase del buscador de Drive:', datos.error)
+        if (datos.error) console.error('[MAPPEL] El pase del buscador de Drive:', datos.error)
         setAviso('Puedes hacerle una foto o elegir el archivo del teléfono.')
         setOcupado(false)
         return

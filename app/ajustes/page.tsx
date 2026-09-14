@@ -90,7 +90,7 @@ export default async function Ajustes({
   const perfil = await leerPerfil(supabase, user.id, user.email)
 
   /* De qué casa es quien mira esta pantalla. Todo lo de Google —el
-     Drive conectado, el calendario— es de SU casa, no «el» de HUBI. */
+     Drive conectado, el calendario— es de SU casa, no «el» de MAPPEL. */
   const hogarId = await elEspacio(supabase)
 
   const admin = clienteServidor()
@@ -119,7 +119,7 @@ export default async function Ajustes({
 
      Va con la SESIÓN y no con la clave de servidor. Con la clave de
      servidor no hay políticas: el «otro» que salía aquí podía ser
-     cualquiera de HUBI, y esta pantalla le habría enseñado a alguien
+     cualquiera de MAPPEL, y esta pantalla le habría enseñado a alguien
      el nombre de pila de un desconocido. */
   const { data: otros } = await supabase
     .from('perfiles')
@@ -349,7 +349,7 @@ export default async function Ajustes({
   try {
     /* TODAS las actividades, se dividan o no. Antes solo salían las
        divididas, y por eso la Finca no aparecía por ningún lado: no
-       había manera de decirle a HUBI «ésta también quiero llevarla
+       había manera de decirle a MAPPEL «ésta también quiero llevarla
        por partes». El interruptor está ahora dentro de cada una. */
     const { data: secciones } = await supabase
       .from('categorias')
@@ -578,7 +578,7 @@ export default async function Ajustes({
           la más alta y quedarían huecos entre unas y otras.
 
           Izquierda, quién eres y cómo lo ves. Derecha, por dónde te
-          avisa HUBI. La salida, abajo y a lo ancho: es la única acción
+          avisa MAPPEL. La salida, abajo y a lo ancho: es la única acción
           de la que no se vuelve.
         */}
         <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
@@ -589,7 +589,7 @@ export default async function Ajustes({
         </div>
 
         {/*
-          ── CÓMO SE USA HUBI ──
+          ── CÓMO SE USA MAPPEL ──
 
           Estaba abajo del todo, encima de «Salir», con el
           razonamiento de que es donde se busca la ayuda en casi
@@ -607,7 +607,7 @@ export default async function Ajustes({
 
           Y sin el vídeo dentro, a propósito. Un vídeo de treinta
           segundos moviéndose en la pantalla de ajustes es algo que
-          quien ya sabe usar HUBI se traga cada vez que entra a
+          quien ya sabe usar MAPPEL se traga cada vez que entra a
           cambiar el tema.
         */}
         <Link
@@ -621,7 +621,7 @@ export default async function Ajustes({
           <Logo tam={40} />
           <span className="min-w-0 flex-1">
             <span className="block text-[19px] font-extrabold leading-snug tracking-tight">
-              Cómo se usa HUBI
+              Cómo se usa MAPPEL
             </span>
             <span className="t-apoyo mt-1 block">
               Un vídeo corto de cada cosa que sabe hacer
@@ -633,7 +633,7 @@ export default async function Ajustes({
         {/*
           ── EL ESCRITORIO ──
 
-          Solo si tiene más de una casa. Es la única pantalla de HUBI
+          Solo si tiene más de una casa. Es la única pantalla de MAPPEL
           pensada para un ordenador o una tableta, y la única que sale
           o no según lo que tengas — no según quién seas.
         */}

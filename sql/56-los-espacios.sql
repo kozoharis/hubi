@@ -57,7 +57,7 @@ set local statement_timeout = '120s';
 -- ni con la llave pública ni con una sesión. Solo el servidor.
 --
 -- Guardan condiciones de seguridad —dónde está cada puerta y cómo se
--- abre— y eso no tiene por qué poder leerlo quien entra en HUBI.
+-- abre— y eso no tiene por qué poder leerlo quien entra en MAPPEL.
 
 create table if not exists politicas_antes_de_los_espacios (
   guardadas_en timestamptz not null default now(),
@@ -439,7 +439,7 @@ create policy permisos_mandar on public.permisos_carpeta
 -- equivocado sin un solo error.
 --
 -- Es el último sitio donde `casa_activa` podía decidir dónde va un
--- papel. Hoy no muerde: las diecisiete inserciones de HUBI escriben el
+-- papel. Hoy no muerde: las diecisiete inserciones de MAPPEL escriben el
 -- espacio a mano (eso lo dejó comprobado el paso 1, y `probar-espacio`
 -- lo vigila). Pero un defecto que solo es inofensivo mientras nadie se
 -- despiste no es una garantía, es una casualidad.
@@ -465,7 +465,7 @@ end $$;
 -- Y SE QUEDA
 -- ═══════════════════════════════════════════════════════════════
 --
--- Después de esto, comprueba en HUBI, por este orden:
+-- Después de esto, comprueba en MAPPEL, por este orden:
 --
 --   1. Que el Inicio carga y enseña lo de siempre.
 --   2. Que los Papeles siguen ahí, con el mismo número.

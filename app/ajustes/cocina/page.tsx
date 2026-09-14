@@ -54,7 +54,7 @@ export const dynamic = 'force-dynamic'
   haya.
 */
 
-/* Los siete que HUBI sabe deducir (`deducirTipo`, `lib/tablon.ts`), con
+/* Los siete que MAPPEL sabe deducir (`deducirTipo`, `lib/tablon.ts`), con
    el nombre que les pondría una persona y el emoji con el que ya se
    pintan en la Agenda — el mismo, para que nadie tenga que traducir
    entre esta pantalla y aquélla. */
@@ -68,7 +68,7 @@ const LOS_TIPOS: { tipo: string; nombre: string; emoji: string; explica: string 
   { tipo: 'farmacia',    emoji: '💊', nombre: 'Farmacia',      explica: 'Medicación y recetas' },
 ]
 
-/* Lo que HUBI propone si nadie ha decidido nada. Las dos de salud se
+/* Lo que MAPPEL propone si nadie ha decidido nada. Las dos de salud se
    quedan fuera, y ésa es toda la propuesta: una pantalla en una cocina
    la ve quien entre en la cocina. */
 const LO_QUE_PROPONEMOS = ['tarea', 'recado', 'vencimiento', 'coche']

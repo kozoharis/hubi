@@ -534,7 +534,7 @@ export async function GET() {
       'Permiso concedido. Falta pulsar «Calendario en Google» en Ajustes.'
   } else {
     /*
-      ANTES AQUÍ PONÍA "Calendario HUBI creado." Y YA ESTÁ.
+      ANTES AQUÍ PONÍA "Calendario MAPPEL creado." Y YA ESTÁ.
 
       Y era falso en el sentido que importa: solo miraba si teníamos un
       identificador apuntado en NUESTRA base de datos. Eso no demuestra
@@ -600,7 +600,7 @@ export async function GET() {
 
     ESTO ESTABA MINTIENDO, Y ERA LO PEOR QUE PODÍA MENTIR.
 
-    Decía "Cloud Vision saca el texto y HUBI lo entiende en su propio
+    Decía "Cloud Vision saca el texto y MAPPEL lo entiende en su propio
     servidor" con solo mirar si existía la variable de Vision. Pero el
     29/8 se quitó ese desvío del código: Vision devolvía 403 —nunca se
     activó la facturación— y encima entendía con reglas, no con el

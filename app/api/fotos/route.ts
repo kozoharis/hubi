@@ -157,7 +157,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: 'La foto pesa demasiado.',
-        detalle: 'El máximo son 8 MB. Normalmente HUBI la reduce antes de mandarla.',
+        detalle: 'El máximo son 8 MB. Normalmente MAPPEL la reduce antes de mandarla.',
       },
       { status: 400 }
     )
@@ -178,7 +178,7 @@ export async function POST(peticion: NextRequest) {
     .upload(ruta, fichero, { contentType: fichero.type, upsert: false })
 
   if (alSubir) {
-    console.error('[HUBI] No se ha podido guardar la foto:', alSubir.message)
+    console.error('[MAPPEL] No se ha podido guardar la foto:', alSubir.message)
     return NextResponse.json(
       {
         error: 'No se ha podido guardar la foto.',
@@ -203,7 +203,7 @@ export async function POST(peticion: NextRequest) {
        ir dejando bytes de nadie por el cubo. */
     await admin.storage.from(CUBO).remove([ruta])
 
-    console.error('[HUBI] La foto no ha entrado en el tablón:', alApuntar.message)
+    console.error('[MAPPEL] La foto no ha entrado en el tablón:', alApuntar.message)
     return NextResponse.json(
       { error: 'No se ha podido poner en el tablón.', detalle: alApuntar.message },
       { status: 403 }
@@ -305,6 +305,6 @@ async function hacerSitio(hogarId: string) {
 
     await admin.storage.from(CUBO).remove(sobran.map((f) => f.ruta as string))
   } catch (e) {
-    console.error('[HUBI] No se ha podido hacer sitio en el tablón:', e)
+    console.error('[MAPPEL] No se ha podido hacer sitio en el tablón:', e)
   }
 }

@@ -170,7 +170,7 @@ export async function pagosAlDia(
   Y QUÉ PAPELES FALTAN
 
   Se pregunta por los pagos que esperan papel y se compara con lo
-  guardado. Devuelve una lista para enseñar, no para actuar: HUBI no
+  guardado. Devuelve una lista para enseñar, no para actuar: MAPPEL no
   borra ni deshace nada por esto, solo lo dice.
 */
 export type Falta = {

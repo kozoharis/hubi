@@ -18,7 +18,7 @@ export default function BotonSalir() {
 
   return (
     <BotonDestructivo onClick={salir} desactivado={saliendo}>
-      {saliendo ? 'Cerrando…' : 'Salir de HUBI'}
+      {saliendo ? 'Cerrando…' : 'Salir de MAPPEL'}
     </BotonDestructivo>
   )
 }

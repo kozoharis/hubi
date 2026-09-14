@@ -6,7 +6,7 @@
   Dos ideas, y la segunda es la que de verdad vale:
 
    1. Lo que se sabe que se paga se apunta sin fotografiar nada.
-   2. Y cuando llega el mes y NO está la factura, HUBI lo dice.
+   2. Y cuando llega el mes y NO está la factura, MAPPEL lo dice.
 
   Lo segundo solo puede hacerlo porque sabe lo que se programó. Es la
   diferencia entre un archivador —que guarda lo que le das— y algo que
@@ -17,7 +17,7 @@
 
   Dar por pagado un gasto que quizá no ocurrió infla las cuentas, y no
   se nota en meses: un recibo devuelto, una baja, un mes que la
-  compañía no pasó el cobro. Si HUBI lo apunta igual, el balance miente
+  compañía no pasó el cobro. Si MAPPEL lo apunta igual, el balance miente
   hacia el lado peor y no hay ningún papel que lo desmienta.
 
   Así que cuenta, sí, pero marcado. Se confirma con un toque o subiendo

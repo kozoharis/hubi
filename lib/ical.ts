@@ -20,7 +20,7 @@ import { ZONA } from '@/lib/tablon'
      y no se puede acelerar; se dice y ya está.
 
   Es de SOLO LECTURA y en un sentido. Estas citas se enseñan, no se
-  tocan: son suyas, viven en su Google, y HUBI no tiene por qué poder
+  tocan: son suyas, viven en su Google, y MAPPEL no tiene por qué poder
   cambiarlas.
 
   ─────────────────────────────────────────────────────────────
@@ -46,20 +46,20 @@ export type CitaExterna = {
   hora: string | null
   lugar: string | null
   /*
-    ¿Esta cita la puso HUBI?
+    ¿Esta cita la puso MAPPEL?
 
-    Todo lo que HUBI escribe en Google lleva "Apuntado en HUBI" en su
+    Todo lo que MAPPEL escribe en Google lleva "Apuntado en MAPPEL" en su
     descripción. Sirve para no enseñar dos veces la misma cosa: si
-    alguien conecta como calendario propio uno donde HUBI también
+    alguien conecta como calendario propio uno donde MAPPEL también
     escribe, sus tareas volverían de Google y saldrían duplicadas en la
     Agenda —una como tarea y otra como cita— sin que se entienda por
     qué. Se marcan aquí y se descartan al enseñarlas.
   */
-  deHubi: boolean
+  deMappel: boolean
 }
 
-/** La firma que HUBI deja en todo lo que escribe en Google. */
-export const FIRMA_HUBI = 'Apuntado en HUBI'
+/** La firma que MAPPEL deja en todo lo que escribe en Google. */
+export const FIRMA_MAPPEL = 'Apuntado en MAPPEL'
 
 const MAXIMO = 400
 
@@ -87,7 +87,7 @@ export function leerICS(texto: string, desde: string, hasta: string): CitaExtern
 
     const titulo = texto_(campos.get('SUMMARY')?.valor ?? '').trim() || '(sin título)'
     const lugar = texto_(campos.get('LOCATION')?.valor ?? '').trim() || null
-    const deHubi = texto_(campos.get('DESCRIPTION')?.valor ?? '').includes(FIRMA_HUBI)
+    const deMappel = texto_(campos.get('DESCRIPTION')?.valor ?? '').includes(FIRMA_MAPPEL)
     const uid = (campos.get('UID')?.valor ?? '').trim() || `${cuando.fecha}-${titulo}`
 
     const regla = campos.get('RRULE')?.valor ?? null
@@ -107,7 +107,7 @@ export function leerICS(texto: string, desde: string, hasta: string): CitaExtern
 
     for (const dia of dias) {
       if (excluidas.has(dia)) continue
-      citas.push({ uid: `${uid}·${dia}`, titulo, fecha: dia, hora: cuando.hora, lugar, deHubi })
+      citas.push({ uid: `${uid}·${dia}`, titulo, fecha: dia, hora: cuando.hora, lugar, deMappel })
       if (citas.length >= MAXIMO) return ordenar(citas)
     }
   }
@@ -348,7 +348,7 @@ function desplegarRegla(
 
   Solo https y solo de Google. No por cerrazón: es una dirección que
   nuestro SERVIDOR va a pedir, y aceptar cualquier dirección
-  convertiría a HUBI en un recadero que va a donde le manden — a la red
+  convertiría a MAPPEL en un recadero que va a donde le manden — a la red
   interna de Vercel, por ejemplo. Se acota a lo que de verdad se
   necesita.
 */

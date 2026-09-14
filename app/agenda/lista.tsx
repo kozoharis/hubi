@@ -209,7 +209,7 @@ export default async function Lista({
 
         Las tres se van, y cada una por su motivo:
 
-        · VENCIDAS era lo más urgente de HUBI escondido detrás de un
+        · VENCIDAS era lo más urgente de MAPPEL escondido detrás de un
           botón que hay que saber que existe. Ahora sube arriba del
           todo, y solo cuando hay algo.
 
@@ -466,7 +466,7 @@ export default async function Lista({
       {/* Apuntar algo ES la acción de la Agenda.
 
           SOLO EN EL MÓVIL: en grande vive arriba a la derecha, en la
-          banda, con la caja de HUBI. Aquí abajo, después de la semana
+          banda, con la caja de MAPPEL. Aquí abajo, después de la semana
           entera y con el ancho de la pantalla, quedaba flotando en
           mitad del papel a media pantalla de lo que se estaba
           leyendo. */}
@@ -614,7 +614,7 @@ function Tira({
 
       Una tira de días es un CONTROL, no un contenido: tiene su tamaño
       natural y ensancharlo no enseña ni un dato más. Es la misma regla
-      que la caja de HUBI (420) y los segmentos (440) de la banda —
+      que la caja de MAPPEL (420) y los segmentos (440) de la banda —
       medidas fijas, y el sitio que sobra se deja sobrar.
 
       440 para que sea exactamente la de los segmentos: en la Agenda

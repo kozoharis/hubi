@@ -90,7 +90,7 @@ export async function POST(peticion: NextRequest) {
       hogar_id: hogarId,
       titulo,
       /* El tipo lo deduce el sistema de lo que se ha escrito, igual que
-         en el resto de HUBI. Pedirle a una pared que elija categoría
+         en el resto de MAPPEL. Pedirle a una pared que elija categoría
          sería exactamente la complejidad que no queremos trasladar. */
       tipo: deducirTipo(titulo),
       fecha,
@@ -106,7 +106,7 @@ export async function POST(peticion: NextRequest) {
     .select('id')
 
   if (error) {
-    console.error('[HUBI] La pared no ha podido apuntar:', error.message)
+    console.error('[MAPPEL] La pared no ha podido apuntar:', error.message)
     return NextResponse.json(
       {
         error: 'No se ha podido apuntar.',

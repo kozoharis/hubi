@@ -142,7 +142,7 @@ export async function PATCH(
   así que ése se deja pasar tal cual; los demás no se enseñan.
 */
 function elFallo(error: { message: string }) {
-  console.error('[HUBI] La pared no ha podido cambiar algo:', error)
+  console.error('[MAPPEL] La pared no ha podido cambiar algo:', error)
 
   const suyo = /pantalla de la cocina/i.test(error.message)
 

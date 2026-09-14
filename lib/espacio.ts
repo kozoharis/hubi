@@ -9,7 +9,7 @@ import { miHogar } from './hogar'
   ═══════════════════════════════════════════════════════════════
 
   Una función. Una respuesta. Y es LA MISMA para las doscientas
-  consultas de HUBI.
+  consultas de MAPPEL.
 
   ─────────────────────────────────────────────────────────────
   POR QUÉ NO SE LLAMA `miHogar` A SECAS

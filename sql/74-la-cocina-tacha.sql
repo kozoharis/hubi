@@ -29,7 +29,7 @@
 -- aquí se anotó que se haría igual. **No vale, y conviene dejar escrito
 -- por qué** para no volver a intentarlo dentro de seis meses.
 --
--- Un `grant` es por ROL de base de datos, y en HUBI todo el mundo —las
+-- Un `grant` es por ROL de base de datos, y en MAPPEL todo el mundo —las
 -- personas y las pantallas— entra como `authenticated`. No hay manera
 -- de dar un permiso de columna a las pantallas y no a la familia: son
 -- el mismo rol de Postgres.

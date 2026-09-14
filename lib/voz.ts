@@ -63,7 +63,7 @@ export type Entendido = {
   papel_id?: string | null
   /* De qué tarea ya apuntada se habla, con las palabras que se hayan
      dicho: "la de la farmacia", "lo del médico del martes". Solo para
-     cambiar y borrar. HUBI la busca con esto. */
+     cambiar y borrar. MAPPEL la busca con esto. */
   cual: string | null
   titulo: string | null
   nota: string | null
@@ -80,7 +80,7 @@ export type Entendido = {
   /*
     QUÉ SE ESTÁ PREGUNTANDO.
 
-    Todo lo que HUBI guarda tiene que poder preguntarse en voz alta —
+    Todo lo que MAPPEL guarda tiene que poder preguntarse en voz alta —
     si algo se puede apuntar y no se puede preguntar, la mitad de la
     función está sin hacer. Hoy son cinco:
 
@@ -346,7 +346,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
    Vale cualquier carpeta de la lista, también las que tienen otras
    dentro: "Finca" incluye todo lo suyo.
 
-   Con la carpeta puesta, HUBI enseña TODOS los papeles que hay
+   Con la carpeta puesta, MAPPEL enseña TODOS los papeles que hay
    dentro. Es exacto: no se busca por palabras, se abre la carpeta.
 
    "Enséñame todas las facturas de la finca"
@@ -366,7 +366,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
    "enséñame" o "papeles": no están escritas en ningún documento y
    solo estorban.
 
-5. "consulta" — preguntar, y que HUBI conteste en voz alta.
+5. "consulta" — preguntar, y que MAPPEL conteste en voz alta.
 
    POR LAS CUENTAS:
    "¿Cuánto hemos gastado este trimestre en agua?"
@@ -397,7 +397,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
 
    UNA PREGUNTA NUNCA ES UNA TAREA. Si la frase empieza pidiendo
    información —dime, dame, cuánto, cuál, qué tal— y nombra algo que
-   HUBI guarda —ingresos, gastos, balance, facturas, la compra, la
+   MAPPEL guarda —ingresos, gastos, balance, facturas, la compra, la
    agenda, las reservas—, es SIEMPRE accion "consulta". Nunca
    "recordatorio". Apuntarle a alguien su propia pregunta en el
    calendario es el peor error que puedes cometer aquí: no contestas y
@@ -411,7 +411,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
 
    LA DIFERENCIA CON "buscar", que es la que más se confunde:
    - "BUSCA la factura del seguro"  → accion "buscar": quiere VERLA, y
-     HUBI le abre la lista de papeles.
+     MAPPEL le abre la lista de papeles.
    - "DIME cuál fue la última factura" → accion "consulta" con
      tipo_consulta "papel": quiere que se lo CUENTEN, en voz alta,
      porque está conduciendo o con las manos ocupadas.
@@ -444,7 +444,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
 
    CUIDADO CON LA DIFERENCIA. "Ya lo he hecho", "ya está recogido" o
    "eso está hecho" NO es borrar: es marcarlo hecho. Usa accion
-   "cambiar" con "cual" y no toques nada más — HUBI ya sabe. Borrar es
+   "cambiar" con "cual" y no toques nada más — MAPPEL ya sabe. Borrar es
    solo cuando la cosa NO hay que hacerla: se ha anulado, era un
    error, o ya no hace falta.
 
@@ -505,7 +505,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
 
    "Apunta leche, pan y huevos y recuérdame ir el sábado a las diez"
    → accion "compra", con las tres cosas Y ADEMÁS fecha: el sábado,
-     hora: "10:00". HUBI apunta la compra y pone la ida en la Agenda.
+     hora: "10:00". MAPPEL apunta la compra y pone la ida en la Agenda.
    "Añade lechuga y tomate para la finca, que voy mañana"
    → accion "compra", compra_seccion: la finca, fecha: mañana.
    "Apunta pan y que vaya Conchita el viernes"
@@ -825,7 +825,7 @@ function unaDe<T extends string>(v: unknown, permitidos: readonly T[]): T | null
 /*
   Distinguir "se ha llenado el minuto" de "se ha acabado el día".
 
-  Google devuelve un 429 para las dos cosas, y HUBI decía siempre "se
+  Google devuelve un 429 para las dos cosas, y MAPPEL decía siempre "se
   ha agotado por hoy". Casi siempre era mentira: lo normal al probar es
   pasarse del cupo POR MINUTO, que se arregla esperando treinta
   segundos. Mandar a alguien a esperar hasta mañana cuando bastaba con

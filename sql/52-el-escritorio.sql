@@ -24,7 +24,7 @@
 -- ─────────────────────────────────────────────────────────────
 -- POR QUÉ UNA FUNCIÓN Y NO CAMBIAR LAS POLÍTICAS
 --
--- Todo HUBI está atado a UNA casa: `mi_hogar()` dice cuál estás
+-- Todo MAPPEL está atado a UNA casa: `mi_hogar()` dice cuál estás
 -- mirando, y todas las políticas de todas las tablas preguntan «¿esta
 -- fila es de esa casa?». Es lo que hace que la finca de una familia no
 -- aparezca jamás en la de otra.
@@ -113,7 +113,7 @@ as $$
 
        `hondura < 12` — un padre que apunte a su propio nieto haría que
        esto girara para siempre, y una consulta infinita en una función
-       que llama la pantalla al abrirla se ve como que HUBI no arranca.
+       que llama la pantalla al abrirla se ve como que MAPPEL no arranca.
        Doce niveles son cuatro veces lo más hondo que tiene nadie. */
     where c.hogar_id = a.hogar_id
       and a.hondura < 12
@@ -181,7 +181,7 @@ comment on function mi_escritorio(date, date) is
 
   Que devuelva filas sin sesión SÍ sería el fallo.
 
-  La prueba de verdad se hace desde HUBI: entra, ve a Ajustes → El
+  La prueba de verdad se hace desde MAPPEL: entra, ve a Ajustes → El
   escritorio, y comprueba que salen tus casas y solo las tuyas.
 */
 select * from mi_escritorio(date_trunc('quarter', current_date)::date,

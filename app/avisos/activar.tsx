@@ -140,7 +140,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
     if (r.ok) {
       setBien('Enviado. Debería llegarte en unos segundos.')
     } else {
-      if (datos.error) console.error('[HUBI] El aviso de prueba no ha salido:', datos.error)
+      if (datos.error) console.error('[MAPPEL] El aviso de prueba no ha salido:', datos.error)
       setAviso('No ha salido el aviso de prueba. Los avisos siguen activados.')
     }
     setOcupado(false)
@@ -149,7 +149,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
   return (
     <main className="min-h-screen pb-40">
       {/* El título va en la cabecera, como en el resto (decisión D6).
-          Y el emoji sale: los iconos de HUBI son de trazo, y un emoji
+          Y el emoji sale: los iconos de MAPPEL son de trazo, y un emoji
           de campana se pinta distinto en cada teléfono. */}
       <Cabecera formulario>
         <Volver href="/" />
@@ -166,7 +166,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
         {estado === 'instalar' && (
           <>
             <p className="t-cuerpo mt-4">
-              Para que los avisos lleguen a este iPhone, HUBI tiene que estar
+              Para que los avisos lleguen a este iPhone, MAPPEL tiene que estar
               en la pantalla de inicio. Es cosa de Apple: dentro de Safari los avisos
               no existen.
             </p>
@@ -179,7 +179,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
               <Paso n={1} texto="Toca el botón de compartir, abajo en el centro de Safari: un cuadrado con una flecha hacia arriba." />
               <Paso n={2} texto="Desliza la lista hacia abajo hasta ver «Añadir a pantalla de inicio»." />
               <Paso n={3} texto="Toca «Añadir», arriba a la derecha." />
-              <Paso n={4} texto="Cierra Safari y abre HUBI desde el icono nuevo." />
+              <Paso n={4} texto="Cierra Safari y abre MAPPEL desde el icono nuevo." />
               <Paso n={5} texto="Vuelve a esta pantalla y activa los avisos." />
             </ol>
           </>
@@ -241,10 +241,10 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
           <>
             <div className="mt-4">
               <Aviso
-                titulo="Este teléfono tiene los avisos bloqueados para HUBI"
+                titulo="Este teléfono tiene los avisos bloqueados para MAPPEL"
                 explicacion={
                   esIphone
-                    ? 'Entra en Ajustes → Notificaciones → HUBI y permite las notificaciones. Después vuelve aquí.'
+                    ? 'Entra en Ajustes → Notificaciones → MAPPEL y permite las notificaciones. Después vuelve aquí.'
                     : 'Abre los ajustes del navegador para esta página y permite las notificaciones. Después vuelve aquí.'
                 }
               />
@@ -254,7 +254,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
 
         {estado === 'imposible' && (
           <p className="t-cuerpo mt-4">
-            Este navegador no admite avisos. Prueba desde el móvil, con HUBI
+            Este navegador no admite avisos. Prueba desde el móvil, con MAPPEL
             añadida a la pantalla de inicio.
           </p>
         )}

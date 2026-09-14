@@ -81,7 +81,7 @@ export async function POST(peticion: NextRequest) {
     .maybeSingle()
 
   if (error) {
-    console.error('[HUBI] La pared no ha podido dejar una nota:', error)
+    console.error('[MAPPEL] La pared no ha podido dejar una nota:', error)
     return NextResponse.json(
       {
         /* Si es la política la que dice que no, se dice con palabras.

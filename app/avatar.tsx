@@ -5,7 +5,7 @@ import { Ico } from './iconos'
 
   Si hay foto, la foto. Si no, sus iniciales sobre el verde de la
   marca. Nunca un muñeco gris genérico: la pantalla tiene que decir
-  de un vistazo quién está usando HUBI.
+  de un vistazo quién está usando MAPPEL.
 */
 
 export function iniciales(nombre: string): string {

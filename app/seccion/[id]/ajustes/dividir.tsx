@@ -191,7 +191,7 @@ export default function Dividir({
                 maxLength={30}
               />
               <p className="t-apoyo mt-2">
-                En singular y sin artículo: «obra», «parcela», «piso», «coche». HUBI
+                En singular y sin artículo: «obra», «parcela», «piso», «coche». MAPPEL
                 escribe el resto.
               </p>
               <div className="mt-3 flex gap-2">

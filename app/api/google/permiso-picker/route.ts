@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
   1. SOLO JUAN MIGUEL. El permiso abre SU Drive. En su propio móvil
      eso es su cuenta y su Drive, y no hay nada que objetar. En el
      móvil de Conchita sería darle la llave del Drive personal de otra
-     persona — no solo de la carpeta de HUBI. Así que si quien pide
+     persona — no solo de la carpeta de MAPPEL. Así que si quien pide
      esto no es el propietario, se le dice que no.
 
   2. DURA UNA HORA. No se manda el permiso duradero —el que está
@@ -27,7 +27,7 @@ export const dynamic = 'force-dynamic'
      sino un pase temporal que Google caduca solo.
 
   3. NO PUEDE MÁS DE LO QUE YA PODÍA. El pase hereda el mismo alcance
-     que tiene HUBI, `drive.file`: los archivos que HUBI ha creado y
+     que tiene MAPPEL, `drive.file`: los archivos que MAPPEL ha creado y
      los que la persona elija a mano en el buscador. Ni un archivo más.
 
   Nunca se guarda en el navegador ni se escribe en ningún sitio: se

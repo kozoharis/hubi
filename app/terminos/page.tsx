@@ -1,13 +1,13 @@
 import Link from '@/app/enlace'
 export const metadata = {
-  title: 'Términos de uso · HUBI',
+  title: 'Términos de uso · MAPPEL',
 }
 
 export default function Terminos() {
   return (
     <main className="min-h-screen px-6 py-16">
       <article className="mx-auto w-full max-w-2xl">
-        <p className="rotulo tracking-[0.25em]">HUBI</p>
+        <p className="rotulo tracking-[0.25em]">MAPPEL</p>
         <h1 className="t-titulo mt-4">
           Términos de uso
         </h1>
@@ -17,7 +17,7 @@ export default function Terminos() {
           <section>
             <h2 className="t-seccion">Uso privado</h2>
             <p className="mt-3">
-              HUBI es una aplicación de uso estrictamente privado y familiar.
+              MAPPEL es una aplicación de uso estrictamente privado y familiar.
               No se ofrece como servicio a terceros, no admite registro abierto y no
               tiene ningún fin comercial.
             </p>
@@ -35,7 +35,7 @@ export default function Terminos() {
             <h2 className="t-seccion">Responsabilidad</h2>
             <p className="mt-3">
               La aplicación se ofrece tal cual, sin garantías de disponibilidad
-              continua. HUBI organiza y da acceso a documentos, pero no
+              continua. MAPPEL organiza y da acceso a documentos, pero no
               sustituye a la conservación de los originales ni al cumplimiento de las
               obligaciones legales o fiscales de sus usuarios.
             </p>
@@ -50,7 +50,7 @@ export default function Terminos() {
             <h2 className="t-seccion">Tus documentos son tuyos</h2>
             <p className="mt-3">
               Los archivos permanecen en la cuenta de Google Drive de su titular. La
-              aplicación no reclama ningún derecho sobre ellos. Si HUBI dejara
+              aplicación no reclama ningún derecho sobre ellos. Si MAPPEL dejara
               de existir, los documentos seguirían íntegros y accesibles en Drive,
               organizados en carpetas con nombres legibles.
             </p>

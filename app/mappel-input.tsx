@@ -5,7 +5,7 @@ import { Ico } from './iconos'
 
 /*
   ═══════════════════════════════════════════════════════════════
-  HUBI INPUT · la pieza, no todavía el asistente
+  MAPPEL INPUT · la pieza, no todavía el asistente
   ═══════════════════════════════════════════════════════════════
 
   ESTO ES SOLO LA PIEZA VISUAL Y SUS ESTADOS. No está conectada a
@@ -16,14 +16,14 @@ import { Ico } from './iconos'
   ─────────────────────────────────────────────────────────────
   POR QUÉ EXISTE
 
-  Hoy HUBI no es una capacidad del producto: es una PANTALLA del
+  Hoy MAPPEL no es una capacidad del producto: es una PANTALLA del
   producto. Vive en su propia dirección, se navega hasta ella, se hace
   una cosa y se sale. No sabe desde dónde has llegado. Y compite con un
   buscador que hace la misma pregunta con otro motor — la caja «¿Qué
   estás buscando?» de Papeles y el asistente son dos sistemas para lo
   mismo, y la persona tiene que saber a cuál acudir.
 
-  Eso es justo lo contrario de «no busques, pregunta a HUBI».
+  Eso es justo lo contrario de «no busques, pregunta a MAPPEL».
 
   La pieza que arregla eso no es un chatbot flotante. Es más simple:
   UNA SOLA CAJA, la misma en todas partes, que sabe dónde está.
@@ -33,7 +33,7 @@ import { Ico } from './iconos'
 
   1 · VOZ Y TEXTO SON LA MISMA COSA.
       Se puede escribir sin tocar el micrófono y hablar sin tocar el
-      teclado. La voz es la forma preferida de hablarle a HUBI, no la
+      teclado. La voz es la forma preferida de hablarle a MAPPEL, no la
       única — y en una casa donde alguien tiene setenta años, la voz
       falla más a menudo, no menos. Un asistente que solo funciona por
       voz no es un asistente: es una función de voz.
@@ -47,12 +47,12 @@ import { Ico } from './iconos'
 
   3 · EL DEGRADADO Y LA SOMBRA SON SUYOS.
       En toda la aplicación solo hay tres sombras y las tres son del
-      botón de voz. Que la sombra teal signifique «HUBI está aquí» y
+      botón de voz. Que la sombra teal signifique «MAPPEL está aquí» y
       nada más es una regla de sistema, y esta pieza la hereda: donde
       aparece el degradado, hay inteligencia detrás.
 */
 
-export type EstadoHubi =
+export type EstadoMappel =
   | 'reposo'
   | 'escuchando'
   | 'pensando'
@@ -61,9 +61,9 @@ export type EstadoHubi =
   | 'sin_microfono'
 
 /* Estaba escrito aquí a mano, y en otros cinco sitios. Ahora vive en
-   `lib/voz-hubi.ts` — una identidad copiada seis veces se deshace sola
+   `lib/voz-mappel.ts` — una identidad copiada seis veces se deshace sola
    en cuanto alguien retoca una copia. */
-import { DEGRADADO } from '@/lib/voz-hubi'
+import { DEGRADADO } from '@/lib/voz-mappel'
 
 /**
  * Lo que se sugiere en cada sitio.
@@ -85,7 +85,7 @@ export const SUGERENCIAS: Record<string, string> = {
 
 // ═══════════════════════════════════════════════════════════════
 
-export default function HubiInput({
+export default function MappelInput({
   estado = 'reposo',
   donde = 'inicio',
   sugerencia: sugerenciaDada,
@@ -98,12 +98,12 @@ export default function HubiInput({
   alEnviar,
   alHablar,
 }: {
-  estado?: EstadoHubi
+  estado?: EstadoMappel
   /** Qué pantalla es ésta. Solo cambia la sugerencia. */
   donde?: keyof typeof SUGERENCIAS | string
   /*
     Una sugerencia concreta, por encima de la de la pantalla. En el
-    Inicio van rotando: es la única parte de HUBI que enseña qué se le
+    Inicio van rotando: es la única parte de MAPPEL que enseña qué se le
     puede pedir, y nadie lee un manual pero todo el mundo lee una
     frase que se mueve delante de sus ojos.
   */
@@ -174,7 +174,7 @@ export default function HubiInput({
 
         {/*
           El micrófono. Es lo único de toda la aplicación que lleva el
-          degradado y la sombra de HUBI — y por eso se reconoce.
+          degradado y la sombra de MAPPEL — y por eso se reconoce.
 
           Cuando no hay micrófono desaparece en vez de quedarse
           apagado: un botón muerto invita a pulsarlo y a pensar que
@@ -184,7 +184,7 @@ export default function HubiInput({
           <button
             type="button"
             onClick={escuchando ? undefined : alHablar}
-            aria-label={escuchando ? 'Terminar' : 'Hablar con HUBI'}
+            aria-label={escuchando ? 'Terminar' : 'Hablar con MAPPEL'}
             className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[14px] text-white"
             style={{ background: DEGRADADO, boxShadow: '0 6px 16px rgba(20,184,166,.34)' }}
           >

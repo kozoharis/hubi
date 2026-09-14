@@ -37,7 +37,7 @@ export default function PrepararCalendario({
     ? 'Antes hay que volver a conectar Google'
     : listo
       ? 'Creado · pulsa para volver a compartirlo'
-      : 'Crear el calendario HUBI y compartirlo'
+      : 'Crear el calendario MAPPEL y compartirlo'
 
   async function preparar() {
     setOcupado(true)
@@ -85,8 +85,8 @@ export default function PrepararCalendario({
         <div className="mt-2 rounded-[16px] bg-[color:var(--t-bien-velo)] px-4 py-3 text-[15px] font-semibold leading-snug text-[color:var(--t-bien)]">
           <p>
             {resultado.yaExistia
-              ? 'El calendario HUBI ya estaba en tu Google.'
-              : 'Calendario HUBI creado en tu Google.'}
+              ? 'El calendario MAPPEL ya estaba en tu Google.'
+              : 'Calendario MAPPEL creado en tu Google.'}
           </p>
           {resultado.compartido && resultado.compartido.length > 0 && (
             <p className="mt-1.5">
@@ -107,7 +107,7 @@ export default function PrepararCalendario({
       {/*
         Compartir a mano.
 
-        Google no deja que HUBI reparta permisos de un calendario sin
+        Google no deja que MAPPEL reparta permisos de un calendario sin
         pedir un permiso mucho más grande, que además obliga a pasar
         una verificación y a ver una pantalla de advertencia cada vez
         que se conecta. Por un gesto que se hace UNA vez, no compensa.
@@ -126,7 +126,7 @@ export default function PrepararCalendario({
           </p>
           <ol className="mt-2.5 space-y-2">
             <Paso n={1}>
-              Abre <b>calendar.google.com</b> y busca <b>HUBI</b> en la lista de la
+              Abre <b>calendar.google.com</b> y busca <b>MAPPEL</b> en la lista de la
               izquierda.
             </Paso>
             <Paso n={2}>

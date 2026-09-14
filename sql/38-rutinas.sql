@@ -12,7 +12,7 @@
 -- ─────────────────────────────────────────────────────────────
 -- POR QUÉ NO SON RECORDATORIOS QUE SE REPITEN
 --
--- HUBI ya sabe repetir: `recordatorios.repite` existe desde el SQL 11.
+-- MAPPEL ya sabe repetir: `recordatorios.repite` existe desde el SQL 11.
 -- Habría salido más barato hoy. Pero una tarea repetida que no se
 -- marca se queda de «sin hacer» y se arrastra en rojo para siempre.
 --
@@ -201,7 +201,7 @@ create policy hechas_desmarcar on rutinas_hechas
 
   2 · Las dos tablas vacías y con RLS puesto. `rls = true` no es un
       detalle: sin él, cualquiera con una sesión vería el plan de
-      trabajo de todas las casas de HUBI.
+      trabajo de todas las casas de MAPPEL.
 */
 select tablename as tabla, policyname as politica, cmd as para_que
 from pg_policies

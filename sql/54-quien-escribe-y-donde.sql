@@ -71,7 +71,7 @@ as $$
        de verdad no puede escribir se topa además con las políticas de
        su tabla, que no fallan nunca. Al revés —quedarse en `false`—
        alguien con todo el derecho a apuntar vería una pantalla sin
-       botones y pensaría que HUBI está roto. */
+       botones y pensaría que MAPPEL está roto. */
     (select papel <> 'lector' from miembros
       where perfil_id = auth.uid() and hogar_id = mi_hogar()),
     true

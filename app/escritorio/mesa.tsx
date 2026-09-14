@@ -19,7 +19,7 @@ import { api, laPuertaDe } from '@/lib/api'
   ─────────────────────────────────────────────────────────────
   ES UNA TABLA, Y ESO AQUÍ ESTÁ BIEN
 
-  En el resto de HUBI no hay tablas: hay tarjetas grandes, pocas por
+  En el resto de MAPPEL no hay tablas: hay tarjetas grandes, pocas por
   pantalla, con mucho aire. Es lo correcto cuando lo que se hace es
   UNA cosa.
 

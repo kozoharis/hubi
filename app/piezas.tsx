@@ -6,7 +6,7 @@ import EnCamino from './en-camino'
 
 /*
   ═══════════════════════════════════════════════════════════════
-  LAS PIEZAS DE HUBI · Design System v1
+  LAS PIEZAS DE MAPPEL · Design System v1
   ═══════════════════════════════════════════════════════════════
 
   POR QUÉ EXISTE ESTE FICHERO.
@@ -47,7 +47,7 @@ import EnCamino from './en-camino'
   · Dos pesos: 600 para leer, 800 para titular.
   · Una tarjeta es superficie y borde. No lleva sombra ni se rellena
     de color: el color entra por la pastilla del icono.
-  · La sombra es solo del botón de HUBI. Es la única pieza que flota,
+  · La sombra es solo del botón de MAPPEL. Es la única pieza que flota,
     y por eso significa algo.
   · Nada por debajo de 48 px de alto si hay que pulsarlo.
 */
@@ -230,7 +230,7 @@ type PropsBoton = {
   */
   ancho?: 'completo' | 'auto'
   /*
-    ENLACE EXTERNO. `Link` de Next sirve para navegar DENTRO de HUBI;
+    ENLACE EXTERNO. `Link` de Next sirve para navegar DENTRO de MAPPEL;
     «Ver el papel» abre el archivo en otra pestaña y necesita un <a>
     de verdad, con su `target` y su `rel`.
 

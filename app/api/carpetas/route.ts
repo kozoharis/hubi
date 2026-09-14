@@ -26,7 +26,7 @@ export const dynamic = 'force-dynamic'
   Es la misma regla que en las partidas y en la división por partes, y
   se repite aquí porque es la que hace que alguien se atreva a tocar
   el interruptor: apagar una carpeta la esconde. Sus papeles siguen en
-  HUBI y en el Drive, exactamente donde estaban, y volver a encenderla
+  MAPPEL y en el Drive, exactamente donde estaban, y volver a encenderla
   los devuelve tal cual.
 
   Un interruptor que destruye lo que hay debajo es un interruptor que
@@ -34,7 +34,7 @@ export const dynamic = 'force-dynamic'
 */
 
 /*
-  LOS ICONOS QUE HUBI SABE DIBUJAR.
+  LOS ICONOS QUE MAPPEL SABE DIBUJAR.
 
   Las carpetas guardan su icono como emoji —es lo que se puede elegir
   desde una pantalla sin programar nada— pero en la aplicación se
@@ -74,7 +74,7 @@ export async function PATCH(peticion: NextRequest) {
 
   const cambios: Record<string, unknown> = {}
   if (typeof cuerpo.activa === 'boolean') cambios.activa = cuerpo.activa
-  /* Solo los que HUBI sabe dibujar. Cualquier otro emoji se pintaría
+  /* Solo los que MAPPEL sabe dibujar. Cualquier otro emoji se pintaría
      como una carpeta genérica y quien lo eligió no entendería por
      qué; es más honesto no dejarle elegirlo. */
   if (cuerpo.icono !== undefined && ICONOS.includes(String(cuerpo.icono))) {
@@ -89,9 +89,9 @@ export async function PATCH(peticion: NextRequest) {
     /*
       El segmento del Drive NO se toca al renombrar. La carpeta ya
       existe en Google con su nombre, y puede tener papeles dentro de
-      cuatro años distintos. Cambiarlo aquí haría que HUBI empezara a
+      cuatro años distintos. Cambiarlo aquí haría que MAPPEL empezara a
       guardar en una carpeta nueva y dejara la vieja atrás, sin decir
-      nada. Se cambia el rótulo en HUBI; en Drive se queda como está.
+      nada. Se cambia el rótulo en MAPPEL; en Drive se queda como está.
     */
   }
 
@@ -206,7 +206,7 @@ export async function POST(peticion: NextRequest) {
     .maybeSingle()
 
   if (error || !creada?.id) {
-    console.error('[HUBI] No se ha podido crear la carpeta:', error)
+    console.error('[MAPPEL] No se ha podido crear la carpeta:', error)
     return NextResponse.json(
       { error: 'No se ha podido crear la carpeta.', detalle: error?.message },
       { status: 500 }

@@ -103,7 +103,7 @@ export async function POST(peticion: NextRequest) {
     .single()
 
   if (error || !data) {
-    console.error('[HUBI] No se ha podido poner la nota:', error)
+    console.error('[MAPPEL] No se ha podido poner la nota:', error)
     return NextResponse.json(
       {
         error: 'No se ha podido guardar la nota.',
@@ -129,7 +129,7 @@ export async function POST(peticion: NextRequest) {
       const yo = await leerPerfil(supabase, user.id, user.email)
       const quienEs = yo.nombre.split(' ')[0]
       await avisarA(para, {
-        titulo: 'HUBI',
+        titulo: 'MAPPEL',
         cuerpo: `${quienEs} te ha dejado una nota: ${recorta(texto)}`,
         url: '/notas',
         tag: `nota-${data.id}`,
@@ -137,7 +137,7 @@ export async function POST(peticion: NextRequest) {
     } catch (e) {
       /* La nota ya está puesta. Que el aviso no salga no puede hacer
          que la pantalla diga que ha fallado. */
-      console.error('[HUBI] Nota guardada pero sin avisar:', e)
+      console.error('[MAPPEL] Nota guardada pero sin avisar:', e)
     }
   }
 
@@ -325,7 +325,7 @@ export async function PATCH(peticion: NextRequest) {
     .select('id')
 
   if (error || !data || data.length === 0) {
-    console.error('[HUBI] No se ha podido cambiar la nota:', error)
+    console.error('[MAPPEL] No se ha podido cambiar la nota:', error)
     return NextResponse.json(
       {
         error: 'No se ha podido cambiar la nota.',

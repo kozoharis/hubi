@@ -20,7 +20,7 @@ import { createWorker } from 'tesseract.js'
 
   - Lee peor que Vision. Con una factura arrugada, a contraluz o con
     letra pequeña se le escaparán cosas. Por eso todo lo que saca pasa
-    igualmente por la pantalla de confirmación: HUBI propone, la
+    igualmente por la pantalla de confirmación: MAPPEL propone, la
     persona corrige.
   - La primera vez tiene que descargarse el idioma —unos pocos megas—.
     Después se queda guardado y ya no vuelve a bajarlo.

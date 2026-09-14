@@ -14,7 +14,7 @@ import { Ico, type Icono } from './iconos'
 
 export type Tema = 'claro' | 'oscuro' | 'sistema'
 
-export const LLAVE = 'hubi-tema'
+export const LLAVE = 'mappel-tema'
 
 const OPCIONES: { valor: Tema; texto: string; pie: string; icono: Icono }[] = [
   { valor: 'claro', texto: 'Claro', pie: 'Fondo blanco', icono: 'sol' },

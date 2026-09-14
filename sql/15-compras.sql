@@ -3,7 +3,7 @@
 --
 --  Hasta ahora, un ticket del súper y unas camisas acababan los dos en
 --  "Casa → Compras", que es tanto como no clasificarlos. Y en cuanto
---  HUBI empezó a leer bien los tickets, esa carpeta se convirtió en el
+--  MAPPEL empezó a leer bien los tickets, esa carpeta se convirtió en el
 --  cajón de sastre donde va a parar todo.
 --
 --  Se separan en dos sitios, y la línea no es caprichosa:

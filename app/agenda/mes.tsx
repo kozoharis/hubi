@@ -114,12 +114,12 @@ export default async function Mes({
     Y las citas de su Google, si las ha volcado.
 
     Van en su propio grupo, debajo, y NO SE PUEDEN TOCAR: son suyas,
-    viven en su calendario y HUBI solo las enseña. Mezclarlas con las
-    de HUBI y dejar marcarlas "hecho" sería prometer algo que no
+    viven en su calendario y MAPPEL solo las enseña. Mezclarlas con las
+    de MAPPEL y dejar marcarlas "hecho" sería prometer algo que no
     podemos cumplir — el cambio no llegaría a Google.
 
     Si Google no responde, esto viene vacío y aquí no se entera nadie:
-    la Agenda sigue enseñando lo de HUBI. */
+    la Agenda sigue enseñando lo de MAPPEL. */
   const calendarios = await calendariosVisibles(user.id)
   const dueno = de && calendarios.some((c) => c.id === de) ? de : null
 
@@ -269,7 +269,7 @@ export default async function Mes({
                     />
                   ))}
                   {/* Las de Google, con el color de su dueño y huecas:
-                      de un vistazo se ve QUÉ es de HUBI y qué viene de
+                      de un vistazo se ve QUÉ es de MAPPEL y qué viene de
                       fuera, sin tener que entrar en el día. */}
                   {(conGoogle.get(f) ?? []).slice(0, 2).map((color) => (
                     <span

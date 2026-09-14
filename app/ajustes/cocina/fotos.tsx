@@ -154,7 +154,7 @@ export default function Fotos() {
               />
               {/*
                 El botón de quitar, encima y arriba a la derecha. 44 px,
-                que es lo que pide el suelo de HUBI, aunque el dibujo sea
+                que es lo que pide el suelo de MAPPEL, aunque el dibujo sea
                 pequeño: lo que importa es el sitio donde se puede dar,
                 no el tamaño de la cruz.
               */}

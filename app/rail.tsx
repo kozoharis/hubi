@@ -59,7 +59,7 @@ function cualEsta(ruta: string): string {
   El rail vive en `layout.tsx`, o sea en TODAS las pantallas, y la
   barra de abajo la pinta cada pantalla por su cuenta. Esa diferencia
   tenía una consecuencia que no se veía en el móvil: en un ordenador,
-  quien abría HUBI sin haber entrado se encontraba las cinco pestañas
+  quien abría MAPPEL sin haber entrado se encontraba las cinco pestañas
   de la casa a la izquierda —Papeles, Cuentas, Ajustes— antes de
   escribir su correo.
 
@@ -111,7 +111,7 @@ export default function Rail() {
     >
       <div className="flex items-center gap-2.5 px-3 pb-6">
         <Marca />
-        <span className="text-[15px] font-extrabold tracking-[.3em] text-tinta">HUBI</span>
+        <span className="text-[15px] font-extrabold tracking-[.3em] text-tinta">MAPPEL</span>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -125,7 +125,7 @@ export default function Rail() {
               className={
                 'tocable flex items-center gap-3 rounded-[14px] px-3 py-2.5 text-[17px] font-extrabold transition-colors ' +
                 /* `velo-chip` y no un `bg-` inventado: es el gris que
-                   ya usa el resto de HUBI, y está calculado sobre la
+                   ya usa el resto de MAPPEL, y está calculado sobre la
                    tinta del tema para que funcione en claro y oscuro. */
                 (aqui
                   ? 'velo-chip text-tinta'

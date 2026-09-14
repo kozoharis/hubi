@@ -1,7 +1,7 @@
 -- ───────────────────────────────────────────────────────────
 --  LA UNIDAD
 --
---  Ésta es la pieza que hace que HUBI le sirva a alguien más que a
+--  Ésta es la pieza que hace que MAPPEL le sirva a alguien más que a
 --  esta casa.
 --
 --  Hoy Los Helechos son tres apartamentos, y están escritos a fuego:

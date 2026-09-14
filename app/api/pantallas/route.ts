@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic'
   `visible_en_casa`. Aquí no se decide nada de eso.
 
   ─────────────────────────────────────────────────────────────
-  LA CUENTA LA CREA HUBI
+  LA CUENTA LA CREA MAPPEL
 
   Igual que al invitar a una persona (`app/api/miembros/route.ts:155`).
   No hay que entrar en ningún panel.
@@ -98,7 +98,7 @@ export async function POST(peticion: NextRequest) {
   for (let pagina = 1; pagina <= 20 && !existe; pagina++) {
     const { data, error } = await admin.auth.admin.listUsers({ page: pagina, perPage: 200 })
     if (error) {
-      console.error('[HUBI] No se ha podido leer las cuentas:', error.message)
+      console.error('[MAPPEL] No se ha podido leer las cuentas:', error.message)
       return NextResponse.json(
         { error: 'No se ha podido comprobar el correo. Inténtalo otra vez.' },
         { status: 500 }
@@ -112,7 +112,7 @@ export async function POST(peticion: NextRequest) {
   if (existe) {
     return NextResponse.json(
       {
-        error: 'Ese correo ya tiene cuenta en HUBI.',
+        error: 'Ese correo ya tiene cuenta en MAPPEL.',
         detalle:
           'Una pantalla necesita una dirección nueva, para su uso. Si usáramos la de una ' +
           'persona, su cuenta pasaría a ser la pantalla — y eso no se puede deshacer. ' +
@@ -128,7 +128,7 @@ export async function POST(peticion: NextRequest) {
   })
 
   if (alCrear || !creada?.user?.id) {
-    console.error('[HUBI] No se ha podido crear la cuenta de la pantalla:', alCrear)
+    console.error('[MAPPEL] No se ha podido crear la cuenta de la pantalla:', alCrear)
     return NextResponse.json(
       { error: 'No se ha podido crear su cuenta.', detalle: alCrear?.message },
       { status: 500 }
@@ -144,7 +144,7 @@ export async function POST(peticion: NextRequest) {
     .select('id')
 
   if (alNombrar) {
-    console.error('[HUBI] La pantalla se ha quedado sin nombre:', alNombrar.message)
+    console.error('[MAPPEL] La pantalla se ha quedado sin nombre:', alNombrar.message)
   }
 
   /*
@@ -192,7 +192,7 @@ export async function POST(peticion: NextRequest) {
     .select('perfil_id')
 
   if (alMeter || !metida || metida.length === 0) {
-    console.error('[HUBI] La pantalla no ha entrado en la casa:', alMeter)
+    console.error('[MAPPEL] La pantalla no ha entrado en la casa:', alMeter)
     return NextResponse.json(
       {
         error: 'Se ha creado la cuenta pero no ha entrado en la casa.',
@@ -223,7 +223,7 @@ export async function POST(peticion: NextRequest) {
   QUITAR UNA PANTALLA SÍ ES BORRAR. SACAR A UNA PERSONA, NO.
 
   Aquí se borra la cuenta entera, y está bien: una pantalla no es
-  nadie, no ha vivido nada, y lo que enseñaba sigue estando en HUBI.
+  nadie, no ha vivido nada, y lo que enseñaba sigue estando en MAPPEL.
 
   Con una persona sería lo contrario, y la base lo demuestra:
 
@@ -314,7 +314,7 @@ export async function DELETE(peticion: NextRequest) {
   const { error } = await admin.auth.admin.deleteUser(id)
 
   if (error) {
-    console.error('[HUBI] No se ha podido quitar la pantalla:', error.message)
+    console.error('[MAPPEL] No se ha podido quitar la pantalla:', error.message)
     return NextResponse.json(
       { error: 'No se ha podido quitar.', detalle: error.message },
       { status: 500 }

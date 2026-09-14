@@ -172,7 +172,7 @@ begin
   /* El asesor SÍ apunta en la agenda: es la decisión del 64b, escrita
      en el comentario de `puedo_en_agenda`. Un asesor que no puede
      poner «el día 20 hay un pago» tiene que mandarlo por WhatsApp, y
-     entonces HUBI no sirve para lo que se hizo. */
+     entonces MAPPEL no sirve para lo que se hizo. */
   select puede(casa, 'agenda', null, 'anadir')
       or coalesce(mi_rol(casa), 'familia') = 'asesor' into r;
   return coalesce(r, false);

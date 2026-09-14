@@ -2,12 +2,12 @@
 -- 34 · UNA PERSONA PUEDE ESTAR EN VARIAS CASAS
 -- ═══════════════════════════════════════════════════════════════
 --
--- Hasta hoy, invitar a alguien que ya usaba HUBI se rechazaba: «cada
+-- Hasta hoy, invitar a alguien que ya usaba MAPPEL se rechazaba: «cada
 -- persona pertenece a una sola casa». Era una limitación técnica
 -- convertida en regla de producto, y estaba mal.
 --
--- El caso real es este: el hijo de Juan Miguel tiene su HUBI y además
--- quiere ayudar con el de sus padres. Hoy tiene que elegir. Y HUBI le
+-- El caso real es este: el hijo de Juan Miguel tiene su MAPPEL y además
+-- quiere ayudar con el de sus padres. Hoy tiene que elegir. Y MAPPEL le
 -- castigaba por haber entrado primero.
 --
 -- ─────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@
 -- ─────────────────────────────────────────────────────────────
 -- Y LA INVITACIÓN PASA A SER DE DOS
 --
--- Meter sin permiso a alguien que ya usa HUBI no se sostiene. Se
+-- Meter sin permiso a alguien que ya usa MAPPEL no se sostiene. Se
 -- resuelve sin tabla nueva: la fila de miembro se crea igual, pero con
 -- `aceptado_en` a nulo. Mientras esté a nulo, esa casa NO existe para
 -- esa persona — ni la ve, ni cuenta como suya, ni se le puede activar.

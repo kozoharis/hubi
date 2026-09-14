@@ -119,7 +119,7 @@ export async function POST(peticion: NextRequest) {
         { status: 409 }
       )
     }
-    console.error('[HUBI] Fallo apuntando movimiento:', error)
+    console.error('[MAPPEL] Fallo apuntando movimiento:', error)
     return NextResponse.json({ error: 'No se ha podido apuntar.' }, { status: 500 })
   }
 

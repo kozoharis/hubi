@@ -70,7 +70,7 @@ export default async function AjustesDeGoogle() {
               <>
                 Los papeles de esta casa se guardan en el Google Drive de{' '}
                 <strong className="text-tinta">{conexion?.email_cuenta ?? 'la cuenta'}</strong>,
-                en una carpeta llamada <strong className="text-tinta">HUBI</strong>.
+                en una carpeta llamada <strong className="text-tinta">MAPPEL</strong>.
               </>
             ) : manda ? (
               'Todavía no se pueden guardar papeles. Conecta tu cuenta de Google aquí abajo.'
@@ -80,7 +80,7 @@ export default async function AjustesDeGoogle() {
           </p>
 
           {/*
-            HUBI SOLO VE LO QUE ELLA MISMA CREA.
+            MAPPEL SOLO VE LO QUE ELLA MISMA CREA.
 
             Es literalmente cierto —el permiso que pedimos a Google se
             llama `drive.file`— y es la frase que decide si alguien
@@ -88,7 +88,7 @@ export default async function AjustesDeGoogle() {
             duda, y no en un texto legal que nadie abre.
           */}
           <p className="mt-3 rounded-[16px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
-            HUBI solo ve los archivos que ella misma crea. No puede abrir nada de lo que ya
+            MAPPEL solo ve los archivos que ella misma crea. No puede abrir nada de lo que ya
             tengas en tu Drive.
           </p>
         </div>
@@ -104,8 +104,8 @@ export default async function AjustesDeGoogle() {
 
             <p className="mt-3 text-[15px] font-semibold leading-snug text-tenue">
               {conectado
-                ? 'Hace falta solo si HUBI pide un permiso nuevo —el del calendario, por ejemplo— o si algo deja de funcionar. No pierdes nada de lo guardado.'
-                : 'Google mostrará un aviso de aplicación no verificada. Es normal: pulsa Configuración avanzada y después Ir a HUBI. Solo ocurre esta vez.'}
+                ? 'Hace falta solo si MAPPEL pide un permiso nuevo —el del calendario, por ejemplo— o si algo deja de funcionar. No pierdes nada de lo guardado.'
+                : 'Google mostrará un aviso de aplicación no verificada. Es normal: pulsa Configuración avanzada y después Ir a MAPPEL. Solo ocurre esta vez.'}
             </p>
 
             <h2 className="rotulo mt-6">El calendario</h2>

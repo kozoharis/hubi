@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic'
   Todas tus casas de una vez.
 
   ─────────────────────────────────────────────────────────────
-  LA ÚNICA PANTALLA DE HUBI QUE PIDE SITIO
+  LA ÚNICA PANTALLA DE MAPPEL QUE PIDE SITIO
 
   Y va contra la regla de la casa, que es móvil primero. A propósito.
 
@@ -83,7 +83,7 @@ export default async function Escritorio() {
   return (
     <main className="min-h-screen pb-24">
       {/* Era una cabecera escrita a mano, con `max-w-5xl` centrado: la
-          única medida de HUBI que no salía del sistema, y centrada
+          única medida de MAPPEL que no salía del sistema, y centrada
           además, o sea flotando al lado del rail. Ahora es la columna
           de siempre —1100 a la izquierda— y la banda de siempre. */}
       <Cabecera ancho>
@@ -128,7 +128,7 @@ export default async function Escritorio() {
             <Aviso
               tono="atencion"
               titulo="Todavía no hay de dónde leer esto"
-              explicacion="El escritorio necesita una consulta que aún no está puesta en la base de datos. Todo lo demás de HUBI funciona igual."
+              explicacion="El escritorio necesita una consulta que aún no está puesta en la base de datos. Todo lo demás de MAPPEL funciona igual."
               detalle="Falta ejecutar sql/52-el-escritorio.sql en Supabase."
             />
           </div>

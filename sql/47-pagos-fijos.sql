@@ -13,7 +13,7 @@
 --  1. LAS CUENTAS SE COMPLETAN SOLAS. Lo que se sabe que se paga, se
 --     apunta sin fotografiar nada.
 --
---  2. Y CUANDO LLEGA EL MES Y NO ESTÁ LA FACTURA, HUBI LO DICE:
+--  2. Y CUANDO LLEGA EL MES Y NO ESTÁ LA FACTURA, MAPPEL LO DICE:
 --     «Falta la factura de Movistar de septiembre». Puede decirlo
 --     porque sabe lo que se programó y puede compararlo con lo que
 --     hay guardado. Eso es lo que convierte un archivador en algo que
@@ -24,7 +24,7 @@
 --
 -- Dar por pagado un gasto que quizá no ocurrió infla las cuentas, y
 -- nadie lo nota en meses. Un recibo devuelto, una baja, un mes que la
--- compañía no pasó el cobro: si HUBI lo apunta igual, el balance miente
+-- compañía no pasó el cobro: si MAPPEL lo apunta igual, el balance miente
 -- y miente hacia el lado peor —parece que se ha gastado más— sin que
 -- haya ningún papel que lo desmienta.
 --
@@ -48,7 +48,7 @@ create table if not exists pagos_fijos (
   /*
     De quién es. No es decorativo: es lo que permite reconocer la
     factura cuando llegue. Si el pago fijo dice «Movistar» y se guarda
-    un papel cuyo proveedor es Movistar dentro de ese mes, HUBI sabe
+    un papel cuyo proveedor es Movistar dentro de ese mes, MAPPEL sabe
     que ya no falta.
   */
   proveedor text,
@@ -56,7 +56,7 @@ create table if not exists pagos_fijos (
   -- Dónde cuenta. La partida manda: de ella sale si es gasto o ingreso.
   categoria_id uuid not null references categorias(id),
 
-  -- El TOTAL, como en todo HUBI. Nunca la base.
+  -- El TOTAL, como en todo MAPPEL. Nunca la base.
   importe   numeric(12,2) not null check (importe > 0),
   -- Y su IGIC/IVA, si se sabe. Nulo = el que toque por la partida.
   impuesto_tipo numeric(5,2)

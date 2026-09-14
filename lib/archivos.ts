@@ -6,7 +6,7 @@
   Parece una tontería y era el fallo: **un PDF no siempre llega
   diciendo que es un PDF.**
 
-  Todo HUBI preguntaba `archivo.type === 'application/pdf'`. Ese dato
+  Todo MAPPEL preguntaba `archivo.type === 'application/pdf'`. Ese dato
   no lo pone el archivo: lo pone el navegador al elegirlo, deduciéndolo
   del sistema. Y hay unos cuantos sitios donde llega vacío o mal:
 
@@ -17,7 +17,7 @@
   · Compartir desde otra aplicación.
   · Archivos venidos de un ZIP o de una nube.
 
-  Cuando eso pasaba, HUBI no decía «esto no lo entiendo». Hacía algo
+  Cuando eso pasaba, MAPPEL no decía «esto no lo entiendo». Hacía algo
   peor: trataba el PDF como si fuera una FOTO. Lo metía en la lista de
   páginas, intentaba encogerlo en un lienzo —donde no cabe— y al
   cerrar el documento lo pegaba dentro de otro PDF con jsPDF. El
@@ -45,7 +45,7 @@ export function esPdf(archivo: { type?: string; name?: string }): boolean {
 /**
  * El tipo de verdad de un archivo.
  *
- * Devuelve null cuando no es nada que HUBI sepa guardar. No adivina
+ * Devuelve null cuando no es nada que MAPPEL sepa guardar. No adivina
  * más de la cuenta: solo rescata los casos en que el navegador se ha
  * callado o se ha equivocado, y la extensión lo dice claro.
  */

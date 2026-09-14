@@ -34,7 +34,7 @@
   —lo dicen con `X-Frame-Options`— y no hay manera de saberlo antes de
   intentarlo: el navegador no nos deja mirar dentro.
 
-  Cuando pasa, la ventana sale en blanco. No es un fallo de HUBI y no se
+  Cuando pasa, la ventana sale en blanco. No es un fallo de MAPPEL y no se
   puede arreglar desde aquí, así que la pantalla lo dice con palabras en
   vez de dejar un hueco gris sin explicación.
 */

@@ -5,7 +5,7 @@ import { type Icono } from './iconos'
   LAS PESTAÑAS, EN UN SOLO SITIO
   ═══════════════════════════════════════════════════════════════
 
-  Las mismas cinco navegan HUBI en las tres superficies:
+  Las mismas cinco navegan MAPPEL en las tres superficies:
 
     · en el móvil, la barra de abajo
     · en la tableta y el ordenador, el rail de la izquierda

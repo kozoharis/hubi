@@ -126,7 +126,7 @@ export default function RutinasHoy({
                   hecha no es una acción: es un ESTADO, y el estado
                   bueno tiene su propio color. Con el teal, la mitad
                   de la pantalla de La casa acababa pintada del color
-                  que en el resto de HUBI quiere decir «pulsa aquí».
+                  que en el resto de MAPPEL quiere decir «pulsa aquí».
                 */}
                 <span
                   className="casilla r-campo flex h-[44px] w-[44px] shrink-0 items-center justify-center"

@@ -3,7 +3,7 @@
 --
 --  Este archivo NO cambia el comportamiento de nada. Crea dos tablas,
 --  añade una columna a las demás y la rellena. Después de ejecutarlo,
---  HUBI funciona exactamente igual que antes.
+--  MAPPEL funciona exactamente igual que antes.
 --
 --  Es a propósito. La fase 1 entera —columnas Y políticas de acceso—
 --  toca todas las tablas de la aplicación. Hacerlo de una vez

@@ -86,7 +86,7 @@ export async function POST(peticion: NextRequest) {
       /* El `.select()`: sin él, un cambio que la base de datos no
          permita afecta a cero filas y contesta que todo bien. */
       if (error || !data || data.length === 0) {
-        console.error('[HUBI] No se ha podido aceptar la invitación:', error)
+        console.error('[MAPPEL] No se ha podido aceptar la invitación:', error)
         return NextResponse.json(
           {
             error: 'No se ha podido aceptar.',
@@ -117,7 +117,7 @@ export async function POST(peticion: NextRequest) {
     .select('id')
 
   if (alMirar || !mirando || mirando.length === 0) {
-    console.error('[HUBI] No se ha podido cambiar de casa:', alMirar)
+    console.error('[MAPPEL] No se ha podido cambiar de casa:', alMirar)
     return NextResponse.json(
       {
         error: 'No se ha podido cambiar de casa.',

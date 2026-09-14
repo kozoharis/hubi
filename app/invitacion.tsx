@@ -1,6 +1,6 @@
 'use client'
 
-import HubiCaja from './hubi-caja'
+import MappelCaja from './mappel-caja'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -17,13 +17,13 @@ import HubiCaja from './hubi-caja'
   menos, y quien no puede o no quiere hablarle en voz alta al móvil en
   ese momento se quedaba sin asistente.
 
-  Ahora es la caja de HUBI: se escribe o se habla, y las dos cosas
+  Ahora es la caja de MAPPEL: se escribe o se habla, y las dos cosas
   acaban en el mismo sitio.
 
   ─────────────────────────────────────────────────────────────
   LAS FRASES SE QUEDAN, Y AHORA HACEN MÁS
 
-  Siguen rotando, porque son la única parte de HUBI que enseña qué se
+  Siguen rotando, porque son la única parte de MAPPEL que enseña qué se
   le puede pedir: nadie lee un manual, pero todo el mundo lee una
   frase que se mueve delante de sus ojos.
 
@@ -51,7 +51,7 @@ const FRASES = [
 export default function Invitacion() {
   return (
     <div className="mt-3.5">
-      <HubiCaja donde="inicio" rotando={FRASES} buscarEn="/documentos" />
+      <MappelCaja donde="inicio" rotando={FRASES} buscarEn="/documentos" />
     </div>
   )
 }

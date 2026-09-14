@@ -15,12 +15,12 @@ export const dynamic = 'force-dynamic'
 
   Antes esto eran dos archivos —`app/finca/page.tsx` y
   `app/helechos/page.tsx`— que hacían exactamente lo mismo con otro
-  nombre y otro color escritos a mano. Y ahí estaba el techo de HUBI:
+  nombre y otro color escritos a mano. Y ahí estaba el techo de MAPPEL:
   una familia podía crear la actividad «Obras» con sus categorías, sus
   unidades y sus carpetas en Drive… y no tendría ninguna pantalla
   donde verlas. Habría que escribir un archivo nuevo.
 
-  O sea: HUBI necesitaba a un programador cada vez que alguien tenía
+  O sea: MAPPEL necesitaba a un programador cada vez que alguien tenía
   una actividad que no habíamos previsto. Escribir ocho pantallas para
   ocho obras es el camino de no acabar nunca. Ésta es una que sirve
   para todas.

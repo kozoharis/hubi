@@ -16,9 +16,9 @@ export const maxDuration = 30
   «ACTUALIZAR AHORA» — Y LO QUE ESTE BOTÓN NO PUEDE HACER.
 
   Hay DOS retrasos entre una cita puesta en el móvil y esa cita
-  aparecida en HUBI, y este botón solo quita uno:
+  aparecida en MAPPEL, y este botón solo quita uno:
 
-    1. EL NUESTRO. HUBI guarda lo que trae de Google durante quince
+    1. EL NUESTRO. MAPPEL guarda lo que trae de Google durante quince
        minutos para no ir a pedir el archivo en cada pantalla. Esto lo
        tira a la basura y va a buscarlo otra vez. Es instantáneo.
 

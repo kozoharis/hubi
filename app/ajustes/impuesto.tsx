@@ -13,7 +13,7 @@ import { api } from '@/lib/api'
   Juan Miguel y Conchita no facturan a nadie. Para ellos este apartado
   no puede existir — ni una palabra nueva en la pantalla de apuntar, ni
   una línea más en el balance, ni un botón que no sepan para qué es.
-  Mientras esté en «ninguno», HUBI se comporta exactamente igual que
+  Mientras esté en «ninguno», MAPPEL se comporta exactamente igual que
   antes de que esto existiera.
 
   Quien factura lo enciende una vez, y a partir de ahí cada apunte se
@@ -23,7 +23,7 @@ import { api } from '@/lib/api'
   TRES OPCIONES Y NO UN SÍ/NO
 
   Porque no es lo mismo. En Canarias es IGIC —general del 7%— y en la
-  península IVA —general del 21%—. Un interruptor obligaría a HUBI a
+  península IVA —general del 21%—. Un interruptor obligaría a MAPPEL a
   adivinar cuál, y adivinar el impuesto de alguien es de las cosas que
   no se hacen.
 */
@@ -109,7 +109,7 @@ export default function ImpuestoDeLaCasa({ puesto }: { puesto: Impuesto }) {
         */}
         <p className="mt-3 text-[14.5px] font-semibold leading-snug text-tenue">
           {puesto === 'ninguno'
-            ? 'Enciéndelo solo si facturas. Los importes que apuntes seguirán siendo el total; HUBI saca la base y la cuota por su cuenta.'
+            ? 'Enciéndelo solo si facturas. Los importes que apuntes seguirán siendo el total; MAPPEL saca la base y la cuota por su cuenta.'
             : 'Se sigue tecleando el TOTAL de la factura. Lo que ya estaba apuntado no se toca, y cada apunte se puede corregir uno a uno.'}
         </p>
       </div>

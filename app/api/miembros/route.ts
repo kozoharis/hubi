@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
   INVITAR A ALGUIEN A TU CASA
   ═══════════════════════════════════════════════════════════════
 
-  Sin esto, HUBI solo servía para una persona por casa. Se podía crear
+  Sin esto, MAPPEL solo servía para una persona por casa. Se podía crear
   una casa, pero no meter a nadie más en ella — y toda la aplicación
   está pensada alrededor de dos: el tablón, los recados, «para los
   dos», el aviso de «Conchita te ha dejado una tarea».
@@ -28,7 +28,7 @@ export const dynamic = 'force-dynamic'
 
   Es el camino por el que entró Conchita, ahora sin tocar SQL.
 
-  No se manda ningún correo de invitación: HUBI todavía escribe desde
+  No se manda ningún correo de invitación: MAPPEL todavía escribe desde
   el Gmail personal de Juan Miguel, y mandar correos a desconocidos
   desde ahí no se sostiene. Quien invita le dice a la otra persona
   «entra con tu correo», que además es más fiable que un correo que
@@ -142,7 +142,7 @@ export async function POST(peticion: NextRequest) {
   })
 
   if (alBuscar) {
-    console.error('[HUBI] No se ha podido leer las cuentas:', alBuscar)
+    console.error('[MAPPEL] No se ha podido leer las cuentas:', alBuscar)
     return NextResponse.json(
       { error: 'No se ha podido invitar.', detalle: alBuscar.message },
       { status: 500 }
@@ -158,7 +158,7 @@ export async function POST(peticion: NextRequest) {
     })
 
     if (error || !creada?.user?.id) {
-      console.error('[HUBI] No se ha podido crear la cuenta invitada:', error)
+      console.error('[MAPPEL] No se ha podido crear la cuenta invitada:', error)
       return NextResponse.json(
         { error: 'No se ha podido crear su cuenta.', detalle: error?.message },
         { status: 500 }
@@ -173,7 +173,7 @@ export async function POST(peticion: NextRequest) {
     Solo en ÉSTA. Antes se rechazaba a cualquiera que estuviera en
     otra —«cada persona pertenece a una sola»— y eso era una
     limitación técnica disfrazada de regla: castigaba a quien hubiera
-    entrado en HUBI primero. El hijo que tiene su casa y además ayuda
+    entrado en MAPPEL primero. El hijo que tiene su casa y además ayuda
     con la de sus padres es un caso normal, no una excepción.
 
     Desde sql/34 una persona puede estar en varias y elegir cuál mira.
@@ -208,7 +208,7 @@ export async function POST(peticion: NextRequest) {
   /*
     El nombre solo si no tiene el suyo puesto.
 
-    Antes se sobrescribía siempre. Con gente que ya usa HUBI eso
+    Antes se sobrescribía siempre. Con gente que ya usa MAPPEL eso
     significaría que invitar a alguien le CAMBIA el nombre en su
     propia casa — donde lleva meses llamándose como él quiso.
   */
@@ -226,7 +226,7 @@ export async function POST(peticion: NextRequest) {
     : { error: null }
 
   if (alNombrar) {
-    console.error('[HUBI] No se ha podido ponerle nombre:', alNombrar)
+    console.error('[MAPPEL] No se ha podido ponerle nombre:', alNombrar)
     return NextResponse.json(
       { error: 'No se ha podido invitar.', detalle: alNombrar.message },
       { status: 500 }
@@ -243,7 +243,7 @@ export async function POST(peticion: NextRequest) {
 
     Meter a alguien en tu casa sin preguntarle era aceptable cuando
     nadie tenía cuenta antes de ser invitado. Con gente que ya usa
-    HUBI, no.
+    MAPPEL, no.
   */
   /*
     El rol y la fecha de fin se piden APARTE del insert principal, en
@@ -266,7 +266,7 @@ export async function POST(peticion: NextRequest) {
     .select('perfil_id')
 
   if (conRol.error) {
-    console.error('[HUBI] Sin rol todavía (¿falta el SQL 37?):', conRol.error)
+    console.error('[MAPPEL] Sin rol todavía (¿falta el SQL 37?):', conRol.error)
     conRol = await admin.from('miembros').insert(fila).select('perfil_id')
   }
 
@@ -275,7 +275,7 @@ export async function POST(peticion: NextRequest) {
   /* Con el `.select()`: sin él, una inserción que no entre devuelve
      «todo bien» habiendo metido cero filas. */
   if (alMeter || !metida || metida.length === 0) {
-    console.error('[HUBI] La persona no ha entrado en la casa:', alMeter)
+    console.error('[MAPPEL] La persona no ha entrado en la casa:', alMeter)
     return NextResponse.json(
       { error: 'No se ha podido meterla en tu casa.', detalle: alMeter?.message },
       { status: 500 }
@@ -303,11 +303,11 @@ export async function POST(peticion: NextRequest) {
       el_rol: rol,
     })
     if (alRepartir) {
-      console.error('[HUBI] Invitada pero sin repartir el rol:', alRepartir)
+      console.error('[MAPPEL] Invitada pero sin repartir el rol:', alRepartir)
       repartido = false
     }
   } catch (e) {
-    console.error('[HUBI] Invitada pero sin repartir el rol:', e)
+    console.error('[MAPPEL] Invitada pero sin repartir el rol:', e)
     repartido = false
   }
 
@@ -457,7 +457,7 @@ export async function PATCH(peticion: NextRequest) {
     })
 
     if (error) {
-      console.error('[HUBI] No se ha podido cambiar el rol:', error)
+      console.error('[MAPPEL] No se ha podido cambiar el rol:', error)
       return NextResponse.json(
         {
           error: 'No se ha podido cambiar el rol.',
@@ -492,7 +492,7 @@ export async function PATCH(peticion: NextRequest) {
     })
 
     if (error) {
-      console.error('[HUBI] No se ha podido cambiar el color:', error)
+      console.error('[MAPPEL] No se ha podido cambiar el color:', error)
       return NextResponse.json(
         {
           error: 'No se ha podido cambiar el color.',
@@ -527,7 +527,7 @@ export async function PATCH(peticion: NextRequest) {
       .select('perfil_id')
 
     if (error || !data || data.length === 0) {
-      console.error('[HUBI] No se ha podido cambiar la fecha de fin:', error)
+      console.error('[MAPPEL] No se ha podido cambiar la fecha de fin:', error)
       return NextResponse.json(
         {
           error: 'No se ha podido cambiar la fecha.',

@@ -37,7 +37,7 @@ export const dynamic = 'force-dynamic'
   la que de verdad manda.
 */
 
-const TIPOS_QUE_HUBI_CONOCE = [
+const TIPOS_QUE_MAPPEL_CONOCE = [
   'tarea',
   'recado',
   'vencimiento',
@@ -65,13 +65,13 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json({ error: 'No se ha entendido la petición.' }, { status: 400 })
   }
 
-  /* Se filtra contra la lista que HUBI conoce en vez de pasar lo que
+  /* Se filtra contra la lista que MAPPEL conoce en vez de pasar lo que
      venga. Un tipo inventado no rompería nada —no encontraría filas—
      pero se quedaría guardado en la casa para siempre, y dentro de un
      año nadie sabría de dónde salió. */
   const tipos = Array.isArray(cuerpo.tipos)
     ? [...new Set(cuerpo.tipos.filter((t): t is string => typeof t === 'string'))].filter((t) =>
-        TIPOS_QUE_HUBI_CONOCE.includes(t)
+        TIPOS_QUE_MAPPEL_CONOCE.includes(t)
       )
     : []
 
@@ -83,7 +83,7 @@ export async function POST(peticion: NextRequest) {
   })
 
   if (error) {
-    console.error('[HUBI] No se ha podido decidir lo de la cocina:', error.message)
+    console.error('[MAPPEL] No se ha podido decidir lo de la cocina:', error.message)
     return NextResponse.json(
       {
         error:

@@ -17,7 +17,7 @@
 --
 -- Esto hay que decirlo aquí y decirlo en la pantalla. Un registro de
 -- jornada laboral tiene requisitos legales —conservación cuatro años,
--- inalterabilidad, entrega a la Inspección— que HUBI no cumple y que
+-- inalterabilidad, entrega a la Inspección— que MAPPEL no cumple y que
 -- no vamos a fingir que cumple. Lo que hay es una libreta compartida
 -- para que a fin de mes los dos miren el mismo número.
 --
@@ -163,7 +163,7 @@ create index if not exists idx_listas_cerradas
 
   3 · La tabla vacía y con RLS puesto. `rls = true` no es un detalle:
       sin él, cualquiera con una sesión vería las horas de todas las
-      casas de HUBI.
+      casas de MAPPEL.
 */
 select policyname as politica, cmd as para_que,
        coalesce(qual, with_check) ilike '%auth.uid()%' as solo_ella

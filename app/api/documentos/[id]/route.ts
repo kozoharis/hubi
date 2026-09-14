@@ -26,7 +26,7 @@ export const maxDuration = 60
   leído se quedaba así para siempre. La única salida era volver a
   fotografiarla y quedarse con el papel duplicado en Drive.
 
-  LA REGLA DE ESTE ARCHIVO: HUBI Y DRIVE NO PUEDEN CONTARSE COSAS
+  LA REGLA DE ESTE ARCHIVO: MAPPEL Y DRIVE NO PUEDEN CONTARSE COSAS
   DISTINTAS.
 
   Cambiar la carpeta aquí y no en Drive sería lo cómodo, y sería
@@ -242,7 +242,7 @@ export async function PATCH(
 
       await moverYRenombrar(acceso, antes.drive_file_id, nombre, carpetaId, antes.drive_folder_id)
     } catch (e) {
-      console.error('[HUBI] No se ha podido mover el papel en Drive:', e)
+      console.error('[MAPPEL] No se ha podido mover el papel en Drive:', e)
       /* No se guarda NADA. Un cambio a medias —la base de datos dice
          una carpeta y Drive tiene otra— es peor que no haber cambiado. */
       return NextResponse.json(
@@ -416,24 +416,24 @@ export async function PATCH(
     })
 
     /* El aviso se creó, pero solo al segundo intento: falta ejecutar un
-       SQL. No se le dice nada a quien está usando HUBI —su aviso está
+       SQL. No se le dice nada a quien está usando MAPPEL —su aviso está
        puesto— pero queda en el registro, que es donde hace falta. */
     if (sinMarca) {
-      console.warn('[HUBI] Aviso creado sin `motivo`. ¿Falta el sql/43?:', sinMarca)
+      console.warn('[MAPPEL] Aviso creado sin `motivo`. ¿Falta el sql/43?:', sinMarca)
     }
 
     /* Entró uno de los dos. El papel está guardado y el aviso que
        importa existe, así que NO se para a nadie por esto — pero se
        dice, porque falta la mitad de lo que se prometió en pantalla. */
     if (aMedias) {
-      console.error('[HUBI] Solo se ha creado parte de los avisos:', aMedias)
+      console.error('[MAPPEL] Solo se ha creado parte de los avisos:', aMedias)
       avisoDelAviso =
         'Se ha guardado, pero solo he podido poner uno de los dos avisos en el calendario. Míralo en la Agenda.'
       porQue = aMedias
     }
 
     if (fallo) {
-      console.error('[HUBI] No se han podido rehacer los avisos del papel:', fallo)
+      console.error('[MAPPEL] No se han podido rehacer los avisos del papel:', fallo)
       avisoDelAviso =
         'El papel se ha guardado, pero no se ha podido poner el aviso en el calendario. Vuelve a entrar aquí e inténtalo otra vez.'
       /* Y el motivo exacto, aparte. A Juan Miguel no le dice nada y por
@@ -580,7 +580,7 @@ export async function DELETE(
   let enPapelera = false
   try {
     /* Si no se sabe de qué casa es, no se toca ningún Drive: la ficha
-       ya está borrada de HUBI y dejar un archivo huérfano en Drive es
+       ya está borrada de MAPPEL y dejar un archivo huérfano en Drive es
        infinitamente mejor que mandar a la papelera el de otra
        familia. */
     const casa = await elEspacio(supabase)
@@ -589,7 +589,7 @@ export async function DELETE(
     const { acceso } = await accesoDrive(casa)
     enPapelera = await aLaPapelera(acceso, papel.drive_file_id)
   } catch (e) {
-    console.error('[HUBI] No se ha podido enviar a la papelera de Drive:', e)
+    console.error('[MAPPEL] No se ha podido enviar a la papelera de Drive:', e)
   }
 
   return NextResponse.json({ bien: true, enPapelera })

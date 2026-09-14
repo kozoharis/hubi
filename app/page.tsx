@@ -62,7 +62,7 @@ const AVISOS: Record<string, { texto: string; bien: boolean }> = {
   },
   'sin-permiso': {
     texto:
-      'Google no ha devuelto un permiso duradero. Entra en la cuenta de Google, quita el acceso de HUBI y vuelve a conectarlo.',
+      'Google no ha devuelto un permiso duradero. Entra en la cuenta de Google, quita el acceso de MAPPEL y vuelve a conectarlo.',
     bien: false,
   },
   estado: { texto: 'La conexión se ha interrumpido por seguridad. Inténtalo de nuevo.', bien: false },
@@ -112,7 +112,7 @@ export default async function Inicio({
 
     Quien entra sin hogar no ve NADA: todas las políticas de la base
     de datos dicen `hogar_id = mi_hogar()`, así que cada consulta le
-    devuelve cero filas. Y un HUBI completamente vacío, con sus cinco
+    devuelve cero filas. Y un MAPPEL completamente vacío, con sus cinco
     pestañas y ni un dato, no parece una casa nueva: parece una
     aplicación rota.
 
@@ -123,7 +123,7 @@ export default async function Inicio({
 
   /*
     Y si se ha llegado aquí sin espacio en la dirección —que es lo que
-    pasa al abrir HUBI—, se entra por la puerta.
+    pasa al abrir MAPPEL—, se entra por la puerta.
 
     A partir de este momento la pestaña sabe en qué casa está y ya no
     se la pisa nadie. Es la última vez que `casa_activa` decide algo.
@@ -302,10 +302,10 @@ export default async function Inicio({
   const nombre = perfil.nombre
 
   /*
-    ── QUÉ LE ENSEÑA HUBI A ESTA PERSONA ──
+    ── QUÉ LE ENSEÑA MAPPEL A ESTA PERSONA ──
 
     Y esto es lo que de verdad cambia con los roles, más que los
-    permisos. A quien ayuda en casa, HUBI no le abre en «Cuentas de
+    permisos. A quien ayuda en casa, MAPPEL no le abre en «Cuentas de
     casa» y «Papeles»: le abre en lo de hoy y la compra. El permiso
     evita que vea algo; la pantalla hace que encuentre lo suyo en un
     segundo.
@@ -525,7 +525,7 @@ export default async function Inicio({
 
           Ahora son dos cosas distintas:
 
-            · La foto solo dice quién está usando HUBI. Ya no se puede
+            · La foto solo dice quién está usando MAPPEL. Ya no se puede
               tocar, porque no llevaba a ningún sitio que se pudiera
               adivinar.
             · Al lado, un botón con la rueda Y la palabra «Ajustes».
@@ -544,7 +544,7 @@ export default async function Inicio({
         <div className="flex h-14 items-center justify-between gap-2">
           <span className="flex min-w-0 items-center gap-2">
             <Logo tam={36} />
-            <span className="text-[22px] font-extrabold tracking-[0.09em]">HUBI</span>
+            <span className="text-[22px] font-extrabold tracking-[0.09em]">MAPPEL</span>
           </span>
 
           {/*
@@ -555,7 +555,7 @@ export default async function Inicio({
             flecha — las tres cosas estuvieron y las tres se fueron.
 
             Tuvo el borde en degradado hasta la D8 (turquesa a morado:
-            colores que no son de HUBI, pegados al logotipo), y después
+            colores que no son de MAPPEL, pegados al logotipo), y después
             un borde de tarjeta que sobre el papel cálido de la Fase 3
             da 1,13:1 y no se ve. Un botón sin caja visible pero con el
             hueco de la caja es justo lo que se veía raro.
@@ -565,7 +565,7 @@ export default async function Inicio({
             `iconos.tsx`, con los números de los dos modos.
           */}
           {/* El margen invisible arriba y abajo: la píldora se ve de 30
-              px y se toca de 48. Ninguna pantalla de HUBI tiene algo
+              px y se toca de 48. Ninguna pantalla de MAPPEL tiene algo
               pulsable por debajo de esa medida, y este botón no iba a
               ser la excepción por quedar más fino. Al bajar de 34 a 30
               el relleno sube de 7 a 9: lo que encoge es el dibujo, no
@@ -727,7 +727,7 @@ export default async function Inicio({
 
         {/* AVISO DE QUE ALGO NO FUNCIONA, Y POR ESO VA EL PRIMERO.
 
-            No es una tarjeta más ni una sugerencia: es HUBI diciendo
+            No es una tarjeta más ni una sugerencia: es MAPPEL diciendo
             que ahora mismo no puede cumplir lo que promete. Eso no se
             pone debajo de seis tarjetas.
 
@@ -767,7 +767,7 @@ export default async function Inicio({
         {/* ── La grande: hacer una foto ── */}
         {conectado && ve.guardarDocumento && (
           /*
-            FOTOGRAFIAR es una de las tres cosas que HUBI promete
+            FOTOGRAFIAR es una de las tres cosas que MAPPEL promete
             —hablar, fotografiar, consultar— y en esta pantalla es LA
             acción. Así que va con el botón de acción, no con una
             tarjeta teñida de teal a mano.
@@ -806,7 +806,7 @@ export default async function Inicio({
             </BotonPrincipal>
             <p className="t-cuerpo mt-4">
               Google mostrará un aviso de aplicación no verificada. Es normal: pulsa{' '}
-              <strong>Configuración avanzada</strong> y después <strong>Ir a HUBI</strong>.
+              <strong>Configuración avanzada</strong> y después <strong>Ir a MAPPEL</strong>.
               Solo ocurre esta vez.
             </p>
           </div>
@@ -1098,7 +1098,7 @@ export default async function Inicio({
         EL BOTÓN DE VOZ APARECE CUANDO LA INVITACIÓN NO ESTÁ.
 
         Aquí ponía `voz={false}` a secas, y la razón era buena: arriba
-        está la invitación de HUBI con el mismo símbolo, y dos botones
+        está la invitación de MAPPEL con el mismo símbolo, y dos botones
         para lo mismo en una pantalla es uno de más.
 
         Lo que no se vio es que esa invitación SOLO SE PINTA SI DRIVE

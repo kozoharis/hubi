@@ -33,13 +33,13 @@ export default async function Hablar({
   /*
     ── LO QUE VIENE YA DICHO ──
 
-    En el iPhone no existe un «Hola HUBI»: ningún programa que no sea
+    En el iPhone no existe un «Hola MAPPEL»: ningún programa que no sea
     Siri puede escuchar en segundo plano, y eso no es una limitación
     nuestra sino de iOS.
 
     Lo que sí se puede es que Siri escuche por nosotros. Un Atajo
-    llamado «Hubi» dicta la frase y la trae aquí en la dirección, y
-    HUBI la interpreta al abrirse: «Oye Siri, Hubi» → «¿Qué necesitas?»
+    llamado «Mappel» dicta la frase y la trae aquí en la dirección, y
+    MAPPEL la interpreta al abrirse: «Oye Siri, Mappel» → «¿Qué necesitas?»
     → hablas → se abre con lo que has dicho ya entendido.
 
     Y así se esquiva de paso el problema de verdad: Safari no deja

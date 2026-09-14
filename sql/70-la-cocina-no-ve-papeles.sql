@@ -56,7 +56,7 @@
 -- ponerle `ve_todo` mañana.
 --
 -- **No:** no convierte las cuatro funciones en cáscaras. Eso cambia lo
--- que significan las 57 políticas permisivas de HUBI y no puede ir de
+-- que significan las 57 políticas permisivas de MAPPEL y no puede ir de
 -- propina dentro de un arreglo urgente. Va solo, con su ensayo y su
 -- comparación fila a fila, y es lo siguiente que hay que hacer.
 --

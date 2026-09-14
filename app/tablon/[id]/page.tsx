@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
 
 /*
   El mismo tipo que decide el emoji del móvil (`lib/tablon.ts`), dicho
-  con los iconos dibujados de HUBI, que son los que entiende la banda.
+  con los iconos dibujados de MAPPEL, que son los que entiende la banda.
 
   Se traduce aquí y no allí a propósito: `lib/tablon.ts` lo usan
   también la Agenda y el resumen del Inicio, y no tienen por qué
@@ -143,7 +143,7 @@ export default async function Detalle({
         no se pinta (`Encabezado` es `hidden lg:block`), y por eso la
         ficha de abajo no se toca ni un píxel.
 
-        Sin esto, ésta era la última pantalla de HUBI que en un
+        Sin esto, ésta era la última pantalla de MAPPEL que en un
         ordenador seguía enseñando la cabecera del móvil: la flecha
         redonda de volver y el emoji a tamaño de pulgar.
       */}
@@ -181,7 +181,7 @@ export default async function Detalle({
           {/*
             Era un emoji suelto a `text-4xl` — 🩺, 💊, ⏳— mientras que
             la banda de al lado, en pantalla ancha, pintaba el mismo
-            tipo con el icono DIBUJADO de HUBI. La misma tarea, dos
+            tipo con el icono DIBUJADO de MAPPEL. La misma tarea, dos
             dibujos distintos, en el mismo fichero.
 
             Ahora es la pastilla de siempre, la misma que en el tablón,

@@ -74,7 +74,7 @@ export default async function Carpeta({
   /* Si esto falla, SE DICE. Ignorando el error, la carpeta salía
      "vacía" — que es justo lo que se ve cuando de verdad no hay nada. */
   const { data, error: averia } = await consulta
-  if (averia) console.error('[HUBI] Carpeta no ha podido cargar:', averia.message)
+  if (averia) console.error('[MAPPEL] Carpeta no ha podido cargar:', averia.message)
   const papeles = (data ?? []) as unknown as Papel[]
 
   /* Los nombres, en una consulta aparte y sin cruces. Si fallara, las

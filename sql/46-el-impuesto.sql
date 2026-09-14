@@ -28,7 +28,7 @@
 --
 -- Juan Miguel y Conchita no facturan a nadie. Para ellos esto no puede
 -- existir: ni una palabra nueva en pantalla, ni un botón más. Se
--- enciende casa por casa, y mientras esté apagado HUBI se comporta
+-- enciende casa por casa, y mientras esté apagado MAPPEL se comporta
 -- exactamente igual que antes de este archivo.
 --
 -- Se puede ejecutar más de una vez sin estropear nada.

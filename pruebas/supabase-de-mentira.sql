@@ -2,7 +2,7 @@
 -- SUPABASE DE MENTIRA
 -- ═══════════════════════════════════════════════════════════════
 --
--- Lo mínimo de Supabase que HUBI necesita para arrancar en un Postgres
+-- Lo mínimo de Supabase que MAPPEL necesita para arrancar en un Postgres
 -- vacío: los tres papeles que reparte, el esquema `auth`, y `auth.uid()`
 -- leyendo la sesión igual que allí.
 --
@@ -36,7 +36,7 @@ alter default privileges in schema public
 create schema if not exists auth;
 grant usage on schema auth to anon, authenticated, service_role;
 
-/* La tabla de usuarios, con las columnas que HUBI toca: `perfiles.id`
+/* La tabla de usuarios, con las columnas que MAPPEL toca: `perfiles.id`
    apunta aquí, y el disparador del SQL 01 lee el correo y los metadatos
    para escribir el nombre. */
 create table if not exists auth.users (

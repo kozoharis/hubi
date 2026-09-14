@@ -78,7 +78,7 @@ export async function POST(peticion: NextRequest) {
     .eq('lista_id', de)
 
   if (alLeer) {
-    console.error('[HUBI] No se ha podido leer la lista vieja:', alLeer)
+    console.error('[MAPPEL] No se ha podido leer la lista vieja:', alLeer)
     return NextResponse.json(
       { error: 'No se ha podido leer esa compra.', detalle: alLeer.message },
       { status: 500 }
@@ -149,7 +149,7 @@ export async function POST(peticion: NextRequest) {
   /* El `.select()`: sin él, una inserción que las políticas no
      permitan devuelve «todo bien» habiendo metido cero filas. */
   if (error || !data || data.length === 0) {
-    console.error('[HUBI] No se ha podido recuperar la compra:', error)
+    console.error('[MAPPEL] No se ha podido recuperar la compra:', error)
     return NextResponse.json(
       { error: 'No se ha podido recuperar.', detalle: error?.message },
       { status: 500 }

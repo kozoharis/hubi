@@ -7,7 +7,7 @@ import type { Ambito } from '@/lib/ambitos'
   ═══════════════════════════════════════════════════════════════
 
   Una sola lista, y de ella salen las dos pantallas: la tarjeta de
-  «Primeros pasos» del Inicio y la de «Cómo se usa HUBI» de Ajustes.
+  «Primeros pasos» del Inicio y la de «Cómo se usa MAPPEL» de Ajustes.
   Estaban destinadas a divergir en la segunda semana si cada una
   tenía la suya.
 
@@ -37,7 +37,7 @@ export type Accion = {
   para?: Papel[]
   /*
     Los que salen en la tarjeta del Inicio, en este orden. Los demás
-    están en «Cómo se usa HUBI» desde el primer día, pero no se ponen
+    están en «Cómo se usa MAPPEL» desde el primer día, pero no se ponen
     delante de nadie: cuatro cosas por hacer se leen, nueve se
     ignoran.
   */
@@ -48,7 +48,7 @@ export const ACCIONES: Accion[] = [
   {
     clave: 'guardar',
     titulo: 'Guardar un papel',
-    linea: 'Haz una foto y HUBI la lee, la guarda en su carpeta y la suma a las cuentas.',
+    linea: 'Haz una foto y MAPPEL la lee, la guarda en su carpeta y la suma a las cuentas.',
     icono: 'foto',
     ambito: 'verde',
     href: '/guardar',
@@ -57,7 +57,7 @@ export const ACCIONES: Accion[] = [
   },
   {
     clave: 'hablar',
-    titulo: 'Hablarle a HUBI',
+    titulo: 'Hablarle a MAPPEL',
     linea: 'Dile lo que necesitas como se lo dirías a una persona. Te enseña lo que ha entendido antes de guardar.',
     icono: 'micro',
     ambito: 'azul',
@@ -98,7 +98,7 @@ export const ACCIONES: Accion[] = [
   {
     clave: 'avisa',
     titulo: 'Que un papel te avise',
-    linea: 'Si el seguro vence en noviembre, HUBI te lo recuerda en octubre. Tú eliges cuándo.',
+    linea: 'Si el seguro vence en noviembre, MAPPEL te lo recuerda en octubre. Tú eliges cuándo.',
     icono: 'campana',
     ambito: 'violeta',
     href: '/agenda',
@@ -152,7 +152,7 @@ export const ACCIONES: Accion[] = [
 
 /** El vídeo de una acción, si lo tiene. */
 export function videoDe(clave: string): string | null {
-  return CON_VIDEO.has(clave) ? `/guia/hubi-${clave}.mp4` : null
+  return CON_VIDEO.has(clave) ? `/guia/mappel-${clave}.mp4` : null
 }
 
 /*

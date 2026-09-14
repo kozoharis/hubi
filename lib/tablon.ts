@@ -23,7 +23,7 @@ export type Recordatorio = {
  *
  * Cada pista llevaba además su emoji —💊, 🩺, 🚗, 📄, ⏳, 🛍— y una
  * función `iconoDe(tipo)` que lo devolvía, con `✅` para lo que no
- * reconocía. Así que HUBI tenía **dos vocabularios de iconos**: los
+ * reconocía. Así que MAPPEL tenía **dos vocabularios de iconos**: los
  * dibujados de `iconos.tsx`, que son los de la marca, y estos, que son
  * los del teclado del móvil.
  *
