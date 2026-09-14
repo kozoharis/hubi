@@ -87,6 +87,95 @@ export function comoSeLlamaLaSemana(lunes: string): string {
 }
 
 /*
+  ═══════════════════════════════════════════════════════════════
+  EL PLATO QUE VUELVE
+  ═══════════════════════════════════════════════════════════════
+
+  Haris: *«poder crearlo en un solo sitio y luego asignarle el día o
+  días que se repite en la semana, si es comida o cena y si se repite
+  cada semana, cada dos semanas o tres»*.
+
+  Aquí solo se calculan LAS FECHAS. Lo que se hace con ellas —escribir
+  los menús, saltar los días que ya tienen algo— es de la API, y lo que
+  significan es del sql/81.
+
+  ─────────────────────────────────────────────────────────────
+  POR QUÉ ESTO NO USA `Date` MÁS DE LO IMPRESCINDIBLE
+
+  Lo mismo que arriba: el servidor está en Londres, la casa en
+  Canarias. Una cuenta de días hecha con horas se equivoca de día dos
+  veces al año, y son justo los días en que alguien mira la pantalla y
+  no entiende nada.
+
+  Todo pasa por `elDia()`, que fija las doce del mediodía.
+*/
+
+/** Cada cuántas semanas vuelve un plato. Lo que se pidió, ni más. */
+export const CADA_SEMANAS: { valor: 1 | 2 | 3; texto: string }[] = [
+  { valor: 1, texto: 'Cada semana' },
+  { valor: 2, texto: 'Cada dos semanas' },
+  { valor: 3, texto: 'Cada tres semanas' },
+]
+
+/*
+  Lunes = 0 … domingo = 6. El orden en que se lee una semana aquí.
+
+  El corto va de TRES letras y no de una. La costumbre española es
+  L·M·X·J·V·S·D, y esa X de miércoles hay que sabérsela: no se deduce
+  mirándola. «Mié» se lee sin que nadie lo explique, que es la regla
+  del punto 5 del planteamiento.
+*/
+export const DIAS_DE_LA_SEMANA: { valor: number; texto: string; corto: string }[] = DIAS.map(
+  (nombre, i) => ({
+    valor: i,
+    texto: nombre.charAt(0).toUpperCase() + nombre.slice(1),
+    corto: nombre.charAt(0).toUpperCase() + nombre.slice(1, 3),
+  })
+)
+
+/** Cuánto se escribe por delante. Tres meses, y luego el botón de alargar. */
+export const SEMANAS_POR_DELANTE = 13
+
+/**
+ * Los días en que toca ese plato.
+ *
+ * @param desde        Desde cuándo cuenta. Nunca se devuelve nada anterior.
+ * @param dias         Días de la semana, lunes = 0.
+ * @param cadaSemanas  1, 2 o 3.
+ * @param semanas      Cuántas semanas se escriben por delante.
+ *
+ * La cuenta se ancla al LUNES de la semana de `desde`, no a `desde`.
+ * Si no, «cada dos semanas desde el miércoles» y «cada dos semanas
+ * desde el viernes de esa misma semana» darían calendarios distintos
+ * para lo que cualquiera diría que es el mismo plan.
+ */
+export function losDiasDelPlan(
+  desde: string,
+  dias: number[],
+  cadaSemanas: 1 | 2 | 3,
+  semanas: number = SEMANAS_POR_DELANTE
+): string[] {
+  const limpios = [...new Set(dias)].filter((d) => Number.isInteger(d) && d >= 0 && d <= 6).sort()
+  if (limpios.length === 0) return []
+
+  const lunes = elLunesDe(desde)
+  const salida: string[] = []
+
+  for (let s = 0; s < semanas; s += cadaSemanas) {
+    for (const d of limpios) {
+      const f = elDia(lunes)
+      f.setDate(f.getDate() + s * 7 + d)
+      const iso = comoTexto(f)
+      /* Nada antes de hoy: un menú en el pasado no se puede comprar ni
+         cocinar, solo estorba en la semana que se está mirando. */
+      if (iso >= desde) salida.push(iso)
+    }
+  }
+
+  return salida.sort()
+}
+
+/*
   ¿Es un enlace de verdad?
 
   Se admite lo que tenga pinta de dirección de internet y nada más. Un

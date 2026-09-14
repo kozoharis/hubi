@@ -26,17 +26,40 @@ export async function GET(peticion: NextRequest) {
   const lunes = /^\d{4}-\d{2}-\d{2}$/.test(pedida) ? elLunesDe(pedida) : elLunesDe(hoyAqui())
   const dias = laSemanaDe(lunes)
 
-  const { data, error } = await supabase
+  const casa = await elEspacioO(supabase)
+
+  /*
+    Lo del paso 81 —la tanda y la comprobación— se pide primero y, si
+    la base todavía no lo tiene, se vuelve a pedir sin ello. Es la
+    misma red que ya hay abajo para los ingredientes, y por lo mismo:
+    Postgres rechaza la consulta ENTERA cuando falta una columna, no
+    esa columna. Sin la red, un paso sin dar deja la semana en blanco.
+  */
+  const MENU_CON = 'id, fecha, momento, que, receta_id, grupo_id, cada_semanas, comprobado_en, faltan'
+  const MENU_SIN = 'id, fecha, momento, que, receta_id'
+
+  let { data, error } = await supabase
     .from('menus')
-    .select('id, fecha, momento, que, receta_id')
-    .eq('hogar_id', await elEspacioO(supabase))
+    .select(MENU_CON)
+    .eq('hogar_id', casa)
     .gte('fecha', dias[0])
     .lte('fecha', dias[6])
 
   if (error) {
+    const segunda = await supabase
+      .from('menus')
+      .select(MENU_SIN)
+      .eq('hogar_id', casa)
+      .gte('fecha', dias[0])
+      .lte('fecha', dias[6])
+    data = segunda.data as typeof data
+    error = segunda.error
+  }
+
+  if (error) {
     /* Sin las tablas todavía: se contesta vacío en vez de romper la
        pantalla. El sql/48 puede no estar ejecutado. */
-    return NextResponse.json({ lunes, dias, menus: [], recetas: [], sinTablas: true })
+    return NextResponse.json({ lunes, dias, menus: [], recetas: [], listas: [], sinTablas: true })
   }
 
   /*
@@ -55,7 +78,7 @@ export async function GET(peticion: NextRequest) {
   let { data: recetas, error: falloRecetas } = await supabase
     .from('recetas')
     .select(CON)
-    .eq('hogar_id', await elEspacioO(supabase))
+    .eq('hogar_id', casa)
     .order('creado_en', { ascending: false })
     .limit(100)
 
@@ -63,14 +86,41 @@ export async function GET(peticion: NextRequest) {
     const segunda = await supabase
       .from('recetas')
       .select(SIN)
-      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('hogar_id', casa)
       .order('creado_en', { ascending: false })
       .limit(100)
     recetas = segunda.data as typeof recetas
     falloRecetas = segunda.error
   }
 
-  return NextResponse.json({ lunes, dias, menus: data ?? [], recetas: recetas ?? [] })
+  /*
+    Y las listas de la compra, porque lo que falte de un menú hay que
+    poder mandarlo a una sin salir de aquí — que fue justo lo que se
+    decidió: «me preguntas a cuál».
+
+    Si el sql/23 no está, se contesta vacío y la pantalla lo dice; no
+    se rompe la semana por eso.
+  */
+  const { data: listas } = await supabase
+    .from('listas_compra')
+    /* `hora` y `asignado_a` viajan aunque aquí no se pinten: si desde
+       el menú se le pone día a la lista, hay que devolverle a la API de
+       listas TODO lo que ya tenía. Esa API gobierna el día, la hora y
+       la tarea de la Agenda a la vez, y un campo que no se manda se
+       entiende como «quítalo». */
+    .select('id, nombre, fecha, hora, asignado_a')
+    .eq('hogar_id', casa)
+    .is('archivada_en', null)
+    .order('creada_en', { ascending: true })
+    .limit(30)
+
+  return NextResponse.json({
+    lunes,
+    dias,
+    menus: data ?? [],
+    recetas: recetas ?? [],
+    listas: listas ?? [],
+  })
 }
 
 // ── PONER O CAMBIAR LO DE UN DÍA ─────────────────────────────
@@ -167,6 +217,112 @@ export async function PUT(peticion: NextRequest) {
   }
 
   return NextResponse.json({ bien: true, id: data[0].id })
+}
+
+// ── «¿TIENES TODO ESTO?» ─────────────────────────────────────
+/*
+  La lista de comprobación del paso 81.
+
+  Dos respuestas y nada más: SÍ deja el menú comprobado y sin nada que
+  falte; NO guarda lo que falta y, si se ha elegido lista, lo apunta en
+  la compra.
+
+  ─────────────────────────────────────────────────────────────
+  Y LOS INGREDIENTES NO PASAN POR EL FILTRO DE LA COMPRA
+
+  `/api/compra` tiene un colador —`esAlgoQueSeCompra`— que descarta lo
+  que seguro que no es un producto. Existe por el DICTADO: al partir
+  una frase hablada se cuelan verbos, días de la semana y nombres de
+  personas.
+
+  Aquí no hay nada de eso. Un ingrediente lo escribió alguien de la
+  casa en una receta, una línea por cosa. Pasarlo por ese colador solo
+  puede hacer daño: «sal al gusto» o «un chorrito de vino» tienen todas
+  las papeletas de no parecer productos, y desaparecerían sin decir
+  nada. Así que se apunta tal cual, que es como se escribió.
+*/
+export async function PATCH(peticion: NextRequest) {
+  const supabase = await clienteSesion()
+  const user = await quien(supabase)
+  if (!user) return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
+
+  const casa = await elEspacioO(supabase)
+  const cuerpo = (await peticion.json().catch(() => ({}))) as {
+    id?: string
+    faltan?: string[]
+    lista_id?: string | null
+  }
+
+  const id = String(cuerpo.id ?? '')
+  if (!id) return NextResponse.json({ error: 'Falta cuál.' }, { status: 400 })
+
+  const faltan = [
+    ...new Set(
+      (cuerpo.faltan ?? [])
+        .map((i) => String(i ?? '').trim().replace(/\s+/g, ' ').slice(0, 80))
+        .filter((i) => i.length > 1)
+    ),
+  ].slice(0, 30)
+
+  // ── 1 · Queda comprobado ──
+  const { data, error } = await supabase
+    .from('menus')
+    .update({ comprobado_en: new Date().toISOString(), faltan })
+    .eq('hogar_id', casa)
+    .eq('id', id)
+    .select('id, que, fecha')
+
+  /* Sin el paso 81 no se puede dejar constancia, pero lo que falta sí
+     se puede apuntar en la compra. Se hace y se dice. */
+  const sinPaso81 = Boolean(error && /comprobado_en|faltan/.test(error.message))
+
+  if (error && !sinPaso81) {
+    return NextResponse.json(
+      { error: 'No se ha podido guardar la comprobación.', detalle: error.message },
+      { status: 500 }
+    )
+  }
+  if (!sinPaso81 && (!data || data.length === 0)) {
+    return NextResponse.json({ error: 'Ese menú ya no está.' }, { status: 404 })
+  }
+
+  // ── 2 · Y lo que falta, a la compra ──
+  let apuntados = 0
+  if (faltan.length > 0 && cuerpo.lista_id) {
+    const filas = faltan.map((que) => ({
+      hogar_id: casa,
+      que,
+      cantidad: null,
+      seccion_id: null,
+      lista_id: cuerpo.lista_id,
+      anadido_por: user.id,
+    }))
+
+    const { data: puestos, error: falloCompra } = await supabase
+      .from('compra')
+      .insert(filas)
+      .select('id')
+
+    if (falloCompra) {
+      return NextResponse.json(
+        {
+          error: 'Se ha guardado la comprobación, pero no se ha podido apuntar en la compra.',
+          detalle: falloCompra.message,
+          comprobado: true,
+        },
+        { status: 500 }
+      )
+    }
+    apuntados = puestos?.length ?? 0
+  }
+
+  return NextResponse.json({
+    bien: true,
+    faltan,
+    apuntados,
+    sinPaso81,
+    menu: data?.[0] ?? null,
+  })
 }
 
 // ── UNA IDEA NUEVA PARA EL CAJÓN ─────────────────────────────

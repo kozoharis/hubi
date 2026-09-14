@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Ico } from '../iconos'
 import { Aviso, BotonPrincipal, BotonSecundario, Vacio } from '../piezas'
 import { api } from '@/lib/api'
+import Comprobar, { type ListaDeCompra } from './comprobar'
+import RepetirPlato from './repetir-plato'
 import {
   comoSeLlamaElDia,
   comoSeLlamaLaSemana,
@@ -28,7 +30,19 @@ import {
   familia deje de usar una función a la segunda semana.
 */
 
-type Menu = { id: string; fecha: string; momento: Momento; que: string; receta_id: string | null }
+type Menu = {
+  id: string
+  fecha: string
+  momento: Momento
+  que: string
+  receta_id: string | null
+  /* Del paso 81. Pueden no venir: la API los pide y, si la base
+     todavía no los tiene, vuelve a pedir sin ellos. */
+  grupo_id?: string | null
+  cada_semanas?: number | null
+  comprobado_en?: string | null
+  faltan?: string[] | null
+}
 type Receta = {
   id: string
   titulo: string
@@ -44,8 +58,15 @@ export default function Semana() {
   const [dias, setDias] = useState<string[]>([])
   const [menus, setMenus] = useState<Menu[]>([])
   const [recetas, setRecetas] = useState<Receta[]>([])
+  const [listas, setListas] = useState<ListaDeCompra[]>([])
   const [sinTablas, setSinTablas] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
+
+  /* Qué menú se está comprobando, y qué plato se está poniendo a
+     repetir. Uno cada vez: dos fichas abiertas a la vez en una pantalla
+     de teléfono es no saber cuál contestas. */
+  const [comprobando, setComprobando] = useState<string | null>(null)
+  const [repitiendo, setRepitiendo] = useState<string | null>(null)
 
   // ── El cajón de ideas ──
   const [abierto, setAbierto] = useState(false)
@@ -69,6 +90,7 @@ export default function Semana() {
         dias?: string[]
         menus?: Menu[]
         recetas?: Receta[]
+        listas?: ListaDeCompra[]
         sinTablas?: boolean
         error?: string
       }
@@ -80,6 +102,7 @@ export default function Semana() {
       setDias(d.dias ?? [])
       setMenus(d.menus ?? [])
       setRecetas(d.recetas ?? [])
+      setListas(d.listas ?? [])
       setSinTablas(d.sinTablas === true)
     } catch {
       setAviso('No hay conexión.')
@@ -135,11 +158,41 @@ export default function Semana() {
       }),
     })
 
+    const d = (await r.json().catch(() => ({}))) as {
+      id?: string
+      error?: string
+      detalle?: string
+    }
+
     if (!r.ok) {
-      const d = (await r.json().catch(() => ({}))) as { error?: string; detalle?: string }
       setAviso(d.detalle ?? d.error ?? 'No se ha podido guardar.')
       traer(lunes ?? undefined)
+      return
     }
+
+    /*
+      Y SE CAMBIA EL IDENTIFICADOR DE MENTIRA POR EL DE VERDAD.
+
+      Mientras se guardaba, la fila llevaba `nuevo-2026-09-18-cena`,
+      que sirve para pintarla y para nada más. Sin esta línea, la
+      comprobación de ingredientes que se abriera justo después
+      mandaría ese texto a la base y volvería «ese menú ya no está»
+      sobre un menú que se acaba de poner.
+    */
+    if (d.id) {
+      setMenus((lista) =>
+        lista.map((m) => (m.fecha === fecha && m.momento === momento ? { ...m, id: d.id! } : m))
+      )
+    }
+  }
+
+  /* Lo que acaba de comprobarse, sin volver a pedir la semana entera. */
+  function yaComprobado(id: string, faltan: string[]) {
+    setMenus((lista) =>
+      lista.map((m) =>
+        m.id === id ? { ...m, comprobado_en: new Date().toISOString(), faltan } : m
+      )
+    )
   }
 
   async function nuevaIdea() {
@@ -232,9 +285,14 @@ export default function Semana() {
                 const suya = puesto?.receta_id
                   ? recetas.find((r) => r.id === puesto.receta_id)
                   : undefined
+                const lleva = suya?.ingredientes ?? []
+                const nuevoDeVerdad = puesto && !puesto.id.startsWith('nuevo-')
+                const sinMirar = Boolean(nuevoDeVerdad && lleva.length > 0 && !puesto!.comprobado_en)
+                const faltan = puesto?.faltan ?? []
+
                 return (
                   <div key={valor}>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                       <span className="t-apoyo w-[62px] shrink-0 font-extrabold">
                         {texto}
                       </span>
@@ -242,7 +300,54 @@ export default function Semana() {
                         valor={puesto?.que ?? ''}
                         alSalir={(v) => guardar(fecha, valor, v)}
                       />
+                      {/*
+                        ── EL DESPLEGABLE ──
+
+                        Haris: *«si queremos cambiar el menú de la cena
+                        del viernes, pueda salirte un desplegable y lo
+                        puedas elegir»*.
+
+                        Es un `select` de los del navegador, a
+                        propósito: en el teléfono abre la rueda del
+                        sistema, que es enorme y se maneja con el pulgar
+                        sin apuntar. Una lista dibujada por nosotros
+                        sería más bonita y más pequeña.
+
+                        Y NO SUSTITUYE AL CAMPO DE ESCRIBIR, que sigue
+                        al lado. «Sobras» y «cada uno lo suyo» no están
+                        en el cajón de recetas y nunca lo estarán.
+                      */}
+                      {recetas.length > 0 && (
+                        <label className="relative shrink-0">
+                          <span className="sr-only">
+                            Elegir un plato guardado para la {texto.toLowerCase()} del{' '}
+                            {comoSeLlamaElDia(fecha)}
+                          </span>
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              const r = recetas.find((x) => x.id === e.target.value)
+                              if (r) guardar(fecha, valor, r.titulo, r.id)
+                            }}
+                            className="absolute inset-0 h-full w-full opacity-0"
+                          >
+                            <option value="">Elegir…</option>
+                            {recetas.map((r) => (
+                              <option key={r.id} value={r.id}>
+                                {r.titulo}
+                              </option>
+                            ))}
+                          </select>
+                          <span
+                            aria-hidden
+                            className="tocable flex h-[48px] w-[48px] items-center justify-center rounded-[16px] border border-borde bg-superficie"
+                          >
+                            <Ico nombre="flecha" tam={18} grosor={2.4} className="rotate-90" />
+                          </span>
+                        </label>
+                      )}
                     </div>
+
                     {/* Si vino de una receta con enlace, se puede abrir
                         desde aquí: es el momento en que hace falta. */}
                     {suya?.url && (
@@ -250,11 +355,54 @@ export default function Semana() {
                         href={suya.url}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="t-apoyo mt-1 ml-[74px] flex h-12 items-center font-extrabold"
+                        className="t-apoyo mt-1 ml-[72px] flex h-12 items-center font-extrabold"
                         style={{ color: 'var(--t-bien)' }}
                       >
                         Ver la receta · {deDondeEs(suya.url)}
                       </a>
+                    )}
+
+                    {/*
+                      ── ¿SE PUEDE HACER? ──
+
+                      Haris: *«siempre hay que hacer una checklist para
+                      que se pueda hacer, si no que se haga otro»*. Por
+                      eso el estado se ve SIN abrir nada: lo que hay que
+                      poder decidir de un vistazo es si hay que cambiar
+                      el menú del viernes, y eso se decide mirando la
+                      semana, no entrando en siete fichas.
+                    */}
+                    {nuevoDeVerdad && lleva.length > 0 && comprobando !== puesto!.id && (
+                      <button
+                        onClick={() => setComprobando(puesto!.id)}
+                        className="t-apoyo ml-[72px] flex h-12 items-center gap-1.5 font-extrabold"
+                        style={{
+                          color: sinMirar
+                            ? 'var(--t-tinta-suave)'
+                            : faltan.length > 0
+                              ? 'var(--t-alerta)'
+                              : 'var(--t-bien)',
+                        }}
+                      >
+                        {!sinMirar && faltan.length === 0 && (
+                          <Ico nombre="check" tam={17} grosor={2.6} />
+                        )}
+                        {sinMirar
+                          ? `¿Tienes lo que lleva? · ${lleva.length}`
+                          : faltan.length > 0
+                            ? `Faltan ${faltan.length} ${faltan.length === 1 ? 'cosa' : 'cosas'}`
+                            : 'Está todo para hacerlo'}
+                      </button>
+                    )}
+
+                    {comprobando === puesto?.id && (
+                      <Comprobar
+                        menu={puesto}
+                        ingredientes={lleva}
+                        listas={listas}
+                        alGuardar={(f) => yaComprobado(puesto.id, f)}
+                        cerrar={() => setComprobando(null)}
+                      />
                     )}
                   </div>
                 )
@@ -330,6 +478,32 @@ export default function Semana() {
                 ))}
               </div>
               <p className="t-apoyo mt-1.5">Toca un día para ponerla de comida</p>
+
+              {/*
+                ── Y QUE VUELVA ──
+
+                Los botones de arriba ponen el plato UNA vez, esta
+                semana. Esto lo pone todos los viernes durante tres
+                meses. Son dos cosas distintas y por eso son dos sitios
+                distintos: mezclarlas obligaría a preguntar «¿solo hoy o
+                siempre?» cada vez que se toca un día, que es la
+                pregunta de más que sobra catorce veces por semana.
+              */}
+              {repitiendo === r.id ? (
+                <RepetirPlato
+                  receta={r}
+                  alHecho={() => traer(lunes ?? undefined)}
+                  cerrar={() => setRepitiendo(null)}
+                />
+              ) : (
+                <button
+                  onClick={() => setRepitiendo(r.id)}
+                  className="t-apoyo mt-1 flex h-12 items-center gap-1.5 font-extrabold text-tinta"
+                >
+                  <Ico nombre="refrescar" tam={18} grosor={2.4} />
+                  Que vuelva cada semana
+                </button>
+              )}
 
               {/* Era texto suelto de 14 px: 20 px de alto en una lista
                   donde todo lo demás pasa de 48. */}
