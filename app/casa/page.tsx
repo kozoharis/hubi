@@ -7,10 +7,28 @@ import { pintaDe } from '../iconos'
 import { AMBITO, PastillaAmbito } from '../piezas'
 import Cosa from './cosa'
 import Mes from './calendario/mes'
-import Fotos from './fotos'
 import Rutinas from './rutinas'
 import Tiempo from './tiempo'
+import LoQueQuepa from './lo-que-quepa'
 import { Nada, Rotulo } from './rotulo'
+
+/*
+  ── Y LAS FOTOS YA NO ESTÁN AQUÍ ──
+
+  Estaban abajo a la izquierda, y eran el bloque que más ocupaba con
+  diferencia. Se han ido a dos sitios mejores, y las dos veces se ven
+  MÁS que antes:
+
+    · **El descanso** (`descanso.tsx`). A los tres minutos sin tocar
+      nada, llenan la pared entera. Antes eran un rectángulo de 760 px
+      en una esquina; ahora son la pantalla.
+
+    · **Notas**, que es el tablón. Ahí se ven y ahí se ponen — el botón
+      de subir una foto sigue estando, que es lo que no se podía perder.
+
+  Quitar una función para ganar sitio habría sido el error de siempre.
+  Lo que se ha quitado es su SITIO, no la función.
+*/
 
 export const dynamic = 'force-dynamic'
 
@@ -115,18 +133,67 @@ export default async function Hoy() {
   const comida = menus.find((m) => m.momento === 'comida')?.que ?? null
   const cena = menus.find((m) => m.momento === 'cena')?.que ?? null
 
-  return (
-    <div className="mt-12 xl:grid xl:grid-cols-[1.4fr_1fr] xl:items-start xl:gap-14">
-      {/* ── IZQUIERDA · lo que hay que leer ── */}
-      <div>
-        <section>
-          <Rotulo>Hoy</Rotulo>
+  /*
+    ── LO DESTACADO VA DENTRO DE HOY, NO EN SU PROPIA SECCIÓN ──
 
-          {deHoy.length === 0 ? (
-            <Nada>Hoy no hay nada apuntado.</Nada>
-          ) : (
-            <ul className="mt-6 space-y-4">
-              {deHoy.map((c) => (
+    Tenía rótulo propio, su aire de sección y sus 44 px de separación,
+    para decir algo que ya es la respuesta a «¿qué hay hoy?». Alguien
+    deja una cosa A LA VISTA precisamente porque es lo primero que hay
+    que ver — y estaba en tercer lugar, debajo de dos listas.
+
+    Ahora encabeza la lista de Hoy, con su chincheta y su color. Se
+    gana un rótulo, una separación y una decisión menos por pantalla.
+
+    Y se quita el duplicado: una tarea de hoy que además esté destacada
+    salía dos veces, una en cada bloque.
+  */
+  const destacadoIds = new Set(destacado.map((c) => c.id))
+  const deHoySinRepetir = deHoy.filter((c) => !destacadoIds.has(c.id))
+
+  return (
+    /*
+      ═══════════════════════════════════════════════════════════
+      TRES COLUMNAS, Y LA PANTALLA MANDA
+      ═══════════════════════════════════════════════════════════
+
+      Haris: *«habría que intentar comprimirlo para que no tengan que
+      desplazar hacia abajo… se ve mejor todo en una única pantalla»*.
+
+      Antes eran dos columnas **a partir de 1280 px**, y ahí estaba
+      medio problema: una tableta de 10 u 11 pulgadas en horizontal
+      mide entre 1024 y 1194, o sea que esta pantalla nunca llegaba a
+      tener dos columnas en el sitio para el que se hizo. Todo caía en
+      una sola y había que desplazarse un metro.
+
+      Ahora son tres desde 1024. Por debajo de eso se apila y se
+      desplaza, y está bien: por debajo de 1024 no hay ninguna pared —
+      quien abre esto en un teléfono acaba en `/en-la-cocina`.
+
+      ─────────────────────────────────────────────────────────
+      Y NINGUNA LISTA TIENE UN TOPE ESCRITO A MANO
+
+      La primera versión traía topes fijos —tres recados, tres
+      rutinas, ocho de la compra— calculados para 800 px de alto. Haris
+      lo tiró, con razón: *«que sea adaptable… todas las tabletas son
+      de 1920, 2K o incluso 4K»*. Un tope escrito a mano es una
+      pantalla concreta metida en el código, y resuelve la pequeña
+      estropeando la grande.
+
+      `LoQueQuepa` mide el hueco de verdad y enseña los que caben.
+      Aquí se le pasa TODO lo que hay.
+    */
+    <div className="pt-6 lg:grid lg:h-full lg:grid-cols-[1.45fr_1fr_1fr] lg:gap-7 lg:overflow-hidden">
+      {/* ══ 1 · LO QUE HAY QUE HACER ══ */}
+      <div className="flex min-h-0 flex-col">
+        <Rotulo>Hoy</Rotulo>
+
+        {destacado.length === 0 && deHoySinRepetir.length === 0 ? (
+          <Nada>Hoy no hay nada apuntado.</Nada>
+        ) : (
+          <LoQueQuepa peso={2} elResto={(n) => `y ${n} más para hoy`}>
+            {[
+              ...destacado.map((c) => <ALaVista key={c.id} cosa={c} />),
+              ...deHoySinRepetir.map((c) => (
                 /* Con `id`: lo de HOY se tacha desde la pared, que es
                    donde tachar significa algo. Lo de «Después», no. */
                 <Cosa
@@ -136,23 +203,26 @@ export default async function Hoy() {
                   cuando={c.hora ? c.hora.slice(0, 5) : ''}
                   talla="hoy"
                 />
-              ))}
-            </ul>
-          )}
-        </section>
+              )),
+            ]}
+          </LoQueQuepa>
+        )}
 
         {/*
-          ── LO DE CADA DÍA ──
+          ── LO DE CADA DÍA, PEGADO Y SEPARADO POR UNA RAYA ──
 
-          Debajo de lo de hoy y encima de lo destacado. Es lo que se
-          mira al pasar por la cocina —regar, la basura, las pastillas de
-          la mañana— y lo único de esta pantalla que además se TACHA.
+          Era una sección con su rótulo y sus 44 px de aire. Y para
+          Juan Miguel y Conchita «lo de hoy» y «lo de cada día» son la
+          misma pregunta — es literalmente el punto 18 del
+          planteamiento: para ellos todo son *cosas que tengo que
+          recordar*.
 
-          Y existía en MAPPEL desde hace tiempo sin salir por ninguna
-          parte de la pared, que es donde más falta hacía.
+          Una raya fina cuesta 1 px y dice lo mismo que una sección
+          entera: que esto es otra cosa, pero de la misma familia.
         */}
         {rutinas.length > 0 && (
-          <section className="mt-11">
+          <>
+            <div className="my-4 h-px shrink-0 bg-borde" />
             <Rutinas
               rutinas={rutinas.map((r) => ({
                 id: r.id,
@@ -162,166 +232,94 @@ export default async function Hoy() {
                 dequien: r.para ? (nombreDe.get(r.para) ?? null) : null,
               }))}
             />
-          </section>
+          </>
         )}
-
-        {/*
-          Lo destacado sale también aquí, y no solo en el Calendario. Es
-          justamente lo que no se puede quedar a dos toques de
-          distancia: si algo merece estar «a la vista», tiene que estar a
-          la vista en la pantalla que se ve el 95 % del tiempo.
-        */}
-        {destacado.length > 0 && (
-          <section className="mt-11">
-            <Rotulo>A la vista</Rotulo>
-            <ul className="mt-6 space-y-3">
-              {destacado.slice(0, 4).map((c) => {
-                const p = pintaDe(c.titulo)
-                return (
-                  <li
-                    key={c.id}
-                    className="flex items-center gap-5 rounded-[28px] border bg-superficie px-6 py-4"
-                    style={{
-                      borderColor: 'var(--t-borde)',
-                      borderLeft: `6px solid ${AMBITO[p.ambito]}`,
-                    }}
-                  >
-                    <PastillaAmbito icono={p.icono} ambito={p.ambito} tam={48} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[24px] font-extrabold leading-tight text-tinta">
-                        {c.titulo}
-                      </span>
-                      {c.fecha && (
-                        <span className="mt-0.5 block text-[17px] font-bold text-tenue">
-                          {enPalabras(c.fecha, c.hora)}
-                        </span>
-                      )}
-                    </span>
-                    <span className="shrink-0 text-apagado">
-                      <Ico nombre="chincheta" tam={22} grosor={2.1} />
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
-        )}
-
-        {/*
-          ── Y LAS FOTOS, ABAJO DEL TODO Y A LA IZQUIERDA ──
-
-          Estaban a la derecha y Haris lo vio enseguida: «muévelo para la
-          izquierda, que hay más espacio». Es verdad y es estructural, no
-          casualidad de un día tranquilo — la columna izquierda es la
-          ancha, y una foto es lo único de esta pantalla que gana de
-          verdad con el tamaño. Una lista de la compra no.
-
-          Abajo del todo a propósito. Lo de arriba es lo que hay que
-          SABER —qué hay hoy, qué está pendiente— y se lee en segundos
-          desde la puerta. Las fotos son lo que hace que uno se quede
-          mirando, y eso va después de lo útil, nunca delante.
-
-          El ancho tope de 760 px no es por estética: sin él, en la
-          columna ancha una foto en 16/10 mide 630 px de alto y empuja
-          todo lo demás fuera de la pantalla. Una pared no se desliza.
-
-          `puedeSubir`: aquí sí, porque quien mira esto ES la pantalla de
-          la cocina, y es la única cosa que puede escribir en todo MAPPEL
-          aparte de la compra.
-        */}
-        <section className="mt-11">
-          <Rotulo>En casa</Rotulo>
-          <div className="mt-6 max-w-[760px]">
-            <Fotos puedeSubir />
-          </div>
-        </section>
       </div>
 
-      {/* ── DERECHA · lo que se contesta con tres palabras ── */}
-      <div className="mt-12 xl:mt-0">
-        {/*
-          ── EL TIEMPO, LO PRIMERO DE LA DERECHA ──
+      {/* ══ 2 · LA CASA ══ */}
+      <div className="mt-9 flex min-h-0 flex-col lg:mt-0">
+        <Rotulo>Qué se come</Rotulo>
 
-          Es lo que más se mira de esta columna y lo primero que mira
-          cualquiera por la mañana en una cocina. En una casa con finca
-          no es curiosidad: es si hay que regar, si se puede tender y si
-          conviene adelantar la recogida.
-
-          Si la previsión no llega, este bloque no se pinta — ni cartel
-          de error ni hueco gris. Lo decide `tiempo.tsx`.
-        */}
-        <div className="mb-11">
-          <Tiempo />
-        </div>
-
-        <section>
-          <Rotulo>Qué se come</Rotulo>
-
-          {!comida && !cena ? (
-            <Nada>Hoy no hay menú puesto.</Nada>
-          ) : (
-            <div className="mt-6 space-y-3">
-              <Plato momento="Comida" que={comida} />
-              <Plato momento="Cena" que={cena} />
-            </div>
-          )}
-        </section>
+        {!comida && !cena ? (
+          <Nada>Hoy no hay menú puesto.</Nada>
+        ) : (
+          <div className="shrink-0 space-y-2.5">
+            <Plato momento="Comida" que={comida} />
+            <Plato momento="Cena" que={cena} />
+          </div>
+        )}
 
         {/*
           ── LA COMPRA ──
 
-          Aquí sí tiene sentido, y es la única de las cinco cosas de esta
-          pantalla que un aparato PUEDE tocar: su nivel en `compra` es
-          `anadir`, a propósito, porque una tableta colgada en la cocina
-          existe sobre todo para apuntar que se ha acabado la leche.
+          Es la única de las cosas de esta pantalla que un aparato
+          PUEDE tocar: su nivel en `compra` es `anadir`, a propósito,
+          porque una tableta colgada en la cocina existe sobre todo
+          para apuntar que se ha acabado la leche.
 
-          Hoy solo se enseña. Apuntar desde la pared es lo siguiente que
-          tiene sentido añadir, y necesita un teclado de pantalla bien
-          resuelto — que es otra conversación.
+          En una columna y no en dos: la columna del centro mide ahora
+          un tercio de la pared, y «bolsas de basura» partido en dos
+          renglones dentro de media columna no se lee mejor que en una.
         */}
         {laCompra.length > 0 && (
-          <section className="mt-11">
-            <div className="flex items-baseline gap-4">
+          <>
+            <div className="mt-9 flex shrink-0 items-baseline gap-4">
               <Rotulo>Falta en casa</Rotulo>
-              <p className="text-[19px] font-extrabold text-tinta-suave">
+              <p className="mb-3 text-[19px] font-extrabold text-tinta-suave">
                 {laCompra.length === 1 ? '1 cosa' : `${laCompra.length} cosas`}
               </p>
             </div>
 
             <div
-              className="mt-6 rounded-[28px] border bg-superficie px-6 py-5"
+              className="flex min-h-0 flex-1 flex-col rounded-[28px] border bg-superficie px-6 py-4"
               style={{ borderColor: 'var(--t-borde)', borderLeft: `6px solid ${AMBITO.oliva}` }}
             >
-              {/* En dos columnas: una lista de la compra son palabras de
-                  dos sílabas, y en una columna deja media tarjeta vacía. */}
-              <ul className="columns-2 gap-6 [&>*]:mb-1.5 [&>*]:break-inside-avoid">
-                {laCompra.slice(0, 12).map((c) => (
-                  <li
+              <LoQueQuepa hueco={4}>
+                {laCompra.map((c) => (
+                  <p
                     key={c.id}
-                    className="flex items-start gap-2.5 text-[20px] font-extrabold leading-snug text-tinta"
+                    className="flex items-start gap-2.5 text-[21px] font-extrabold leading-snug text-tinta"
                   >
                     <span
-                      className="mt-[9px] block h-[7px] w-[7px] shrink-0 rounded-full"
+                      className="mt-[10px] block h-[7px] w-[7px] shrink-0 rounded-full"
                       style={{ background: AMBITO.oliva }}
                     />
                     <span className="min-w-0">{c.que}</span>
-                  </li>
+                  </p>
                 ))}
-              </ul>
-
-              {laCompra.length > 12 && (
-                <p className="mt-3 text-[17px] font-bold text-tenue">
-                  y {laCompra.length - 12} más
-                </p>
-              )}
+              </LoQueQuepa>
             </div>
-          </section>
+          </>
         )}
+      </div>
+
+      {/* ══ 3 · LO QUE VIENE ══ */}
+      {/*
+        `pb-24` en grande y no en las otras dos: el micrófono está
+        fijo abajo a la derecha, o sea encima de esta columna. Sin ese
+        hueco se comería las dos últimas filas del mes.
+      */}
+      <div className="mt-9 flex min-h-0 flex-col lg:mt-0 lg:pb-24">
+        {/*
+          ── EL TIEMPO ──
+
+          Lo primero que mira cualquiera por la mañana en una cocina. Y
+          en una casa con finca no es curiosidad: es si hay que regar,
+          si se puede tender y si conviene adelantar la recogida.
+
+          Si la previsión no llega, este bloque no se pinta — ni cartel
+          de error ni hueco gris. Lo decide `tiempo.tsx`.
+        */}
+        <div className="shrink-0">
+          <Tiempo />
+        </div>
 
         {luego.length > 0 && (
-          <section className="mt-11">
-            <Rotulo>Después</Rotulo>
-            <ul className="mt-6 space-y-3">
+          <>
+            <div className="mt-9 shrink-0">
+              <Rotulo>Después</Rotulo>
+            </div>
+            <LoQueQuepa>
               {luego.map((c) => (
                 <Cosa
                   key={c.id}
@@ -330,29 +328,63 @@ export default async function Hoy() {
                   talla="columna"
                 />
               ))}
-            </ul>
-          </section>
+            </LoQueQuepa>
+          </>
         )}
 
         {/*
           ── EL MES ──
 
-          Aquí abajo a la derecha, la misma rejilla que en el Calendario
-          y la misma pieza: hoy en círculo, un punto en los días que
-          tienen algo, y la semana en curso teñida.
+          Abajo del todo, la misma rejilla que en el Calendario: hoy en
+          círculo, un punto en los días que tienen algo, y la semana en
+          curso teñida.
 
-          No es repetir el Calendario: es la pregunta que ninguna de las
-          listas de esta pantalla contesta — «¿en qué parte del mes
+          No es repetir el Calendario: es la pregunta que ninguna de
+          las listas de esta pantalla contesta — «¿en qué parte del mes
           estamos?» y «el día 4, ¿qué día cae?». Sin un mes delante eso
           se cuenta con los dedos.
         */}
-        <section className="mt-11">
+        <div className="mt-9 shrink-0">
           <Rotulo>El mes</Rotulo>
-          <div className="mt-6">
-            <Mes hoy={hoy} conAlgo={conAlgo} lunes={elLunesDe(hoy)} />
-          </div>
-        </section>
+          <Mes hoy={hoy} conAlgo={conAlgo} lunes={elLunesDe(hoy)} />
+        </div>
       </div>
+    </div>
+  )
+}
+
+/*
+  Lo que alguien dejó A LA VISTA, ahora en lo alto de Hoy.
+
+  Se distingue por tres cosas y ninguna es un rótulo: la pastilla de su
+  ámbito a la izquierda, el filo de color, y la chincheta. Con eso basta
+  para que se lea distinto sin gastar una sección entera.
+*/
+function ALaVista({
+  cosa,
+}: {
+  cosa: { id: string; titulo: string; fecha: string | null; hora: string | null }
+}) {
+  const p = pintaDe(cosa.titulo)
+  return (
+    <div
+      className="flex items-center gap-5 rounded-[28px] border bg-superficie px-6 py-3.5"
+      style={{ borderColor: 'var(--t-borde)', borderLeft: `6px solid ${AMBITO[p.ambito]}` }}
+    >
+      <PastillaAmbito icono={p.icono} ambito={p.ambito} tam={48} />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[24px] font-extrabold leading-tight text-tinta">
+          {cosa.titulo}
+        </span>
+        {cosa.fecha && (
+          <span className="mt-0.5 block text-[17px] font-bold text-tenue">
+            {enPalabras(cosa.fecha, cosa.hora)}
+          </span>
+        )}
+      </span>
+      <span className="shrink-0 text-apagado">
+        <Ico nombre="chincheta" tam={22} grosor={2.1} />
+      </span>
     </div>
   )
 }

@@ -8,7 +8,9 @@ import type { ReactNode } from 'react'
 */
 export function Rotulo({ children }: { children: ReactNode }) {
   return (
-    <h2 className="text-[20px] font-extrabold uppercase tracking-[0.2em] text-tenue">{children}</h2>
+    <h2 className="mb-3 shrink-0 text-[20px] font-extrabold uppercase tracking-[0.2em] text-tenue">
+      {children}
+    </h2>
   )
 }
 
@@ -21,8 +23,12 @@ export function Rotulo({ children }: { children: ReactNode }) {
 */
 export function Nada({ children }: { children: ReactNode }) {
   return (
-    <div className="mt-6 rounded-[28px] border border-borde bg-superficie px-8 py-10">
-      <p className="text-[25px] font-extrabold leading-snug text-tinta-suave">{children}</p>
+    /* Era `py-10` con `mt-6`. Cuarenta píxeles de aire y otros
+       veinticuatro encima para decir que no hay nada: en una pared que
+       tiene que caber entera, el hueco de lo que NO existe no puede
+       medir lo mismo que una tarjeta con algo dentro. */
+    <div className="shrink-0 rounded-[28px] border border-borde bg-superficie px-7 py-6">
+      <p className="text-[23px] font-extrabold leading-snug text-tinta-suave">{children}</p>
     </div>
   )
 }

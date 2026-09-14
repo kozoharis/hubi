@@ -2,6 +2,7 @@ import { laPared } from '@/lib/pared'
 import { AMBITO } from '../../piezas'
 import { Nada, Rotulo } from '../rotulo'
 import Apuntar from './apuntar'
+import Fotos from '../fotos'
 
 export const dynamic = 'force-dynamic'
 
@@ -142,6 +143,34 @@ export default async function Notas() {
         que alguien escriba cualquier cosa al pasar.
       */}
       {puedeDejarNotas && <Apuntar />}
+
+      {/*
+        ══════════════════════════════════════════════════════════
+        LAS FOTOS, QUE AHORA VIVEN AQUÍ
+        ══════════════════════════════════════════════════════════
+
+        Estaban en Hoy y se fueron de allí para que esa pantalla
+        cupiera entera sin desplazarse. Podrían haberse quitado y
+        punto; en vez de eso tienen dos casas, y en las dos se ven más
+        que antes:
+
+          · A pantalla completa cuando la pared descansa
+            (`descanso.tsx`), que es cuando de verdad se miran.
+          · Y aquí, en el corcho, que es donde ya estaban las cosas
+            que la familia deja puestas para todos.
+
+        Aquí abajo y no arriba, por lo mismo que el campo de escribir:
+        el corcho se lee primero. Y con `puedeSubir`, porque **poner
+        una foto desde la cocina no se podía perder** — es una de las
+        tres cosas que esta pantalla sabe escribir, junto con la compra
+        y las notas.
+      */}
+      <div className="mt-12">
+        <Rotulo>En casa</Rotulo>
+        <div className="max-w-[760px]">
+          <Fotos puedeSubir />
+        </div>
+      </div>
     </section>
   )
 }

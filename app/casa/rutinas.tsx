@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Ico } from '../iconos'
 import { AMBITO } from '../piezas'
+import LoQueQuepa from './lo-que-quepa'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -97,8 +98,18 @@ export default function Rutinas({ rutinas }: { rutinas: RutinaEnLaPared[] }) {
   const quedan = locales.filter((r) => !r.hecha).length
 
   return (
-    <>
-      <div className="flex items-baseline gap-4">
+    /*
+      Una columna de flex, y no un fragmento suelto.
+
+      Desde que la pared cabe en una pantalla (`layout.tsx`), esta lista
+      convive con la de Hoy dentro de la misma columna y las dos se
+      reparten el hueco que sobre. Para eso tiene que haber un elemento
+      que pueda encoger: `min-h-0` es lo que se lo permite, y sin él un
+      hijo de flex no baja de lo que mida su contenido — o sea que el
+      recorte de arriba no serviría de nada.
+    */
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-baseline gap-4">
         <h2 className="text-[20px] font-extrabold uppercase tracking-[0.2em] text-tenue">
           Lo de cada día
         </h2>
@@ -108,14 +119,16 @@ export default function Rutinas({ rutinas }: { rutinas: RutinaEnLaPared[] }) {
       </div>
 
       {fallo && (
-        <p className="mt-3 text-[18px] font-bold" style={{ color: 'var(--t-alerta)' }}>
+        <p className="mt-3 shrink-0 text-[18px] font-bold" style={{ color: 'var(--t-alerta)' }}>
           {fallo}
         </p>
       )}
 
-      <ul className="mt-6 space-y-3">
+      <div className="h-3 shrink-0" />
+
+      <LoQueQuepa elResto={(n) => `y ${n} más de cada día`}>
         {locales.map((r) => (
-          <li key={r.id}>
+          <div key={r.id}>
             {/*
               Se toca la fila entera, no una casilla. Se hace de pie y
               muchas veces con una mano ocupada: el sitio donde hay que
@@ -160,9 +173,9 @@ export default function Rutinas({ rutinas }: { rutinas: RutinaEnLaPared[] }) {
                 </span>
               </span>
             </button>
-          </li>
+          </div>
         ))}
-      </ul>
-    </>
+      </LoQueQuepa>
+    </div>
   )
 }

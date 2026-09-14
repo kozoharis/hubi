@@ -48,7 +48,25 @@ type Foto = { id: string; url: string; pie: string | null }
 
 const CADA = 20_000
 
-export default function Fotos({ puedeSubir = false }: { puedeSubir?: boolean }) {
+export default function Fotos({
+  puedeSubir = false,
+  /*
+    ── A PANTALLA COMPLETA ──
+
+    El descanso de la pared (`descanso.tsx`). Misma pieza y no una
+    copia: el carrusel, el fundido de dos capas, el refresco de las
+    direcciones firmadas y la regla de que de noche no cambia son
+    exactamente los mismos. Dos copias de esto serían dos sitios donde
+    arreglar el parpadeo la próxima vez.
+
+    Lo único que cambia es el marco: sin tarjeta, sin borde, sin
+    proporción fija — la foto llena lo que haya.
+  */
+  pantallaCompleta = false,
+}: {
+  puedeSubir?: boolean
+  pantallaCompleta?: boolean
+}) {
   const [fotos, setFotos] = useState<Foto[] | null>(null)
   const [cual, setCual] = useState(0)
   const [encima, setEncima] = useState(true)
@@ -102,6 +120,11 @@ export default function Fotos({ puedeSubir = false }: { puedeSubir?: boolean }) 
      una pared es peor que no tener tablón. */
   if (fotos === null) return null
 
+  /* A pantalla completa y sin fotos no se pinta NADA, ni siquiera la
+     invitación a poner la primera: el descanso decide por su cuenta si
+     tiene sentido aparecer, y sin fotos no lo tiene. */
+  if (fotos.length === 0 && pantallaCompleta) return null
+
   if (fotos.length === 0) {
     /* Sin fotos, solo tiene sentido enseñar algo si desde aquí se puede
        poner la primera. Si no, esta esquina no existe. */
@@ -126,13 +149,21 @@ export default function Fotos({ puedeSubir = false }: { puedeSubir?: boolean }) 
   const actual = fotos[cual]
 
   return (
-    <div className="relative overflow-hidden rounded-[28px] border border-borde bg-superficie">
+    <div
+      className={
+        pantallaCompleta
+          ? 'relative h-full w-full overflow-hidden bg-black'
+          : 'relative overflow-hidden rounded-[28px] border border-borde bg-superficie'
+      }
+    >
       {/*
         16 por 10 y no libre: siete fotos de alturas distintas harían
         saltar media pantalla cada veinte segundos. El marco manda y la
         foto se recorta desde el centro, que es donde está la gente.
+
+        A pantalla completa manda la pantalla, que ya tiene su forma.
       */}
-      <div className="relative aspect-[16/10] w-full">
+      <div className={pantallaCompleta ? 'relative h-full w-full' : 'relative aspect-[16/10] w-full'}>
         {[anterior, actual].map((f, i) => {
           /* La de abajo y la de encima se turnan para que el fundido
              cruce siempre en el mismo sentido. */
@@ -153,15 +184,25 @@ export default function Fotos({ puedeSubir = false }: { puedeSubir?: boolean }) 
           /* El pie, sobre un degradado y no sobre la foto a pelo: en una
              foto de playa el texto blanco desaparece. */
           <div
-            className="absolute inset-x-0 bottom-0 px-7 pb-5 pt-16"
+            className={
+              pantallaCompleta
+                ? 'absolute inset-x-0 bottom-0 px-14 pb-12 pt-32'
+                : 'absolute inset-x-0 bottom-0 px-7 pb-5 pt-16'
+            }
             style={{ background: 'linear-gradient(to top, rgba(0,0,0,.62), transparent)' }}
           >
-            <p className="text-[22px] font-extrabold leading-snug text-white">{actual.pie}</p>
+            <p
+              className={`font-extrabold leading-snug text-white ${
+                pantallaCompleta ? 'text-[32px]' : 'text-[22px]'
+              }`}
+            >
+              {actual.pie}
+            </p>
           </div>
         )}
       </div>
 
-      {puedeSubir && (
+      {puedeSubir && !pantallaCompleta && (
         <div className="flex justify-end px-5 py-4">
           <SubirFoto alTerminar={traer} />
         </div>

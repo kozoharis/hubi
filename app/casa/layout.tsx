@@ -4,6 +4,7 @@ import Reloj from './reloj'
 import Pestanas from './pestanas'
 import VuelveAHoy from './vuelve-a-hoy'
 import Microfono from './microfono'
+import Descanso from './descanso'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,10 +82,33 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
   const { nombre } = await laPared()
 
   return (
-    <div className="min-h-screen bg-fondo px-10 py-8 xl:px-14 xl:py-10" id="la-pared">
+    <>
+    {/*
+      ── LA PARED MIDE LA PANTALLA, NI UN PÍXEL MÁS ──
+
+      Era `min-h-screen`: la pared medía lo que midiera su contenido y
+      crecía hacia abajo. Con nueve bloques en Hoy eso significaba
+      desplazarse, y una pared colgada no se desplaza — nadie va a
+      arrastrar una lista para ver si hay algo debajo.
+
+      Ahora mide exactamente la pantalla y el sobrante se recorta. La
+      diferencia no es que ya no HAGA FALTA desplazar: es que **no se
+      puede**. Si algo no cabe se verá que no cabe, en vez de esconderse
+      bajo el borde durante meses sin que nadie lo eche en falta.
+
+      El armazón es una columna: cabecera arriba con su alto, y debajo
+      el hueco que sobre. Las cinco pantallas reciben ese hueco y cada
+      una decide qué hacer con él — Hoy lo llena sin desbordar, y las
+      otras cuatro se desplazan dentro, que ahí sí tiene sentido porque
+      son listas que se van a mirar de cerca.
+    */}
+    <div
+      className="flex h-screen flex-col overflow-hidden bg-fondo px-10 py-8 xl:px-14 xl:py-10"
+      id="la-pared"
+    >
       <VuelveAHoy />
 
-      <header className="flex items-end justify-between gap-10">
+      <header className="flex shrink-0 items-end justify-between gap-10">
         {/* Izquierda: la hora y la fecha, y nada más. */}
         <div className="min-w-0">
           <Reloj />
@@ -110,7 +134,10 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
         </div>
       </header>
 
-      {children}
+      {/* El hueco que queda. `min-h-0` es imprescindible: sin él, un
+          hijo de flex no encoge por debajo de su contenido y el recorte
+          de arriba no sirve de nada. */}
+      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
 
       {/*
         ── EL MICRÓFONO, EN EL ARMAZÓN Y NO EN CADA PANTALLA ──
@@ -126,5 +153,18 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
       */}
       <Microfono />
     </div>
+
+    {/*
+      ── Y EL DESCANSO, FUERA DE `#la-pared` ──
+
+      A propósito. `reloj.tsx` atenúa `#la-pared` al 45 % por la noche,
+      y el descanso ya se apaga por su cuenta al 28 %. Metido dentro,
+      las dos cosas se multiplicarían: 0,45 × 0,28 es negro.
+
+      Cada uno apaga lo suyo, y el de las fotos sabe mejor cuánto
+      necesita — es lo único que ocupa la pantalla entera.
+    */}
+    <Descanso />
+    </>
   )
 }
