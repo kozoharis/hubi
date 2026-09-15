@@ -9,6 +9,7 @@ import { decir, callar } from './decir'
 import { api } from '@/lib/api'
 import { aWav } from '@/lib/a-wav'
 import { NOCHE, DEGRADADO } from '@/lib/voz-mappel'
+import { FalloDicho, elMotivo, loQueSePuedeDecir } from '@/lib/fallo'
 
 type Estado = 'listo' | 'grabando' | 'pensando' | 'buscando' | 'entendido' | 'guardando' | 'hecho'
 
@@ -415,14 +416,14 @@ export default function Grabar({
         que decía "hecho" sin hacer nada nos costó una tarde entera.
       */
       if (oido.accion === 'borrar' || oido.accion === 'cambiar') {
-        if (!elegida) throw new Error('Elige primero cuál.')
+        if (!elegida) throw new FalloDicho('Elige primero cuál.')
 
         const r = await fetch(api(`/api/recordatorios/${elegida}`), {
           method: oido.accion === 'borrar' ? 'DELETE' : 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: oido.accion === 'borrar' ? undefined : JSON.stringify(oido.cambios ?? {}),
         })
-        if (!r.ok) throw new Error((await r.json()).error)
+        if (!r.ok) await elMotivo(r, oido.accion === 'borrar' ? 'No se ha podido borrar.' : 'No se ha podido cambiar.')
 
         decir(oido.accion === 'borrar' ? 'Borrado.' : 'Cambiado.')
         setEstado('hecho')
@@ -469,8 +470,8 @@ export default function Grabar({
             lista_id: listaId,
           }),
         })
-        const respuesta = await r.json()
-        if (!r.ok) throw new Error(respuesta.error)
+        const respuesta = await r.json().catch(() => ({}))
+        if (!r.ok) throw new FalloDicho(respuesta?.error || 'No se ha podido apuntar en la compra.')
 
         /* Si algo se ha caído por no ser un producto, SE DICE. Que
            alguien dicte cinco cosas, se apunten tres y no se entere es
@@ -577,7 +578,7 @@ export default function Grabar({
           }),
         })
         const d = await r.json().catch(() => ({}))
-        if (!r.ok || d?.bien !== true) throw new Error(d?.error ?? 'No se ha podido poner la nota.')
+        if (!r.ok || d?.bien !== true) throw new FalloDicho(d?.error ?? 'No se ha podido poner la nota.')
 
         decir('Nota puesta.')
         setEstado('hecho')
@@ -607,8 +608,8 @@ export default function Grabar({
             })),
           }),
         })
-        const respuesta = await r.json()
-        if (!r.ok) throw new Error(respuesta.error)
+        const respuesta = await r.json().catch(() => ({}))
+        if (!r.ok) throw new FalloDicho(respuesta?.error || 'No se han podido apuntar las tareas.')
 
         /* Si algo se ha caído por no ser un producto, SE DICE. Que
            alguien dicte cinco cosas, se apunten tres y no se entere es
@@ -635,7 +636,7 @@ export default function Grabar({
             nota: oido.nota,
           }),
         })
-        if (!r.ok) throw new Error((await r.json()).error)
+        if (!r.ok) await elMotivo(r, 'No se ha podido guardar.')
       }
       decir(
         oido.accion === 'recordatorio'
@@ -646,7 +647,7 @@ export default function Grabar({
       )
       setEstado('hecho')
     } catch (e) {
-      setAviso(e instanceof Error ? e.message : 'No se ha podido guardar.')
+      setAviso(loQueSePuedeDecir(e, 'No se ha podido guardar.'))
       setEstado('entendido')
     }
   }

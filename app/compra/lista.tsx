@@ -8,6 +8,7 @@ import { Ico } from '../iconos'
 import { Aviso } from '../piezas'
 import Programar from './programar'
 import { api } from '@/lib/api'
+import { FalloDicho, elMotivo, loQueSePuedeDecir } from '@/lib/fallo'
 
 type Cosa = {
   id: string
@@ -368,7 +369,7 @@ export default function Pantalla({
         apuntadas?: { id: string; que: string; cantidad: string | null; lista_id: string | null }[]
       } | null
 
-      if (!r.ok || d?.ok !== true) throw new Error(d?.error ?? 'No se ha podido apuntar.')
+      if (!r.ok || d?.ok !== true) throw new FalloDicho(d?.error ?? 'No se ha podido apuntar.')
 
       /*
         SE CAMBIA EL PROVISIONAL POR EL DE VERDAD.
@@ -392,7 +393,7 @@ export default function Pantalla({
       empezar(() => router.refresh())
     } catch (e) {
       setCosas((c) => c.filter((x) => x.id !== provisional.id))
-      setAviso(e instanceof Error ? e.message : 'No se ha podido apuntar.')
+      setAviso(loQueSePuedeDecir(e, 'No se ha podido apuntar.'))
     }
   }
 
@@ -406,7 +407,7 @@ export default function Pantalla({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comprado: !antes }),
       })
-      if (!r.ok) throw new Error((await r.json()).error)
+      if (!r.ok) await elMotivo(r, 'No se ha podido cambiar.')
       /* Se vuelve a leer para que el otro móvil y éste digan lo mismo.
          La huella se limpia primero: si no, el efecto vería la misma
          de antes y descartaría la recarga. */
@@ -414,7 +415,7 @@ export default function Pantalla({
       empezar(() => router.refresh())
     } catch (e) {
       setCosas((c) => c.map((x) => (x.id === cosa.id ? { ...x, comprado: antes } : x)))
-      setAviso(e instanceof Error ? e.message : 'No se ha podido cambiar.')
+      setAviso(loQueSePuedeDecir(e, 'No se ha podido cambiar.'))
     }
   }
 
@@ -424,12 +425,12 @@ export default function Pantalla({
 
     try {
       const r = await fetch(api(`/api/compra/${cosa.id}`), { method: 'DELETE' })
-      if (!r.ok) throw new Error((await r.json()).error)
+      if (!r.ok) await elMotivo(r, 'No se ha podido quitar.')
       ultimaHuella.current = ''
       empezar(() => router.refresh())
     } catch (e) {
       setCosas(copia)
-      setAviso(e instanceof Error ? e.message : 'No se ha podido quitar.')
+      setAviso(loQueSePuedeDecir(e, 'No se ha podido quitar.'))
     }
   }
 
@@ -458,7 +459,7 @@ export default function Pantalla({
         cerrada?: { id: string; nombre: string } | null
       } | null
 
-      if (!r.ok || d?.ok !== true) throw new Error(d?.error ?? 'No se ha podido guardar.')
+      if (!r.ok || d?.ok !== true) throw new FalloDicho(d?.error ?? 'No se ha podido guardar.')
 
       setCosas((c) => c.filter((x) => !x.comprado))
       /* Se recuerda cuál se acaba de cerrar para ofrecer el ticket
@@ -468,7 +469,7 @@ export default function Pantalla({
       ultimaHuella.current = ''
       empezar(() => router.refresh())
     } catch (e) {
-      setAviso(e instanceof Error ? e.message : 'No se ha podido guardar.')
+      setAviso(loQueSePuedeDecir(e, 'No se ha podido guardar.'))
     }
     setCerrando(false)
   }
@@ -491,13 +492,13 @@ export default function Pantalla({
         aviso?: string
       } | null
 
-      if (!r.ok || d?.ok !== true) throw new Error(d?.error ?? 'No se ha podido recuperar.')
+      if (!r.ok || d?.ok !== true) throw new FalloDicho(d?.error ?? 'No se ha podido recuperar.')
 
       if (d.aviso) setAviso(d.aviso)
       ultimaHuella.current = ''
       empezar(() => router.refresh())
     } catch (e) {
-      setAviso(e instanceof Error ? e.message : 'No se ha podido recuperar.')
+      setAviso(loQueSePuedeDecir(e, 'No se ha podido recuperar.'))
     }
     setRecuperando(null)
   }

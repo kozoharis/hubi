@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useIr } from '@/app/enlace'
 import { Aviso, BotonDestructivo, BotonSecundario } from '../../piezas'
 import { api } from '@/lib/api'
+import { elMotivo, loQueSePuedeDecir } from '@/lib/fallo'
 
 /*
   Cambiar o borrar una tarea que ya existe.
@@ -103,12 +104,12 @@ export default function Editar({
           aviso_previo: fecha ? avisoPrevio : 'sin_aviso',
         }),
       })
-      if (!r.ok) throw new Error((await r.json()).error)
+      if (!r.ok) await elMotivo(r, 'No se ha podido guardar.')
 
       setAbierto(false)
       router.refresh()
     } catch (e) {
-      setAviso(e instanceof Error ? e.message : 'No se ha podido guardar.')
+      setAviso(loQueSePuedeDecir(e, 'No se ha podido guardar.'))
     }
     setGuardando(false)
   }
@@ -117,11 +118,11 @@ export default function Editar({
     setBorrando(true)
     try {
       const r = await fetch(api(`/api/recordatorios/${id}`), { method: 'DELETE' })
-      if (!r.ok) throw new Error((await r.json()).error)
+      if (!r.ok) await elMotivo(r, 'No se ha podido borrar.')
       router.push('/agenda')
       router.refresh()
     } catch (e) {
-      setAviso(e instanceof Error ? e.message : 'No se ha podido borrar.')
+      setAviso(loQueSePuedeDecir(e, 'No se ha podido borrar.'))
       setBorrando(false)
       setSeguro(false)
     }
