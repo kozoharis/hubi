@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { DEGRADADO } from '@/lib/voz-mappel'
+import { Palabra } from './iconos'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -58,8 +59,12 @@ function esDeNoche() {
   try {
     const puesto = document.documentElement.dataset.tema
     if (puesto === 'oscuro') return true
-    if (puesto === 'claro') return false
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
+    /* Y sólo se mira el teléfono si la persona ha PEDIDO que se mire.
+       Sin atributo, mappel es claro: la regla entera está en
+       `globals.css`, y aquí hay que seguirla o el arranque saldría de
+       un color y la pantalla de debajo de otro. */
+    if (puesto === 'sistema') return window.matchMedia('(prefers-color-scheme: dark)').matches
+    return false
   } catch {
     return false
   }
@@ -152,13 +157,9 @@ export default function Arranque() {
         dejado de hacer falta: ya no es texto con una tipografía
         prestada, es el trazado del logotipo.
       */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={oscuro ? '/mappel-palabra-clara.png' : '/mappel-palabra.png'}
-        alt="mappel"
-        className="mappel-palabra mt-[26px] block"
-        style={{ height: 17, width: 'auto' }}
-      />
+      <span className="mt-[26px] block">
+        <Palabra alto={17} />
+      </span>
     </div>
   )
 }

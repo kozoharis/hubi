@@ -125,7 +125,6 @@ export default function Rail() {
       <div className="flex items-center gap-3 px-3 pb-6">
         <Logo tam={26} />
         <Palabra alto={16} />
-        <span className="sr-only">mappel</span>
       </div>
 
       <div className="flex flex-col gap-1">

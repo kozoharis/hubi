@@ -360,9 +360,28 @@ export function Logo({ tam = 30, oscuro = false }: { tam?: number; oscuro?: bool
    lleva su propio trazado, geométrico y redondo, y Plus Jakarta Sans
    no lo es.
 
-   Así que la palabra pasa a ser el dibujo entregado. Dos versiones y
-   solo dos, porque solo hay dos fondos: tinta sobre el papel cálido y
-   papel sobre el marino de la puerta.
+   Así que la palabra pasa a ser el dibujo entregado.
+
+   ─────────────────────────────────────────────────────────────
+   ⚠️  Y NO ES UNA IMAGEN: ES UNA MÁSCARA
+
+   Primero fueron dos archivos —uno con la tinta dentro y otro con el
+   papel— y quien la ponía elegía cuál con un `clara`. Duró un día: en
+   la cabecera de Inicio se puso el de tinta, y en modo oscuro la
+   palabra DESAPARECIÓ. Negro sobre marino. Se veía el símbolo, que es
+   un degradado y se lee sobre cualquier cosa, y al lado un hueco.
+
+   Ese fallo no se arregla acordándose de pasar `clara`, porque el
+   mismo sitio necesita las dos según el modo, y nadie va a mirar cada
+   cabecera en oscuro cada vez que toca una pantalla.
+
+   Así que el dibujo va de MÁSCARA y el color lo pone debajo: por
+   defecto `--t-tinta`, que ya cambia con el modo. Un solo archivo, y
+   en cualquier sitio donde se ponga sale del color que le toca sin
+   que nadie decida nada.
+
+   `color` es para el único caso que no sigue al modo: la puerta, que
+   es marino esté el teléfono como esté.
 
    ─────────────────────────────────────────────────────────────
    EL ALTO VA EN `em`, Y ES A PROPÓSITO
@@ -376,15 +395,40 @@ export function Logo({ tam = 30, oscuro = false }: { tam?: number; oscuro?: bool
    crece con todo lo demás. El número que se pasa son los píxeles que
    medía antes; aquí se divide entre 16 —el tamaño base— y ya está.
 
-   Y lleva `sr-only` al lado donde hacía de título, para que quien
-   navegue con lector de pantalla siga oyendo el nombre. */
-export function Palabra({ alto = 22, clara = false }: { alto?: number; clara?: boolean }) {
+   Y lleva `aria-label`, para que quien navegue con lector de pantalla
+   siga oyendo el nombre. */
+const MASCARA = {
+  WebkitMaskImage: 'url(/mappel-palabra.png)',
+  maskImage: 'url(/mappel-palabra.png)',
+  WebkitMaskRepeat: 'no-repeat',
+  maskRepeat: 'no-repeat',
+  WebkitMaskPosition: 'center',
+  maskPosition: 'center',
+  WebkitMaskSize: 'contain',
+  maskSize: 'contain',
+} as const
+
+export function Palabra({
+  alto = 22,
+  color = 'var(--t-tinta)',
+}: {
+  alto?: number
+  color?: string
+}) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={clara ? '/mappel-palabra-clara.png' : '/mappel-palabra.png'}
-      alt="mappel"
-      style={{ height: `${alto / 16}em`, width: 'auto', display: 'block' }}
+    <span
+      role="img"
+      aria-label="mappel"
+      style={{
+        ...MASCARA,
+        display: 'block',
+        height: `${alto / 16}em`,
+        /* El ancho sale del propio dibujo: 1000×261. Con `aspect-ratio`
+           la caja mide lo que mediría la imagen, que es lo que hace
+           falta cuando lo que se pinta es un fondo y no un `<img>`. */
+        aspectRatio: '1000 / 261',
+        background: color,
+      }}
     />
   )
 }

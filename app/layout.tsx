@@ -86,13 +86,20 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: [
-    /* Es el `--t-fondo` de cada modo, y tiene que ir a la par: si
-       aquí se queda el gris viejo, la barra de arriba del iPhone sale
-       de otro color que la pantalla y se ve la juntura. */
-    { media: '(prefers-color-scheme: light)', color: '#F7F5F1' },
-    { media: '(prefers-color-scheme: dark)', color: '#0B1220' },
-  ],
+  /*
+    Uno solo, y es el papel.
+
+    Eran dos, por `prefers-color-scheme`, y con el claro por defecto
+    eso deja la franja de arriba del iPhone en azul marino encima de
+    una aplicación de papel cálido: una costura horizontal justo
+    debajo del reloj, en todas las pantallas y para todo el mundo que
+    lleve el teléfono en oscuro.
+
+    Quien elija el oscuro en Ajustes no se queda sin ella: `ColorDeBarra`
+    la cambia en marcha desde cada pantalla que lo necesita, que es
+    como lo hace ya la puerta con su marino.
+  */
+  themeColor: '#F7F5F1',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -249,13 +256,18 @@ export default async function RootLayout({
           un instante en claro y saltaría a oscuro: un fogonazo blanco
           en la cara, de noche, es exactamente lo que no queremos.
 
+          Tres valores, y ninguno es el que tenga el teléfono por su
+          cuenta: `claro`, `oscuro` y `sistema`. Sin nada guardado no se
+          pone atributo, y sin atributo mappel es CLARO — la regla está
+          explicada en `globals.css`.
+
           Y si el servidor ya ha puesto un tema —la pantalla de la
           pared—, ése manda: el guardado en la tableta no lo pisa.
         */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{if(!document.documentElement.dataset.tema){var t=localStorage.getItem('mappel-tema');if(t==='claro'||t==='oscuro')document.documentElement.dataset.tema=t}}catch(e){}",
+              "try{if(!document.documentElement.dataset.tema){var t=localStorage.getItem('mappel-tema');if(t==='claro'||t==='oscuro'||t==='sistema')document.documentElement.dataset.tema=t}}catch(e){}",
           }}
         />
 

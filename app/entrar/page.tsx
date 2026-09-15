@@ -239,8 +239,10 @@ export default function Entrar() {
           </span>
         </div>
         <h1 className="mt-5 flex justify-center">
-          <Palabra alto={32} clara />
-          <span className="sr-only">mappel</span>
+          {/* El único `color` a mano de toda la aplicación: la puerta
+              es marino esté el teléfono en claro o en oscuro, así que
+              aquí la palabra no puede seguir a `--t-tinta`. */}
+          <Palabra alto={32} color="var(--t-fondo-claro, #F7F5F1)" />
         </h1>
         <p className="mt-1.5 text-center text-[16.5px] font-semibold text-apagado">
           Todo lo importante, en un mismo lugar.

@@ -202,10 +202,29 @@
 }
 
 /* ── Modo oscuro ───────────────────────────────────────── */
-/* Se define una vez y se aplica en dos sitios: cuando lo pide el
-   teléfono y cuando lo pide la persona desde Ajustes. */
+/*
+  ⚠️  mappel ES CLARO POR DEFECTO, Y ESO ES UNA DECISIÓN DE PRODUCTO
+
+  Hasta septiembre de 2026 esto era `:root:not([data-tema="claro"])`,
+  o sea: si el teléfono está en oscuro, mappel también. Y como casi
+  todo el mundo lleva el teléfono en oscuro, casi todo el mundo veía
+  mappel en azul marino sin haberlo pedido nunca.
+
+  El planteamiento lo dice sin matices —«no quiero interfaz negra»— y
+  lo que se cuelga en una cocina ya lo hace: `layout.tsx` fuerza
+  `claro` en la pared desde el principio. Lo raro era que el móvil no.
+
+  Ahora hay tres estados y el que manda es el de la persona:
+
+      sin atributo        CLARO. Es lo que ve quien no ha elegido.
+      data-tema="oscuro"  oscuro, porque lo ha pedido en Ajustes.
+      data-tema="sistema" lo que diga el teléfono, también pedido.
+
+  El oscuro se define una vez y se aplica en esos dos sitios: el que
+  lo elige a mano y el que elige seguir al teléfono.
+*/
 @media (prefers-color-scheme: dark) {
-  :root:not([data-tema="claro"]) {
+  :root[data-tema="sistema"] {
     --t-fondo:        #0B1220;
     --t-superficie:   #182133;
     --t-borde:        #253148;

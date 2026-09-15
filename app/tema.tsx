@@ -10,6 +10,18 @@ import { Ico, type Icono } from './iconos'
   preferencia del aparato, no de la persona. Juan Miguel puede querer
   el móvil en oscuro por la noche y el ordenador en claro de día, y
   guardarlo en la cuenta le impediría tener las dos cosas.
+
+  ─────────────────────────────────────────────────────────────
+  EL DE SERIE ES «CLARO», Y «EL DEL TELÉFONO» YA NO LO ES
+
+  Antes, no elegir nada quería decir «el del teléfono», y eso dejaba
+  mappel en azul marino a casi todo el mundo sin haberlo pedido. Ahora
+  no elegir nada quiere decir CLARO, y seguir al teléfono es una de
+  las tres opciones —hay que pedirla, y se guarda como `sistema`.
+
+  Que también cambia lo que se guarda: antes «El del teléfono» BORRABA
+  la preferencia, porque era lo mismo que no haber elegido. Ahora son
+  cosas distintas y se guarda igual que las otras dos.
 */
 
 export type Tema = 'claro' | 'oscuro' | 'sistema'
@@ -17,23 +29,26 @@ export type Tema = 'claro' | 'oscuro' | 'sistema'
 export const LLAVE = 'mappel-tema'
 
 const OPCIONES: { valor: Tema; texto: string; pie: string; icono: Icono }[] = [
-  { valor: 'claro', texto: 'Claro', pie: 'Fondo blanco', icono: 'sol' },
+  { valor: 'claro', texto: 'Claro', pie: 'El de siempre', icono: 'sol' },
   { valor: 'oscuro', texto: 'Oscuro', pie: 'Fondo azul marino', icono: 'luna' },
   { valor: 'sistema', texto: 'El del teléfono', pie: 'Cambia solo', icono: 'contraste' },
 ]
 
 export default function SelectorTema() {
-  const [tema, setTema] = useState<Tema>('sistema')
+  const [tema, setTema] = useState<Tema>('claro')
 
   useEffect(() => {
     const guardado = document.documentElement.dataset.tema
-    setTema(guardado === 'claro' || guardado === 'oscuro' ? guardado : 'sistema')
+    setTema(guardado === 'oscuro' || guardado === 'sistema' ? guardado : 'claro')
   }, [])
 
   function elegir(nuevo: Tema) {
     setTema(nuevo)
+    /* `claro` es lo de serie, así que elegirlo es borrar la
+       preferencia: deja el <html> sin atributo, que es exactamente el
+       estado de quien nunca ha entrado aquí. */
     try {
-      if (nuevo === 'sistema') {
+      if (nuevo === 'claro') {
         localStorage.removeItem(LLAVE)
         delete document.documentElement.dataset.tema
       } else {
@@ -43,7 +58,7 @@ export default function SelectorTema() {
     } catch {
       // Navegador con el almacenamiento cerrado: el cambio vale para
       // esta pantalla y no se recuerda. No es motivo para romper nada.
-      if (nuevo === 'sistema') delete document.documentElement.dataset.tema
+      if (nuevo === 'claro') delete document.documentElement.dataset.tema
       else document.documentElement.dataset.tema = nuevo
     }
   }

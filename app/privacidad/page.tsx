@@ -12,7 +12,7 @@ export default function Privacidad() {
             `<p className="rotulo">mappel</p>`, y `.rotulo` lleva
             `text-transform: uppercase`, así que en pantalla ponía
             MAPPEL. Dos reglas rotas de una vez con una sola línea. */}
-        <p className="mb-4"><Palabra alto={20} /><span className="sr-only">mappel</span></p>
+        <p className="mb-4"><Palabra alto={20} /></p>
         <h1 className="t-titulo mt-4">
           Política de privacidad
         </h1>
