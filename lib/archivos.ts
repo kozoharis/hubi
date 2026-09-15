@@ -6,7 +6,7 @@
   Parece una tontería y era el fallo: **un PDF no siempre llega
   diciendo que es un PDF.**
 
-  Todo MAPPEL preguntaba `archivo.type === 'application/pdf'`. Ese dato
+  Todo mappel preguntaba `archivo.type === 'application/pdf'`. Ese dato
   no lo pone el archivo: lo pone el navegador al elegirlo, deduciéndolo
   del sistema. Y hay unos cuantos sitios donde llega vacío o mal:
 

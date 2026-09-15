@@ -78,7 +78,7 @@ function limpio(t: string): string {
 
   Antes se usaba `includes` a secas, y eso busca trozos. Con un billete
   de barco de verdad, "digi" —la compañía de teléfono— apareció dentro
-  de "digital", y MAPPEL dijo que el proveedor del billete era Digi. Lo
+  de "digital", y mappel dijo que el proveedor del billete era Digi. Lo
   mismo hacía "prima" dentro de "primera", que convertía cualquier
   papel en una póliza de seguros.
 
@@ -418,7 +418,7 @@ function elQueLoEmite(texto: string): string | null {
       como el nombre de la tienda.
 
       Y lo grave no era el nombre feo: era que, con un proveedor
-      "encontrado", MAPPEL se creía que había leído bien el papel y NO
+      "encontrado", mappel se creía que había leído bien el papel y NO
       pedía ayuda. Un dato inventado tapaba el fallo entero.
 
       Un nombre de verdad tiene una palabra seguida de cuatro letras

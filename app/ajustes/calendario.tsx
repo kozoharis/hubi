@@ -37,7 +37,7 @@ export default function PrepararCalendario({
     ? 'Antes hay que volver a conectar Google'
     : listo
       ? 'Creado · pulsa para volver a compartirlo'
-      : 'Crear el calendario MAPPEL y compartirlo'
+      : 'Crear el calendario mappel y compartirlo'
 
   async function preparar() {
     setOcupado(true)
@@ -85,8 +85,8 @@ export default function PrepararCalendario({
         <div className="mt-2 rounded-[16px] bg-[color:var(--t-bien-velo)] px-4 py-3 text-[15px] font-semibold leading-snug text-[color:var(--t-bien)]">
           <p>
             {resultado.yaExistia
-              ? 'El calendario MAPPEL ya estaba en tu Google.'
-              : 'Calendario MAPPEL creado en tu Google.'}
+              ? 'El calendario mappel ya estaba en tu Google.'
+              : 'Calendario mappel creado en tu Google.'}
           </p>
           {resultado.compartido && resultado.compartido.length > 0 && (
             <p className="mt-1.5">

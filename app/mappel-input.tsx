@@ -184,7 +184,7 @@ export default function MappelInput({
           <button
             type="button"
             onClick={escuchando ? undefined : alHablar}
-            aria-label={escuchando ? 'Terminar' : 'Hablar con MAPPEL'}
+            aria-label={escuchando ? 'Terminar' : 'Hablar con mappel'}
             className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[14px] text-white"
             style={{ background: DEGRADADO, boxShadow: '0 6px 16px rgba(20,184,166,.34)' }}
           >

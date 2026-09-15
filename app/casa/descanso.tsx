@@ -182,7 +182,7 @@ export default function Descanso() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/logo-mappel.png"
-          alt="MAPPEL"
+          alt="mappel"
           className="block h-[34px] w-auto"
           style={{ opacity: 0.45 }}
         />

@@ -48,7 +48,7 @@ export const ACCIONES: Accion[] = [
   {
     clave: 'guardar',
     titulo: 'Guardar un papel',
-    linea: 'Haz una foto y MAPPEL la lee, la guarda en su carpeta y la suma a las cuentas.',
+    linea: 'Haz una foto y mappel la lee, la guarda en su carpeta y la suma a las cuentas.',
     icono: 'foto',
     ambito: 'verde',
     href: '/guardar',
@@ -57,7 +57,7 @@ export const ACCIONES: Accion[] = [
   },
   {
     clave: 'hablar',
-    titulo: 'Hablarle a MAPPEL',
+    titulo: 'Hablarle a mappel',
     linea: 'Dile lo que necesitas como se lo dirías a una persona. Te enseña lo que ha entendido antes de guardar.',
     icono: 'micro',
     ambito: 'azul',
@@ -98,7 +98,7 @@ export const ACCIONES: Accion[] = [
   {
     clave: 'avisa',
     titulo: 'Que un papel te avise',
-    linea: 'Si el seguro vence en noviembre, MAPPEL te lo recuerda en octubre. Tú eliges cuándo.',
+    linea: 'Si el seguro vence en noviembre, mappel te lo recuerda en octubre. Tú eliges cuándo.',
     icono: 'campana',
     ambito: 'violeta',
     href: '/agenda',

@@ -73,7 +73,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: faltaLaFuncion
-          ? 'MAPPEL todavía no sabe crear casas nuevas. No es cosa tuya: avisa a quien lo mantiene.'
+          ? 'mappel todavía no sabe crear casas nuevas. No es cosa tuya: avisa a quien lo mantiene.'
           : 'No se ha podido crear tu casa. Inténtalo en un minuto.',
       },
       { status: 500 }

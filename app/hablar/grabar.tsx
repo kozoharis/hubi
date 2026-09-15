@@ -204,7 +204,7 @@ export default function Grabar({
 
         setAviso(
           motivo === 'sin-permiso'
-            ? 'MAPPEL necesita el micrófono para escucharte. Dale permiso cuando el teléfono lo pida.'
+            ? 'mappel necesita el micrófono para escucharte. Dale permiso cuando el teléfono lo pida.'
             : motivo === 'sin-micro'
               ? 'Este navegador no puede grabar. Escríbelo aquí abajo y te entiendo igual.'
               : 'No he oído nada. Prueba a acercarte un poco al teléfono.'
@@ -214,7 +214,7 @@ export default function Grabar({
     } catch {
       setEstado('listo')
       setAviso(
-        'No he podido abrir el micrófono. Cierra MAPPEL del todo y vuelve a abrirla.'
+        'No he podido abrir el micrófono. Cierra mappel del todo y vuelve a abrirla.'
       )
       return
     }

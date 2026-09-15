@@ -129,7 +129,7 @@ export async function POST(peticion: NextRequest) {
       const yo = await leerPerfil(supabase, user.id, user.email)
       const quienEs = yo.nombre.split(' ')[0]
       await avisarA(para, {
-        titulo: 'MAPPEL',
+        titulo: 'mappel',
         cuerpo: `${quienEs} te ha dejado una nota: ${recorta(texto)}`,
         url: '/notas',
         tag: `nota-${data.id}`,

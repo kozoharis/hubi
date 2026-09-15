@@ -157,7 +157,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error: 'La foto pesa demasiado.',
-        detalle: 'El máximo son 8 MB. Normalmente MAPPEL la reduce antes de mandarla.',
+        detalle: 'El máximo son 8 MB. Normalmente mappel la reduce antes de mandarla.',
       },
       { status: 400 }
     )

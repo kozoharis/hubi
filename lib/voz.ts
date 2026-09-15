@@ -366,7 +366,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
    "enséñame" o "papeles": no están escritas en ningún documento y
    solo estorban.
 
-5. "consulta" — preguntar, y que MAPPEL conteste en voz alta.
+5. "consulta" — preguntar, y que mappel conteste en voz alta.
 
    POR LAS CUENTAS:
    "¿Cuánto hemos gastado este trimestre en agua?"
@@ -444,7 +444,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
 
    CUIDADO CON LA DIFERENCIA. "Ya lo he hecho", "ya está recogido" o
    "eso está hecho" NO es borrar: es marcarlo hecho. Usa accion
-   "cambiar" con "cual" y no toques nada más — MAPPEL ya sabe. Borrar es
+   "cambiar" con "cual" y no toques nada más — mappel ya sabe. Borrar es
    solo cuando la cosa NO hay que hacerla: se ha anulado, era un
    error, o ya no hace falta.
 
@@ -505,7 +505,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
 
    "Apunta leche, pan y huevos y recuérdame ir el sábado a las diez"
    → accion "compra", con las tres cosas Y ADEMÁS fecha: el sábado,
-     hora: "10:00". MAPPEL apunta la compra y pone la ida en la Agenda.
+     hora: "10:00". mappel apunta la compra y pone la ida en la Agenda.
    "Añade lechuga y tomate para la finca, que voy mañana"
    → accion "compra", compra_seccion: la finca, fecha: mañana.
    "Apunta pan y que vaya Conchita el viernes"
@@ -825,7 +825,7 @@ function unaDe<T extends string>(v: unknown, permitidos: readonly T[]): T | null
 /*
   Distinguir "se ha llenado el minuto" de "se ha acabado el día".
 
-  Google devuelve un 429 para las dos cosas, y MAPPEL decía siempre "se
+  Google devuelve un 429 para las dos cosas, y mappel decía siempre "se
   ha agotado por hoy". Casi siempre era mentira: lo normal al probar es
   pasarse del cupo POR MINUTO, que se arregla esperando treinta
   segundos. Mandar a alguien a esperar hasta mañana cuando bastaba con

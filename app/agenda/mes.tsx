@@ -115,7 +115,7 @@ export default async function Mes({
 
     Van en su propio grupo, debajo, y NO SE PUEDEN TOCAR: son suyas,
     viven en su calendario y MAPPEL solo las enseña. Mezclarlas con las
-    de MAPPEL y dejar marcarlas "hecho" sería prometer algo que no
+    de mappel y dejar marcarlas "hecho" sería prometer algo que no
     podemos cumplir — el cambio no llegaría a Google.
 
     Si Google no responde, esto viene vacío y aquí no se entera nadie:

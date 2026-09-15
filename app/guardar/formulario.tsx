@@ -1550,7 +1550,7 @@ function bastante(l: {
     tienda: eran los dibujos del mantel leídos como letras. "Ef» Po
     Pi".
 
-    Con los tres campos "llenos", MAPPEL se creía que había leído el
+    Con los tres campos "llenos", mappel se creía que había leído el
     papel y no pedía ayuda. El dato inventado tapaba el fallo entero.
 
     Ahora solo cuenta un proveedor RECONOCIDO: uno que ya habéis

@@ -68,7 +68,7 @@ export default async function ComoSeHace({
         <Volver href="/ajustes" />
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono="ojo" ambito="azul" tam={44} />
-          <h1 className="t-titulo">Cómo se usa MAPPEL</h1>
+          <h1 className="t-titulo">Cómo se usa mappel</h1>
         </div>
       </Cabecera>
 
@@ -88,7 +88,7 @@ export default async function ComoSeHace({
               playsInline
               autoPlay
               preload="auto"
-              aria-label="Todo lo que hace MAPPEL"
+              aria-label="Todo lo que hace mappel"
               className="w-full rounded-[20px] border border-borde bg-fondo"
             />
             <p className="t-apoyo mt-3">

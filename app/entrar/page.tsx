@@ -115,7 +115,7 @@ export default function Entrar() {
           ? [d.error ?? 'No se ha podido crear la cuenta.', d.detalle]
               .filter(Boolean)
               .join(' · ')
-          : 'MAPPEL no ha llegado a intentar crear la cuenta. No es cosa tuya: avisa a quien lo mantiene.'
+          : 'mappel no ha llegado a intentar crear la cuenta. No es cosa tuya: avisa a quien lo mantiene.'
       )
       return
     }
@@ -224,8 +224,8 @@ export default function Entrar() {
             <Logo tam={66} oscuro />
           </span>
         </div>
-        <h1 className="mt-5 text-center text-[34px] font-extrabold tracking-[0.09em] text-white">
-          MAPPEL
+        <h1 className="mt-5 text-center text-[34px] font-extrabold tracking-[-0.025em] text-white">
+          mappel
         </h1>
         <p className="mt-1.5 text-center text-[16.5px] font-semibold text-apagado">
           Todo lo importante, en un mismo lugar.
@@ -475,7 +475,7 @@ function mensajeClaro(original: string, paso: Paso): string {
      bien configurada. Decirlo así evita que alguien se pase la tarde
      probando códigos buenos. */
   if (e.includes('api key') || e.includes('anon key') || e.includes('jwt')) {
-    return 'MAPPEL no está bien conectado con su base de datos. No es cosa tuya: avisa a quien lo mantiene.'
+    return 'mappel no está bien conectado con su base de datos. No es cosa tuya: avisa a quien lo mantiene.'
   }
   /*
     «Signups not allowed for otp» significa UNA cosa: Supabase no
@@ -489,8 +489,8 @@ function mensajeClaro(original: string, paso: Paso): string {
   */
   if (e.includes('signups not allowed') || e.includes('not authorized')) {
     return paso === 'alta'
-      ? 'La cuenta se ha creado pero MAPPEL no ha podido mandarte el número. No es cosa tuya: hay que mirar los ajustes de registro en Supabase.'
-      : 'Este correo no tiene acceso a MAPPEL. Revisa que esté bien escrito, o crea tu cuenta ahí abajo.'
+      ? 'La cuenta se ha creado pero mappel no ha podido mandarte el número. No es cosa tuya: hay que mirar los ajustes de registro en Supabase.'
+      : 'Este correo no tiene acceso a mappel. Revisa que esté bien escrito, o crea tu cuenta ahí abajo.'
   }
   if (e.includes('rate limit') || e.includes('too many')) {
     return 'Se han pedido demasiados códigos en poco rato. Espera unos minutos y vuelve a intentarlo.'

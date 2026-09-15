@@ -107,7 +107,7 @@ export default function NuevaActividad() {
       setFallo(
         d
           ? [d.error ?? 'No se ha podido crear.', d.detalle].filter(Boolean).join(' · ')
-          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'mappel no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }

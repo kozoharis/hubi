@@ -177,7 +177,7 @@ export async function rehacerAvisos(
   const { documentoId, espacio, titulo, creadoPor, hoy } = datos
 
   /*
-    Fuera los de antes. Solo los que puso MAPPEL (`motivo`) y solo los que
+    Fuera los de antes. Solo los que puso mappel (`motivo`) y solo los que
     están pendientes: uno ya marcado como hecho es historia de lo que
     pasó, y reescribir la historia porque hoy se corrige una fecha
     borraría la prueba de que aquel año sí se avisó a tiempo.

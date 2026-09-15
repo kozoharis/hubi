@@ -1,13 +1,13 @@
 import Link from '@/app/enlace'
 export const metadata = {
-  title: 'Términos de uso · MAPPEL',
+  title: 'Términos de uso · mappel',
 }
 
 export default function Terminos() {
   return (
     <main className="min-h-screen px-6 py-16">
       <article className="mx-auto w-full max-w-2xl">
-        <p className="rotulo tracking-[0.25em]">MAPPEL</p>
+        <p className="rotulo tracking-[0.25em]">mappel</p>
         <h1 className="t-titulo mt-4">
           Términos de uso
         </h1>

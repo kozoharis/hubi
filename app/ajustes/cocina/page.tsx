@@ -54,7 +54,7 @@ export const dynamic = 'force-dynamic'
   haya.
 */
 
-/* Los siete que MAPPEL sabe deducir (`deducirTipo`, `lib/tablon.ts`), con
+/* Los siete que mappel sabe deducir (`deducirTipo`, `lib/tablon.ts`), con
    el nombre que les pondría una persona y el emoji con el que ya se
    pintan en la Agenda — el mismo, para que nadie tenga que traducir
    entre esta pantalla y aquélla. */

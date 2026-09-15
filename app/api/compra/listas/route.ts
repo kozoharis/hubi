@@ -242,7 +242,7 @@ export async function PATCH(peticion: NextRequest) {
       titulo,
       /* El mismo que pondría la ruta de tareas: lo deduce del título
          para que en la Agenda salga con su icono, como todo lo demás.
-         `'compra'` no es un tipo que MAPPEL conozca. */
+         `'compra'` no es un tipo que mappel conozca. */
       tipo: deducirTipo(titulo),
       asignado_a: asignado,
       fecha,

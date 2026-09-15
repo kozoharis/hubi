@@ -67,7 +67,7 @@ export default function Comprobacion() {
           dentro del mismo armazón —con el rail delante— y centrada
           flotaba como las demás. La medida de texto le sirve. */}
       <div className="columna-texto">
-        <p className="rotulo tracking-[0.2em]">MAPPEL</p>
+        <p className="rotulo tracking-[0.2em]">mappel</p>
         <h1 className="t-titulo mt-3">Comprobación del sistema</h1>
         <p className="t-cuerpo mt-3">
           Esta pantalla no forma parte de MAPPEL. Solo sirve para verificar
@@ -287,7 +287,7 @@ export default function Comprobacion() {
             )}
 
             {datos.calendario && (
-              <Bloque titulo="7 · El calendario MAPPEL">
+              <Bloque titulo="7 · El calendario mappel">
                 <Linea
                   ok={datos.calendario.existeEnGoogle === true && datos.calendario.enLaLista === true}
                   texto={datos.calendario.diagnostico ?? '—'}

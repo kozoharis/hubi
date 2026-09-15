@@ -1,13 +1,13 @@
 import Link from '@/app/enlace'
 export const metadata = {
-  title: 'Privacidad · MAPPEL',
+  title: 'Privacidad · mappel',
 }
 
 export default function Privacidad() {
   return (
     <main className="min-h-screen px-6 py-16">
       <article className="mx-auto w-full max-w-2xl">
-        <p className="rotulo tracking-[0.25em]">MAPPEL</p>
+        <p className="rotulo tracking-[0.25em]">mappel</p>
         <h1 className="t-titulo mt-4">
           Política de privacidad
         </h1>
@@ -15,7 +15,7 @@ export default function Privacidad() {
 
         <div className="mt-10 space-y-8 text-lg leading-relaxed text-tinta-suave">
           <section>
-            <h2 className="t-seccion">Qué es MAPPEL</h2>
+            <h2 className="t-seccion">Qué es mappel</h2>
             <p className="mt-3">
               MAPPEL es una aplicación privada de uso familiar, creada para dos
               personas concretas. No es un servicio público, no admite registro

@@ -16,7 +16,7 @@ export async function POST() {
 
   try {
     const entregados = await avisarA(user.id, {
-      titulo: 'MAPPEL',
+      titulo: 'mappel',
       cuerpo: 'Los avisos funcionan. Así te llegarán los recordatorios.',
       url: '/',
       tag: 'prueba',

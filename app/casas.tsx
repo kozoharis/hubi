@@ -67,7 +67,7 @@ export default function Casas({ casas }: { casas: Casa[] }) {
       setFallo(
         d
           ? [d.error ?? 'No se ha podido.', d.detalle].filter(Boolean).join(' · ')
-          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'mappel no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }

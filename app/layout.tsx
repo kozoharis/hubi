@@ -11,10 +11,10 @@ import Rail from './rail'
 const fuente = { variable: 'font-stub', className: 'font-stub' }
 
 export const metadata: Metadata = {
-  title: 'MAPPEL',
+  title: 'mappel',
   description: 'Todo lo importante, en un mismo lugar.',
   manifest: '/manifest.webmanifest',
-  applicationName: 'MAPPEL',
+  applicationName: 'mappel',
 
   /*
     ── FUERA DE LOS BUSCADORES ──
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
   // sin la barra del navegador.
   appleWebApp: {
     capable: true,
-    title: 'MAPPEL',
+    title: 'mappel',
     statusBarStyle: 'default',
   },
 }

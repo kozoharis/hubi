@@ -111,7 +111,7 @@ export default function Rail() {
     >
       <div className="flex items-center gap-2.5 px-3 pb-6">
         <Marca />
-        <span className="text-[15px] font-extrabold tracking-[.3em] text-tinta">MAPPEL</span>
+        <span className="text-[15px] font-extrabold tracking-[.3em] text-tinta">mappel</span>
       </div>
 
       <div className="flex flex-col gap-1">

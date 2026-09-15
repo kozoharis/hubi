@@ -75,7 +75,7 @@ export default async function PaginaNuevo({
       ? (perfiles ?? []).filter((p) => dentro!.includes(p.id as string))
       : (perfiles ?? [])
 
-  /* Solo se admite un `volver` de dentro de MAPPEL. Sin esto, una
+  /* Solo se admite un `volver` de dentro de mappel. Sin esto, una
      dirección con `?volver=https://…` convertiría este botón en un
      salto a donde quisiera quien mandara el enlace. */
   const volver =

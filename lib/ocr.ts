@@ -353,7 +353,7 @@ function fechaValida(valor: string | null | undefined): string | null {
 /*
   Distinguir "se ha llenado el minuto" de "se ha acabado el día".
 
-  Google devuelve un 429 para las dos cosas, y MAPPEL decía siempre "se
+  Google devuelve un 429 para las dos cosas, y mappel decía siempre "se
   ha agotado por hoy". Casi siempre era mentira: lo normal al probar es
   pasarse del cupo POR MINUTO, que se arregla esperando treinta
   segundos. Mandar a alguien a esperar hasta mañana cuando bastaba con

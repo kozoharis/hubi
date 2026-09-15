@@ -104,8 +104,8 @@ export default async function AjustesDeGoogle() {
 
             <p className="mt-3 text-[15px] font-semibold leading-snug text-tenue">
               {conectado
-                ? 'Hace falta solo si MAPPEL pide un permiso nuevo —el del calendario, por ejemplo— o si algo deja de funcionar. No pierdes nada de lo guardado.'
-                : 'Google mostrará un aviso de aplicación no verificada. Es normal: pulsa Configuración avanzada y después Ir a MAPPEL. Solo ocurre esta vez.'}
+                ? 'Hace falta solo si mappel pide un permiso nuevo —el del calendario, por ejemplo— o si algo deja de funcionar. No pierdes nada de lo guardado.'
+                : 'Google mostrará un aviso de aplicación no verificada. Es normal: pulsa Configuración avanzada y después Ir a mappel. Solo ocurre esta vez.'}
             </p>
 
             <h2 className="rotulo mt-6">El calendario</h2>

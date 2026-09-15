@@ -76,7 +76,7 @@ export async function POST() {
 
   if (error) {
     return NextResponse.json(
-      { error: 'No se ha podido leer quién más usa MAPPEL.' },
+      { error: 'No se ha podido leer quién más usa mappel.' },
       { status: 500 }
     )
   }

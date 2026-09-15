@@ -230,7 +230,7 @@ type PropsBoton = {
   */
   ancho?: 'completo' | 'auto'
   /*
-    ENLACE EXTERNO. `Link` de Next sirve para navegar DENTRO de MAPPEL;
+    ENLACE EXTERNO. `Link` de Next sirve para navegar DENTRO de mappel;
     «Ver el papel» abre el archivo en otra pestaña y necesita un <a>
     de verdad, con su `target` y su `rel`.
 

@@ -112,7 +112,7 @@ export async function POST(peticion: NextRequest) {
   if (existe) {
     return NextResponse.json(
       {
-        error: 'Ese correo ya tiene cuenta en MAPPEL.',
+        error: 'Ese correo ya tiene cuenta en mappel.',
         detalle:
           'Una pantalla necesita una dirección nueva, para su uso. Si usáramos la de una ' +
           'persona, su cuenta pasaría a ser la pantalla — y eso no se puede deshacer. ' +

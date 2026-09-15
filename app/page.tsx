@@ -62,7 +62,7 @@ const AVISOS: Record<string, { texto: string; bien: boolean }> = {
   },
   'sin-permiso': {
     texto:
-      'Google no ha devuelto un permiso duradero. Entra en la cuenta de Google, quita el acceso de MAPPEL y vuelve a conectarlo.',
+      'Google no ha devuelto un permiso duradero. Entra en la cuenta de Google, quita el acceso de mappel y vuelve a conectarlo.',
     bien: false,
   },
   estado: { texto: 'La conexión se ha interrumpido por seguridad. Inténtalo de nuevo.', bien: false },
@@ -544,7 +544,7 @@ export default async function Inicio({
         <div className="flex h-14 items-center justify-between gap-2">
           <span className="flex min-w-0 items-center gap-2">
             <Logo tam={36} />
-            <span className="text-[22px] font-extrabold tracking-[0.09em]">MAPPEL</span>
+            <span className="text-[22px] font-extrabold tracking-[-0.02em]">mappel</span>
           </span>
 
           {/*

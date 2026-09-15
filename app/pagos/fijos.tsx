@@ -274,7 +274,7 @@ export default function Fijos({
             explicacion={
               sinTabla
                 ? 'Los pagos fijos todavía no están disponibles en esta casa.'
-                : 'El internet, el teléfono, el alquiler, un seguro. Lo apuntas una vez y MAPPEL lo lleva solo cada mes — y te avisa el mes que no aparezca la factura.'
+                : 'El internet, el teléfono, el alquiler, un seguro. Lo apuntas una vez y mappel lo lleva solo cada mes — y te avisa el mes que no aparezca la factura.'
             }
           />
         </div>

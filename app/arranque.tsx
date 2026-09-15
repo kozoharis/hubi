@@ -140,9 +140,18 @@ export default function Arranque() {
 
       <span
         className="mappel-palabra mt-[26px] block text-[15px] font-extrabold text-tinta"
-        style={{ letterSpacing: '0.3em', paddingLeft: '0.3em' }}
+        /*
+          En mayúsculas esto iba a 0,3em, y el `paddingLeft` del mismo
+          valor estaba para recentrar la palabra — el espaciado se lo
+          come el último hueco, que no se ve pero ocupa.
+
+          En minúscula sobran los dos. El espaciado ancho es de las
+          versales; abrir una palabra en minúscula la convierte en
+          letras sueltas.
+        */
+        style={{ letterSpacing: '-0.005em' }}
       >
-        MAPPEL
+        mappel
       </span>
     </div>
   )

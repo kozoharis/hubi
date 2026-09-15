@@ -89,7 +89,7 @@ export async function POST(peticion: NextRequest) {
     return NextResponse.json(
       {
         error:
-          'Esa es la dirección del calendario MAPPEL, y ése ya lo llenamos nosotros. Lo que hay que pegar aquí es la dirección de tu calendario PERSONAL, el que usas tú, para que sus citas se vean también en MAPPEL.',
+          'Esa es la dirección del calendario mappel, y ése ya lo llenamos nosotros. Lo que hay que pegar aquí es la dirección de tu calendario PERSONAL, el que usas tú, para que sus citas se vean también en mappel.',
       },
       { status: 400 }
     )

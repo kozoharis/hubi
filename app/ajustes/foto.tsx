@@ -184,7 +184,7 @@ export default function TuPerfil({
           <div className="min-w-0 flex-1">
             <p className="truncate text-[19px] font-extrabold">{nombre || 'Tu perfil'}</p>
             <p className="text-[14.5px] font-semibold text-tenue">
-              {nombre ? 'Estás usando MAPPEL' : 'Pon tu nombre y tu foto'}
+              {nombre ? 'Estás usando mappel' : 'Pon tu nombre y tu foto'}
             </p>
           </div>
         </div>

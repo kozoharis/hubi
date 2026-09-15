@@ -15,7 +15,7 @@
   · Android reentrega los mismos trozos una y otra vez. Salían frases
     repetidas veinte veces.
   · Safari entrega la frase entera y NUNCA la marca como definitiva.
-    MAPPEL contestaba "no he oído nada" con la frase escrita en la
+    mappel contestaba "no he oído nada" con la frase escrita en la
     pantalla.
   · Android puede tardar tres segundos en soltar el primer texto. MAPPEL
     lo tomaba por silencio y cortaba en mitad de la frase.

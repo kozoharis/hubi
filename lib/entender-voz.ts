@@ -1135,7 +1135,7 @@ export function entenderFrase(opciones: {
 
     Es el peor fallo posible de esta pantalla y estaba pasando: "dime
     los ingresos previstos de Los Helechos tres" no encajaba en ninguna
-    señal de consulta, se caía a "recordatorio" y MAPPEL APUNTABA LA
+    señal de consulta, se caía a "recordatorio" y mappel APUNTABA LA
     PREGUNTA EN EL CALENDARIO. No solo no contestaba: ensuciaba la
     agenda con una cita que nadie había pedido y que hay que borrar a
     mano.

@@ -705,7 +705,7 @@ export async function POST(peticion: NextRequest) {
     /*
       ── Qué hay que hacer un día ─────────────────────────────
 
-      "¿Qué tengo mañana?". Se juntan las tareas de MAPPEL y las citas
+      "¿Qué tengo mañana?". Se juntan las tareas de mappel y las citas
       del Google de quien pregunta, porque para quien lo dice son la
       misma cosa —el punto 18: todo es "cosas que tengo que recordar"—
       y separarlas al contestar sería devolverle una distinción que no

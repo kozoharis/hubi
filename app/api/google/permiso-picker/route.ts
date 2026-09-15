@@ -27,7 +27,7 @@ export const dynamic = 'force-dynamic'
      sino un pase temporal que Google caduca solo.
 
   3. NO PUEDE MÁS DE LO QUE YA PODÍA. El pase hereda el mismo alcance
-     que tiene MAPPEL, `drive.file`: los archivos que MAPPEL ha creado y
+     que tiene mappel, `drive.file`: los archivos que mappel ha creado y
      los que la persona elija a mano en el buscador. Ni un archivo más.
 
   Nunca se guarda en el navegador ni se escribe en ningún sitio: se

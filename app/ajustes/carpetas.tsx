@@ -100,7 +100,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
       setFallo(
         d
           ? [d.error ?? 'No se ha podido crear.', d.detalle].filter(Boolean).join(' · ')
-          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'mappel no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }
@@ -213,7 +213,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
 
       <p className="px-1 text-[14.5px] font-semibold leading-snug text-tenue">
         Apagar una carpeta la esconde: deja de salir al guardar papeles. Lo que ya tenga dentro
-        <strong className="text-tinta"> no se borra</strong>, ni en MAPPEL ni en tu Drive, y vuelve
+        <strong className="text-tinta"> no se borra</strong>, ni en mappel ni en tu Drive, y vuelve
         a aparecer si la enciendes.
       </p>
 

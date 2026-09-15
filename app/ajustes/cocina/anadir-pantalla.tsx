@@ -118,7 +118,7 @@ export default function AnadirPantalla({ pantallas }: { pantallas: Pantalla[] })
 
         <ol className="mt-3 space-y-2.5">
           {[
-            'Abre MAPPEL en su navegador.',
+            'Abre mappel en su navegador.',
             <>
               Escribe este correo: <strong className="text-tinta">{lista}</strong>
             </>,

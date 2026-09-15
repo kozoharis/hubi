@@ -218,7 +218,7 @@ export default function Microfono() {
           que: 'aqui-no',
           titulo: 'Los papeles se ven en el móvil',
           explica:
-            'Esta pantalla la ve cualquiera que entre en la casa, así que no enseña documentos. Búscalo en tu MAPPEL y sale en un momento.',
+            'Esta pantalla la ve cualquiera que entre en la casa, así que no enseña documentos. Búscalo en tu mappel y sale en un momento.',
         })
 
       case 'consulta':
@@ -226,7 +226,7 @@ export default function Microfono() {
           que: 'aqui-no',
           titulo: 'Eso te lo contesto en el móvil',
           explica:
-            'Contestarlo aquí sería decirlo en voz alta en la cocina, y por la cocina pasa cualquiera. Pregúntaselo a tu MAPPEL y te lo dice sólo a ti.',
+            'Contestarlo aquí sería decirlo en voz alta en la cocina, y por la cocina pasa cualquiera. Pregúntaselo a tu mappel y te lo dice sólo a ti.',
         })
 
       case 'cambiar':
@@ -290,7 +290,7 @@ export default function Microfono() {
           setAbierto(true)
           if (hayMicro) empezar()
         }}
-        aria-label="Hablar con MAPPEL"
+        aria-label="Hablar con mappel"
         /*
           ═══════════════════════════════════════════════════════
           ⚠️  ESTE BOTÓN ESTABA MAL, Y DE TRES MANERAS

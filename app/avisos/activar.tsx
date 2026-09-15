@@ -179,7 +179,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
               <Paso n={1} texto="Toca el botón de compartir, abajo en el centro de Safari: un cuadrado con una flecha hacia arriba." />
               <Paso n={2} texto="Desliza la lista hacia abajo hasta ver «Añadir a pantalla de inicio»." />
               <Paso n={3} texto="Toca «Añadir», arriba a la derecha." />
-              <Paso n={4} texto="Cierra Safari y abre MAPPEL desde el icono nuevo." />
+              <Paso n={4} texto="Cierra Safari y abre mappel desde el icono nuevo." />
               <Paso n={5} texto="Vuelve a esta pantalla y activa los avisos." />
             </ol>
           </>
@@ -241,10 +241,10 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
           <>
             <div className="mt-4">
               <Aviso
-                titulo="Este teléfono tiene los avisos bloqueados para MAPPEL"
+                titulo="Este teléfono tiene los avisos bloqueados para mappel"
                 explicacion={
                   esIphone
-                    ? 'Entra en Ajustes → Notificaciones → MAPPEL y permite las notificaciones. Después vuelve aquí.'
+                    ? 'Entra en Ajustes → Notificaciones → mappel y permite las notificaciones. Después vuelve aquí.'
                     : 'Abre los ajustes del navegador para esta página y permite las notificaciones. Después vuelve aquí.'
                 }
               />

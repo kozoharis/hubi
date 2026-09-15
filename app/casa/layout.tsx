@@ -125,7 +125,7 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
         <div className="flex shrink-0 flex-col items-end gap-5">
           <p className="flex items-center gap-3.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-mappel.png" alt="MAPPEL" className="block h-[30px] w-auto" />
+            <img src="/logo-mappel.png" alt="mappel" className="block h-[30px] w-auto" />
             <span className="truncate text-[19px] font-extrabold uppercase tracking-[0.22em] text-tenue">
               {nombre}
             </span>

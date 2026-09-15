@@ -115,7 +115,7 @@ export default function Gente({
       setFallo(
         d
           ? [d.error ?? 'No se ha podido invitar.', d.detalle].filter(Boolean).join(' · ')
-          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'mappel no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }
@@ -163,7 +163,7 @@ export default function Gente({
       setFallo(
         d
           ? [d.error ?? 'No se ha podido.', d.detalle].filter(Boolean).join(' · ')
-          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'mappel no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }
@@ -198,7 +198,7 @@ export default function Gente({
           ? [d.error ?? 'No se ha podido cambiar el color.', d.detalle]
               .filter(Boolean)
               .join(' · ')
-          : 'MAPPEL no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+          : 'mappel no ha llegado a intentarlo. Avisa a quien lo mantiene.'
       )
       return
     }
@@ -629,7 +629,7 @@ export default function Gente({
 
       {hecho && (
         <p className="rounded-[16px] border border-borde px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
-          Listo. Dile a <strong className="text-tinta">{hecho.nombre}</strong> que entre en MAPPEL
+          Listo. Dile a <strong className="text-tinta">{hecho.nombre}</strong> que entre en mappel
           con <strong className="text-tinta">{hecho.correo}</strong>: le llegará su número y verá
           tu invitación nada más entrar, y tiene que aceptarla desde su MAPPEL.
         </p>

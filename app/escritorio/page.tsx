@@ -128,7 +128,7 @@ export default async function Escritorio() {
             <Aviso
               tono="atencion"
               titulo="Todavía no hay de dónde leer esto"
-              explicacion="El escritorio necesita una consulta que aún no está puesta en la base de datos. Todo lo demás de MAPPEL funciona igual."
+              explicacion="El escritorio necesita una consulta que aún no está puesta en la base de datos. Todo lo demás de mappel funciona igual."
               detalle="Falta ejecutar sql/52-el-escritorio.sql en Supabase."
             />
           </div>
