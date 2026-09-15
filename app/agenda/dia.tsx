@@ -243,7 +243,7 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
                 className="absolute left-0 right-0 flex items-start gap-2"
                 style={{ top: i * ALTO, height: ALTO }}
               >
-                <span className="w-[42px] shrink-0 -translate-y-[7px] text-right text-[12.5px] font-bold tabular-nums text-tenue">
+                <span className="w-[42px] shrink-0 -translate-y-[7px] text-right text-[13px] font-bold tabular-nums text-tenue">
                   {String(h).padStart(2, '0')}:00
                 </span>
                 <span className="mt-[1px] h-px flex-1 bg-borde" />
@@ -302,7 +302,7 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
                         {b.titulo}
                       </span>
                       <span
-                        className="truncate text-[12px] font-bold"
+                        className="truncate text-[13px] font-bold"
                         style={{ color: b.color }}
                       >
                         {enHora(b.minuto)}

@@ -173,7 +173,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
               role="switch"
               aria-checked={c.activa}
               aria-label={`${c.activa ? 'Apagar' : 'Encender'} ${c.nombre}`}
-              className="relative h-[34px] w-[58px] shrink-0 rounded-full transition disabled:opacity-50"
+              className="relative h-[34px] w-[58px] shrink-0 rounded-full before:absolute before:inset-x-0 before:-inset-y-[7px] before:content-[''] transition disabled:opacity-50"
               style={{
                 background: c.activa ? 'var(--t-boton)' : 'var(--t-borde)',
               }}

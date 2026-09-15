@@ -57,7 +57,7 @@ export default function Compra({ puesta }: { puesta: boolean }) {
           role="switch"
           aria-checked={puesta}
           aria-label={puesta ? 'Apagar la compra' : 'Encender la compra'}
-          className="relative h-[34px] w-[58px] shrink-0 rounded-full transition disabled:opacity-50"
+          className="relative h-[34px] w-[58px] shrink-0 rounded-full before:absolute before:inset-x-0 before:-inset-y-[7px] before:content-[''] transition disabled:opacity-50"
           style={{ background: puesta ? 'var(--t-boton)' : 'var(--t-borde)' }}
         >
           <span

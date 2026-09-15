@@ -199,7 +199,7 @@ export default function Semana({
               <button
                 onClick={() => setTrabajos((ts) => ts.filter((_, j) => j !== i))}
                 aria-label={`Quitar ${t.que}`}
-                className="flex h-9 w-9 shrink-0 items-center justify-center text-[22px] font-light leading-none text-tenue"
+                className="flex h-12 w-12 shrink-0 items-center justify-center text-[22px] font-light leading-none text-tenue"
               >
                 ×
               </button>
@@ -213,7 +213,7 @@ export default function Semana({
                     onClick={() => tocar(i, d.n)}
                     aria-pressed={puesto}
                     aria-label={`${t.que}, ${d.largo}`}
-                    className="h-10 flex-1 rounded-[11px] text-[14.5px] font-extrabold"
+                    className="h-12 flex-1 rounded-[11px] text-[14.5px] font-extrabold"
                     style={
                       puesto
                         ? { background: 'var(--t-tinta)', color: 'var(--t-fondo)' }

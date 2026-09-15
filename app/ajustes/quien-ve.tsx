@@ -151,11 +151,11 @@ export default function QuienVe({
           <div className="mt-5 flex items-center justify-between px-1">
             <span className="rotulo">Carpeta</span>
             <span className="flex gap-3 pr-1">
-              <span className="w-11 text-center text-[12.5px] font-extrabold tracking-wider text-tenue">
+              <span className="w-11 text-center text-[13px] font-extrabold tracking-wider text-tenue">
                 VER
               </span>
               {!todoEscribir && (
-                <span className="w-11 text-center text-[12.5px] font-extrabold tracking-wider text-tenue">
+                <span className="w-11 text-center text-[13px] font-extrabold tracking-wider text-tenue">
                   GUARDAR
                 </span>
               )}

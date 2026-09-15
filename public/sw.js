@@ -40,7 +40,12 @@ self.addEventListener('activate', (evento) => {
   muestra nada.
 */
 self.addEventListener('push', (evento) => {
-  let aviso = { titulo: 'MAPPEL', cuerpo: 'Tienes algo nuevo', url: '/', tag: 'mappel' }
+  /* En minúsculas, como en todas partes. Estuvo en versales hasta
+     septiembre de 2026 y era el sitio con más ojos de toda la marca:
+     el título de un aviso en la pantalla de bloqueo del teléfono. El
+     servidor ya mandaba 'mappel'; esta copia se quedó atrás porque el
+     service worker no se toca casi nunca. */
+  let aviso = { titulo: 'mappel', cuerpo: 'Tienes algo nuevo', url: '/', tag: 'mappel' }
 
   try {
     if (evento.data) aviso = { ...aviso, ...evento.data.json() }
@@ -54,7 +59,7 @@ self.addEventListener('push', (evento) => {
   }
 
   evento.waitUntil(
-    self.registration.showNotification(aviso.titulo || 'MAPPEL', {
+    self.registration.showNotification(aviso.titulo || 'mappel', {
       body: aviso.cuerpo || '',
       icon: '/icono-192.png',
       badge: '/icono-192.png',

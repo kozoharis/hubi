@@ -162,7 +162,7 @@ export default function Fotos() {
                 type="button"
                 onClick={() => quitar(f.id)}
                 aria-label="Quitar esta foto"
-                className="absolute right-1 top-1 flex h-[44px] w-[44px] items-center justify-center"
+                className="absolute right-1 top-1 flex h-[48px] w-[48px] items-center justify-center"
               >
                 <span
                   className="flex h-[28px] w-[28px] items-center justify-center rounded-full text-white"

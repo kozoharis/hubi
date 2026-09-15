@@ -317,26 +317,74 @@ export function BotonAjustes() {
 }
 
 /* ── El logotipo ─────────────────────────────────────────
-   Es el archivo de verdad: la H con el degradado de MAPPEL —turquesa,
-   verde azulado y azul— y nada más.
+   La m de dos arcos que se cruzan, con el degradado de mappel:
+   turquesa, verde azulado y azul.
 
-   El anterior llevaba dentro rojo, naranja y rosa, tres de las siete
-   familias que la Fase 1 retiró de la paleta. O sea que el símbolo
-   anunciaba unos colores que dentro no existían.
+   Antes de ésta hubo una H —el símbolo de cuando el producto se
+   llamaba HUBI— a la que se le dio la vuelta al trazo del medio para
+   convertirla en M. Nunca coló: medido sobre el archivo, el vértice
+   central solo bajaba al 63 % de la altura, y a eso el ojo le llama
+   travesaño, no vértice. Al lado de la palabra «mappel» seguía
+   leyéndose H.
 
-   `oscuro` pide la variante crema. Hace falta menos que antes —el
-   degradado nuevo acaba en azul vivo y aguanta sobre el marino—, pero
-   sobre la puerta, que ya lleva manchas turquesa y azules por detrás,
-   dos degradados se pelean y el crema queda limpio. */
+   ─────────────────────────────────────────────────────────────
+   ⚠️  SE MIDE POR EL ALTO, Y ESO NO ES UN DETALLE
+
+   Antes esto era `width: tam; height: tam` con `object-fit: contain`
+   -— una caja cuadrada—, y funcionaba de casualidad: la H era MÁS ALTA
+   que ancha (512×555), así que dentro del cuadrado se ajustaba por el
+   alto y salía a `tam` de alta.
+
+   La m es al revés: 384×253, más ancha que alta. En la misma caja
+   cuadrada se ajustaría por el ancho y saldría a 20 px de alta donde
+   antes había 30 — un tercio más pequeña, sin que nadie hubiera
+   cambiado ningún número.
+
+   Lo que quiere decir `tam` en todas las llamadas es «así de alto».
+   Así que ahora se pide el alto y el ancho sale solo. */
 export function Logo({ tam = 30, oscuro = false }: { tam?: number; oscuro?: boolean }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={oscuro ? '/logo-mappel-oscuro.png' : '/logo-mappel.png'}
       alt=""
-      width={tam}
       height={tam}
-      style={{ width: tam, height: tam, objectFit: 'contain' }}
+      style={{ height: tam, width: 'auto', display: 'block' }}
+    />
+  )
+}
+
+/* ── La palabra escrita ──────────────────────────────────
+   «mappel» era TEXTO en la tipografía de la interfaz, y al lado del
+   símbolo nuevo se veía que eran dos letras distintas: el logotipo
+   lleva su propio trazado, geométrico y redondo, y Plus Jakarta Sans
+   no lo es.
+
+   Así que la palabra pasa a ser el dibujo entregado. Dos versiones y
+   solo dos, porque solo hay dos fondos: tinta sobre el papel cálido y
+   papel sobre el marino de la puerta.
+
+   ─────────────────────────────────────────────────────────────
+   EL ALTO VA EN `em`, Y ES A PROPÓSITO
+
+   Una palabra convertida en imagen deja de crecer cuando alguien
+   agranda la letra del teléfono. En una aplicación para gente mayor
+   eso importa, aunque un logotipo no se lea sino que se reconozca.
+
+   Se arregla dando el alto en `em` en vez de en píxeles: `em` es
+   relativo al tamaño de letra del contenedor, así que la palabra
+   crece con todo lo demás. El número que se pasa son los píxeles que
+   medía antes; aquí se divide entre 16 —el tamaño base— y ya está.
+
+   Y lleva `sr-only` al lado donde hacía de título, para que quien
+   navegue con lector de pantalla siga oyendo el nombre. */
+export function Palabra({ alto = 22, clara = false }: { alto?: number; clara?: boolean }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={clara ? '/mappel-palabra-clara.png' : '/mappel-palabra.png'}
+      alt="mappel"
+      style={{ height: `${alto / 16}em`, width: 'auto', display: 'block' }}
     />
   )
 }

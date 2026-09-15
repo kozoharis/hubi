@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { clienteNavegador } from '@/lib/supabase/navegador'
-import { Ico, Logo } from '../iconos'
+import { Ico, Logo, Palabra } from '../iconos'
 import ColorDeBarra from '../color-barra'
 import { api } from '@/lib/api'
 import { NOCHE } from '@/lib/voz-mappel'
@@ -217,15 +217,30 @@ export default function Entrar() {
 
       <div className="relative mx-auto w-full max-w-md">
         <div className="flex justify-center">
+          {/*
+            El azulejo se ajusta a la marca, y no al revés.
+
+            Era un cuadrado fijo de 106×106, de cuando el símbolo era
+            la H y era más alto que ancho. Con la m —384×253— un logo
+            de 66 de alto mide 100 de ancho, y dentro de 106 menos el
+            borde quedaban CUATRO píxeles de holgura: el único sitio de
+            la aplicación donde subir el logotipo dos puntos lo habría
+            reventado.
+
+            Ahora el alto lo pone el logotipo y el ancho lo pone el
+            relleno, así que el azulejo sale rectangular —como la
+            propia m— y no hay nada que se pueda quedar corto.
+          */}
           <span
-            className="flex h-[106px] w-[106px] items-center justify-center rounded-[32px]"
+            className="inline-flex items-center justify-center rounded-[32px] px-6 py-5"
             style={{ background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.14)' }}
           >
             <Logo tam={66} oscuro />
           </span>
         </div>
-        <h1 className="mt-5 text-center text-[34px] font-extrabold tracking-[-0.025em] text-white">
-          mappel
+        <h1 className="mt-5 flex justify-center">
+          <Palabra alto={32} clara />
+          <span className="sr-only">mappel</span>
         </h1>
         <p className="mt-1.5 text-center text-[16.5px] font-semibold text-apagado">
           Todo lo importante, en un mismo lugar.

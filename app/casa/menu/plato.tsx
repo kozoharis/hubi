@@ -114,7 +114,7 @@ export default function Plato({
             onClick={() => setAbierto(true)}
             className="tocable mt-1 flex items-center gap-2 text-left text-[17px] font-extrabold"
             style={{
-              minHeight: 44,
+              minHeight: 60,
               color: !mirado
                 ? 'var(--t-tinta-suave)'
                 : cuantasFaltan > 0

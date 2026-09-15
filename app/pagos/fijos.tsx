@@ -470,7 +470,7 @@ export default function Fijos({
                 Había tres medidas distintas de interruptor en la
                 aplicación; ésta era la mediana. */}
             <span
-              className="relative h-[34px] w-[58px] shrink-0 rounded-full transition-colors"
+              className="relative h-[34px] w-[58px] shrink-0 rounded-full before:absolute before:inset-x-0 before:-inset-y-[7px] before:content-[''] transition-colors"
               style={{ background: esperaPapel ? 'var(--color-accion)' : 'var(--t-borde)' }}
             >
               <span

@@ -200,6 +200,23 @@ export default function Barra({
                 <Ico nombre="onda" tam={23} grosor={2.4} />
               </span>
             </span>
+            {/*
+              La palabra, que faltaba.
+
+              El `flex-col items-center` de arriba llevaba aquí desde
+              el principio esperando un pie que nunca se puso: la
+              acción principal de mappel era, en el móvil, un círculo
+              de color con una rayita dentro y nada más. La misma cosa
+              en la pared de la cocina sí dice «HABLAR» debajo, o sea
+              que el móvil era el raro.
+
+              Y es la regla de los iconos: para quien ya sabe lo que
+              hace, el icono basta; para quien no lo sabe es un
+              jeroglífico, y este producto es para quien no lo sabe.
+            */}
+            <span className="mt-1 text-[13px] font-extrabold uppercase tracking-[.12em] text-tenue">
+              Hablar
+            </span>
           </Link>
         )}
       </div>
@@ -292,7 +309,7 @@ function Dentro({
 
   return (
     <span
-      className={`tocable flex h-full w-full flex-col items-center justify-center gap-1 text-[12px] font-bold ${
+      className={`tocable flex h-full w-full flex-col items-center justify-center gap-1 text-[13px] font-bold ${
         encendida ? 'text-tinta' : 'text-apagado'
       }`}
     >

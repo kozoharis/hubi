@@ -214,7 +214,7 @@ export default function Hilo({
                        pendiente: es lo único de esta lista que tiene
                        estado, y ahora lo dice el color de estado. */
                     <span
-                      className="flex h-[22px] shrink-0 items-center rounded-full px-2 text-[12.5px] font-extrabold uppercase tracking-wide"
+                      className="flex h-[22px] shrink-0 items-center rounded-full px-2 text-[13px] font-extrabold uppercase tracking-wide"
                       style={
                         c.hecha
                           ? {

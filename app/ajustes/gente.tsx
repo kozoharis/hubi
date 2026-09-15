@@ -683,7 +683,7 @@ function Accion({
       onClick={alPulsar}
       disabled={ocupado}
       aria-pressed={puesta}
-      className="flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-[16px] px-1 text-[12.5px] font-extrabold leading-none disabled:opacity-50"
+      className="flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-[16px] px-1 text-[13px] font-extrabold leading-none disabled:opacity-50"
       style={{
         color: peligro ? 'var(--t-alerta)' : puesta ? 'var(--t-tinta)' : 'var(--t-tinta-suave)',
         background: puesta

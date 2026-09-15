@@ -132,7 +132,7 @@ export default function Encabezado({
             <Link
               href={volver}
               aria-label="Volver"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-borde bg-superficie text-tinta"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-borde bg-superficie text-tinta"
             >
               <Ico nombre="atras" tam={22} grosor={2.4} />
             </Link>

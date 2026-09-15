@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Ico } from '../iconos'
+import { Ico, Palabra } from '../iconos'
 import { Aviso, BotonSecundario } from '../piezas'
 import { api } from '@/lib/api'
 
@@ -67,7 +67,11 @@ export default function Comprobacion() {
           dentro del mismo armazón —con el rail delante— y centrada
           flotaba como las demás. La medida de texto le sirve. */}
       <div className="columna-texto">
-        <p className="rotulo tracking-[0.2em]">mappel</p>
+        {/* El nombre va dibujado, no escrito: esto era
+            `<p className="rotulo">mappel</p>`, y `.rotulo` lleva
+            `text-transform: uppercase`, así que en pantalla ponía
+            MAPPEL. Dos reglas rotas de una vez con una sola línea. */}
+        <p className="mb-4"><Palabra alto={20} /><span className="sr-only">mappel</span></p>
         <h1 className="t-titulo mt-3">Comprobación del sistema</h1>
         <p className="t-cuerpo mt-3">
           Esta pantalla no forma parte de mappel. Solo sirve para verificar

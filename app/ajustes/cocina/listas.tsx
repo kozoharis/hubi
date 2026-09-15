@@ -113,7 +113,7 @@ export default function Listas({ listas }: { listas: LaLista[] }) {
                 role="switch"
                 aria-checked={puesto}
                 aria-label={`${puesto ? 'Quitar' : 'Poner'} ${l.nombre} en la pantalla de la cocina`}
-                className="relative h-[34px] w-[58px] shrink-0 rounded-full transition"
+                className="relative h-[34px] w-[58px] shrink-0 rounded-full before:absolute before:inset-x-0 before:-inset-y-[7px] before:content-[''] transition"
                 style={{ background: puesto ? 'var(--t-boton)' : 'var(--t-borde)' }}
               >
                 <span

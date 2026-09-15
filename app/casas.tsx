@@ -116,7 +116,7 @@ export default function Casas({ casas }: { casas: Casa[] }) {
               desactivado={ocupado}
               ancho="completo"
             >
-              Aceptar
+              Entrar en esa casa
             </BotonPrincipal>
             <BotonSecundario
               onClick={() => pedir(c.id, 'rechazar')}

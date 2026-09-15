@@ -11,7 +11,7 @@ import PrimerosPasos from './primeros-pasos'
 import { accionesDe, primerosPasos, type Papel } from '@/lib/guia'
 import { pasosHechos } from '@/lib/pasos'
 import Cabecera from './cabecera'
-import { BotonAjustes, Ico, Logo, pintaDe } from './iconos'
+import { BotonAjustes, Ico, Logo, Palabra, pintaDe } from './iconos'
 import Avatar from './avatar'
 import { cuando, hoyAqui, type Recordatorio } from '@/lib/tablon'
 import MesPequeno from './mes-pequeno'
@@ -544,7 +544,7 @@ export default async function Inicio({
         <div className="flex h-14 items-center justify-between gap-2">
           <span className="flex min-w-0 items-center gap-2">
             <Logo tam={36} />
-            <span className="text-[22px] font-extrabold tracking-[-0.02em]">mappel</span>
+            <Palabra alto={22} />
           </span>
 
           {/*
@@ -1196,7 +1196,7 @@ function TarjetaCasa({
         style={{ color }}
       >
         <span className="text-[19px] font-extrabold tracking-tight">{hechas}</span>
-        <span className="mt-0.5 text-[10.5px] font-bold opacity-70">de {total}</span>
+        <span className="mt-0.5 text-[13px] font-bold opacity-70">de {total}</span>
       </span>
 
       <span className="min-w-0 flex-1">

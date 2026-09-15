@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import Link from './enlace'
-import { Ico } from './iconos'
+import { Ico, Logo, Palabra } from './iconos'
 import { useCasa } from './actividades-contexto'
 import { pestanasDe } from './pestanas'
 
@@ -109,9 +109,23 @@ export default function Rail() {
       */
       className="relative z-10 hidden w-[248px] shrink-0 flex-col border-r border-borde bg-superficie px-3 py-5 lg:flex"
     >
-      <div className="flex items-center gap-2.5 px-3 pb-6">
-        <Marca />
-        <span className="text-[15px] font-extrabold tracking-[.3em] text-tinta">mappel</span>
+      {/*
+        ── LA MARCA, LA DE VERDAD ──
+
+        Aquí vivió hasta septiembre de 2026 la H de HUBI, dibujada a
+        mano en SVG, con el nombre escrito al lado en Plus Jakarta Sans
+        y un espaciado de 0,3em. O sea que el único sitio de toda la
+        aplicación donde la marca no era la marca era el rail — y como
+        sólo sale en pantallas grandes, el cambio de logotipo pasó por
+        encima sin tocarlo.
+
+        Ahora son las dos piezas de siempre, `Logo` y `Palabra`, que ya
+        van por el alto y ya se recolorean solas con el modo.
+      */}
+      <div className="flex items-center gap-3 px-3 pb-6">
+        <Logo tam={26} />
+        <Palabra alto={16} />
+        <span className="sr-only">mappel</span>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -186,21 +200,6 @@ export default function Rail() {
   )
 }
 
-/* La H, dibujada. No es el PNG: a este tamaño y sobre los dos fondos,
-   el trazo vectorial es lo único que no se emborrona. */
-function Marca() {
-  return (
-    <svg width="24" height="26" viewBox="0 0 1024 1111" aria-hidden="true">
-      <defs>
-        <linearGradient id="rail-h" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#2DD4BF" />
-          <stop offset=".45" stopColor="#14B8A6" />
-          <stop offset="1" stopColor="#3B82F6" />
-        </linearGradient>
-      </defs>
-      <path d="M135 760A376 376 0 0 1 887 760" fill="none" stroke="url(#rail-h)" strokeWidth="250" />
-      <rect x="10" y="10" width="250" height="1090" rx="125" fill="url(#rail-h)" />
-      <rect x="762" y="10" width="250" height="1090" rx="125" fill="url(#rail-h)" />
-    </svg>
-  )
-}
+/* Aquí estaba `Marca()`: la H de HUBI dibujada en SVG, con su propia
+   copia del degradado escrita a mano. Se ha ido entera. El símbolo es
+   un archivo entregado y `Logo` es quien lo pone. */

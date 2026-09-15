@@ -126,8 +126,13 @@ export default function Arranque() {
       <img
         src={oscuro ? '/logo-mappel-oscuro.png' : '/logo-mappel.png'}
         alt=""
+        /* Por el ALTO, como en todas partes desde que el símbolo es la
+           m. Iba por el ancho —104— y con la H, que era más alta que
+           ancha, salía a 113 de alta; la m es más ancha que alta, y
+           con ese mismo 104 de ancho se habría quedado en 68 de alta,
+           perdida en mitad de la pantalla de arranque. */
         className="mappel-marca block"
-        style={{ width: 104, height: 'auto' }}
+        style={{ height: 88, width: 'auto' }}
       />
 
       <span
@@ -138,21 +143,22 @@ export default function Arranque() {
         }}
       />
 
-      <span
-        className="mappel-palabra mt-[26px] block text-[15px] font-extrabold text-tinta"
-        /*
-          En mayúsculas esto iba a 0,3em, y el `paddingLeft` del mismo
-          valor estaba para recentrar la palabra — el espaciado se lo
-          come el último hueco, que no se ve pero ocupa.
+      {/*
+        La palabra, ya dibujada.
 
-          En minúscula sobran los dos. El espaciado ancho es de las
-          versales; abrir una palabra en minúscula la convierte en
-          letras sueltas.
-        */
-        style={{ letterSpacing: '-0.005em' }}
-      >
-        mappel
-      </span>
+        Aquí hubo primero un espaciado de 0,3em con su `paddingLeft`
+        para recentrarla —cosa de cuando el nombre iba en versales—, y
+        después uno negativo cuando pasó a minúsculas. Los dos han
+        dejado de hacer falta: ya no es texto con una tipografía
+        prestada, es el trazado del logotipo.
+      */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={oscuro ? '/mappel-palabra-clara.png' : '/mappel-palabra.png'}
+        alt="mappel"
+        className="mappel-palabra mt-[26px] block"
+        style={{ height: 17, width: 'auto' }}
+      />
     </div>
   )
 }

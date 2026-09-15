@@ -59,7 +59,7 @@ export default function Refrescar({ cuantasHabia }: { cuantasHabia: number }) {
         onClick={traer}
         disabled={yendo}
         aria-label="Traer las citas de Google otra vez"
-        className="flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-borde bg-superficie px-3.5 text-[14px] font-extrabold text-tinta-suave disabled:opacity-50"
+        className="flex h-12 shrink-0 items-center gap-1.5 rounded-full border border-borde bg-superficie px-3.5 text-[14px] font-extrabold text-tinta-suave disabled:opacity-50"
       >
         <Ico
           nombre="refrescar"

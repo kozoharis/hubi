@@ -47,15 +47,15 @@ export default function Tarjeta({
     >
       {/* De quién para quién */}
       {paraOtro ? (
-        <p className="flex items-center gap-1.5 text-[12.5px] font-extrabold tracking-wider text-tenue">
+        <p className="flex items-center gap-1.5 text-[13px] font-extrabold tracking-wider text-tenue">
           <span>{de.toUpperCase()}</span>
           <Ico nombre="flecha" tam={13} grosor={2.6} />
           <span>{para?.toUpperCase()}</span>
         </p>
       ) : !r.asignado_a ? (
-        <p className="text-[12.5px] font-extrabold tracking-wider text-tenue">PARA LOS DOS</p>
+        <p className="text-[13px] font-extrabold tracking-wider text-tenue">PARA LOS DOS</p>
       ) : (
-        <p className="text-[12.5px] font-extrabold tracking-wider text-tenue">
+        <p className="text-[13px] font-extrabold tracking-wider text-tenue">
           {(para ?? de).toUpperCase()}
         </p>
       )}

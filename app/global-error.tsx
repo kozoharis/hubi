@@ -72,10 +72,11 @@ export default function GlobalError({
             Entrar de nuevo
           </a>
 
-          <p style={{ marginTop: 32, fontSize: 12, color: '#7D7166', wordBreak: 'break-word' }}>
-            {error.message}
-            {error.digest ? ` · ${error.digest}` : ''}
-          </p>
+          {error.digest ? (
+            <p style={{ marginTop: 32, fontSize: 13, color: '#7D7166', wordBreak: 'break-word' }}>
+              Si hace falta contarlo, el código es {error.digest}
+            </p>
+          ) : null}
         </div>
       </body>
     </html>

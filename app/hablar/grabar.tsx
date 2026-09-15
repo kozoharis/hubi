@@ -869,7 +869,7 @@ export default function Grabar({
                       type="submit"
                       disabled={escrito.trim().length === 0}
                       aria-label="Enviar"
-                      className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[13px] text-white disabled:opacity-30"
+                      className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[13px] text-white disabled:opacity-30"
                       style={{ background: DEGRADADO }}
                     >
                       <Ico nombre="flecha" tam={22} grosor={2.4} />

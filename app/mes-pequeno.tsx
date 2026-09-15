@@ -87,7 +87,7 @@ export default function MesPequeno({
           {DIAS.map((d, i) => (
             <span
               key={i}
-              className="text-center text-[12.5px] font-extrabold uppercase tracking-wide text-tenue"
+              className="text-center text-[13px] font-extrabold uppercase tracking-wide text-tenue"
             >
               {d}
             </span>

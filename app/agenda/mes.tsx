@@ -168,14 +168,14 @@ export default async function Mes({
             <Link
               href={`/agenda?vista=mes&mes=${anterior}${filtro}`}
               aria-label="Mes anterior"
-              className="flex h-11 w-11 items-center justify-center text-tenue"
+              className="flex h-12 w-12 items-center justify-center text-tenue"
             >
               <Ico nombre="atras" tam={22} grosor={2.4} />
             </Link>
             <Link
               href={`/agenda?vista=mes&mes=${siguiente}${filtro}`}
               aria-label="Mes siguiente"
-              className="flex h-11 w-11 items-center justify-center text-tenue"
+              className="flex h-12 w-12 items-center justify-center text-tenue"
             >
               <Ico nombre="flecha" tam={22} grosor={2.4} />
             </Link>
@@ -490,7 +490,7 @@ function Renglon({
       }`}
     >
       <span
-        className="w-[40px] shrink-0 text-[12.5px] font-extrabold tabular-nums"
+        className="w-[42px] shrink-0 text-[13px] font-extrabold tabular-nums"
         style={{ color: hora ? color : 'var(--t-apagado)' }}
       >
         {hora ? hora.slice(0, 5) : '—'}

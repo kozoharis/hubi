@@ -524,7 +524,7 @@ function Renglon({
       }`}
     >
       <span
-        className="w-[40px] shrink-0 text-[12.5px] font-extrabold tabular-nums"
+        className="w-[42px] shrink-0 text-[13px] font-extrabold tabular-nums"
         style={{ color: hora ? color : 'var(--t-apagado)' }}
       >
         {hora ? hora.slice(0, 5) : '—'}
@@ -652,7 +652,7 @@ function Tira({
                   }
             }
           >
-            <span className="text-[12px] font-bold uppercase tracking-wider opacity-70">
+            <span className="text-[13px] font-bold uppercase tracking-wider opacity-70">
               {LETRAS[i]}
             </span>
             <span

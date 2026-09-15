@@ -179,7 +179,7 @@ export default function Decidir({
                 role="switch"
                 aria-checked={puesto}
                 aria-label={`${puesto ? 'Quitar' : 'Poner'} ${c.nombre} en la pantalla de la cocina`}
-                className="relative h-[34px] w-[58px] shrink-0 rounded-full transition"
+                className="relative h-[34px] w-[58px] shrink-0 rounded-full before:absolute before:inset-x-0 before:-inset-y-[7px] before:content-[''] transition"
                 style={{ background: puesto ? 'var(--t-boton)' : 'var(--t-borde)' }}
               >
                 <span
@@ -211,7 +211,7 @@ export default function Decidir({
             role="switch"
             aria-checked={conLosRecados}
             aria-label={`${conLosRecados ? 'Quitar' : 'Poner'} los recados en la pantalla de la cocina`}
-            className="relative h-[34px] w-[58px] shrink-0 rounded-full transition"
+            className="relative h-[34px] w-[58px] shrink-0 rounded-full before:absolute before:inset-x-0 before:-inset-y-[7px] before:content-[''] transition"
             style={{ background: conLosRecados ? 'var(--t-boton)' : 'var(--t-borde)' }}
           >
             <span

@@ -1,4 +1,5 @@
 import Link from '@/app/enlace'
+import { Palabra } from '@/app/iconos'
 export const metadata = {
   title: 'Privacidad · mappel',
 }
@@ -7,7 +8,11 @@ export default function Privacidad() {
   return (
     <main className="min-h-screen px-6 py-16">
       <article className="mx-auto w-full max-w-2xl">
-        <p className="rotulo tracking-[0.25em]">mappel</p>
+        {/* El nombre va dibujado, no escrito: esto era
+            `<p className="rotulo">mappel</p>`, y `.rotulo` lleva
+            `text-transform: uppercase`, así que en pantalla ponía
+            MAPPEL. Dos reglas rotas de una vez con una sola línea. */}
+        <p className="mb-4"><Palabra alto={20} /><span className="sr-only">mappel</span></p>
         <h1 className="t-titulo mt-4">
           Política de privacidad
         </h1>

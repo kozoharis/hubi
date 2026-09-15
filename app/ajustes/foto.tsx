@@ -168,7 +168,7 @@ export default function TuPerfil({
             disabled={ocupado}
             className="h-[60px] flex-1 rounded-[16px] border border-borde text-[17.5px] font-extrabold text-tinta-suave disabled:opacity-50"
           >
-            Cancelar
+            Dejarlo como está
           </button>
         </div>
       </div>

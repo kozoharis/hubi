@@ -528,8 +528,16 @@ input, textarea, select {
 }
 
 /* ── Etiqueta de sección ───────────────────────────────── */
+/*
+  13 px, que es el suelo de la escala para versales y el número que
+  dice la documentación dos veces (aquí abajo, y en el manual de
+  marca). Estuvo en `0.78rem` —12,48 px— desde el principio: medio
+  píxel por debajo de su propio mínimo, repartido en el centenar de
+  sitios que usan esta clase. Nadie lo iba a ver a ojo; se encontró
+  midiendo.
+*/
 .rotulo {
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
