@@ -404,7 +404,7 @@ export default async function Cuentas({
   )
 
   return (
-    <main className="min-h-screen pb-40 lg:pb-16">
+    <main className="min-h-dvh pb-40 lg:pb-16">
       <Cabecera ancho>
         <div className="lg:hidden">
         <div className="flex h-14 items-center gap-3">

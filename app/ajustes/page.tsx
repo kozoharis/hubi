@@ -543,7 +543,7 @@ export default async function Ajustes({
   )
 
   return (
-    <main className="min-h-screen pb-40 lg:pb-16">
+    <main className="min-h-dvh pb-40 lg:pb-16">
       <Cabecera ancho>
         {/* La de siempre, solo en el móvil. */}
         <div className="lg:hidden">

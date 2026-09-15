@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sin conexión · mappel</title>
+<!--
+  LA ÚNICA PANTALLA DE MAPPEL QUE NO ES UNA PANTALLA DE MAPPEL.
+
+  Es un archivo suelto, sin React, sin Tailwind y sin fuentes de
+  fuera, porque tiene que poder pintarse cuando NO HAY RED. Todo lo
+  demás de la aplicación necesita bajar algo; esto no.
+
+  El trabajador de fondo se la guarda al instalarse y la enseña cuando
+  alguien abre mappel sin cobertura. Que exista es además lo que hace
+  que Chrome en Android considere mappel instalable: sin una respuesta
+  válida estando sin conexión, el navegador no ofrece «Instalar».
+
+  No lleva enlaces a ningún sitio de dentro: sin red no llevarían a
+  ninguna parte, y un botón que no hace nada es peor que no tenerlo.
+  Lleva uno solo, «Volver a intentarlo», que recarga.
+-->
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #F7F5F1;
+    color: #1A1714;
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui,
+                 -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    padding-top: calc(24px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    text-align: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 26rem; }
+  .marca {
+    display: block; width: 72px; height: 72px;
+    margin: 0 auto 28px; border-radius: 18px;
+  }
+  h1 {
+    font-size: 30px;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+  }
+  p {
+    font-size: 19px;
+    line-height: 1.55;
+    font-weight: 500;
+    color: #453F39;
+    margin: 0 0 32px;
+  }
+  button {
+    font: inherit;
+    font-size: 19px;
+    font-weight: 800;
+    color: #FFFFFF;
+    background: #14B8A6;
+    border: 0;
+    border-radius: 16px;
+    /* El suelo de tocar de mappel: nada por debajo de 60 px de alto. */
+    min-height: 60px;
+    padding: 0 30px;
+    cursor: pointer;
+  }
+  button:active { background: #0B7C6F; }
+</style>
+</head>
+<body>
+  <main>
+    <!--
+      EL SÍMBOLO DE VERDAD, NO UNO DIBUJADO AQUÍ.
+
+      La tentación era dibujar la m a mano en SVG, que no necesita
+      red. Pero el símbolo es un archivo entregado y no se redibuja en
+      ningún sitio —esa regla es de las pocas que no tienen excepción—,
+      así que se pone el icono real y el trabajador de fondo se lo
+      guarda JUNTO CON esta página. Si aun así no estuviera, el `alt`
+      dice el nombre y ya está.
+    -->
+    <img class="marca" src="/icono-192.png" alt="mappel" width="72" height="72">
+
+    <h1>No hay conexión</h1>
+    <p>
+      mappel necesita internet para enseñarte tus cosas al día.
+      Comprueba el wifi o los datos del teléfono y vuelve a intentarlo.
+    </p>
+    <button type="button" onclick="location.reload()">Volver a intentarlo</button>
+  </main>
+</body>
+</html>

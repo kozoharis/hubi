@@ -143,7 +143,7 @@ export default async function Documentos({
     }
 
     return (
-      <main className="min-h-screen pb-40 lg:pb-16">
+      <main className="min-h-dvh pb-40 lg:pb-16">
         <Cabecera ancho>
           <div className="lg:hidden">
             <Titulo />
@@ -329,7 +329,7 @@ export default async function Documentos({
   const recientes = papeles.slice(0, 8)
 
   return (
-    <main className="min-h-screen pb-40 lg:pb-16">
+    <main className="min-h-dvh pb-40 lg:pb-16">
       {/*
         En el móvil, la cabecera de siempre: el título y debajo la caja
         de MAPPEL a todo lo ancho, que es donde se busca con el pulgar.

@@ -81,10 +81,15 @@ export default function SubirFoto({ alTerminar }: { alTerminar: () => void }) {
         </p>
       )}
 
+      {/* `image/*`, que además es lo que dice el comentario de arriba de
+          este mismo archivo. Estaba escrito `image/jpeg,image/png,
+          image/webp`, y en el aparato SIN cámara —donde el navegador
+          ignora `capture` y abre el selector— eso dejaba en gris casi
+          todas las fotos de la tableta. */}
       <input
         ref={campo}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*"
         capture="environment"
         onChange={elegida}
         className="hidden"

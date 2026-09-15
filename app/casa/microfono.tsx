@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { grabarVoz, sePuedeGrabar, type Grabando } from '../hablar/grabadora'
+import { aWav } from '@/lib/a-wav'
 import { NOCHE, DEGRADADO, DEGRADADO_TUMBADO, TURQUESA } from '@/lib/voz-mappel'
 import { Ico } from '../iconos'
 
@@ -132,9 +133,11 @@ export default function Microfono() {
         setFallo(
           motivo === 'sin-permiso'
             ? 'Esta pantalla no tiene permiso para usar el micrófono. Se le da desde los ajustes del navegador de la tableta.'
-            : motivo === 'sin-micro'
-              ? 'Esta pantalla no tiene micrófono.'
-              : 'No se ha oído nada. Prueba otra vez.'
+            : motivo === 'ocupado'
+              ? 'El micrófono lo está usando otra aplicación de la tableta. Ciérrala y prueba otra vez.'
+              : motivo === 'sin-micro'
+                ? 'Esta pantalla no tiene micrófono.'
+                : 'No se ha oído nada. Prueba otra vez.'
         )
       },
     })
@@ -145,8 +148,31 @@ export default function Microfono() {
     setPaso({ que: 'pensando' })
 
     try {
+      /*
+        ── ESTO ES LO QUE HACÍA QUE EL MICRÓFONO DE LA COCINA NO
+           FUNCIONARA NUNCA ──
+
+        Aquí ponía:
+
+            paquete.append('audio', audio, 'hablar.webm')
+
+        O sea: el archivo tal como lo suelta el navegador, con un
+        nombre puesto a mano. En la tableta de la cocina —Android—
+        `grabadora.ts` graba en webm/opus, y el modelo que transcribe
+        NO admite webm. La respuesta era siempre la misma: «No se ha
+        entendido. Prueba otra vez.»
+
+        Se movía la barra, se oía la voz, y no se entendía nada jamás.
+        Parecía cosa del acento o del ruido de la cocina.
+
+        El micrófono del móvil sí convertía a WAV antes de mandar —lo
+        hacía dentro de su propio archivo, donde nadie más lo veía—.
+        Ahora la conversión está en `lib/a-wav.ts` y la usan los dos.
+      */
+      const wav = await aWav(audio)
+
       const paquete = new FormData()
-      paquete.append('audio', audio, 'hablar.webm')
+      paquete.append('audio', new File([wav], 'voz.wav', { type: 'audio/wav' }))
       /* SIN pista: el intérprete entero, como en el móvil. Lo que no se
          pueda hacer aquí se explica abajo, no se fuerza a ser otra
          cosa. */

@@ -226,10 +226,14 @@ export default function TuPerfil({
         </p>
       )}
 
+      {/* `image/*`, no la lista de tres: en Android el selector deja en
+          gris —sin poder tocarlas— las fotos que la galería o Drive
+          declaran sin tipo, que son muchas. El porqué largo está en
+          `app/ajustes/cocina/fotos.tsx`. */}
       <input
         ref={carrete}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*"
         onChange={elegida}
         className="hidden"
       />

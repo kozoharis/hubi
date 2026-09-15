@@ -221,9 +221,27 @@ export default function Barra({
         )}
       </div>
 
+      {/*
+        ── UN SUELO MÍNIMO, PORQUE EN ANDROID `env()` ES CERO ──
+
+        Era sólo `env(safe-area-inset-bottom, 0px)`. Eso funciona en
+        iPhone, que declara los 34 px de la raya de abajo, y NO funciona
+        en Android: allí la barra de gestos —esa rayita blanca de abajo
+        del todo— se dibuja ENCIMA de la página y el navegador declara
+        `0`.
+
+        Resultado, en el móvil de quien tenga Android: la última fila de
+        pestañas pegada a la rayita del sistema, y al tocar «Ajustes» o
+        «Inicio» —las de los extremos— muchas veces se disparaba el
+        gesto del sistema en lugar de la pestaña. Un botón que a veces
+        no responde y a veces te saca de la aplicación.
+
+        `max()` coge el que sea mayor: los 34 del iPhone, o estos 10 en
+        todo lo demás. No se nota en iOS y despega la barra en Android.
+      */}
       <nav
         className="barra-abajo pointer-events-auto border-t border-borde bg-superficie"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        style={{ paddingBottom: 'max(10px, env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="mx-auto flex h-[68px] max-w-md">
           {PESTANAS.map((p) => (

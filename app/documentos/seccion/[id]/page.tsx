@@ -230,7 +230,7 @@ export default async function Seccion({
   }
 
   return (
-    <main className="min-h-screen pb-40 lg:pb-16">
+    <main className="min-h-dvh pb-40 lg:pb-16">
       {/* El título vive en la cabecera (D6): aquí estaba en el cuerpo
           y se perdía al hacer scroll. */}
       <Cabecera ancho>

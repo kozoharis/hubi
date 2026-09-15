@@ -95,7 +95,7 @@ export default async function Cuentas() {
   const nombreMes = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(hoy)
 
   return (
-    <main className="min-h-screen pb-40 lg:pb-16">
+    <main className="min-h-dvh pb-40 lg:pb-16">
       {/* El «volver» solo en el móvil: en grande el rail está a la
           vista y el Inicio está a un toque, siempre en el mismo sitio.
           Una flecha atrás encima de una navegación permanente es un

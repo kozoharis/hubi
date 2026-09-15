@@ -130,7 +130,7 @@ export default async function DiaADia() {
   const veAsesor = !soyLaAyuda && !soyElAsesor && laGestoria !== null
 
   return (
-    <main className="min-h-screen pb-40 lg:pb-16">
+    <main className="min-h-dvh pb-40 lg:pb-16">
       <Cabecera ancho>
         <div className="lg:hidden">
           {/* El volver, solo en el móvil: en grande el rail ya lleva

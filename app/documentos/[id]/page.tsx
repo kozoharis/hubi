@@ -177,7 +177,7 @@ export default async function Documento({
     : '/documentos'
 
   return (
-    <main className="min-h-screen pb-40 lg:pb-16">
+    <main className="min-h-dvh pb-40 lg:pb-16">
       {/*
         EL TÍTULO SUBE A LA CABECERA.
 
@@ -487,7 +487,7 @@ export default async function Documento({
 */
 function NoSeHaPodido() {
   return (
-    <main className="min-h-screen pb-40">
+    <main className="min-h-dvh pb-40">
       <Cabecera formulario>
         <Volver href="/documentos" />
         <h1 className="t-titulo mt-2.5">No se ha podido abrir</h1>

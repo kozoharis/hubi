@@ -51,7 +51,7 @@ export const dynamic = 'force-static'
 
 export default function EnLaCocina() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-16">
+    <main className="flex min-h-dvh items-center justify-center px-6 py-16">
       <div className="columna-texto">
         <div className="rounded-[28px] border border-borde bg-superficie px-7 py-8">
           <h1 className="t-titulo">Esto es la pantalla de la cocina</h1>

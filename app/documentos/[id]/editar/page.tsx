@@ -68,7 +68,7 @@ export default async function EditarDocumento({
   if (error) {
     console.error('[MAPPEL] No se ha podido abrir para corregir:', error.message)
     return (
-      <main className="min-h-screen pb-40">
+      <main className="min-h-dvh pb-40">
         <Cabecera formulario>
           <Volver href={`/documentos/${id}`} />
           <h1 className="t-titulo mt-2.5">No se ha podido abrir</h1>
@@ -95,7 +95,7 @@ export default async function EditarDocumento({
     .eq('activa', true)
 
   return (
-    <main className="min-h-screen pb-40">
+    <main className="min-h-dvh pb-40">
       <Cabecera formulario>
         <Volver href={`/documentos/${id}`} />
         <h1 className="t-titulo mt-2.5">Corregir</h1>

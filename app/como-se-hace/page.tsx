@@ -63,7 +63,7 @@ export default async function ComoSeHace({
   const abrir = ver && acciones.some((a) => a.clave === ver) ? ver : null
 
   return (
-    <main className="min-h-screen pb-24">
+    <main className="min-h-dvh pb-24">
       <Cabecera texto>
         <Volver href="/ajustes" />
         <div className="flex h-14 items-center gap-3">

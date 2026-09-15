@@ -6,6 +6,7 @@ import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
 import { Aviso, BotonPrincipal, BotonSecundario, PastillaAmbito } from '../piezas'
 import { api } from '@/lib/api'
+import { instalar, useInstalable } from '../instalacion'
 
 type Estado = 'mirando' | 'instalar' | 'apagados' | 'encendidos' | 'bloqueados' | 'imposible'
 
@@ -13,6 +14,22 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
   const [estado, setEstado] = useState<Estado>('mirando')
   const [esIphone, setEsIphone] = useState(false)
   const [ocupado, setOcupado] = useState(false)
+
+  /*
+    ── Y EN ANDROID SE INSTALA DE UN TOQUE ──
+
+    Aquí sólo existían los cinco pasos de Safari. Un Android que abría
+    esta pantalla veía «Activar los avisos» y nada más: los avisos
+    funcionan en la pestaña de Chrome, sí, pero entonces mappel se
+    queda dentro del navegador para siempre, con su barra de
+    direcciones comiéndose una franja de pantalla y sin icono propio.
+
+    Chrome deja ofrecer la instalación de verdad —un botón, un
+    diálogo— y no lo estábamos ofreciendo. `useInstalable` es cierto
+    sólo cuando el navegador ya ha dicho que se puede.
+  */
+  const sePuedeInstalar = useInstalable()
+  const [instalando, setInstalando] = useState(false)
 
   /*
     Antes esto era UNA caja gris que servía igual para «enviado» que
@@ -147,7 +164,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
   }
 
   return (
-    <main className="min-h-screen pb-40">
+    <main className="min-h-dvh pb-40">
       {/* El título va en la cabecera, como en el resto (decisión D6).
           Y el emoji sale: los iconos de MAPPEL son de trazo, y un emoji
           de campana se pinta distinto en cada teléfono. */}
@@ -161,6 +178,37 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
 
       <div className="columna-formulario pt-1">
         {estado === 'mirando' && <p className="t-cuerpo mt-4 text-tenue">Comprobando…</p>}
+
+        {/*
+          ── INSTALARLA, EN ANDROID Y EN EL ORDENADOR ──
+
+          Va arriba del todo y sin depender del estado: se puede
+          instalar antes de activar los avisos, después, o sin
+          activarlos nunca. Desaparece sola en cuanto está instalada,
+          porque el navegador deja de ofrecerlo.
+        */}
+        {sePuedeInstalar && (
+          <div className="mt-4 rounded-[18px] border border-borde bg-superficie p-4">
+            <p className="t-cuerpo">
+              Puedes poner mappel en la pantalla de inicio de este dispositivo. Se abre
+              con su icono, a pantalla completa y sin la barra del navegador.
+            </p>
+
+            <div className="mt-4">
+              <BotonPrincipal
+                onClick={async () => {
+                  setInstalando(true)
+                  await instalar()
+                  setInstalando(false)
+                }}
+                desactivado={instalando}
+                icono="casa"
+              >
+                {instalando ? 'Instalando…' : 'Instalar mappel'}
+              </BotonPrincipal>
+            </div>
+          </div>
+        )}
 
         {/* ── Hay que instalarla primero (iPhone) ── */}
         {estado === 'instalar' && (

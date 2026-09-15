@@ -141,7 +141,7 @@ export default async function Agenda({
   )
 
   return (
-    <main className="min-h-screen pb-40 lg:pb-16">
+    <main className="min-h-dvh pb-40 lg:pb-16">
       <Cabecera ancho>
         {/* En el móvil, la cabecera de siempre. */}
         <div className="lg:hidden">

@@ -50,7 +50,7 @@ export default async function Guardar({
     const elJefe = hogarId ? await quienManda(supabase, hogarId) : null
 
     return (
-      <main className="min-h-screen pb-12">
+      <main className="min-h-dvh pb-12">
         <Cabecera formulario>
           <Volver href="/" />
           <h1 className="t-titulo">Guardar un papel</h1>

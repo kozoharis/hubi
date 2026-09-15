@@ -484,7 +484,7 @@ export default async function Inicio({
       : null
 
   return (
-    <main className="relative min-h-screen pb-40 lg:pb-16">
+    <main className="relative min-h-dvh pb-40 lg:pb-16">
       <Arranque />
 
       {/* El color, de borde a borde y siempre por detrás */}

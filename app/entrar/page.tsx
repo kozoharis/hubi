@@ -168,7 +168,7 @@ export default function Entrar() {
 
   return (
     <main
-      className="techo relative flex min-h-screen flex-col justify-center overflow-hidden px-6 pb-16"
+      className="techo relative flex min-h-dvh flex-col justify-center overflow-hidden px-6 pb-16"
       style={{ background: NOCHE }}
     >
       {/* El color que va a la deriva por detrás */}

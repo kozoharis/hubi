@@ -133,7 +133,7 @@ export default function Empezar({ nombre }: { nombre: string }) {
   }
 
   return (
-    <main className="techo-holgado min-h-screen px-5 pb-16">
+    <main className="techo-holgado min-h-dvh px-5 pb-16">
       <div className="mx-auto w-full max-w-md">
         <div className="flex justify-center pt-4">
           <Logo tam={54} />

@@ -793,7 +793,7 @@ export default function Formulario({
 
   if (paso === 'guardado' && resultado?.vencimiento && !avisoResuelto) {
     return (
-      <main className="flex min-h-screen flex-col justify-center py-16">
+      <main className="flex min-h-dvh flex-col justify-center py-16">
         <div className="columna-formulario">
           {/* Primero se confirma que YA ESTÁ GUARDADO, y luego se
               pregunta. Estas tres preguntas son opcionales; si alguien
@@ -927,7 +927,7 @@ export default function Formulario({
   // ══ PANTALLA FINAL ════════════════════════════════════════
   if (paso === 'guardado' && resultado) {
     return (
-      <main className="flex min-h-screen flex-col justify-center py-16">
+      <main className="flex min-h-dvh flex-col justify-center py-16">
         <div className="columna-formulario">
           <Hecho titulo="Documento guardado" explicacion={resultado.ruta}>
             {resultado.repetida && (
@@ -984,7 +984,7 @@ export default function Formulario({
   }
 
   return (
-    <main className="techo-holgado min-h-screen pb-10">
+    <main className="techo-holgado min-h-dvh pb-10">
       {/*
         Los dos campos de archivo viven aquí, fuera de las pantallas.
         Si se declararan dentro de cada paso, al cambiar de pantalla la

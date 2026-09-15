@@ -112,10 +112,26 @@ export default function Fotos() {
         ni el asesor.
       </p>
 
+      {/*
+        ── `image/*` Y NO LA LISTA DE TRES ──
+
+        Ponía `accept="image/jpeg,image/png,image/webp"`. Suena más
+        preciso y en Android es peor: el selector de archivos filtra
+        por el tipo que le declara cada aplicación, y la galería,
+        Google Fotos y Drive declaran muchas fotos sin tipo o con uno
+        genérico. Resultado: se abría el selector y las fotos salían
+        EN GRIS, sin poder tocarlas. Ninguna explicación en pantalla:
+        simplemente no se dejaban elegir.
+
+        Con `image/*` se puede elegir cualquier imagen, y si el formato
+        al final no vale —un HEIC pequeño que no ha pasado por
+        `encoger`— lo dice el servidor con palabras, que es mejor que
+        un icono apagado que nadie sabe interpretar.
+      */}
       <input
         ref={campo}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*"
         onChange={elegida}
         className="hidden"
       />

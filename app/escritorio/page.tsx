@@ -81,7 +81,7 @@ export default async function Escritorio() {
   const unaSola = casas !== null && casas.length <= 1
 
   return (
-    <main className="min-h-screen pb-24">
+    <main className="min-h-dvh pb-24">
       {/* Era una cabecera escrita a mano, con `max-w-5xl` centrado: la
           única medida de MAPPEL que no salía del sistema, y centrada
           además, o sea flotando al lado del rail. Ahora es la columna

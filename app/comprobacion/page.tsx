@@ -62,7 +62,7 @@ export default function Comprobacion() {
   }, [])
 
   return (
-    <main className="min-h-screen bg-fondo py-12 text-tinta">
+    <main className="min-h-dvh bg-fondo py-12 text-tinta">
       {/* Es una pantalla de diagnóstico y no de producto, pero se ve
           dentro del mismo armazón —con el rail delante— y centrada
           flotaba como las demás. La medida de texto le sirve. */}

@@ -5,6 +5,7 @@ import Pestanas from './pestanas'
 import VuelveAHoy from './vuelve-a-hoy'
 import Microfono from './microfono'
 import Descanso from './descanso'
+import Despierta from './despierta'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,11 +102,39 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
       una decide qué hacer con él — Hoy lo llena sin desbordar, y las
       otras cuatro se desplazan dentro, que ahí sí tiene sentido porque
       son listas que se van a mirar de cerca.
+
+      ── Y ES `h-dvh`, NO `h-screen` ──
+
+      `h-screen` es `100vh`, y `100vh` en Android es **la ventana sin
+      las barras del sistema**: Chrome la calcula como si la barra de
+      direcciones estuviera escondida, siempre. En la tableta de la
+      cocina, que no esconde nada porque nadie se desplaza, eso son
+      unos 56 px de pared que caen por debajo del borde de abajo — y
+      como aquí hay `overflow-hidden`, no se pueden recuperar
+      desplazando. Se pierden y ya está.
+
+      Lo que se perdía era justo lo de abajo del todo: el micrófono.
+      El botón que el punto 20 del planteamiento manda tener SIEMPRE.
+
+      En un iPad no se nota, porque Safari en horizontal y a pantalla
+      completa hace que `100vh` y la pantalla coincidan. La pared es
+      justamente la que nunca es un iPad.
+
+      `h-dvh` es `100dvh`: el alto que hay AHORA MISMO, barras
+      incluidas. Lo entienden todos los navegadores desde 2022.
     */}
     <div
-      className="flex h-screen flex-col overflow-hidden bg-fondo px-10 py-8 xl:px-14 xl:py-10"
+      className="flex h-dvh flex-col overflow-hidden bg-fondo px-10 py-8 xl:px-14 xl:py-10"
       id="la-pared"
     >
+      {/*
+        No pinta nada: le pide a la tableta que no apague la pantalla.
+        Sin esto, la pared estaba negra casi siempre y el descanso de
+        las fotos —que entra a los tres minutos— no llegó a verse
+        nunca, porque Android apagaba a los dos.
+      */}
+      <Despierta />
+
       <VuelveAHoy />
 
       <header className="flex shrink-0 items-end justify-between gap-10">

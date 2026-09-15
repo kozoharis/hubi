@@ -67,7 +67,11 @@ type Manejadores = {
   /** Ha vuelto a hablar. */
   alSeguir: () => void
   alTerminar: (audio: Blob, segundos: number) => void
-  alFallar: (motivo: 'sin-permiso' | 'sin-micro' | 'vacio') => void
+  /* `ocupado` es el caso de Android: el micrófono existe y el permiso
+     está dado, pero lo tiene cogido otra aplicación. Mandar a esa
+     persona a los ajustes del navegador es mandarla a un sitio donde
+     no hay nada que arreglar. */
+  alFallar: (motivo: 'sin-permiso' | 'sin-micro' | 'ocupado' | 'vacio') => void
 }
 
 /* Lo que se espera callado antes de preguntar "¿algo más?". Dos
@@ -111,8 +115,41 @@ export async function grabarVoz(manejadores: Manejadores): Promise<Grabando | nu
         autoGainControl: true,
       },
     })
-  } catch {
-    manejadores.alFallar('sin-permiso')
+  } catch (e) {
+    /*
+      ── NO TODO FALLO DE AQUÍ ES «NO ME HAS DADO PERMISO» ──
+
+      Aquí se contestaba siempre `sin-permiso`, y la pantalla decía
+      «no tienes permiso para usar el micrófono; se da desde los
+      ajustes del navegador». Que es un consejo perfecto… cuando el
+      problema es el permiso.
+
+      En Android hay dos casos frecuentísimos en los que NO lo es, y
+      en los dos se mandaba a la persona a rebuscar en unos ajustes
+      donde el permiso ya estaba dado:
+
+        · `NotReadableError` — el micrófono lo tiene cogido otra cosa.
+          En una tableta de cocina es lo normal: una videollamada
+          abierta en otra pestaña, el asistente del propio sistema.
+        · `NotFoundError` — no hay micrófono, o Android no lo
+          enumera. Pasa con tabletas baratas y con algún auricular
+          bluetooth a medio conectar.
+
+      Y hay uno que no es del dispositivo sino nuestro:
+      `NotAllowedError` con la página servida sin HTTPS. No se puede
+      arreglar desde los ajustes tampoco.
+
+      Los nombres son estándar y los ponen todos los navegadores. Se
+      miran.
+    */
+    const nombre = (e as { name?: string })?.name ?? ''
+    manejadores.alFallar(
+      nombre === 'NotAllowedError' || nombre === 'SecurityError'
+        ? 'sin-permiso'
+        : nombre === 'NotReadableError' || nombre === 'AbortError'
+          ? 'ocupado'
+          : 'sin-micro'
+    )
     return null
   }
 

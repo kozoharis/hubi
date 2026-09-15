@@ -244,7 +244,7 @@ export default async function Compra() {
     .map(([q]) => q.replace(/^\w/, (l) => l.toUpperCase()))
 
   return (
-    <main className="min-h-screen pb-40 lg:pb-16">
+    <main className="min-h-dvh pb-40 lg:pb-16">
       <Cabecera ancho>
         <div className="flex h-14 items-center gap-3 lg:hidden">
           {/* Era `#0EA5E9`, el cian que no está declarado en la

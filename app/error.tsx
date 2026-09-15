@@ -22,7 +22,7 @@ export default function Error({
   }, [error])
 
   return (
-    <main className="flex min-h-screen flex-col justify-center px-6 py-16">
+    <main className="flex min-h-dvh flex-col justify-center px-6 py-16">
       <div className="mx-auto w-full max-w-md text-center">
         <h1 className="font-titulo text-[2.5rem] leading-tight text-tinta">
           Algo no ha ido bien

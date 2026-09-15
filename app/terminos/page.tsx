@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function Terminos() {
   return (
-    <main className="min-h-screen px-6 py-16">
+    <main className="min-h-dvh px-6 py-16">
       <article className="mx-auto w-full max-w-2xl">
         {/* El nombre va dibujado, no escrito: esto era
             `<p className="rotulo">mappel</p>`, y `.rotulo` lleva

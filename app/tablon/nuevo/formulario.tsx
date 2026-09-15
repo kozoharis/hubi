@@ -162,7 +162,7 @@ export default function Nuevo({
 
   if (hecho) {
     return (
-      <main className="flex min-h-screen flex-col justify-center py-16">
+      <main className="flex min-h-dvh flex-col justify-center py-16">
         <div className="columna-formulario">
           <Hecho titulo="Apuntado" explicacion={titulo}>
             {/* Decía «Ver el tablón» y llevaba a una pantalla titulada
@@ -177,7 +177,7 @@ export default function Nuevo({
   }
 
   return (
-    <main className="techo-holgado min-h-screen pb-10">
+    <main className="techo-holgado min-h-dvh pb-10">
       <div className="columna-formulario">
         <Volver href={volver} />
 

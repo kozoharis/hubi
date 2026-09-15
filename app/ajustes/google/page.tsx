@@ -53,7 +53,7 @@ export default async function AjustesDeGoogle() {
   const elJefe = manda || !hogarId ? null : await quienManda(supabase, hogarId)
 
   return (
-    <main className="min-h-screen pb-40">
+    <main className="min-h-dvh pb-40">
       <Cabecera formulario>
         <Volver href="/ajustes" />
         <h1 className="t-titulo mt-2.5">Google</h1>

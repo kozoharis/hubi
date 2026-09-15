@@ -7,6 +7,7 @@ import { ProveedorActividades } from './actividades-contexto'
 import Marco from './marco'
 import { elEspacio } from '@/lib/espacio'
 import Rail from './rail'
+import Instalacion from './instalacion'
 
 const fuente = { variable: 'font-stub', className: 'font-stub' }
 
@@ -316,6 +317,15 @@ export default async function RootLayout({
           consigo la barra de abajo ni la cabecera, que están clavadas
           a la ventana. El porqué largo está en `globals.css`.
         */}
+        {/*
+          No pinta nada. Registra el trabajador de fondo al cargar
+          —hasta ahora sólo se registraba si alguien pulsaba «Activar
+          los avisos», y sin eso Chrome en Android no ofrece instalar
+          mappel— y se queda con el aviso de instalación que manda el
+          navegador, que llega a los pocos segundos y sólo una vez.
+        */}
+        <Instalacion />
+
         <ProveedorActividades casa={{ actividades, rol, usaCompra, esPantalla }}>
           {/*
             ── DOS SUPERFICIES, UN ARMAZÓN ──

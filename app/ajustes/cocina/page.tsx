@@ -221,7 +221,7 @@ export default async function LaCocina() {
   })()
 
   return (
-    <main className="min-h-screen pb-40 lg:pb-16">
+    <main className="min-h-dvh pb-40 lg:pb-16">
       <Cabecera ancho>
         <div className="lg:hidden">
           <Volver href="/ajustes" />

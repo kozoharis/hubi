@@ -133,7 +133,7 @@ export default async function Detalle({
   const tarde = atrasado(r)
 
   return (
-    <main className="techo-holgado min-h-screen px-5 pb-40 lg:px-0 lg:pb-16">
+    <main className="techo-holgado min-h-dvh px-5 pb-40 lg:px-0 lg:pb-16">
       {/*
         ── LA BANDA ──
 
