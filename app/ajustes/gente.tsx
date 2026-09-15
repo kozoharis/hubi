@@ -592,7 +592,7 @@ export default function Gente({
             </p>
 
             <p className="mt-4 text-[14.5px] font-semibold leading-snug text-tenue">
-              No le llega ningún correo de nuestra parte. Dile tú que entre en MAPPEL con ese
+              No le llega ningún correo de nuestra parte. Dile tú que entre en mappel con ese
               correo y le llegará su número, como a ti.
             </p>
 
@@ -631,7 +631,7 @@ export default function Gente({
         <p className="rounded-[16px] border border-borde px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
           Listo. Dile a <strong className="text-tinta">{hecho.nombre}</strong> que entre en mappel
           con <strong className="text-tinta">{hecho.correo}</strong>: le llegará su número y verá
-          tu invitación nada más entrar, y tiene que aceptarla desde su MAPPEL.
+          tu invitación nada más entrar, y tiene que aceptarla desde su mappel.
         </p>
       )}
 

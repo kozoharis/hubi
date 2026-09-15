@@ -63,7 +63,7 @@ export default function EnLaCocina() {
           </p>
 
           <p className="t-cuerpo mt-3 leading-snug">
-            Tú tienes MAPPEL entero, que es más de lo que enseña esa pared.
+            Tú tienes mappel entero, que es más de lo que enseña esa pared.
           </p>
 
           {/*
@@ -73,7 +73,7 @@ export default function EnLaCocina() {
           <div className="mt-6 rounded-[20px] px-5 py-4" style={{ background: 'var(--t-velo)' }}>
             <p className="t-apoyo font-extrabold text-tinta">Para verla</p>
             <ol className="t-apoyo mt-2 list-decimal space-y-1.5 pl-5 leading-snug">
-              <li>En la tableta, abre MAPPEL y sal de la sesión que haya.</li>
+              <li>En la tableta, abre mappel y sal de la sesión que haya.</li>
               <li>Entra con el correo que le pusiste a la pantalla al colgarla.</li>
               <li>Llega un código de seis cifras a ese buzón.</li>
               <li>Al entrar va sola a la pared. No hay que escribir ninguna dirección.</li>
@@ -90,7 +90,7 @@ export default function EnLaCocina() {
               style={{ background: 'var(--t-boton)', color: 'var(--t-boton-texto)' }}
             >
               <Ico nombre="atras" tam={22} grosor={2.3} />
-              Volver a MAPPEL
+              Volver a mappel
             </Link>
           </div>
         </div>

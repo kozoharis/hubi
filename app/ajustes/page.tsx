@@ -621,7 +621,7 @@ export default async function Ajustes({
           <Logo tam={40} />
           <span className="min-w-0 flex-1">
             <span className="block text-[19px] font-extrabold leading-snug tracking-tight">
-              Cómo se usa MAPPEL
+              Cómo se usa mappel
             </span>
             <span className="t-apoyo mt-1 block">
               Un vídeo corto de cada cosa que sabe hacer

@@ -166,7 +166,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
         {estado === 'instalar' && (
           <>
             <p className="t-cuerpo mt-4">
-              Para que los avisos lleguen a este iPhone, MAPPEL tiene que estar
+              Para que los avisos lleguen a este iPhone, mappel tiene que estar
               en la pantalla de inicio. Es cosa de Apple: dentro de Safari los avisos
               no existen.
             </p>
@@ -254,7 +254,7 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
 
         {estado === 'imposible' && (
           <p className="t-cuerpo mt-4">
-            Este navegador no admite avisos. Prueba desde el móvil, con MAPPEL
+            Este navegador no admite avisos. Prueba desde el móvil, con mappel
             añadida a la pantalla de inicio.
           </p>
         )}

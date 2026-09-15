@@ -346,7 +346,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
    Vale cualquier carpeta de la lista, también las que tienen otras
    dentro: "Finca" incluye todo lo suyo.
 
-   Con la carpeta puesta, MAPPEL enseña TODOS los papeles que hay
+   Con la carpeta puesta, mappel enseña TODOS los papeles que hay
    dentro. Es exacto: no se busca por palabras, se abre la carpeta.
 
    "Enséñame todas las facturas de la finca"
@@ -397,7 +397,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
 
    UNA PREGUNTA NUNCA ES UNA TAREA. Si la frase empieza pidiendo
    información —dime, dame, cuánto, cuál, qué tal— y nombra algo que
-   MAPPEL guarda —ingresos, gastos, balance, facturas, la compra, la
+   mappel guarda —ingresos, gastos, balance, facturas, la compra, la
    agenda, las reservas—, es SIEMPRE accion "consulta". Nunca
    "recordatorio". Apuntarle a alguien su propia pregunta en el
    calendario es el peor error que puedes cometer aquí: no contestas y
@@ -411,7 +411,7 @@ LAS NUEVE COSAS QUE PUEDEN PEDIR:
 
    LA DIFERENCIA CON "buscar", que es la que más se confunde:
    - "BUSCA la factura del seguro"  → accion "buscar": quiere VERLA, y
-     MAPPEL le abre la lista de papeles.
+     mappel le abre la lista de papeles.
    - "DIME cuál fue la última factura" → accion "consulta" con
      tipo_consulta "papel": quiere que se lo CUENTEN, en voz alta,
      porque está conduciendo o con las manos ocupadas.

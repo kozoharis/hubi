@@ -297,7 +297,7 @@ export default function Entrar() {
           ) : paso === 'alta' ? (
             <form onSubmit={crearCuenta}>
               <p className="text-[16.5px] font-semibold leading-snug text-apagado">
-                MAPPEL todavía no está abierto a todo el mundo. Para crear tu casa hace
+                mappel todavía no está abierto a todo el mundo. Para crear tu casa hace
                 falta la palabra que te haya dado quien te invitó.
               </p>
 

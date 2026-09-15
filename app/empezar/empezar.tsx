@@ -143,7 +143,7 @@ export default function Empezar({ nombre }: { nombre: string }) {
           <>
             <h1 className="t-titulo mt-7">Hola, {nombre}</h1>
             <p className="t-cuerpo mt-2 text-tenue">
-              Vamos a crear tu espacio en MAPPEL. Son dos preguntas y ya está.
+              Vamos a crear tu espacio en mappel. Son dos preguntas y ya está.
             </p>
 
             <Campo
@@ -181,7 +181,7 @@ export default function Empezar({ nombre }: { nombre: string }) {
           <>
             <h1 className="t-titulo mt-7">¿Llevas cuentas de algo?</h1>
             <p className="t-cuerpo mt-2 text-tenue">
-              Si tienes gastos e ingresos de algo concreto, MAPPEL te lleva las cuentas
+              Si tienes gastos e ingresos de algo concreto, mappel te lleva las cuentas
               solo con fotografiar las facturas.
             </p>
 

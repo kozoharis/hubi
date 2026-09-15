@@ -196,7 +196,7 @@ export default function MappelCaja({
               onClick={() => router.push(`/hablar?dicho=${encodeURIComponent(texto.trim())}`)}
               className="r-campo flex h-[48px] items-center border border-borde px-4 text-[15px] font-extrabold text-tinta"
             >
-              Que lo intente MAPPEL
+              Que lo intente mappel
             </button>
             <button
               onClick={() => router.push(`${buscarEn}?q=${encodeURIComponent(texto.trim())}`)}

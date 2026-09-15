@@ -88,7 +88,7 @@ export default async function AjustesDeGoogle() {
             duda, y no en un texto legal que nadie abre.
           */}
           <p className="mt-3 rounded-[16px] border border-borde px-3.5 py-3 text-[14.5px] font-semibold leading-snug text-tenue">
-            MAPPEL solo ve los archivos que ella misma crea. No puede abrir nada de lo que ya
+            mappel solo ve los archivos que ella misma crea. No puede abrir nada de lo que ya
             tengas en tu Drive.
           </p>
         </div>

@@ -17,7 +17,7 @@ export default function Privacidad() {
           <section>
             <h2 className="t-seccion">Qué es mappel</h2>
             <p className="mt-3">
-              MAPPEL es una aplicación privada de uso familiar, creada para dos
+              mappel es una aplicación privada de uso familiar, creada para dos
               personas concretas. No es un servicio público, no admite registro
               abierto y no está disponible para nadie fuera de esas dos cuentas
               autorizadas.
@@ -43,7 +43,7 @@ export default function Privacidad() {
             <p className="mt-3">
               Los archivos se almacenan en la cuenta personal de Google Drive del
               titular de la aplicación, dentro de una carpeta creada específicamente
-              para MAPPEL. La información que los describe se guarda en una base
+              para mappel. La información que los describe se guarda en una base
               de datos privada alojada en la Unión Europea.
             </p>
           </section>
@@ -53,7 +53,7 @@ export default function Privacidad() {
               Qué permisos de Google se utilizan
             </h2>
             <p className="mt-3">
-              MAPPEL solicita únicamente el permiso <code>drive.file</code>, que
+              mappel solicita únicamente el permiso <code>drive.file</code>, que
               limita el acceso a los archivos que la propia aplicación crea. Family
               Hub no puede ver, leer ni modificar ningún otro contenido del Google
               Drive del usuario.
@@ -73,7 +73,7 @@ export default function Privacidad() {
             </p>
             <p className="mt-3">
               Hay <strong>una excepción, y conviene contarla entera</strong>: para
-              leer un papel fotografiado, MAPPEL envía esa fotografía al servicio de
+              leer un papel fotografiado, mappel envía esa fotografía al servicio de
               lectura de Google (Gemini), que devuelve los datos que contiene —el
               proveedor, la fecha, el importe—. Lo mismo ocurre con la voz cuando el
               teléfono no puede transcribirla por su cuenta.
@@ -94,10 +94,10 @@ export default function Privacidad() {
             <h2 className="t-seccion">Salud y datos personales</h2>
             <p className="mt-3">
               De los documentos guardados en <strong>Salud</strong> y en{' '}
-              <strong>Personal</strong>, MAPPEL <strong>no conserva el texto leído</strong>.
+              <strong>Personal</strong>, mappel <strong>no conserva el texto leído</strong>.
               El archivo se guarda en Google Drive como cualquier otro y se puede
               ver y abrir igual, pero su contenido no queda almacenado en la base de
-              datos de MAPPEL.
+              datos de mappel.
             </p>
             <p className="mt-3">
               Eso significa que un informe médico se encuentra por su título, su
@@ -124,7 +124,7 @@ export default function Privacidad() {
             <h2 className="t-seccion">Borrado</h2>
             <p className="mt-3">
               Los usuarios pueden eliminar sus documentos en cualquier momento, tanto
-              desde MAPPEL como directamente desde Google Drive. Si se revoca el
+              desde mappel como directamente desde Google Drive. Si se revoca el
               permiso de Google, la aplicación deja inmediatamente de tener acceso a
               los archivos.
             </p>

@@ -141,7 +141,7 @@ export default function SinAvisos() {
         </span>
         <div className="min-w-0">
           <p className="text-[17.5px] font-extrabold leading-snug">
-            Ahora mismo MAPPEL no puede avisarte
+            Ahora mismo mappel no puede avisarte
           </p>
           <p className="mt-1.5 text-[15.5px] font-semibold leading-snug text-tinta-suave">
             {falta === 'instalar'

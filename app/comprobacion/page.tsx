@@ -70,7 +70,7 @@ export default function Comprobacion() {
         <p className="rotulo tracking-[0.2em]">mappel</p>
         <h1 className="t-titulo mt-3">Comprobación del sistema</h1>
         <p className="t-cuerpo mt-3">
-          Esta pantalla no forma parte de MAPPEL. Solo sirve para verificar
+          Esta pantalla no forma parte de mappel. Solo sirve para verificar
           que las piezas están realmente conectadas.
         </p>
 

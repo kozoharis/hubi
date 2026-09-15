@@ -125,7 +125,7 @@ export default function TuPerfil({
           ¿Cómo te llamas?
         </label>
         <p className="mt-1 text-[14.5px] font-semibold leading-snug text-tenue">
-          Así te saluda MAPPEL y así te nombra el otro cuando te deja algo.
+          Así te saluda mappel y así te nombra el otro cuando te deja algo.
         </p>
 
         <input

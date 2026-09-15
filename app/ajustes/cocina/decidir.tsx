@@ -149,7 +149,7 @@ export default function Decidir({
       </p>
 
       <p className="t-apoyo leading-relaxed">
-        Lo que no salga sigue estando en MAPPEL igual que ahora. Tú y quien viva aquí lo
+        Lo que no salga sigue estando en mappel igual que ahora. Tú y quien viva aquí lo
         seguís viendo todo desde vuestro móvil.
       </p>
 
@@ -235,7 +235,7 @@ export default function Decidir({
 
       {sinDecidir && (
         <p className="t-apoyo px-1 leading-snug">
-          Esto todavía no está guardado: es lo que MAPPEL propone. Mientras no lo guardes, la
+          Esto todavía no está guardado: es lo que mappel propone. Mientras no lo guardes, la
           pantalla de la cocina no enseñaría <strong className="text-tinta">nada</strong>.
         </p>
       )}
