@@ -6,20 +6,26 @@ const API = 'https://www.googleapis.com/drive/v3'
 const SUBIDA = 'https://www.googleapis.com/upload/drive/v3'
 const CARPETA = 'application/vnd.google-apps.folder'
 
-export const NOMBRE_RAIZ = 'MAPPEL'
+export const NOMBRE_RAIZ = 'mappel'
 
 /*
-  Cómo se llamaba antes.
+  Cómo se ha llamado antes, en orden del más reciente al más viejo.
 
-  El producto se llamaba «J+C · Family Hub» y la carpeta también. Al
-  pasar a MAPPEL, la carpeta se quedó con el nombre viejo — que además
-  lleva las iniciales de una familia concreta dentro del Drive de
-  cualquier otra, que es directamente un error.
+  Primero fue «J+C · FAMILY HUB» —que además lleva las iniciales de
+  una familia concreta dentro del Drive de cualquier otra, que es
+  directamente un error—, luego «MAPPEL», y ahora «mappel».
 
-  Esta constante NO es nostalgia: es lo que permite RENOMBRAR la que
-  ya existe en vez de crear una nueva al lado. Ver `asegurarRaiz`.
+  Esta lista NO es nostalgia: es lo único que impide que el archivo
+  se parta en dos. Sin ella, el primer papel que se guardara después
+  de cambiar el rótulo crearía una carpeta nueva al lado y los
+  documentos de antes se quedarían en la de al lado, con la
+  aplicación mirando a la vacía. Ver `asegurarRaiz`.
+
+  De aquí no se borra ningún nombre nunca. Cada uno es el rótulo que
+  todavía puede tener la carpeta de alguien que lleve meses sin
+  abrirla.
 */
-const NOMBRE_VIEJO = 'J+C · FAMILY HUB'
+const NOMBRES_DE_ANTES = ['MAPPEL', 'J+C · FAMILY HUB']
 
 /**
  * Devuelve un acceso temporal al Drive DE ESTA CASA.
@@ -164,28 +170,37 @@ async function buscarPorNombre(acceso: string, nombre: string): Promise<string |
 }
 
 /**
- * La carpeta raíz de MAPPEL: la que ya existe, o una nueva.
+ * La carpeta raíz de mappel: la que ya existe, o una nueva.
  *
  * ─────────────────────────────────────────────────────────────
  * OJO CON EL CAMBIO DE NOMBRE
  *
- * La carpeta se llamaba «J+C · FAMILY HUB». Cambiar la constante y ya
- * habría sido un desastre silencioso: al reconectar Google, esta
- * función no habría encontrado ninguna carpeta llamada «MAPPEL» y
- * habría CREADO UNA NUEVA, vacía, al lado de la que tiene todos los
- * papeles. Los documentos viejos seguirían ahí, pero MAPPEL empezaría a
- * guardar en la otra, y nadie entendería por qué faltan cosas.
+ * La carpeta se ha llamado «J+C · FAMILY HUB» y «MAPPEL» antes de
+ * llamarse «mappel». Cambiar la constante a secas y ya habría sido un
+ * desastre silencioso cada vez: esta función no encontraría ninguna
+ * carpeta con el nombre nuevo y CREARÍA UNA, vacía, al lado de la que
+ * tiene todos los papeles. Los documentos viejos seguirían ahí, pero
+ * mappel empezaría a guardar en la otra, y nadie entendería por qué
+ * faltan cosas.
  *
- * Así que si no hay ninguna «MAPPEL», se busca la del nombre viejo y se
- * le CAMBIA EL NOMBRE. Misma carpeta, mismo identificador, mismos
- * documentos dentro: solo el rótulo.
+ * Así que si no hay ninguna con el nombre de ahora, se buscan los de
+ * antes por orden y a la que aparezca se le CAMBIA EL NOMBRE. Misma
+ * carpeta, mismo identificador, mismos documentos dentro: solo el
+ * rótulo.
+ *
+ * Y de propina cubre el caso raro pero real de una casa que se quedó
+ * a medias: alguien que reconectó Google cuando se llamaba MAPPEL
+ * tiene ese rótulo, y alguien que lleva sin tocarlo desde el principio
+ * todavía tiene el de las iniciales. Los dos acaban en el mismo sitio.
  */
 export async function asegurarRaiz(acceso: string): Promise<string> {
   const actual = await buscarPorNombre(acceso, NOMBRE_RAIZ)
   if (actual) return actual
 
-  const antigua = await buscarPorNombre(acceso, NOMBRE_VIEJO)
-  if (antigua) {
+  for (const antes of NOMBRES_DE_ANTES) {
+    const antigua = await buscarPorNombre(acceso, antes)
+    if (!antigua) continue
+
     const r = await fetch(`${API}/files/${antigua}?fields=id`, {
       method: 'PATCH',
       headers: {

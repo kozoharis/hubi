@@ -70,7 +70,7 @@ export default async function AjustesDeGoogle() {
               <>
                 Los papeles de esta casa se guardan en el Google Drive de{' '}
                 <strong className="text-tinta">{conexion?.email_cuenta ?? 'la cuenta'}</strong>,
-                en una carpeta llamada <strong className="text-tinta">MAPPEL</strong>.
+                en una carpeta llamada <strong className="text-tinta">mappel</strong>.
               </>
             ) : manda ? (
               'Todavía no se pueden guardar papeles. Conecta tu cuenta de Google aquí abajo.'

@@ -126,7 +126,7 @@ export default function PrepararCalendario({
           </p>
           <ol className="mt-2.5 space-y-2">
             <Paso n={1}>
-              Abre <b>calendar.google.com</b> y busca <b>MAPPEL</b> en la lista de la
+              Abre <b>calendar.google.com</b> y busca <b>mappel</b> en la lista de la
               izquierda.
             </Paso>
             <Paso n={2}>

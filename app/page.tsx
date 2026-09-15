@@ -806,7 +806,7 @@ export default async function Inicio({
             </BotonPrincipal>
             <p className="t-cuerpo mt-4">
               Google mostrará un aviso de aplicación no verificada. Es normal: pulsa{' '}
-              <strong>Configuración avanzada</strong> y después <strong>Ir a MAPPEL</strong>.
+              <strong>Configuración avanzada</strong> y después <strong>Ir a mappel</strong>.
               Solo ocurre esta vez.
             </p>
           </div>

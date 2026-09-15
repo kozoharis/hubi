@@ -29,11 +29,22 @@ import { FIRMA_MAPPEL } from '@/lib/ical'
 
 const API = 'https://www.googleapis.com/calendar/v3'
 
-export const NOMBRE_CALENDARIO = 'MAPPEL'
+export const NOMBRE_CALENDARIO = 'mappel'
 /* La zona horaria se decide en UN solo sitio, `lib/tablon.ts`. Aquí
    estaba escrita a mano como Europe/Madrid: en Canarias eso mete cada
    cita en el calendario con una hora de más. */
 const COLOR_MARCA = '#14B8A6'
+
+/*
+  Los rótulos que ha llevado este calendario.
+
+  Solo se renombra si se llama como se llamaba antes. Si alguien le
+  ha puesto a mano «Casa» o «Familia», es SUYO y no se le toca: el
+  identificador es lo que manda, y el nombre es cosa de quien lo mira
+  en su móvil.
+*/
+const NOMBRES_DE_ANTES = ['MAPPEL', 'HUBI']
+const esNombreNuestro = (n: string) => NOMBRES_DE_ANTES.includes(n.trim())
 
 /*
   ─────────────────────────────────────────────────────────────
@@ -109,22 +120,43 @@ async function asegurarCalendario(
     const r = await pedir(acceso, `/calendars/${encodeURIComponent(guardado)}`)
     if (r.ok) {
       /*
-        Y DE PASO: QUE LA ZONA DEL CALENDARIO SEA LA DE AQUÍ.
+        Y DE PASO, LAS DOS COSAS QUE SE ARREGLAN SOLAS AL PASAR.
 
-        El calendario se creó con la zona que hubiera puesta ese día, y
-        durante un tiempo aquí decía Europe/Madrid. Cada evento lleva
-        ahora su zona escrita, así que las citas nuevas caen bien igual
-        — pero el calendario en sí sigue anunciando la otra, y eso se
-        nota al mirarlo desde el móvil o al crear algo a mano dentro de
-        él. Se corrige una vez, en silencio, y no se vuelve a tocar.
+        La ZONA: el calendario se creó con la que hubiera puesta ese
+        día, y durante un tiempo aquí decía Europe/Madrid. Cada evento
+        lleva ahora su zona escrita, así que las citas nuevas caen bien
+        igual — pero el calendario en sí sigue anunciando la otra, y
+        eso se nota al mirarlo desde el móvil o al crear algo a mano
+        dentro de él.
+
+        El RÓTULO: se llamó «HUBI» y después «MAPPEL». Aquí el nombre
+        no sirve para encontrarlo —lo que manda es el identificador
+        guardado en `conexion_drive.calendario_id`, y ése no cambia
+        nunca—, así que renombrarlo no rompe nada: es solo lo que se
+        lee en el móvil, al lado de los demás calendarios.
+
+        Las dos se corrigen una vez, en silencio, y no se vuelven a
+        tocar. Si fallan, todo sigue funcionando con lo de antes: no
+        hay nada que rescatar.
       */
-      const info = (await r.json().catch(() => null)) as { timeZone?: string } | null
+      const info = (await r.json().catch(() => null)) as
+        | { timeZone?: string; summary?: string }
+        | null
+
       if (info && info.timeZone !== ZONA) {
         await pedir(acceso, `/calendars/${encodeURIComponent(guardado)}`, {
           method: 'PATCH',
           body: JSON.stringify({ timeZone: ZONA }),
         }).catch(() => null)
       }
+
+      if (info?.summary && info.summary !== NOMBRE_CALENDARIO && esNombreNuestro(info.summary)) {
+        await pedir(acceso, `/calendars/${encodeURIComponent(guardado)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ summary: NOMBRE_CALENDARIO }),
+        }).catch(() => null)
+      }
+
       return guardado
     }
     if (r.status !== 404 && r.status !== 410) return null
@@ -134,7 +166,7 @@ async function asegurarCalendario(
     method: 'POST',
     body: JSON.stringify({
       summary: NOMBRE_CALENDARIO,
-      description: 'Las citas y los vencimientos de MAPPEL. Se llena solo.',
+      description: 'Las citas y los vencimientos de mappel. Se llena solo.',
       timeZone: ZONA,
     }),
   })
@@ -422,7 +454,7 @@ export async function comprobarCalendario(hogarId: string): Promise<{
     return { ...nada, diagnostico: 'Google no está conectado, o falta el permiso del calendario.' }
   }
   if (!c.calendarioId) {
-    return { ...nada, diagnostico: 'Todavía no se ha creado el calendario MAPPEL.' }
+    return { ...nada, diagnostico: 'Todavía no se ha creado el calendario mappel.' }
   }
 
   try {

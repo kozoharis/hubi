@@ -48,7 +48,7 @@ export type CitaExterna = {
   /*
     ¿Esta cita la puso MAPPEL?
 
-    Todo lo que MAPPEL escribe en Google lleva "Apuntado en MAPPEL" en su
+    Todo lo que MAPPEL escribe en Google lleva su firma —«Apuntado en mappel»— en su
     descripción. Sirve para no enseñar dos veces la misma cosa: si
     alguien conecta como calendario propio uno donde MAPPEL también
     escribe, sus tareas volverían de Google y saldrían duplicadas en la
@@ -58,8 +58,37 @@ export type CitaExterna = {
   deMappel: boolean
 }
 
-/** La firma que MAPPEL deja en todo lo que escribe en Google. */
-export const FIRMA_MAPPEL = 'Apuntado en MAPPEL'
+/**
+ * La firma que mappel deja en todo lo que escribe en Google.
+ *
+ * ─────────────────────────────────────────────────────────────
+ * ESTO NO ES UN RÓTULO: ES CÓMO SE RECONOCE A SÍ MISMA
+ *
+ * Las citas que mappel escribe en Google vuelven por el mismo tubo
+ * al leer el calendario. Se distinguen por esta frase, y las que
+ * son suyas se descartan para que no salgan dos veces en la Agenda
+ * —una como tarea y otra como cita—.
+ *
+ * O sea que cambiar la frase NO es cambiar un texto: es dejar de
+ * reconocer todo lo escrito hasta hoy. Al pasar el nombre a
+ * minúsculas, todos los eventos viejos —cientos— se habrían vuelto
+ * ajenos de golpe y habrían salido duplicados.
+ *
+ * Por eso son dos cosas y no una: se ESCRIBE la de ahora y se
+ * RECONOCEN también las de antes. Las viejas no se borran nunca de
+ * esta lista, porque los eventos que las llevan siguen en el
+ * calendario de alguien.
+ */
+export const FIRMA_MAPPEL = 'Apuntado en mappel'
+
+const FIRMAS_DE_ANTES = ['Apuntado en MAPPEL', 'Apuntado en HUBI']
+
+/** ¿Esto lo escribió mappel, con el nombre que fuera? */
+export function loEscribioMappel(descripcion: string): boolean {
+  return (
+    descripcion.includes(FIRMA_MAPPEL) || FIRMAS_DE_ANTES.some((f) => descripcion.includes(f))
+  )
+}
 
 const MAXIMO = 400
 
@@ -87,7 +116,7 @@ export function leerICS(texto: string, desde: string, hasta: string): CitaExtern
 
     const titulo = texto_(campos.get('SUMMARY')?.valor ?? '').trim() || '(sin título)'
     const lugar = texto_(campos.get('LOCATION')?.valor ?? '').trim() || null
-    const deMappel = texto_(campos.get('DESCRIPTION')?.valor ?? '').includes(FIRMA_MAPPEL)
+    const deMappel = loEscribioMappel(texto_(campos.get('DESCRIPTION')?.valor ?? ''))
     const uid = (campos.get('UID')?.valor ?? '').trim() || `${cuando.fecha}-${titulo}`
 
     const regla = campos.get('RRULE')?.valor ?? null
