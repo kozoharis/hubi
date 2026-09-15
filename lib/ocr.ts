@@ -260,6 +260,25 @@ export async function leerDocumento(opciones: {
       const detalle = await respuesta.clone().text()
       if (/thinking/i.test(detalle)) respuesta = await pedir(false)
     }
+
+    /*
+      ── UN 503 NO ES UN FALLO: ES UNA COLA ──
+
+      «This model is currently experiencing high demand» quiere decir
+      «ahora mismo no, vuelve en un segundo». No hay nada roto, no hay
+      nada que arreglar y no hay nada que contarle a nadie: hay que
+      volver a pedirlo.
+
+      Antes no se reintentaba, así que un pico de tráfico de Google —de
+      un segundo— acababa en Juan Miguel clasificando el papel a mano.
+
+      Un reintento y ya: si a la segunda sigue ocupado, es que lo está
+      de verdad y entonces sí se dice.
+    */
+    if (SE_REINTENTA.has(respuesta.status)) {
+      await new Promise((r) => setTimeout(r, 1200))
+      respuesta = await pedir(true)
+    }
   } catch (e) {
     if (e instanceof Error && e.name === 'TimeoutError') throw new Error('DEMASIADO_LENTO')
     throw e
@@ -308,7 +327,27 @@ export async function leerDocumento(opciones: {
       )
     }
 
-    throw new Error(`Gemini no responde (${respuesta.status}): ${detalle.slice(0, 300)}`)
+    /*
+      ── LO QUE SALE DE AQUÍ NO SE ENSEÑA: SE TRADUCE ──
+
+      Aquí se lanzaba el cuerpo entero de la respuesta de Google, en
+      inglés y en JSON. Y ese texto acababa, tal cual, EN LA PANTALLA
+      de Juan Miguel: «Gemini no responde (503): { "error": { "code":
+      503, "message": "This model is currently experiencing high
+      demand"… } }».
+
+      Tres reglas rotas de una vez: inglés en pantalla, jerga en
+      pantalla, y el nombre del proveedor que hay detrás — que es
+      justo lo que el principio del producto dice que no se enseña
+      («la complejidad es del sistema, no de quien lo usa»).
+
+      Así que de aquí salen SEÑAS, no frases: una palabra que
+      `app/api/analizar/route.ts` traduce a algo que se pueda leer. Lo
+      crudo va al registro del servidor, que es donde sirve.
+    */
+    console.error(`[MAPPEL] El modelo ha contestado ${respuesta.status}:`, detalle.slice(0, 400))
+    if (SE_REINTENTA.has(respuesta.status)) throw new Error('MODELO_OCUPADO')
+    throw new Error('MODELO_NO_CONTESTA')
   }
 
   const datos = (await respuesta.json()) as {
@@ -316,7 +355,7 @@ export async function leerDocumento(opciones: {
   }
 
   const bruto = datos.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!bruto) throw new Error('Gemini no ha devuelto nada legible')
+  if (!bruto) throw new Error('MODELO_SIN_RESPUESTA')
 
   const leido = JSON.parse(bruto) as Partial<Lectura>
 
@@ -363,6 +402,10 @@ function fechaValida(valor: string | null | undefined): string | null {
   El motivo viene dentro de la respuesta, en el identificador de la
   cuota: "...PerDay..." o "...PerMinute...".
 */
+/* Los estados en los que merece la pena volver a preguntar: son
+   atascos del otro lado, no fallos de lo que hemos mandado. */
+const SE_REINTENTA = new Set([500, 502, 503, 504])
+
 function porQueNoHayCupo(detalle: string): 'CUOTA_DIA' | 'CUOTA_MINUTO' {
   return /perday|per day|requests_per_day/i.test(detalle) ? 'CUOTA_DIA' : 'CUOTA_MINUTO'
 }

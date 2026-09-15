@@ -224,7 +224,11 @@ export async function POST(peticion: NextRequest) {
           lectura = await leerDocumento({ texto, categorias: hojas, rutaDe })
           comoSeLeyo = 'modelo'
         } catch (e) {
-          porQueReglas = e instanceof Error ? e.message : 'El modelo no ha respondido.'
+          /* Traducido, SIEMPRE. Aquí se ponía `e.message` tal cual, y
+             ese texto sale en la pantalla de guardar: así es como
+             acabó un JSON de Google en inglés delante de Juan Miguel.
+             Lo crudo va al registro; a la pantalla va una frase. */
+          porQueReglas = enCristiano(e)
           console.warn('[MAPPEL] El modelo no ha podido con el texto, van las reglas:', e)
         }
       }
@@ -267,6 +271,7 @@ export async function POST(peticion: NextRequest) {
     const motivo = e instanceof Error ? e.message : ''
     console.error('[MAPPEL] Fallo leyendo el documento:', e)
 
+
     if (motivo === 'SIN_CLAVE_OCR') {
       return NextResponse.json(
         { error: 'La lectura automática no está configurada todavía.' },
@@ -291,6 +296,15 @@ export async function POST(peticion: NextRequest) {
         { status: 429 }
       )
     }
+    if (motivo === 'MODELO_OCUPADO') {
+      return NextResponse.json(
+        {
+          error:
+            'La lectura automática está saturada ahora mismo. Espera un momento y vuelve a darle, o clasifícalo a mano.',
+        },
+        { status: 503 }
+      )
+    }
     if (motivo.startsWith('VISION_SIN_PERMISO')) {
       // El motivo técnico va aparte: no se le enseña a nadie como
       // mensaje, pero evita tener que adivinar qué ha pasado.
@@ -306,5 +320,36 @@ export async function POST(peticion: NextRequest) {
       { error: 'No se ha podido leer el documento. Puedes clasificarlo a mano.' },
       { status: 502 }
     )
+  }
+}
+
+/*
+  ── DE SEÑA A FRASE ────────────────────────────────────────
+
+  `lib/ocr.ts` no lanza mensajes: lanza señas de una palabra. Aquí se
+  convierten en algo que se pueda leer en una cocina.
+
+  Y el `default` es lo importante: cualquier cosa que no esté en esta
+  lista se cuenta con una frase nuestra, no con la suya. Lo que no se
+  conoce no se reenvía — de eso vino el JSON en inglés en pantalla.
+*/
+function enCristiano(e: unknown): string {
+  const sena = e instanceof Error ? e.message : ''
+  switch (sena) {
+    case 'MODELO_OCUPADO':
+      return 'La lectura automática estaba saturada. Lo he leído a mi manera.'
+    case 'MODELO_NO_CONTESTA':
+    case 'MODELO_SIN_RESPUESTA':
+      return 'La lectura automática no ha contestado. Lo he leído a mi manera.'
+    case 'CUOTA_MINUTO':
+      return 'Se han leído muchos papeles seguidos. Espera medio minuto.'
+    case 'CUOTA_DIA':
+      return 'Se ha agotado el cupo de lectura de hoy. Mañana vuelve solo.'
+    case 'DEMASIADO_LENTO':
+      return 'La lectura ha tardado demasiado. Lo he leído a mi manera.'
+    case 'SIN_CLAVE_OCR':
+      return 'La lectura automática no está configurada todavía.'
+    default:
+      return 'La lectura automática no ha podido con este papel. Lo he leído a mi manera.'
   }
 }

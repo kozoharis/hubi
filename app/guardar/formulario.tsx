@@ -122,6 +122,28 @@ export default function Formulario({
      esto se está montando, tener el mensaje exacto de Google delante
      ahorra media hora de adivinar dónde está el fallo. */
   const [detalle, setDetalle] = useState<string | null>(null)
+  /*
+    ── EL TÍTULO DEL AVISO, QUE ERA MENTIRA ──
+
+    Abajo del todo, el aviso se pintaba SIEMPRE con el mismo título:
+    «No se ha podido guardar». Y de los nueve avisos que puede dar esta
+    pantalla, sólo UNO es un fallo al guardar.
+
+    O sea que cuando el lector automático no podía con un papel —que se
+    guarda igual, a mano— salía un cartel rojo diciendo que no se había
+    podido guardar algo que nadie había intentado guardar todavía.
+
+    Ahora cada aviso trae el suyo, y el de guardar es sólo el de
+    guardar.
+  */
+  const [tituloAviso, setTituloAviso] = useState('No se ha podido guardar')
+
+  /* Se pone el texto y el título de una vez, para que no se pueda
+     cambiar uno y olvidar el otro. */
+  function avisar(texto: string | null, titulo = 'No se ha podido guardar') {
+    setAviso(texto)
+    if (texto) setTituloAviso(titulo)
+  }
 
   /* Cuánto lleva leído, de 0 a 100. El móvil tarda unos segundos en
      leer un papel, y una espera que no dice nada parece una avería. */
@@ -288,7 +310,7 @@ export default function Formulario({
     // Un PDF ya es un documento completo: no hay páginas que juntar.
     if (esPdf(original)) {
       if (original.size > MAXIMO) {
-        setAviso('Ese PDF pesa demasiado. El máximo son 4 MB.')
+        avisar('El máximo son 4 MB. Prueba a hacerle una foto en vez de mandar el PDF.', 'Ese PDF pesa demasiado')
         return
       }
       arrancarLectura(original)
@@ -299,7 +321,7 @@ export default function Formulario({
        Antes se colaba, se intentaba encoger, y fallaba más adelante
        con un mensaje que no señalaba al archivo. */
     if (!tipoDe(original)) {
-      setAviso('Ese archivo no se puede guardar. Solo fotos (JPG, PNG) o documentos PDF.')
+      avisar('Solo fotos (JPG, PNG) o documentos PDF.', 'Ese archivo no se puede guardar')
       setDetalle(original.name ? `Has elegido: ${original.name}` : null)
       return
     }
@@ -321,8 +343,9 @@ export default function Formulario({
           : await construirPdf(paginas.map((p) => p.subir))
 
       if (definitivo.size > MAXIMO) {
-        setAviso(
-          `El documento pesa demasiado con ${paginas.length} páginas. Quita alguna o hazlas por separado.`
+        avisar(
+          `Quita alguna página o hazlas por separado.`,
+          `Pesa demasiado con ${paginas.length} páginas`
         )
         setPreparando(false)
         return
@@ -334,7 +357,7 @@ export default function Formulario({
       arrancarLectura(definitivo, paginas.map((p) => p.leer))
     } catch {
       setPreparando(false)
-      setAviso('No se han podido juntar las páginas. Prueba con menos.')
+      avisar('Prueba con menos páginas.', 'No se han podido juntar las páginas')
     }
   }
 
@@ -519,8 +542,11 @@ export default function Formulario({
             falloDelModelo = respuesta?.error ?? `El lector no ha respondido (${conFoto.status}).`
           }
         } catch (e) {
-          falloDelModelo =
-            e instanceof Error ? `No se ha podido consultar: ${e.message}` : 'Sin conexión.'
+          /* `falloDelModelo` acaba EN PANTALLA, así que lo que se pega
+             aquí es una frase nuestra y no el mensaje de la excepción,
+             que llega en inglés. El de verdad, a la consola. */
+          console.error('[MAPPEL] No se ha podido consultar al lector:', e)
+          falloDelModelo = 'No se ha podido consultar al lector. Lo he leído a mi manera.'
         }
         setAyuda(false)
       }
@@ -565,10 +591,11 @@ export default function Formulario({
       /* Ni el modelo ni el móvil. Se va a elegir carpeta a mano, con
          el motivo exacto delante para no tener que adivinarlo. */
       if (!leido) {
-        setAviso(
+        avisar(
           falloDelModelo
-            ? 'No he podido leer este documento. Dime tú dónde va.'
-            : 'No se ha leído texto en la foto. Prueba con más luz o clasifícalo a mano.'
+            ? 'Dime tú dónde va y lo guardo igual.'
+            : 'Prueba con más luz, o dime tú dónde va.',
+          falloDelModelo ? 'No he podido leer este papel' : 'No se ha leído texto en la foto'
         )
         setDetalle(falloDelModelo)
         setPaso('categoria')
@@ -591,7 +618,7 @@ export default function Formulario({
       if (elMotivo) setDetalle(elMotivo)
 
       if (falloDelModelo && !bastante(leido)) {
-        setAviso('No he podido leerlo del todo. Repasa los datos antes de guardar.')
+        avisar('Repasa los datos antes de guardar.', 'No lo he leído del todo')
       }
 
       const reserva: Reserva | null = leido.reserva ?? null
@@ -627,11 +654,17 @@ export default function Formulario({
       setPaso(leido.categoria_id ? 'encontrado' : 'categoria')
     } catch (e) {
       if (abandonado.current) return
-      setAviso('No se ha podido leer el documento. Clasifícalo a mano.')
-      /* El motivo real, en letra pequeña. Sin esto, un fallo del
-         lector y un fallo de conexión se ven exactamente igual — y se
-         acaba arreglando lo que no era. */
-      setDetalle(e instanceof Error ? e.message.slice(0, 220) : null)
+      avisar('Dime tú dónde va y lo guardo igual.', 'No he podido leer este papel')
+      /*
+        El motivo REAL va al registro del navegador, no a la pantalla.
+
+        Aquí se ponía `e.message` en letra pequeña «para no tener que
+        adivinar», y así es como el cuerpo en inglés de una respuesta
+        de Google acabó delante de Juan Miguel. Lo que se enseña son
+        frases nuestras; lo que se depura, la consola.
+      */
+      console.error('[MAPPEL] No se ha podido leer el documento:', e)
+      setDetalle(null)
       setPaso('categoria')
     }
   }
@@ -682,7 +715,7 @@ export default function Formulario({
       const respuesta = await r.json()
 
       if (!r.ok) {
-        setAviso(respuesta.error ?? 'No se ha podido guardar.')
+        avisar(respuesta.error ?? 'Inténtalo otra vez en un momento.')
         setGuardando(false)
         return
       }
@@ -717,7 +750,7 @@ export default function Formulario({
         }).catch(() => {})
       }
     } catch {
-      setAviso('No hay conexión. Comprueba tu internet e inténtalo otra vez.')
+      avisar('Comprueba tu internet e inténtalo otra vez.', 'No hay conexión')
     }
     setGuardando(false)
   }
@@ -1418,10 +1451,10 @@ export default function Formulario({
 
         {aviso && (
           <div className="mt-6">
-            {/* El motivo exacto que ha dado Google va en `detalle`: no
-                es para Juan Miguel ni para Conchita, pero mientras esto
-                se monta ahorra tener que adivinar. */}
-            <Aviso titulo="No se ha podido guardar" explicacion={aviso} detalle={detalle} />
+            {/* `detalle` ya no lleva jerga: lo que llega del servidor
+                viene traducido desde `app/api/analizar/route.ts`, y lo
+                técnico se queda en la consola. */}
+            <Aviso titulo={tituloAviso} explicacion={aviso} detalle={detalle} />
           </div>
         )}
       </div>
