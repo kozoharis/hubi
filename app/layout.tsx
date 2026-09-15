@@ -37,33 +37,35 @@ export const metadata: Metadata = {
   /*
     ── LOS ICONOS ──
 
-    Aquí salía el triángulo de Vercel. Dos motivos, y los dos
-    silenciosos:
+    Esto es mappel cuando deja de ser una página y pasa a ser un
+    botón: la pestaña del navegador y la pantalla de inicio del
+    teléfono. Cada tamaño es para algo:
 
-    1. `app/favicon.ico` seguía siendo EL DE FÁBRICA de Next. Nunca se
-       tocó, y como un favicon no da error, no se notó: simplemente
-       había un triángulo negro en la pestaña.
-    2. `/apple-touch-icon.png` no existía. Se declaraba un archivo que
-       no estaba, así que al añadir MAPPEL a la pantalla de inicio de un
-       iPhone, Safari se inventaba el icono con una foto de la página.
-
-    Ahora hay cuatro tamaños y cada uno es para algo:
-
-      favicon.ico      la pestaña y los marcadores (lleva 16, 32, 48,
-                       64, 128 y 256 dentro — Windows coge el grande)
+      favicon.ico      la pestaña y los marcadores. Lleva 16, 24, 32,
+                       48, 64, 128 y 256 dentro; cada sistema coge el
+                       que le conviene.
       icono-32         la pestaña en pantallas normales
       icono-192/512    Android y el manifiesto
+      icono-maskable   Android otra vez, que lo recorta con la forma
+                       que le dé la gana
       apple-touch      la pantalla de inicio del iPhone, 180 px
 
-    Todos sobre FONDO OSCURO (#0F172A, el mismo del manifiesto), y con
-    la H que está dibujada para fondo oscuro — la otra se apaga por
-    abajo y sobre negro desaparecería media pata.
+    Todos son la m sobre PAPEL CÁLIDO (#F7F5F1), el mismo de la
+    aplicación y el mismo del manifiesto. Hasta septiembre de 2026
+    fueron la H de HUBI sobre azul marino, y el favicon se quedó atrás
+    cuando cambió todo lo demás: la pestaña de los dos siguió
+    enseñando la H tres semanas más. Un favicon no da error, y por eso
+    nadie lo mira.
 
-    Y el de la pestaña va MÁS APRETADO que el de la aplicación: el
-    margen que da aire en la pantalla de inicio de un móvil convierte
-    la H en una manchita cuando el icono mide 16 píxeles. El
-    «maskable» lleva todavía más, porque Android lo recorta con la
-    forma que le dé la gana y se come lo de fuera del 80% central.
+    ── Y LO QUE CAMBIA CON EL TAMAÑO ES CUÁNTO LLENA, NO QUÉ ──
+
+    La m mide 1,52 de ancho por 1 de alto, así que en un cuadrado
+    pequeño se queda baja. Los iconos grandes van al 0,78 del lado
+    —holgados, que es lo que pide una pantalla de inicio—; los de 16,
+    24 y 32 van al 0,92, porque con el margen de los otros los dos
+    arcos se funden en una mancha de color. El «maskable» va al revés,
+    al 0,60: Android recorta un círculo del 80 % y hay que caber
+    DENTRO.
   */
   icons: {
     icon: [
@@ -256,6 +258,42 @@ export default async function RootLayout({
               "try{if(!document.documentElement.dataset.tema){var t=localStorage.getItem('mappel-tema');if(t==='claro'||t==='oscuro')document.documentElement.dataset.tema=t}}catch(e){}",
           }}
         />
+
+        {/*
+          ── LA PANTALLA QUE SALE MIENTRAS ARRANCA, EN EL iPHONE ──
+
+          Al tocar mappel en la pantalla de inicio, Safari enseña un
+          BLANCO mientras carga, y sólo después entra el arranque de la
+          propia aplicación. Es un parpadeo de blanco entre el dedo y
+          la marca, y sobre papel cálido se ve perfectamente.
+
+          Se arregla declarando una imagen por tamaño exacto de
+          pantalla. iOS no escala: o el `media` coincide con el
+          teléfono al píxel, o vuelve al blanco. De ahí que haya doce y
+          no una.
+
+          Las doce son el mismo papel con la m puesta EXACTAMENTE donde
+          la pone `app/arranque.tsx` —88 de alto, centrada como si
+          debajo ya estuvieran la raya y la palabra—, así que cuando
+          iOS suelta su imagen y entra la nuestra no se mueve nada: lo
+          que pasa después es que aparecen la raya y el nombre.
+
+          Se generan con `instalada.py`, y no se escriben a mano: son
+          doce etiquetas con doce medidas y una mal puesta no falla,
+          simplemente vuelve al blanco en ese teléfono.
+        */}
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-se1.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-8.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-8-plus.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-x.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-xr.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-xs-max.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-12.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-12-max.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-14.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-14-max.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-16.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+        <link rel="apple-touch-startup-image" href="/arranque/iphone-16-max.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
       </head>
       <body>
         {/*

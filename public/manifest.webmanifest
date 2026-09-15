@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "mappel",
   "short_name": "mappel",
   "description": "Todo lo importante, en un mismo lugar.",
@@ -7,12 +8,55 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#F7F5F1",
   "theme_color": "#F7F5F1",
   "icons": [
-    { "src": "/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icono-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icono-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Hablar",
+      "short_name": "Hablar",
+      "description": "Decir lo que hay que apuntar",
+      "url": "/hablar",
+      "icons": [
+        {
+          "src": "/atajo-hablar.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Guardar un papel",
+      "short_name": "Guardar",
+      "description": "Hacerle una foto y que se archive solo",
+      "url": "/guardar",
+      "icons": [
+        {
+          "src": "/atajo-guardar.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }
