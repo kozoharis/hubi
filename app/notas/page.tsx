@@ -5,6 +5,7 @@ import { genteDeLaCasa } from '@/lib/gente'
 import { puedeEscribir } from '@/lib/hogar'
 import { notasDe, conFecha } from '@/lib/notas'
 import Cabecera from '../cabecera'
+import { Pildora } from '../piezas'
 import Encabezado from '../encabezado'
 import Barra from '../barra'
 import { Volver } from '../iconos'
@@ -30,10 +31,14 @@ export const dynamic = 'force-dynamic'
 export default async function PaginaNotas({
   searchParams,
 }: {
-  searchParams: Promise<{ ver?: string }>
+  searchParams: Promise<{ ver?: string; escribir?: string }>
 }) {
   const p = await searchParams
   const viendoGuardadas = p.ver === 'guardadas'
+  /* «Dejar una nota» de la banda es un enlace, no un botón: así la
+     acción de arriba y la de abajo hacen exactamente lo mismo sin que
+     la pantalla tenga dos maneras de abrir la misma caja. */
+  const abrirCaja = p.escribir === '1'
 
   const supabase = await clienteSesion()
   const user = await quien(supabase)
@@ -100,7 +105,39 @@ export default async function PaginaNotas({
           </div>
         </div>
 
-        <Encabezado icono="chincheta" ambito="arena" titulo="Notas" volver="/dia" />
+        {/*
+          ── LOS DOS MONTONES, ARRIBA ──
+
+          «En el corcho» y «Guardadas» son las dos maneras de mirar lo
+          mismo, igual que Semana y Mes en la Agenda — así que llevan
+          la misma píldora y viven en el mismo sitio: la banda. En el
+          móvil se quedan donde estaban, encima del corcho.
+
+          Y la acción de la pantalla sube con ellos: hoy «¿Dejamos otra
+          nota?» es un botón ancho al final de veinte notas, o sea que
+          para poner una hay que bajar hasta abajo del todo.
+        */}
+        <Encabezado
+          icono="chincheta"
+          ambito="arena"
+          titulo="Notas"
+          volver="/dia"
+          controles={
+            <div className="flex gap-2" role="group" aria-label="Qué notas ver">
+              <Pildora puesta={!viendoGuardadas} href="/notas">
+                En el corcho
+              </Pildora>
+              <Pildora puesta={viendoGuardadas} href="/notas?ver=guardadas">
+                Guardadas
+              </Pildora>
+            </div>
+          }
+          accion={
+            escribo && !viendoGuardadas
+              ? { texto: 'Dejar una nota', href: '/notas?escribir=1', icono: 'mas' }
+              : undefined
+          }
+        />
       </Cabecera>
 
       <div className="ancho-trabajo pt-2">
@@ -111,6 +148,7 @@ export default async function PaginaNotas({
           yo={user.id}
           escribo={escribo}
           viendoGuardadas={viendoGuardadas}
+          abrirCaja={abrirCaja}
         />
       </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AMBITO } from '@/lib/ambitos'
 import Link from '@/app/enlace'
 import { useRouter } from 'next/navigation'
@@ -50,6 +50,7 @@ export default function Notas({
   escribo,
   viendoGuardadas,
   hayPantalla,
+  abrirCaja = false,
 }: {
   notas: NotaVista[]
   gente: Quien[]
@@ -65,6 +66,16 @@ export default function Notas({
     una tablet aparece solo, sin tocar nada.
   */
   hayPantalla: boolean
+  /*
+    ¿Se entra con la caja de escribir ya abierta?
+
+    En grande, «Dejar una nota» vive arriba en la banda, con el resto
+    de acciones del producto. Ese botón es un enlace —`?escribir=1`— y
+    esto es lo que lo recoge: la pantalla se pinta con la caja abierta
+    y el foco puesto, exactamente igual que si se hubiera pulsado el
+    botón de abajo.
+  */
+  abrirCaja?: boolean
 }) {
   const router = useRouter()
 
@@ -78,7 +89,36 @@ export default function Notas({
   const [otroDestino, setOtroDestino] = useState<string | null>(null)
   /* Qué montón se está mirando, y si la caja de escribir está abierta. */
   const [mirando, setMirando] = useState<string>('todas')
-  const [escribiendo, setEscribiendo] = useState(false)
+  const [escribiendo, setEscribiendo] = useState(abrirCaja)
+
+  /*
+    ── LA NOTA ELEGIDA ──
+
+    Sólo en escritorio, y sólo hace una cosa: la nota **crece en su
+    sitio**. No se abre nada al lado, no se lleva la pantalla, no
+    aparece una ventana encima. Se queda donde está, en su columna del
+    corcho, con el texto entero y sus botones a la vista.
+
+    Es la manera de un corcho: descolgar un papel para leerlo y volver
+    a colgarlo en el mismo sitio. Cualquier otra cosa —un panel a la
+    derecha, una ficha— convierte veinte notas en veinte fichas, y
+    entonces ya no es un corcho.
+
+    En el móvil no existe: allí todas las notas enseñan sus botones
+    siempre, porque con el dedo no hay manera de «acercarse» a una.
+  */
+  const [laElegida, setLaElegida] = useState<string | null>(null)
+
+  /* Escape la suelta. Es la tecla que se prueba, y aquí no hay nada
+     más que cerrar, así que no pisa nada. */
+  useEffect(() => {
+    if (!laElegida) return
+    function alPulsar(e: KeyboardEvent) {
+      if (e.key === 'Escape') setLaElegida(null)
+    }
+    window.addEventListener('keydown', alPulsar)
+    return () => window.removeEventListener('keydown', alPulsar)
+  }, [laElegida])
 
   const otros = gente.filter((g) => g.id !== yo)
 
@@ -221,8 +261,11 @@ export default function Notas({
 
   return (
     <>
-      {/* ── Puestas · Guardadas ── */}
-      <div className="mt-1 flex gap-2">
+      {/* ── Puestas · Guardadas ──
+          `lg:hidden`: en grande viven arriba, en la banda, con la
+          misma píldora del sistema. Decirlo dos veces en la misma
+          pantalla es decirlo peor. */}
+      <div className="mt-1 flex gap-2 lg:hidden">
         <Pestana texto="En el corcho" href="/notas" puesta={!viendoGuardadas} />
         <Pestana texto="Guardadas" href="/notas?ver=guardadas" puesta={viendoGuardadas} />
       </div>
@@ -287,7 +330,24 @@ export default function Notas({
           `items-start` para que una nota larga no estire a las dos de
           al lado hasta su altura.
         */
-        <ul className="mt-4 space-y-2.5 lg:grid lg:grid-cols-3 lg:items-start lg:gap-3 lg:space-y-0">
+        /*
+          ── COLUMNAS DE ALTURA LIBRE, NO REJILLA ──
+
+          Era una rejilla de tres, y una rejilla obliga a que todas las
+          celdas de una fila midan lo que la más alta: una nota de seis
+          renglones dejaba dos agujeros de papel en blanco a los lados.
+          Con veinte notas eso son seis o siete agujeros, y un corcho
+          con agujeros no parece un corcho: parece una tabla mal
+          rellenada.
+
+          `columns` reparte en columnas de verdad —como un periódico— y
+          cada nota ocupa lo que mide. `break-inside-avoid` para que
+          ninguna se parta entre dos columnas, que es el único fallo
+          que tiene esta técnica.
+
+          Tres a 1440, cuatro en un monitor grande.
+        */
+        <ul className="mt-4 space-y-2.5 lg:columns-3 lg:gap-3 lg:space-y-0 monitor:columns-4">
           {visibles.map((n) => {
             const mia = n.escrita_por === yo
             const paraMi = n.para === yo
@@ -298,7 +358,34 @@ export default function Notas({
             return (
               <li
                 key={n.id}
-                className="rounded-[20px] border border-borde bg-superficie px-4 py-3.5"
+                /*
+                  `break-inside-avoid`: que ninguna nota se parta entre
+                  dos columnas. `lg:mb-3` porque en columnas el hueco
+                  vertical ya no lo pone `space-y`.
+
+                  `grupo` es la clase que enseña los botones al pasar
+                  por encima, y sólo con ratón. Está en `globals.css`
+                  con su media query, no aquí, porque con el dedo no
+                  existe «pasar por encima» y una nota con los botones
+                  escondidos sería una nota sin botones.
+                */
+                className={
+                  'grupo rounded-[20px] border border-borde bg-superficie px-4 py-3.5 lg:mb-3 lg:break-inside-avoid ' +
+                  (laElegida === n.id ? 'elegida' : '')
+                }
+                onClick={(e) => {
+                  /* Elegir es sólo «acercarse» a esta nota. No abre
+                     nada ni cambia de sitio: enseña el texto entero y
+                     los botones. Se vuelve a pulsar y se suelta.
+
+                     Y pulsar un botón DE DENTRO no cuenta: sin esta
+                     comprobación, tocar «Visto» marcaría la nota como
+                     vista y además la soltaría, que es un movimiento
+                     de más justo cuando se acaba de hacer algo. */
+                  if (editando === n.id) return
+                  if ((e.target as HTMLElement).closest('button,a,textarea')) return
+                  setLaElegida((x) => (x === n.id ? null : n.id))
+                }}
                 style={
                   /* Una nota que es PARA TI se ve distinta desde el otro
                      lado de la habitación: es lo único de esta pantalla
@@ -372,7 +459,12 @@ export default function Notas({
                   <>
                     {/* `whitespace-pre-wrap`: si alguien escribe la nota
                         en tres renglones, se lee en tres renglones. */}
-                    <p className="t-cuerpo whitespace-pre-wrap font-semibold">
+                    {/* Recortada a ocho renglones mientras no está
+                        elegida, y sólo en grande: en un corcho de tres
+                        columnas, una nota de treinta líneas se come la
+                        columna entera y las cuatro de debajo dejan de
+                        verse. Elegirla la abre del todo. */}
+                    <p className="texto-nota t-cuerpo whitespace-pre-wrap font-semibold">
                       {n.texto}
                     </p>
 
@@ -406,7 +498,7 @@ export default function Notas({
                         botones. Los dibujos se van —«Visto», «Cambiar»
                         y «Quitar» no se confunden escritos— y el ancho
                         lo reparte la fila. */}
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="acciones mt-3 flex flex-wrap gap-2">
                       {paraMi && !n.vista_en && escribo && (
                         <Boton
                           texto="Visto"
@@ -563,7 +655,10 @@ export default function Notas({
         ) : (
           <button
             onClick={() => setEscribiendo(true)}
-            className="t-tarjeta mt-4 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[16px] border border-borde bg-superficie text-tinta"
+            /* SOLO EN EL MÓVIL. En grande «Dejar una nota» vive arriba
+               en la banda: aquí abajo, después de veinte notas, para
+               poner una había que bajar hasta el final del corcho. */
+            className="t-tarjeta mt-4 flex h-[60px] w-full items-center justify-center gap-2.5 rounded-[16px] border border-borde bg-superficie text-tinta lg:hidden"
           >
             <Ico nombre="mas" tam={21} grosor={2.4} />
             ¿Dejamos otra nota?

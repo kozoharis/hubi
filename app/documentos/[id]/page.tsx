@@ -195,21 +195,27 @@ export default async function Documento({
 
         {/*
           En grande, el camino de carpetas sube al pie del título: ahí
-          dice DÓNDE estás, que es media pregunta de esta pantalla. Y
-          las dos acciones, arriba a la derecha — «Ver el papel» abre
-          otra pestaña, por eso va con `externo`.
+          dice DÓNDE estás, que es media pregunta de esta pantalla.
+
+          ── Y NINGUNA ACCIÓN AQUÍ ARRIBA ──
+
+          Estaban «Ver el papel» y «Corregir», y las dos se han bajado
+          al pie de la ficha. El motivo es una regla del sistema de
+          cabeceras: la banda lleva UNA acción, y es la acción DE LA
+          PANTALLA. Éstas son acciones DEL PAPEL, y su sitio es al lado
+          del papel — que además es donde está la vista cuando se
+          decide usarlas: se lee la ficha, se ve que el importe está
+          mal, y «Corregir» está ahí mismo y no a medio metro arriba a
+          la derecha.
+
+          Es la misma corrección que se le hizo al lápiz suelto de
+          Cuentas.
         */}
         <Encabezado
           icono={icono}
           ambito={ambito}
           titulo={d.titulo}
           pie={camino.map((c) => c.nombre).join(' › ')}
-          accion={{ texto: 'Ver el papel', href: enlace, icono: 'ojo', externo: true }}
-          extra={
-            <BotonSecundario href={`/documentos/${d.id}/editar`} icono="lapiz" ancho="auto">
-              Corregir
-            </BotonSecundario>
-          }
         />
       </Cabecera>
 
@@ -232,7 +238,12 @@ export default async function Documento({
           datos de setecientos píxeles de ancho no se lee mejor: deja
           la etiqueta y el valor en dos extremos de la pantalla.
         */}
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-start lg:gap-8">
+        {/* La ficha mide 380 y NO CRECE. Lo que crece es el papel: de 553
+            px de hoja a 1440 hasta 670 en un monitor —que es donde una
+            póliza pasa de intuirse a leerse sin ampliarla—. Una ficha de
+            datos más ancha no se lee mejor: deja la etiqueta y el valor
+            en dos extremos de la pantalla. */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8">
 
         <div className="lg:sticky lg:top-4">
         {/* ── El papel ── */}
@@ -432,7 +443,7 @@ export default async function Documento({
           MAPPEL — que es la razón por la que en la primera migración
           tuve que repetir sus estilos a mano.
         */}
-        <div className="mt-4 lg:hidden">
+        <div className="mt-4">
           <BotonPrincipal href={enlace} externo icono="ojo">
             Ver el papel
           </BotonPrincipal>
@@ -447,7 +458,7 @@ export default async function Documento({
           única forma de arreglarlo era volver a fotografiar el papel y
           quedarse con dos copias en Drive.
         */}
-        <div className="mt-2.5 lg:hidden">
+        <div className="mt-2.5">
           <BotonSecundario href={`/documentos/${d.id}/editar`} icono="lapiz">
             Corregir o borrar
           </BotonSecundario>

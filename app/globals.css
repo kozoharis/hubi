@@ -676,6 +676,61 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   EL CORCHO · lo que se enseña al acercarse
+   ═══════════════════════════════════════════════════════════
+
+   Tres reglas, y todas viven detrás de la misma puerta: pantalla
+   grande Y RATÓN. La segunda condición es la que importa.
+
+   En las Notas hay cuatro botones por nota —Visto, Cambiar, Quitar,
+   En la cocina— y con veinte notas eso son ochenta botones a la vez.
+   El corcho deja de leerse: son más botones que texto.
+
+   Con ratón se pueden esconder, porque existe «acercarse»: los enseña
+   la nota que está bajo el cursor y la que se ha elegido. Con el dedo
+   no existe nada parecido, así que ahí siguen todos visibles —una
+   nota con los botones escondidos sería una nota sin botones— y estas
+   reglas ni siquiera se aplican.
+
+   Es la misma condición de `.roza`, y por el mismo motivo.
+
+   Y lo mismo con el texto: recortado a ocho renglones mientras la
+   nota no está elegida. Una nota de treinta líneas se come su columna
+   entera y las cuatro de debajo dejan de verse. */
+@media (min-width: 64rem) and (hover: hover) and (pointer: fine) {
+  .grupo .acciones {
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  .grupo:hover .acciones,
+  .grupo:focus-within .acciones,
+  .grupo.elegida .acciones {
+    opacity: 1;
+  }
+
+  .grupo .texto-nota {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 8;
+    overflow: hidden;
+  }
+
+  .grupo.elegida .texto-nota {
+    display: block;
+    overflow: visible;
+  }
+
+  /* La elegida se nota sin color: una sombra y el borde un punto más
+     oscuro. Color aquí sería el quinto que compite con las barras de
+     quién escribió cada nota. */
+  .grupo.elegida {
+    border-color: var(--t-apagado);
+    box-shadow: 0 6px 20px -12px rgba(26, 23, 20, 0.35);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
    LA ZONA QUE CEDE SITIO, Y LO QUE ENTRA EN ÉL
    ═══════════════════════════════════════════════════════════
 
