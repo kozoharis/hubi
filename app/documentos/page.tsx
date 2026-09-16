@@ -10,6 +10,7 @@ import { Ico } from '../iconos'
 import { Fila, Vacio, Aviso, PastillaAmbito, seccionPintada } from '../piezas'
 import MappelCaja from '../mappel-caja'
 import { Tabla, Renglon, Punto, Nombre, Dato, Cifra } from '../tabla'
+import ElPapel from '../papel-panel'
 import { euros } from '@/lib/periodos'
 import { elEspacioO } from '@/lib/espacio'
 import { misMarcas, nuevosPorRaiz } from '@/lib/novedades'
@@ -44,9 +45,9 @@ const CAMPOS =
 export default async function Documentos({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; cat?: string; carpeta?: string }>
+  searchParams: Promise<{ q?: string; cat?: string; carpeta?: string; papel?: string }>
 }) {
-  const { q, cat, carpeta: elegidaParam } = await searchParams
+  const { q, cat, carpeta: elegidaParam, papel: papelParam } = await searchParams
   const busqueda = (q ?? '').trim()
   const carpeta = (cat ?? '').trim()
   /*
@@ -57,6 +58,11 @@ export default async function Documentos({
     disparara una búsqueda.
   */
   const elegida = (elegidaParam ?? '').trim()
+
+  /* Y el papel elegido dentro de ella: la tercera zona. Mismo motivo
+     para que viva en la dirección que la carpeta — se copia, se
+     recarga y la flecha de volver hace lo que parece. */
+  const elegido = (papelParam ?? '').trim()
 
   const supabase = await clienteSesion()
   const user = await quien(supabase)
@@ -377,6 +383,103 @@ export default async function Documentos({
   const filas = deLaCarpeta.slice(0, 200)
 
   /*
+    ═══════════════════════════════════════════════════════════════
+    LA TERCERA ZONA · EL PAPEL ELEGIDO
+    ═══════════════════════════════════════════════════════════════
+
+    Éste es el cambio que más quita de esta pantalla, y se ve mejor
+    contando lo que había antes: para mirar un recibo había que
+    acertar cuatro veces seguidas —sección, carpeta, año, papel—, y al
+    llegar, la pantalla entera se sustituía. Para ver el siguiente,
+    volver atrás y repetir.
+
+    Ahora el papel se abre AL LADO. La tabla se queda donde está, con
+    su sitio marcado, y se puede ir bajando por los recibos viéndolos
+    uno detrás de otro. Es la diferencia entre buscar un papel y
+    revisar los papeles, que es lo que de verdad se hace aquí.
+
+    ── LA CONSULTA, SÓLO CUANDO HAY ALGO ELEGIDO ──
+
+    La ficha enseña cosas que la tabla no pide —el proveedor, el
+    vencimiento, de qué archivo salió— y por eso va aparte. Sin nada
+    elegido no se pide nada: esta pantalla hace exactamente las dos
+    consultas que hacía antes.
+
+    Y si el `papel=` de la dirección no lleva a ningún sitio —un
+    enlace viejo, un papel borrado— se queda en `null` y la pantalla
+    es la de siempre.
+  */
+  const { data: elPapelCrudo } = elegido
+    ? await supabase
+        .from('documentos')
+        .select(
+          'id, categoria_id, titulo, nombre_archivo, tipo_mime, proveedor, fecha_documento, importe, fecha_vencimiento, se_renueva'
+        )
+        .eq('hogar_id', espacio)
+        .eq('id', elegido)
+        .maybeSingle()
+    : { data: null }
+
+  const elPapel = elPapelCrudo as {
+    id: string
+    categoria_id: string
+    titulo: string
+    nombre_archivo: string | null
+    tipo_mime: string | null
+    proveedor: string | null
+    fecha_documento: string | null
+    importe: number | null
+    fecha_vencimiento: string | null
+    se_renueva: boolean | null
+  } | null
+
+  /* El camino de la carpeta del papel, para decir dónde está. Sale del
+     árbol que ya está cargado: cero consultas. */
+  const caminoDelPapel: string[] = []
+  if (elPapel) {
+    let actual = todas.find((c) => c.id === elPapel.categoria_id) ?? null
+    while (actual) {
+      caminoDelPapel.unshift(actual.nombre)
+      actual = actual.padre_id ? (todas.find((c) => c.id === actual!.padre_id) ?? null) : null
+    }
+  }
+
+  /*
+    El panel. Se escribe una vez y se pinta en dos sitios: debajo de la
+    tabla hasta 1440, y al lado desde ahí.
+
+    ── POR QUÉ DEBAJO Y NO ESCONDIDO ──
+
+    Porque entre 1024 y 1440 no hay sitio para tres zonas: con las
+    carpetas en 220 y un panel en 340, a la tabla le quedarían 140 px.
+    Y la alternativa —que el panel no exista por debajo de 1440— deja
+    un clic que no hace nada, que es peor que cualquier reparto.
+
+    La regla del sistema dice *si hay sitio para enseñar lo elegido,
+    elegir lo enseña*. Aquí hay sitio, sólo que abajo en vez de al
+    lado. **Pulsar siempre avanza.**
+  */
+  /*
+    La dirección de esta pantalla con la carpeta y el papel que se le
+    digan. Escrita una vez: son seis enlaces —cada carpeta, cada chip,
+    cada renglón y la equis— y tenerla en seis sitios es como uno de
+    ellos se queda sin el otro parámetro y elegir un papel te saca de
+    la carpeta donde estabas.
+  */
+  function aquiCon(carpetaId: string | null, papelId: string | null): string {
+    const partes: string[] = []
+    if (carpetaId) partes.push(`carpeta=${encodeURIComponent(carpetaId)}`)
+    if (papelId) partes.push(`papel=${encodeURIComponent(papelId)}`)
+    return partes.length > 0 ? `/documentos?${partes.join('&')}` : '/documentos'
+  }
+
+  const panelDelPapel = elPapel ? (
+    <ElPapel papel={elPapel} camino={caminoDelPapel} cerrar={aquiCon(elegida || null, null)} />
+  ) : laElegida ? (
+    <LaCarpeta nombre={laElegida.nombre} cuantos={cuantos.get(laElegida.id) ?? 0} />
+  ) : null
+
+  /*
     LO ÚLTIMO GUARDADO — la lista directa.
 
     Hasta ahora, para llegar a un papel había que acertar cuatro veces
@@ -596,7 +699,7 @@ export default async function Documentos({
                 return (
                   <EnCarpeta
                     key={c.id}
-                    href={`/documentos?carpeta=${c.id}`}
+                    href={aquiCon(c.id, null)}
                     nombre={c.nombre}
                     cuantos={cuantos.get(c.id) ?? 0}
                     ambito={s.ambito}
@@ -617,7 +720,7 @@ export default async function Documentos({
             {subcarpetas.length > 0 && (
               <div className="mb-3 flex flex-wrap gap-2">
                 <Chip
-                  href={`/documentos?carpeta=${seccionElegida?.id}`}
+                  href={aquiCon(seccionElegida?.id ?? null, null)}
                   elegido={laElegida?.id === seccionElegida?.id}
                 >
                   Todo · {cuantos.get(seccionElegida?.id ?? '') ?? 0}
@@ -625,7 +728,7 @@ export default async function Documentos({
                 {subcarpetas.map((h) => (
                   <Chip
                     key={h.id}
-                    href={`/documentos?carpeta=${h.id}`}
+                    href={aquiCon(h.id, null)}
                     elegido={laElegida?.id === h.id}
                   >
                     {h.nombre} · {h.cuantos}
@@ -656,7 +759,11 @@ export default async function Documentos({
               {filas.map((d) => {
                 const s = seccionPintada(segmentoPorId.get(d.categoria_id))
                 return (
-                  <Renglon key={d.id} href={`/documentos/${d.id}`}>
+                  <Renglon
+                    key={d.id}
+                    href={aquiCon(elegida || null, d.id)}
+                    elegido={elegido === d.id}
+                  >
                     <Punto ambito={s.ambito} />
                     <Nombre>{d.titulo}</Nombre>
                     <Dato>{nombrePorId.get(d.categoria_id) ?? 'Sin carpeta'}</Dato>
@@ -670,7 +777,21 @@ export default async function Documentos({
                 )
               })}
             </Tabla>
+
+            {/* El panel, DEBAJO, mientras no haya sitio al lado. */}
+            {panelDelPapel && (
+              <div className="mt-4 ancha:hidden">{panelDelPapel}</div>
+            )}
           </div>
+
+          {/* Y al lado desde 1440: 340 px, y 480 en un monitor grande —
+              que es donde el recibo pasa de intuirse a leerse sin
+              abrirlo. Pegado al desplazar, sin barra propia. */}
+          {panelDelPapel && (
+            <aside className="hidden shrink-0 self-start ancha:sticky ancha:top-2 ancha:block ancha:w-[340px] monitor:w-[480px]">
+              {panelDelPapel}
+            </aside>
+          )}
         </div>
 
         {/* Solo cuando de verdad no hay ninguno. Si la consulta ha
@@ -781,6 +902,37 @@ function Buscador({ valor }: { valor: string }) {
   —barra verde de 3 px y fondo verde muy claro— porque es el mismo
   gesto y conviene que se aprenda una sola vez.
 */
+/*
+  Y SIN PAPEL ELEGIDO, LA CARPETA.
+
+  La zona no se queda vacía esperando: dice de qué carpeta se está
+  viendo la tabla y cuántos papeles tiene. Es poco, y es a propósito —
+  una zona con un «selecciona un papel» centrado en gris es un hueco
+  disfrazado de contenido.
+
+  Aquí es donde entrará «¿quién ve esta carpeta?» cuando los permisos
+  por carpeta estén puestos: ése es su sitio y por eso el bloque
+  existe ya.
+*/
+function LaCarpeta({ nombre, cuantos }: { nombre: string; cuantos: number }) {
+  return (
+    <div>
+      <p className="rotulo mb-2.5">La carpeta</p>
+      <div className="rounded-[16px] border border-borde bg-superficie px-4 py-4">
+        <p className="text-[17px] font-extrabold leading-snug">{nombre}</p>
+        <p className="mt-1 text-[14px] text-tenue">
+          {cuantos === 0
+            ? 'Todavía sin papeles.'
+            : `${cuantos} ${cuantos === 1 ? 'papel guardado' : 'papeles guardados'}.`}
+        </p>
+        <p className="mt-3 border-t border-borde pt-3 text-[13px] leading-snug text-tenue">
+          Elige un papel de la lista para verlo aquí sin salir de la carpeta.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function EnCarpeta({
   href,
   nombre,

@@ -14,6 +14,7 @@ import { Ico, type Icono } from './iconos'
    de los números grandes del balance— y son dos cosas distintas. La
    de la tabla es una celda; la de aquí, un titular. */
 import { Tabla, Renglon, Nombre, Dato, Cifra as CeldaCifra } from './tabla'
+import ElPapel from './papel-panel'
 import {
   Aviso,
   BotonPrincipal,
@@ -117,10 +118,25 @@ export default async function Cuentas({
   searchParams,
 }: {
   seccion: Cuenta
-  searchParams: Promise<{ vista?: string; ancla?: string }>
+  searchParams: Promise<{ vista?: string; ancla?: string; mov?: string }>
 }) {
   const p = await searchParams
   const vista: Vista = p.vista === 'mes' || p.vista === 'anio' ? p.vista : 'trimestre'
+
+  /*
+    ── EL MOVIMIENTO ELEGIDO ──
+
+    La tercera zona de esta pantalla: el PAPEL del movimiento que se
+    haya marcado en la tabla.
+
+    Es lo que permite lo que hoy no se puede hacer sin dar tres saltos:
+    ver que a un apunte le falta el IVA, mirar la factura y ponérselo,
+    todo sin salir de la cuenta donde se ha visto que falta.
+
+    Vive en la dirección, como la carpeta de Papeles, y por lo mismo:
+    se copia, se recarga y la flecha de volver hace lo que parece.
+  */
+  const movElegido = (p.mov ?? '').trim()
   const periodo = calcular(vista, p.ancla ?? hoyAqui())
 
   const supabase = await clienteSesion()
@@ -243,6 +259,60 @@ export default async function Cuentas({
   const movimientos = ((data ?? []) as Movimiento[]).filter(
     (m) => m.categoria_id && deFinca.has(m.categoria_id)
   )
+
+  /*
+    ── EL PAPEL DEL MOVIMIENTO ELEGIDO ──
+
+    Una consulta más, y SÓLO cuando hay algo elegido: sin selección
+    esta pantalla hace exactamente las mismas que hacía.
+
+    Se piden los mismos campos que en Papeles porque es el mismo panel
+    —`app/papel-panel.tsx`—: el mismo papel tiene que verse igual se
+    llegue por donde se llegue.
+
+    Un movimiento sin papel no se puede elegir (su renglón no lleva a
+    ningún sitio), así que aquí no hace falta contemplar ese caso: si
+    `mov=` viene de un enlace viejo y no encuentra nada, `elPapel` se
+    queda en `null` y la pantalla es la de siempre.
+  */
+  const movSeleccionado = movElegido
+    ? (movimientos.find((m) => m.id === movElegido) ?? null)
+    : null
+
+  const { data: papelCrudo } = movSeleccionado?.documento_id
+    ? await supabase
+        .from('documentos')
+        .select(
+          'id, categoria_id, titulo, nombre_archivo, tipo_mime, proveedor, fecha_documento, importe, fecha_vencimiento, se_renueva'
+        )
+        .eq('hogar_id', await elEspacioO(supabase))
+        .eq('id', movSeleccionado.documento_id)
+        .maybeSingle()
+    : { data: null }
+
+  const elPapel = papelCrudo as {
+    id: string
+    categoria_id: string
+    titulo: string
+    nombre_archivo: string | null
+    tipo_mime: string | null
+    proveedor: string | null
+    fecha_documento: string | null
+    importe: number | null
+    fecha_vencimiento: string | null
+    se_renueva: boolean | null
+  } | null
+
+  /* Dónde está guardado, para decirlo en el panel. Sale del árbol de
+     categorías que ya está cargado arriba: cero consultas. */
+  const caminoDelPapel: string[] = []
+  if (elPapel) {
+    let actual = porId.get(elPapel.categoria_id) ?? null
+    while (actual) {
+      caminoDelPapel.unshift(actual.nombre)
+      actual = actual.padre_id ? (porId.get(actual.padre_id) ?? null) : null
+    }
+  }
 
   /*
     Las unidades de esta sección, y si reparte lo común.
@@ -574,7 +644,20 @@ export default async function Cuentas({
           En el móvil son dos `div` seguidos y el orden no cambia ni
           una línea.
         */}
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8">
+        {/*
+          ── Y LA TERCERA ZONA, DESDE 1800 ──
+
+          A 1440 no cabe: la tabla de movimientos necesita 700 para no
+          recortar un concepto, la banda de la actividad 380, y un
+          papel legible 420. Son 1500 sin contar los huecos, y a 1440
+          hay 1120.
+
+          Así que hasta 1800 el papel del movimiento se abre DEBAJO de
+          su tabla, a lo ancho —donde se lee mejor que en 420, de
+          hecho— y desde 1800 sube a su columna y se queda al lado.
+          Nunca hay un clic que no haga nada.
+        */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8 monitor:grid-cols-[minmax(0,1fr)_380px_420px]">
 
         <div className="lg:col-start-2 lg:row-start-1">
 
@@ -893,7 +976,26 @@ export default async function Cuentas({
                       : '—'
 
                   return (
-                    <Renglon key={m.id} href={m.documento_id ? `/documentos/${m.documento_id}` : undefined}>
+                    <Renglon
+                      key={m.id}
+                      /*
+                        Elegir, no entrar — y sólo si hay papel que
+                        enseñar. Un movimiento apuntado a mano no lleva
+                        a ningún sitio: no se pinta una promesa que no
+                        se puede cumplir.
+
+                        Y vuelve a pulsarse para cerrar, como en la
+                        Agenda.
+                      */
+                      href={
+                        m.documento_id
+                          ? `${seccion.ruta}?vista=${vista}&ancla=${periodo.desde}${
+                              movElegido === m.id ? '' : `&mov=${m.id}`
+                            }`
+                          : undefined
+                      }
+                      elegido={movElegido === m.id}
+                    >
                       <Nombre
                         pie={
                           m.noches != null
@@ -917,6 +1019,17 @@ export default async function Cuentas({
                   )
                 })}
               </Tabla>
+
+              {/* Debajo, mientras no haya sitio al lado. */}
+              {elPapel && (
+                <div className="mt-4 monitor:hidden">
+                  <ElPapel
+                    papel={elPapel}
+                    camino={caminoDelPapel}
+                    cerrar={`${seccion.ruta}?vista=${vista}&ancla=${periodo.desde}`}
+                  />
+                </div>
+              )}
             </div>
 
             <ul className="mt-3 space-y-2.5 lg:hidden">
@@ -973,6 +1086,19 @@ export default async function Cuentas({
           )}
         </section>
         </div>
+
+        {/* Y al lado desde 1800. Tercera columna de la misma rejilla:
+            así se alinea arriba con el balance y con la banda de la
+            actividad, en vez de flotar por debajo de las dos. */}
+        {elPapel && (
+          <div className="hidden monitor:col-start-3 monitor:row-start-1 monitor:block">
+            <ElPapel
+              papel={elPapel}
+              camino={caminoDelPapel}
+              cerrar={`${seccion.ruta}?vista=${vista}&ancla=${periodo.desde}`}
+            />
+          </div>
+        )}
 
         </div>
 

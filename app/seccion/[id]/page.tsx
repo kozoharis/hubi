@@ -37,7 +37,7 @@ export default async function Seccion({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ vista?: string; ancla?: string }>
+  searchParams: Promise<{ vista?: string; ancla?: string; mov?: string }>
 }) {
   const { id } = await params
 
