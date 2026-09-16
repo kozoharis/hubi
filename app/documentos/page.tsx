@@ -9,6 +9,8 @@ import Encabezado from '../encabezado'
 import { Ico } from '../iconos'
 import { Fila, Vacio, Aviso, PastillaAmbito, seccionPintada } from '../piezas'
 import MappelCaja from '../mappel-caja'
+import { Tabla, Renglon, Punto, Nombre, Dato, Cifra } from '../tabla'
+import { euros } from '@/lib/periodos'
 import { elEspacioO } from '@/lib/espacio'
 import { misMarcas, nuevosPorRaiz } from '@/lib/novedades'
 import {
@@ -20,6 +22,7 @@ import {
   type Categoria,
   type Documento,
 } from '@/lib/carpetas'
+import type { Ambito } from '@/lib/ambitos'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,11 +44,19 @@ const CAMPOS =
 export default async function Documentos({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; cat?: string }>
+  searchParams: Promise<{ q?: string; cat?: string; carpeta?: string }>
 }) {
-  const { q, cat } = await searchParams
+  const { q, cat, carpeta: elegidaParam } = await searchParams
   const busqueda = (q ?? '').trim()
   const carpeta = (cat ?? '').trim()
+  /*
+    `carpeta` es la carpeta ELEGIDA en el escritorio, y no tiene nada
+    que ver con `cat`, que es la de la búsqueda y manda a otra rama
+    entera de esta pantalla. Dos parámetros y dos nombres a propósito:
+    llamarlos igual habría hecho que elegir una carpeta con el ratón
+    disparara una búsqueda.
+  */
+  const elegida = (elegidaParam ?? '').trim()
 
   const supabase = await clienteSesion()
   const user = await quien(supabase)
@@ -249,8 +260,13 @@ export default async function Documentos({
         .from('documentos')
         /* `creado_en` y `subido_por` son para el rótulo de «nuevo»: cuándo
            llegó el papel —que no es lo mismo que la fecha que pone el
-           papel— y quién lo guardó. */
-        .select('id, categoria_id, titulo, fecha_documento, anio, trimestre, creado_en, subido_por')
+           papel— y quién lo guardó.
+
+           `importe` es nuevo aquí, y es la única columna que hacía falta
+           añadir para la tabla del escritorio: estaba en la base de
+           datos y en la ficha del papel, pero esta consulta no lo pedía
+           porque la lista de tarjetas no lo enseñaba. */
+        .select('id, categoria_id, titulo, fecha_documento, anio, trimestre, creado_en, subido_por, importe')
         .eq('hogar_id', espacio)
         .order('fecha_documento', { ascending: false })
         .limit(5000),
@@ -264,6 +280,7 @@ export default async function Documentos({
     titulo: string
     creado_en?: string | null
     subido_por?: string | null
+    importe?: number | null
   })[]
 
   const secciones = hijosDe(todas, null)
@@ -297,6 +314,67 @@ export default async function Documentos({
 
   const nombrePorId = new Map(todas.map((c) => [c.id, c.nombre]))
   const segmentoPorId = new Map(todas.map((c) => [c.id, c.segmento_drive]))
+
+  /*
+    ═══════════════════════════════════════════════════════════════
+    LO QUE HACE FALTA SÓLO EN GRANDE
+    ═══════════════════════════════════════════════════════════════
+
+    En el escritorio esta pantalla deja de ser un árbol de puertas y
+    pasa a ser dos zonas: las carpetas a la izquierda y lo que hay
+    dentro en una tabla, al lado. Elegir una carpeta ya no cambia de
+    pantalla — rellena la zona de en medio.
+
+    Y con eso, «Carpeta» deja de ser una pantalla distinta en un
+    ordenador. La ruta `/documentos/seccion/<id>` se queda tal cual, y
+    es la buena en el móvil y para un enlace: lo que cambia es que
+    desde aquí ya no hace falta ir.
+
+    Nada de esto cuesta una consulta más. Las categorías y los papeles
+    ya estaban pedidos arriba para contar y para pintar lo último: lo
+    único que se hace aquí es mirarlos de otra manera.
+  */
+  const laElegida = elegida ? todas.find((c) => c.id === elegida) ?? null : null
+
+  /* La sección que se marca en la columna de la izquierda. Puede que lo
+     elegido sea una subcarpeta —«Finca › Gastos › Luz»—, y entonces lo
+     que se enciende arriba es su raíz: Finca. */
+  const seccionElegida = laElegida
+    ? secciones.find((s) => s.id === (raizPorCategoria.get(laElegida.id) ?? laElegida.id)) ?? null
+    : null
+
+  /* Las subcarpetas, con su recuento. Dejan de ser puertas y pasan a
+     ser FILTROS: se ve lo que hay dentro de cada una sin entrar, que es
+     justo lo que no se podía hacer cuando cada subcarpeta era una
+     tarjeta que ponía «vacía» nueve veces seguidas. */
+  const subcarpetas = seccionElegida
+    ? hijosDe(todas, seccionElegida.id).map((h) => ({
+        id: h.id,
+        nombre: h.nombre,
+        /* `contar` ya suma la rama entera de cada categoría, así que
+           esto no hay que volver a recorrerlo: una subcarpeta con hijas
+           ya trae los papeles de sus hijas dentro. */
+        cuantos: cuantos.get(h.id) ?? 0,
+      }))
+    : []
+
+  /*
+    Las filas de la tabla.
+
+    Sin carpeta elegida, los últimos de toda la casa. Con una elegida,
+    los suyos y los de sus subcarpetas — por eso se mira la RAÍZ de
+    cada papel y no su categoría directa: un recibo de la luz está en
+    «Finca › Gastos › Luz», y quien elige «Finca» quiere verlo.
+
+    El corte en 200 no es por la pantalla sino por el peso: pintar
+    cinco mil renglones de golpe deja el navegador pensando medio
+    segundo, y nadie recorre cinco mil líneas con la vista. Cuando
+    haya que pasar de ahí, el sitio correcto es el buscador, que ya
+    existe y está arriba.
+  */
+  const rama = laElegida ? ramaDe(todas, laElegida.id) : null
+  const deLaCarpeta = rama ? papeles.filter((d) => rama.has(d.categoria_id)) : papeles
+  const filas = deLaCarpeta.slice(0, 200)
 
   /*
     LO ÚLTIMO GUARDADO — la lista directa.
@@ -386,7 +464,19 @@ export default async function Documentos({
           documento: en el móvil manda el orden de lectura de arriba
           abajo, y ése se queda como está.
         */}
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
+        {/*
+          ── EL MÓVIL, INTACTO ──
+
+          Todo lo de aquí dentro es exactamente lo que había, sin tocar
+          una clase. En un teléfono elegir SÍ es navegar, porque no hay
+          sitio para otra cosa: las carpetas siguen siendo tarjetas y
+          siguen llevando a su pantalla.
+
+          Las clases `lg:` de dentro quedan sin efecto —esto ya no se
+          pinta en grande— y se dejan puestas a propósito: quitarlas
+          sería tocar el móvil, y el móvil no entra en esta tanda.
+        */}
+        <div className="lg:hidden">
 
         {/* Lo último, directo. Sin pasar por el árbol de carpetas. */}
         {recientes.length > 0 && (
@@ -464,12 +554,134 @@ export default async function Documentos({
 
         </div>
 
+        {/*
+          ══════════════════════════════════════════════════════════
+          EL ESCRITORIO · las carpetas, y lo que hay dentro
+          ══════════════════════════════════════════════════════════
+
+          Dos zonas. A la izquierda los nombres; en el resto, una tabla
+          con lo que hay dentro.
+
+          ── POR QUÉ LAS CARPETAS SON UNA COLUMNA Y NO UNOS CHIPS ──
+
+          Porque son ocho y subiendo. La regla: si la lista cabe holgada
+          en una fila, es una fila —las cuentas, que son tres o cuatro—;
+          si no cabe o crece sin techo, es una columna. Doscientos veinte
+          píxeles para ocho nombres es barato; para tres sería un pasillo
+          vacío que además se los quita a la tabla.
+
+          ── Y LO QUE SE VE DE UN VISTAZO ──
+
+          Una carpeta vacía deja de parecerse a una llena. Antes las dos
+          eran la misma tarjeta con el mismo chevrón; aquí la que no
+          tiene nada sale apagada y con una raya en vez de un número.
+          Ése era el peor fallo de la pantalla de carpeta: «Alquileres»
+          con nueve subcarpetas diciendo «vacía» nueve veces, y sin
+          manera de saberlo desde fuera.
+        */}
+        <div className="denso-trabajo hidden pt-2 lg:flex lg:items-start lg:gap-5">
+
+          <nav aria-label="Carpetas" className="w-[220px] shrink-0">
+            <h2 className="rotulo">Carpetas</h2>
+            <div className="mt-2.5 flex flex-col gap-0.5">
+              <EnCarpeta
+                href="/documentos"
+                nombre="Todos los papeles"
+                cuantos={papeles.length}
+                ambito="pizarra"
+                elegida={seccionElegida === null}
+              />
+              {secciones.map((c) => {
+                const s = seccionPintada(c.segmento_drive)
+                return (
+                  <EnCarpeta
+                    key={c.id}
+                    href={`/documentos?carpeta=${c.id}`}
+                    nombre={c.nombre}
+                    cuantos={cuantos.get(c.id) ?? 0}
+                    ambito={s.ambito}
+                    elegida={seccionElegida?.id === c.id}
+                    nuevos={nuevos.get(c.id) ?? 0}
+                  />
+                )
+              })}
+            </div>
+          </nav>
+
+          <div className="min-w-0 flex-1">
+            {/*
+              Las subcarpetas, de filtro. La elegida en negro; las demás
+              con su recuento al lado, que es lo que antes había que
+              entrar a averiguar.
+            */}
+            {subcarpetas.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                <Chip
+                  href={`/documentos?carpeta=${seccionElegida?.id}`}
+                  elegido={laElegida?.id === seccionElegida?.id}
+                >
+                  Todo · {cuantos.get(seccionElegida?.id ?? '') ?? 0}
+                </Chip>
+                {subcarpetas.map((h) => (
+                  <Chip
+                    key={h.id}
+                    href={`/documentos?carpeta=${h.id}`}
+                    elegido={laElegida?.id === h.id}
+                  >
+                    {h.nombre} · {h.cuantos}
+                  </Chip>
+                ))}
+              </div>
+            )}
+
+            <Tabla
+              columnas="12px minmax(0,1fr) 150px 96px 104px"
+              cabecera={[
+                '',
+                'Papel',
+                'Dónde',
+                'Fecha',
+                <span key="i" className="block text-right">Importe</span>,
+              ]}
+              pie={
+                filas.length === 0
+                  ? laElegida
+                    ? 'Aquí todavía no hay ningún papel.'
+                    : 'Todavía no hay papeles guardados.'
+                  : deLaCarpeta.length > filas.length
+                    ? `Los ${filas.length} últimos de ${deLaCarpeta.length}. Para los demás, busca arriba.`
+                    : `${deLaCarpeta.length} ${deLaCarpeta.length === 1 ? 'papel' : 'papeles'}.`
+              }
+            >
+              {filas.map((d) => {
+                const s = seccionPintada(segmentoPorId.get(d.categoria_id))
+                return (
+                  <Renglon key={d.id} href={`/documentos/${d.id}`}>
+                    <Punto ambito={s.ambito} />
+                    <Nombre>{d.titulo}</Nombre>
+                    <Dato>{nombrePorId.get(d.categoria_id) ?? 'Sin carpeta'}</Dato>
+                    <Dato>{fechaBreve(d.fecha_documento)}</Dato>
+                    {d.importe != null ? (
+                      <Cifra>{euros(Number(d.importe))}</Cifra>
+                    ) : (
+                      <span className="text-right text-[13px] text-apagado">—</span>
+                    )}
+                  </Renglon>
+                )
+              })}
+            </Tabla>
+          </div>
+        </div>
+
         {/* Solo cuando de verdad no hay ninguno. Si la consulta ha
             fallado, arriba sale el aviso rojo: decir "todavía no hay
             papeles" cuando lo que pasa es que no se han podido leer es
             mentirle a alguien sobre sus propios documentos. */}
+        {/* `lg:hidden`: en grande lo dice el pie de la tabla, y el botón
+            de guardar está arriba en la banda. Decirlo dos veces en la
+            misma pantalla es decirlo peor. */}
         {papeles.length === 0 && !averia && (
-          <div className="mt-6">
+          <div className="mt-6 lg:hidden">
             <Vacio
               titulo="Todavía no hay papeles"
               explicacion="Haz una foto del primero y yo lo archivo donde toca."
@@ -549,6 +761,100 @@ function Buscador({ valor }: { valor: string }) {
     <div className="mt-1">
       <MappelCaja donde="papeles" valor={valor} buscarEn="/documentos" />
     </div>
+  )
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  UN NOMBRE DE CARPETA, EN LA COLUMNA
+  ═══════════════════════════════════════════════════════════════
+
+  No es una tarjeta ni lleva chevrón, y las dos cosas son a propósito:
+  el chevrón promete «te llevo a otra pantalla», y aquí no se va a
+  ninguna parte — se elige, y lo que hay dentro aparece al lado.
+
+  `scroll={false}` es lo que hace que no sea un salto: sin eso, elegir
+  la sexta carpeta de la columna sube la pantalla al principio y parece
+  que ha cargado otra cosa.
+
+  Y la elegida se marca con lo mismo que un renglón de tabla elegido
+  —barra verde de 3 px y fondo verde muy claro— porque es el mismo
+  gesto y conviene que se aprenda una sola vez.
+*/
+function EnCarpeta({
+  href,
+  nombre,
+  cuantos,
+  ambito,
+  elegida,
+  nuevos = 0,
+}: {
+  href: string
+  nombre: string
+  cuantos: number
+  ambito: Ambito
+  elegida: boolean
+  nuevos?: number
+}) {
+  const vacia = cuantos === 0
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      aria-current={elegida ? 'true' : undefined}
+      className={
+        'objetivo flex items-center gap-2.5 rounded-[11px] px-2.5 text-[15px] transition-colors ' +
+        (elegida
+          ? 'bg-verde-suave font-bold text-bien shadow-[inset_3px_0_0_var(--color-bien)] '
+          : 'roza ') +
+        (!elegida && vacia ? 'text-apagado' : !elegida ? 'text-tinta-suave' : '')
+      }
+    >
+      <Punto ambito={ambito} />
+      <span className="min-w-0 flex-1 truncate">{nombre}</span>
+      {nuevos > 0 ? (
+        <span className="shrink-0 text-[13px] font-extrabold text-verde">
+          {nuevos} nuevo{nuevos === 1 ? '' : 's'}
+        </span>
+      ) : (
+        /* Una raya y no un cero. «Alquileres — » se lee como «aquí no
+           hay nada» de un vistazo; «Alquileres 0» hay que leerlo. */
+        <span className="shrink-0 text-[13px] text-tenue">{vacia ? '—' : cuantos}</span>
+      )}
+    </Link>
+  )
+}
+
+/*
+  UNA SUBCARPETA, DE FILTRO.
+
+  Lo que antes era una tarjeta con chevrón —y nueve de ellas diciendo
+  «vacía»— aquí es un chip con su recuento al lado. Sigue estando, pero
+  ya no hay que entrar para saber si dentro hay algo.
+*/
+function Chip({
+  href,
+  elegido,
+  children,
+}: {
+  href: string
+  elegido: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      aria-current={elegido ? 'true' : undefined}
+      className={
+        'flex h-9 items-center rounded-full border px-3.5 text-[14px] transition-colors ' +
+        (elegido
+          ? 'border-tinta bg-tinta font-semibold text-fondo'
+          : 'roza border-borde bg-superficie text-tinta-suave')
+      }
+    >
+      {children}
+    </Link>
   )
 }
 

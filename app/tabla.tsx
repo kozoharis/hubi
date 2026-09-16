@@ -1,5 +1,3 @@
-'use client'
-
 import type { ReactNode } from 'react'
 import Link from './enlace'
 import { AMBITO, type Ambito } from '@/lib/ambitos'
@@ -132,9 +130,20 @@ export function Tabla({
 /*
   UN RENGLÓN.
 
-  Puede ser un enlace —el caso normal, y entonces es pulsable de punta
-  a punta, no solo el nombre— o un botón, cuando elegir no lleva a
-  ninguna parte sino que rellena la zona de al lado.
+  Un enlace, y pulsable de punta a punta: no sólo el nombre, sino la
+  fila entera, incluido el aire entre columnas.
+
+  ── POR QUÉ UN ENLACE Y NO UN BOTÓN CON `onClick` ──
+
+  Porque un `onClick` obliga a que este módulo sea `'use client'`, y
+  entonces las doscientas filas de Papeles viajan al navegador como
+  componentes de cliente. `piezas.tsx` —que es de donde sale el resto
+  de la aplicación— se renderiza en el servidor, y esto tiene que
+  hacer lo mismo.
+
+  Y no hace falta: elegir se hace con un enlace y `scroll={false}`, que
+  cambia la dirección sin saltar y sin volver a montar la pantalla. Es
+  la manera de la casa y además la que deja el enlace copiable.
 
   Los tres estados están aquí y son los tres del espécimen aprobado:
 
@@ -150,15 +159,16 @@ export function Tabla({
 export function Renglon({
   children,
   href,
-  alElegir,
   elegido = false,
   apagado = false,
 }: {
   children: ReactNode
-  /** A dónde lleva. En el móvil y cuando no hay zona donde enseñarlo. */
+  /*
+    A dónde lleva, o a qué se elige. Sin `href` el renglón es sólo un
+    renglón: se usa para el total de una tabla, o para una fila que no
+    tiene nada detrás.
+  */
   href?: string
-  /** Rellena la zona de al lado en vez de llevar a otra pantalla. */
-  alElegir?: () => void
   elegido?: boolean
   /** Lo que ya no reclama: un papel viejo, una casa callada. */
   apagado?: boolean
@@ -186,15 +196,9 @@ export function Renglon({
   }
 
   return (
-    <button
-      type="button"
-      onClick={alElegir}
-      aria-current={elegido ? 'true' : undefined}
-      className={clases}
-      style={{ gridTemplateColumns: 'var(--columnas)' }}
-    >
+    <div className={clases} style={{ gridTemplateColumns: 'var(--columnas)' }}>
       {dentro}
-    </button>
+    </div>
   )
 }
 
