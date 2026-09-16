@@ -56,8 +56,29 @@
     donde el ancho de trabajo llega a su techo de 1500 y lo que sobra
     se queda de margen.
   */
-  --breakpoint-ancha:   1440px;
-  --breakpoint-monitor: 1800px;
+  /*
+    ── EN `REM` Y NO EN PÍXELES, Y NO ES UN DETALLE ──
+
+    Valen lo mismo —90 rem son 1440 px, 112.5 rem son 1800— pero la
+    unidad decide EL ORDEN EN QUE SE ESCRIBEN LAS REGLAS, y el orden
+    decide cuál gana.
+
+    Escritos en píxeles, Tailwind no puede compararlos con los suyos
+    —que van todos en `rem`— y los saca fuera de la escalera: el
+    bloque de 1440 acababa ANTES que el de `lg`, o sea que a 1440 px
+    seguía mandando la regla de 1024. Se vio al medir el CSS
+    generado: `lg:grid-cols-[340px…]` pisaba a
+    `ancha:grid-cols-[400px…]` en una pantalla de 1440.
+
+    No se ve al mirar la pantalla —sale una rejilla razonable, sólo
+    que la de la medida de antes—, así que es de los que se quedan
+    puestos meses.
+
+    En `rem` entran en su sitio: sm · md · lg · xl · **ancha** · 2xl ·
+    **monitor**.
+  */
+  --breakpoint-ancha:   90rem;
+  --breakpoint-monitor: 112.5rem;
 
   /*
     ═════════════════════════════════════════════════════════
@@ -651,6 +672,73 @@ body {
 @media (hover: hover) and (pointer: fine) {
   .roza:hover {
     background: color-mix(in srgb, var(--t-tinta) 4%, transparent);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LA ZONA QUE CEDE SITIO, Y LO QUE ENTRA EN ÉL
+   ═══════════════════════════════════════════════════════════
+
+   Dos clases, y las dos existen por la misma decisión de la Agenda:
+   la ficha de lo elegido va DEBAJO de la semana, no al lado. Al lado
+   —un panel de 340— dejaría cada día en 112 px, y entonces la semana
+   deja de poder leerse, que es lo único que esa pantalla hace bien.
+
+   Debajo, en cambio, hay que quitarle alto a la semana. Y ahí está el
+   riesgo: una franja de 200 px reservada para cuando haya algo
+   elegido es exactamente la silueta de un programa de trabajo, con su
+   panel de propiedades vacío esperando.
+
+   Así que la franja NO existe hasta que hay algo elegido, y la semana
+   cede el alto en el momento: `.cede` encoge de ~78 vh a 480 px en
+   180 ms, y la ficha entra a la vez desde abajo. Se ve UN movimiento,
+   no dos cosas descuadrándose.
+
+   ── POR QUÉ 78 VH Y NO `NONE` ──
+
+   Porque de `none` no se puede animar: el navegador no sabe de dónde
+   sale. Hacen falta dos medidas reales, y 78 vh es la que deja la
+   semana entera a la vista con la cabecera puesta.
+
+   La barra de dentro sólo aparece cuando hace falta, y sólo mientras
+   la ficha está abierta: sin nada elegido, la semana cabe. */
+.zona-que-cede {
+  max-height: 78vh;
+  overflow-y: auto;
+  transition: max-height 180ms ease;
+}
+
+.zona-que-cede.cede {
+  max-height: 480px;
+}
+
+/* La ficha entra 8 px desde abajo. Es poco a propósito: lo justo para
+   que se lea como «esto se acaba de abrir» y no como «esto siempre
+   estuvo aquí y no lo habías visto». */
+@keyframes entra-abajo {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.entra-abajo {
+  animation: entra-abajo 180ms ease-out;
+}
+
+/* Y las tres cosas se quedan quietas para quien ha pedido que se
+   queden quietas. No es un adorno que se pueda dejar puesto: una
+   franja que salta es de las que marean de verdad. */
+@media (prefers-reduced-motion: reduce) {
+  .zona-que-cede {
+    transition: none;
+  }
+  .entra-abajo {
+    animation: none;
   }
 }
 

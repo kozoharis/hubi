@@ -10,6 +10,7 @@ import { atrasado, hoyAqui, type Recordatorio } from '@/lib/tablon'
 import { citasDeLaFamilia, calendariosVisibles, type CitaDeAlguien } from '@/lib/agenda-google'
 import { enlaceAgenda } from '@/lib/agenda-enlace'
 import Refrescar from './refrescar'
+import EscapeCierra from './escape'
 import { elEspacioO } from '@/lib/espacio'
 
 /*
@@ -60,10 +61,22 @@ export default async function Lista({
   ver,
   semana,
   de,
+  tarea,
 }: {
   ver?: string
   semana?: string
   de?: string
+  /*
+    Lo elegido en la semana de escritorio. Viene de la dirección, y
+    por eso se puede copiar, recargar y volver atrás.
+
+    En el móvil no llega nunca: allí una tarea no se elige, se entra
+    en ella. Es la regla del sistema — *si hay sitio para enseñar lo
+    elegido, elegir lo enseña; si no lo hay, elegir lleva* — y aquí es
+    literalmente eso: el mismo clic hace dos cosas distintas según el
+    tamaño, y no es una incoherencia.
+  */
+  tarea?: string
 }) {
   const viendoAdelante = ver === 'adelante'
 
@@ -189,6 +202,58 @@ export default async function Lista({
      renglones diciendo «nada» ocupan media pantalla para no contar
      nada— pero siguen en la tira, que es donde se ve el hueco. */
   const conAlgo = dias.filter((d) => d.lista.length > 0 || d.google.length > 0)
+
+  /*
+    ═══════════════════════════════════════════════════════════
+    LO ELEGIDO
+    ═══════════════════════════════════════════════════════════
+
+    Se busca primero entre lo que ya está pintado, que es casi
+    siempre: si la tarea está en esta semana, ya vino en la consulta
+    de arriba y pedirla otra vez sería una ida y vuelta de más en la
+    pantalla que más se abre.
+
+    Los datos que la ficha enseña y la semana no —el aviso, si se
+    repite, quién la apuntó, si se ve en la cocina— sí hay que
+    pedirlos, pero SOLO cuando hay algo elegido. Sin selección, esta
+    pantalla hace exactamente las mismas consultas que hacía antes.
+
+    Y si el `tarea=` de la dirección no corresponde a nada —un enlace
+    viejo, una tarea borrada— no pasa nada: `elegida` se queda en
+    `null` y la pantalla es la de siempre. Una dirección estropeada no
+    puede dejar una pantalla rota.
+  */
+  const elegida = tarea ? (todos.find((r) => r.id === tarea) ?? null) : null
+
+  const { data: extra } = elegida
+    ? await supabase
+        .from('recordatorios')
+        .select('aviso_previo, repite, creado_en, hecho_en, hecho_por, visible_en_casa')
+        .eq('hogar_id', casa)
+        .eq('id', elegida.id)
+        .maybeSingle()
+    : { data: null }
+
+  /* De dónde salió: el papel que la generó, si salió de un papel. */
+  const { data: papelOrigen } =
+    elegida?.documento_origen_id
+      ? await supabase
+          .from('documentos')
+          .select('id, titulo')
+          .eq('hogar_id', casa)
+          .eq('id', elegida.documento_origen_id)
+          .maybeSingle()
+      : { data: null }
+
+  /* Qué más hay ese día. Sin ella misma: repetir la elegida dentro de
+     su propio contexto no cuenta nada. */
+  const suDia = elegida?.fecha ? dias.find((d) => d.fecha === elegida.fecha) : null
+  const loDemasDelDia = suDia
+    ? [
+        ...suDia.lista.filter((r) => r.id !== elegida?.id),
+        ...suDia.google.map((c) => ({ id: c.uid, titulo: c.titulo, hora: c.hora })),
+      ]
+    : []
 
   // Lo que viene después de la semana que se está mirando.
   const adelante = pendientes.filter((r) => r.fecha && r.fecha > hasta)
@@ -392,7 +457,12 @@ export default async function Lista({
               el jueves con el viernes de un vistazo, que es la razón
               por la que alguien abre la semana en vez del día.
           */}
-          <div className="denso-trabajo mt-4 hidden grid-cols-7 gap-2 lg:grid">
+          <div
+            className={
+              'zona-que-cede denso-trabajo mt-4 hidden grid-cols-7 gap-2 lg:grid ' +
+              (elegida ? 'cede' : '')
+            }
+          >
             {dias.map((d) => {
               const cosas = d.lista.length + d.google.length
               const esHoy = d.fecha === hoyISO
@@ -428,7 +498,18 @@ export default async function Lista({
                       {d.lista.map((r) => (
                         <Cosita
                           key={r.id}
-                          href={`/tablon/${r.id}`}
+                          /*
+                            Elegir, no entrar. Y pulsar la que ya está
+                            elegida la cierra: es la tercera manera de
+                            cerrar la ficha —con Esc, eligiendo otra, o
+                            volviendo a pulsar ésta— y la que se prueba
+                            sin pensar.
+                          */
+                          href={enlaceAgenda(
+                            { ver, semana, de },
+                            { tarea: elegida?.id === r.id ? null : r.id }
+                          )}
+                          elegida={elegida?.id === r.id}
                           hora={r.hora}
                           titulo={r.titulo}
                           color={AMBITO[pintaDe(r.titulo).ambito]}
@@ -459,6 +540,165 @@ export default async function Lista({
               )
             })}
           </div>
+
+          {/*
+            ═══════════════════════════════════════════════════
+            Y LA FICHA, SOLO CUANDO HAY ALGO ELEGIDO
+            ═══════════════════════════════════════════════════
+
+            Lo primero que hay que decir es lo que NO hay: sin nada
+            elegido, aquí abajo no existe nada. Ni una franja gris
+            esperando, ni un «selecciona una tarea» centrado. Una zona
+            reservada que la mitad de las veces está vacía es la
+            silueta de un programa de trabajo — y esta pantalla la abre
+            gente que viene a mirar una semana, no a operar un panel.
+
+            Al elegir, la semana cede el alto y esto entra desde abajo,
+            a la vez. Se ve un movimiento, no dos.
+
+            ── POR QUÉ DEBAJO Y NO AL LADO ──
+
+            Al lado es lo que hace Papeles, y allí es lo correcto. Aquí
+            no: un panel de 340 a la derecha dejaría cada día en 112 px
+            y la semana dejaría de poder leerse, que es lo único que
+            esta pantalla hace bien. Se le quita alto, que sobra, y no
+            ancho, que no.
+          */}
+          {elegida && (
+            <>
+              <EscapeCierra a={enlaceAgenda({ ver, semana, de }, { tarea: null })} />
+              <section
+                aria-label="La tarea elegida"
+                className="entra-abajo mt-4 hidden rounded-[18px] border border-borde bg-superficie px-5 py-4 shadow-[0_-6px_20px_-14px_rgba(26,23,20,0.3)] lg:block"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="rotulo">La tarea</span>
+                  <Link
+                    href={enlaceAgenda({ ver, semana, de }, { tarea: null })}
+                    scroll={false}
+                    aria-label="Cerrar"
+                    className="objetivo roza -mr-2 flex items-center justify-center rounded-full text-[22px] leading-none text-tenue"
+                  >
+                    ×
+                  </Link>
+                </div>
+
+                {/*
+                  Cuatro medidas, y cada columna aparece cuando hay
+                  sitio para ella entera. Nunca se estrecha una para
+                  que quepa otra: una columna de contexto a 140 px no
+                  es contexto, es un recorte.
+                */}
+                <div className="grid items-start gap-x-8 gap-y-5 lg:grid-cols-[340px_repeat(2,minmax(0,1fr))] ancha:grid-cols-[400px_repeat(3,minmax(0,1fr))] monitor:grid-cols-[400px_repeat(4,minmax(0,1fr))]">
+                  {/* Uno · la tarea, con sus dos acciones.
+
+                      Es la MISMA tarjeta del móvil, a propósito. Podía
+                      haberse dibujado una ficha distinta para grande y
+                      habría quedado bien; pero entonces «Hecho» estaría
+                      en dos sitios con dos formas, y el día que cambie
+                      una cosa habrá que acordarse de la otra. */}
+                  <ul>
+                    <Tarjeta r={elegida} nombres={nombres} yo={user.id} />
+                  </ul>
+
+                  {/* Dos · de dónde salió */}
+                  <Columna rotulo="De dónde salió">
+                    {papelOrigen ? (
+                      <>
+                        <Enunciado>De un papel que guardasteis:</Enunciado>
+                        <Link
+                          href={`/documentos/${papelOrigen.id}`}
+                          className="roza -mx-2 mt-1.5 flex items-center gap-2 rounded-[10px] px-2 py-1.5 text-[15px] font-bold"
+                        >
+                          <Ico nombre="papel" tam={16} grosor={2.4} />
+                          <span className="min-w-0 truncate">{papelOrigen.titulo}</span>
+                        </Link>
+                      </>
+                    ) : (
+                      <Enunciado>
+                        La apuntó {nombres[elegida.creado_por] ?? 'alguien de casa'}
+                        {extra?.creado_en ? ` el ${fechaCorta(extra.creado_en)}` : ''}.
+                      </Enunciado>
+                    )}
+                    {elegida.nota && (
+                      <p className="mt-3 border-l-2 border-borde pl-3 text-[14px] leading-snug text-tinta-suave">
+                        {elegida.nota}
+                      </p>
+                    )}
+                  </Columna>
+
+                  {/* Tres · qué más hay ese día.
+
+                      Es la pregunta que se hace de verdad al mirar una
+                      tarea: no «qué es esto», que ya lo pone, sino «¿me
+                      cuadra con lo demás de ese día?». */}
+                  <Columna rotulo="Ese día, además">
+                    {loDemasDelDia.length === 0 ? (
+                      <Enunciado>No hay nada más ese día.</Enunciado>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {loDemasDelDia.slice(0, 5).map((c) => (
+                          <li key={c.id} className="flex gap-2 text-[14px] leading-snug">
+                            <span className="w-[42px] shrink-0 font-bold tabular-nums text-tenue">
+                              {c.hora ? c.hora.slice(0, 5) : '—'}
+                            </span>
+                            <span className="min-w-0 flex-1 text-tinta-suave">{c.titulo}</span>
+                          </li>
+                        ))}
+                        {loDemasDelDia.length > 5 && (
+                          <li className="text-[13px] text-tenue">
+                            y {loDemasDelDia.length - 5} más
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </Columna>
+
+                  {/* Cuatro · lo que va a hacer sola.
+
+                      Desde 1440. El aviso y la repetición no se ven en
+                      ninguna otra parte de la semana, y son justo lo
+                      que hace dudar: «¿esto me va a avisar o no?». */}
+                  <div className="hidden ancha:block">
+                    <Columna rotulo="Y además">
+                      <ul className="space-y-1.5 text-[14px] leading-snug text-tinta-suave">
+                        <li>{avisoEnPalabras(extra?.aviso_previo ?? null)}</li>
+                        {extra?.repite && <li>Se repite {extra.repite}.</li>}
+                        {extra?.visible_en_casa && <li>Se ve en la pantalla de la cocina.</li>}
+                      </ul>
+                    </Columna>
+                  </div>
+
+                  {/* Cinco · el historial. Desde 1800, y sólo ahí: es
+                      el dato que menos se mira de los cinco, así que es
+                      el que espera a que sobre sitio de verdad. */}
+                  <div className="hidden monitor:block">
+                    <Columna rotulo="Historial">
+                      <ul className="space-y-1.5 text-[14px] leading-snug text-tinta-suave">
+                        {extra?.creado_en && (
+                          <li>
+                            Apuntada el {fechaCorta(extra.creado_en)} por{' '}
+                            {nombres[elegida.creado_por] ?? 'alguien de casa'}.
+                          </li>
+                        )}
+                        {extra?.hecho_en ? (
+                          <li>
+                            Hecha el {fechaCorta(extra.hecho_en)}
+                            {extra.hecho_por && nombres[extra.hecho_por]
+                              ? ` por ${nombres[extra.hecho_por]}`
+                              : ''}
+                            .
+                          </li>
+                        ) : (
+                          <li className="text-tenue">Todavía sin hacer.</li>
+                        )}
+                      </ul>
+                    </Columna>
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
 
           <div className="lg:hidden">
           {conAlgo.length === 0 ? (
@@ -732,6 +972,7 @@ function Cosita({
   color,
   pie,
   hecha = false,
+  elegida = false,
 }: {
   href?: string
   hora: string | null
@@ -739,11 +980,24 @@ function Cosita({
   color: string
   pie: string | null
   hecha?: boolean
+  /*
+    ── EL BORDE VERDE MARCA LO ELEGIDO, NO «HOY» ──
+
+    Es la aclaración que hubo que hacer al componerlo, y conviene que
+    se quede escrita: hoy se reconoce por el número en negrita y la
+    palabra «hoy» en la cabecera de su columna. Si además llevara
+    borde de color, un martes cualquiera elegido y el día de hoy se
+    verían igual y el borde dejaría de significar nada.
+  */
+  elegida?: boolean
 }) {
   const dentro = (
     <span
       className={
-        'flex gap-2 rounded-[11px] border border-borde bg-superficie px-2 py-1.5 ' +
+        'flex gap-2 rounded-[11px] border px-2 py-1.5 transition-colors ' +
+        (elegida
+          ? 'border-bien bg-verde-suave shadow-[0_0_0_1px_var(--color-bien)] '
+          : 'border-borde bg-superficie ') +
         (hecha ? 'opacity-55' : '')
       }
     >
@@ -789,7 +1043,14 @@ function Cosita({
 
   if (!href) return <span className="block">{dentro}</span>
   return (
-    <Link href={href} className="block">
+    /*
+      `scroll={false}`: elegir cambia la dirección, y sin esto el
+      navegador se iría arriba del todo cada vez. La semana está a
+      media pantalla; saltar al techo en cada clic haría que elegir
+      pareciera cambiar de pantalla, que es justo lo contrario de lo
+      que esto hace.
+    */
+    <Link href={href} scroll={false} aria-current={elegida ? 'true' : undefined} className="block">
       {dentro}
     </Link>
   )
@@ -994,6 +1255,54 @@ function MasAdelante({
   )
 }
 
+
+/*
+  Una columna de contexto de la ficha.
+
+  Rótulo de 13 px en versales y lo que sea debajo. Sin tarjeta, sin
+  borde y sin fondo: van DENTRO de la ficha, y meter tarjetas dentro de
+  una tarjeta es como una pantalla acaba pareciendo un panel de
+  control. Lo que las separa es el hueco de 32 px, que basta.
+*/
+function Columna({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <p className="rotulo mb-2">{rotulo}</p>
+      {children}
+    </div>
+  )
+}
+
+/** Una frase de contexto, en el gris de lo que acompaña. */
+function Enunciado({ children }: { children: React.ReactNode }) {
+  return <p className="text-[14px] leading-snug text-tinta-suave">{children}</p>
+}
+
+/*
+  El aviso, dicho como se diría en voz alta.
+
+  «1_dia» es lo que hay en la base de datos, y ahí está bien. En la
+  pantalla no: nadie ha guardado nunca nada «1_dia antes».
+*/
+const AVISO: Record<string, string> = {
+  sin_aviso: 'No avisa antes.',
+  '30_min': 'Avisa 30 minutos antes.',
+  '1_dia': 'Avisa un día antes.',
+  '1_semana': 'Avisa una semana antes.',
+  '1_mes': 'Avisa un mes antes.',
+}
+
+function avisoEnPalabras(clave: string | null): string {
+  return clave ? (AVISO[clave] ?? 'No avisa antes.') : 'No avisa antes.'
+}
+
+/** "14 de agosto" · "14 de agosto de 2025" si no es de este año. */
+function fechaCorta(cuando: string): string {
+  const f = new Date(cuando)
+  if (Number.isNaN(f.getTime())) return ''
+  const esteAno = f.getFullYear() === new Date().getFullYear()
+  return `${f.getDate()} de ${MESES[f.getMonth()]}${esteAno ? '' : ` de ${f.getFullYear()}`}`
+}
 
 function Vacio({ texto }: { texto: string }) {
   return (

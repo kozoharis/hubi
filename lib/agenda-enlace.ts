@@ -36,9 +36,17 @@ export type ParamsAgenda = {
   dia?: string | null
   semana?: string | null
   de?: string | null
+  /*
+    Lo elegido en la semana de escritorio. Va en la dirección y no en
+    un estado del navegador para que se pueda copiar, volver atrás y
+    recargar: es lo mismo que hace Papeles con la carpeta y el papel.
+
+    En el móvil no existe: allí elegir una tarea es entrar en ella.
+  */
+  tarea?: string | null
 }
 
-const ORDEN = ['vista', 'ver', 'mes', 'dia', 'semana', 'de'] as const
+const ORDEN = ['vista', 'ver', 'mes', 'dia', 'semana', 'de', 'tarea'] as const
 
 /**
  * La dirección de la Agenda partiendo de la actual.

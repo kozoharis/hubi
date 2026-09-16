@@ -40,24 +40,39 @@
   izquierda. Ni 448, que parte las frases en renglones de ocho
   palabras, ni 1100, que el ojo recorre pero no lee.
 */
+/*
+  ── `panoramica` ──
+
+  Y la quinta, para lo que ES una rejilla: la semana de la Agenda, la
+  de Menús, el escritorio de casas. Ahí el ancho no tiene techo —cada
+  columna se ensancha pero el ojo nunca recorre la fila entera—, así
+  que la cabecera tampoco puede tenerlo: con `columna` el título se
+  quedaría cortado a 1100 mientras los siete días llegan al borde.
+
+  Es `.ancho-panoramica`, del sistema de anchos de `globals.css`.
+*/
 export default function Cabecera({
   children,
   ancho = false,
   formulario = false,
   texto = false,
+  panoramica = false,
 }: {
   children: React.ReactNode
   ancho?: boolean
   formulario?: boolean
   texto?: boolean
+  panoramica?: boolean
 }) {
-  const medida = ancho
-    ? 'columna'
-    : texto
-      ? 'columna-texto'
-      : formulario
-        ? 'columna-formulario'
-        : 'mx-auto w-full max-w-md px-5'
+  const medida = panoramica
+    ? 'ancho-panoramica'
+    : ancho
+      ? 'columna'
+      : texto
+        ? 'columna-texto'
+        : formulario
+          ? 'columna-formulario'
+          : 'mx-auto w-full max-w-md px-5'
 
   return (
     <div className="cabecera">

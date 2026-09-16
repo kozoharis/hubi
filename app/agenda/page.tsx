@@ -40,6 +40,7 @@ export default async function Agenda({
     dia?: string
     semana?: string
     de?: string
+    tarea?: string
   }>
 }) {
   const p = await searchParams
@@ -57,6 +58,22 @@ export default async function Agenda({
   */
   const enMes = p.vista === 'mes'
   const enDia = p.vista === 'dia'
+
+  /*
+    ── LA SEMANA ES UNA REJILLA; EL MES Y EL DÍA, TODAVÍA NO ──
+
+    La semana son siete columnas puestas a compararse, y eso quiere
+    todo el ancho que haya: a 1100 cada día mide 154 px, a 1600 mide
+    222 y cabe la hora y el sitio en la misma línea. Es el caso de
+    libro de PANORÁMICA.
+
+    El mes y el día se quedan en `columna` — 1100 y a la izquierda —
+    hasta que les toque su tanda. No porque esté bien, sino porque
+    ensanchar una pantalla antes de haberla dibujado es como se
+    estiran las cosas sin querer: el mes pasaría de golpe a casillas
+    de 220 px sin que nadie haya decidido qué se escribe dentro.
+  */
+  const rejilla = !enMes && !enDia
 
   /*
     ── Y CAMBIAR DE ESCALA NO BORRA DÓNDE ESTABAS ──
@@ -142,7 +159,7 @@ export default async function Agenda({
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho>
+      <Cabecera ancho={!rejilla} panoramica={rejilla}>
         {/* En el móvil, la cabecera de siempre. */}
         <div className="lg:hidden">
           <div className="flex h-14 items-center gap-3">
@@ -165,7 +182,7 @@ export default async function Agenda({
         />
       </Cabecera>
 
-      <div className="columna pt-2">
+      <div className={(rejilla ? 'ancho-panoramica' : 'columna') + ' pt-2'}>
         {/* La caja de MAPPEL, con la sugerencia de aquí. Lo que cambia
             entre pantallas es lo que se propone, no lo que hace.
 
@@ -180,7 +197,7 @@ export default async function Agenda({
         ) : enMes ? (
           <Mes mes={p.mes} dia={p.dia} de={p.de} />
         ) : (
-          <Lista ver={p.ver} semana={p.semana} de={p.de} />
+          <Lista ver={p.ver} semana={p.semana} de={p.de} tarea={p.tarea} />
         )}
       </div>
 
