@@ -128,16 +128,35 @@ export default async function Compra() {
        listas, una consulta por cada una serían seis viajes a la base
        de datos para pintar una fila de botones. */
     const cuantas = new Map<string, number>()
+    /*
+      ── Y QUÉ LLEVABA CADA UNA ──
+
+      Las seis primeras cosas de cada lista cerrada. Es lo que arregla
+      el peor defecto que tenía esta pantalla en un ordenador: cuatro
+      filas seguidas poniendo «La del sábado», indistinguibles, y para
+      saber cuál copiar había que abrirlas una a una.
+
+      Va en la MISMA consulta que ya contaba cuántas había: se pide
+      `que` además de `lista_id` y se reparte al vuelo. Cero viajes de
+      más a la base de datos.
+    */
+    const primeras = new Map<string, string[]>()
     if (ids.length > 0) {
       const { data: suyas } = await supabase
         .from('compra')
-        .select('lista_id')
+        .select('lista_id, que')
         .eq('hogar_id', await elEspacioO(supabase))
         .in('lista_id', ids)
 
       for (const c of suyas ?? []) {
         const k = c.lista_id as string
         cuantas.set(k, (cuantas.get(k) ?? 0) + 1)
+
+        const yaHay = primeras.get(k) ?? []
+        if (yaHay.length < 6 && typeof c.que === 'string' && c.que.trim()) {
+          yaHay.push(c.que.trim())
+          primeras.set(k, yaHay)
+        }
       }
     }
 
@@ -148,6 +167,7 @@ export default async function Compra() {
         seccion_id: (c.seccion_id as string | null) ?? null,
         cerrada: (c.archivada_en as string | null) ?? null,
         cosas: cuantas.get(c.id as string) ?? 0,
+        primeras: primeras.get(c.id as string) ?? [],
         ticket_id: ((c as { ticket_id?: string | null }).ticket_id as string | null) ?? null,
       })
     }

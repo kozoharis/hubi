@@ -323,6 +323,72 @@ export default function Semana() {
     ).values(),
   ]
 
+  /*
+    ══════════════════════════════════════════════════════════════
+    LO QUE HACE FALTA PARA LA SEMANA DE ESCRITORIO
+    ══════════════════════════════════════════════════════════════
+  */
+
+  /* Qué menú tiene abierta la comprobación. En el móvil la ficha se
+     pinta dentro de su día y esto no hace falta; en grande se abre
+     debajo de la semana y hay que saber de cuál es. */
+  const elQueSeComprueba = comprobando ? (menus.find((m) => m.id === comprobando) ?? null) : null
+
+  /* Y qué tanda está abierta, por lo mismo. */
+  const laTandaAbierta = laTanda ? (menus.find((m) => m.grupo_id === laTanda) ?? null) : null
+
+  /*
+    Lo que falta en la semana entera, sin repetir.
+
+    Dos platos que llevan huevos no son dos apuntes de huevos en la
+    lista de la compra: es uno. Se normaliza por minúsculas para
+    juntar «Huevos» con «huevos», pero se guarda la primera forma que
+    se escribió — que es como la escribió una persona.
+  */
+  const loQueFaltaEstaSemana = [
+    ...new Map(
+      menus
+        .flatMap((m) => m.faltan ?? [])
+        .map((c) => [c.trim().toLowerCase(), c.trim()])
+    ).values(),
+  ].filter((c) => c.length > 0)
+
+  const [pasando, setPasando] = useState(false)
+
+  /*
+    ── PASARLO A LA COMPRA ──
+
+    Todo de una vez. La API de la compra ya admite una lista de cosas
+    —`cosas: [{ que }]`— así que esto es una sola petición y no nueve.
+
+    No se elige lista ni sección: va a la de siempre de la casa, que es
+    donde acaba la compra de la casa. Preguntar «¿en qué lista?» al
+    final de una tarea que ya se ha hecho entera es la pregunta de más
+    que hace que la siguiente vez se apunte en un papel.
+  */
+  async function pasarloALaCompra() {
+    if (loQueFaltaEstaSemana.length === 0) return
+    setPasando(true)
+    setAviso(null)
+
+    const r = await fetch(api('/api/compra'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cosas: loQueFaltaEstaSemana.map((que) => ({ que })) }),
+    })
+    setPasando(false)
+
+    if (!r.ok) {
+      const d = (await r.json().catch(() => ({}))) as { error?: string; detalle?: string }
+      setAviso(d.detalle ?? d.error ?? 'No se ha podido apuntar en la compra.')
+      return
+    }
+
+    /* Y se quita de «falta»: ya está apuntado, así que la tira se
+       apaga sola. Si se dejara puesta, se pasaría dos veces. */
+    setMenus((lista) => lista.map((m) => (m.faltan?.length ? { ...m, faltan: [] } : m)))
+  }
+
   return (
     <div>
       {/* ── La semana que se está mirando ── */}
@@ -375,8 +441,265 @@ export default function Semana() {
         </div>
       ))}
 
+      {/*
+        ═══════════════════════════════════════════════════════════
+        LOS SIETE DÍAS, EN SIETE COLUMNAS
+        ═══════════════════════════════════════════════════════════
+
+        Es la pantalla que más gana con esto, y por una razón que no
+        tiene que ver con caber: **se ve que el miércoles repite el
+        puchero del lunes**. En una lista vertical de siete tarjetas,
+        para darse cuenta hay que acordarse de lo que ponía cuatro
+        pantallas más arriba. Al lado, se ve sin leer.
+
+        Y los huecos se leen como «esta semana no está planeada», no
+        como «formulario a medio rellenar», que es lo que parecían
+        siete campos vacíos uno debajo de otro.
+
+        ─────────────────────────────────────────────────────────
+        EL COLOR, MEDIDO
+
+        La regla de esta pantalla: **solo hay color donde falta algo.**
+
+        De once manchas de color se baja a cuatro líneas ámbar. Lo que
+        se ha ido, y por qué:
+
+          · El distintivo verde de «tienes lo que lleva» — tenerlo es
+            lo normal, y lo normal se dice callando. Se queda el tic,
+            en gris.
+          · «Se repite» pasa de ámbar a gris: repetir es un dato, no
+            un aviso.
+          · «Ver la receta» deja el teal y se va a gris con una
+            flecha.
+          · Lo que falta pierde la caja de color y se queda en una
+            línea de texto ámbar.
+
+        Esto es del escritorio. En el móvil la pantalla es una columna
+        y el color no se acumula igual: ahí se queda como estaba.
+      */}
+      <div className="denso-trabajo mt-4 hidden grid-cols-7 gap-2 lg:grid">
+        {dias.map((fecha) => (
+          <div key={fecha} className="min-w-0">
+            <p className="rotulo mb-1.5 truncate text-center">{comoSeLlamaElDia(fecha)}</p>
+            <div className="flex flex-col gap-2 rounded-[14px] border border-borde bg-superficie p-2">
+              {MOMENTOS.map(({ valor, texto }) => {
+                const puesto = loDe(fecha, valor)
+                const suya = puesto?.receta_id
+                  ? recetas.find((r) => r.id === puesto.receta_id)
+                  : undefined
+                const lleva = suya?.ingredientes ?? []
+                const deVerdad = puesto && !puesto.id.startsWith('nuevo-')
+                const sinMirar = Boolean(deVerdad && lleva.length > 0 && !puesto!.comprobado_en)
+                const faltan = puesto?.faltan ?? []
+
+                return (
+                  <div key={valor} className="min-w-0">
+                    <div className="mb-1 flex items-center justify-between gap-1">
+                      <span className="rotulo">{texto}</span>
+                      {/* El desplegable de platos guardados, en pequeño.
+                          Mismo `select` del sistema que en el móvil: lo
+                          que cambia es el tamaño del tirador, no la
+                          manera de elegir. */}
+                      {recetas.length > 0 && (
+                        <label className="relative shrink-0">
+                          <span className="sr-only">
+                            Elegir un plato guardado para la {texto.toLowerCase()} del{' '}
+                            {comoSeLlamaElDia(fecha)}
+                          </span>
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              const r = recetas.find((x) => x.id === e.target.value)
+                              if (r) guardar(fecha, valor, r.titulo, r.id)
+                            }}
+                            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                          >
+                            <option value="">Elegir…</option>
+                            {recetas.map((r) => (
+                              <option key={r.id} value={r.id}>
+                                {r.titulo}
+                              </option>
+                            ))}
+                          </select>
+                          <span
+                            aria-hidden
+                            className="roza flex h-[26px] w-[26px] items-center justify-center rounded-[8px] text-tenue"
+                          >
+                            <Ico nombre="flecha" tam={14} grosor={2.4} className="rotate-90" />
+                          </span>
+                        </label>
+                      )}
+                    </div>
+
+                    <Renglon
+                      valor={puesto?.que ?? ''}
+                      alSalir={(v) => guardar(fecha, valor, v)}
+                      corto
+                    />
+
+                    {/* Y debajo, lo que se sabe de ese plato. Tres
+                        líneas como mucho, todas en gris menos la de lo
+                        que falta. */}
+                    {suya?.url && (
+                      <a
+                        href={suya.url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="roza mt-1 flex items-center gap-1 rounded-[7px] text-[12px] font-bold text-tenue"
+                      >
+                        <span aria-hidden>▸</span>
+                        <span className="truncate">Ver la receta</span>
+                      </a>
+                    )}
+
+                    {deVerdad && lleva.length > 0 && (
+                      <button
+                        onClick={() => setComprobando(puesto!.id)}
+                        className={
+                          'mt-1 flex w-full items-center gap-1 text-left text-[12px] font-bold ' +
+                          (faltan.length > 0 && !sinMirar ? 'text-alerta' : 'text-tenue')
+                        }
+                      >
+                        {!sinMirar && faltan.length === 0 && (
+                          <Ico nombre="check" tam={13} grosor={2.6} />
+                        )}
+                        <span className="truncate">
+                          {sinMirar
+                            ? `¿Tienes lo que lleva? · ${lleva.length}`
+                            : faltan.length > 0
+                              ? `Faltan ${faltan.length} ${faltan.length === 1 ? 'cosa' : 'cosas'}`
+                              : 'Está todo'}
+                        </span>
+                      </button>
+                    )}
+
+                    {puesto?.grupo_id && (
+                      <button
+                        onClick={() =>
+                          setLaTanda((g) => (g === puesto.grupo_id ? null : puesto.grupo_id!))
+                        }
+                        className="mt-1 flex w-full items-center gap-1 text-left text-[12px] font-bold text-tenue"
+                      >
+                        <Ico nombre="refrescar" tam={13} grosor={2.4} />
+                        <span className="truncate">
+                          {puesto.cada_semanas === 2
+                            ? 'Cada dos semanas'
+                            : puesto.cada_semanas === 3
+                              ? 'Cada tres semanas'
+                              : 'Cada semana'}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/*
+        ── LO QUE SE ABRE, SE ABRE DEBAJO ──
+
+        Ésta es la única decisión del dibujo que la medida obliga a
+        cambiar, y conviene que esté dicha: la ficha de «¿tienes lo que
+        lleva?» tiene nueve renglones con casillas y tres botones, y
+        eso no entra en una columna de 154 px por mucho que se apriete.
+
+        Se abre debajo de la semana, a lo ancho. No encima —nada tapa
+        la semana— y no al lado, que dejaría los días en 112. Es lo
+        mismo que hace la ficha de la Agenda, y por el mismo motivo.
+
+        Lo que NO cambia: escribir sigue siendo en el sitio. Esto es
+        para la comprobación, que es otra cosa.
+      */}
+      {comprobando && elQueSeComprueba && (
+        <div className="mt-3 hidden lg:block">
+          <Comprobar
+            menu={elQueSeComprueba}
+            ingredientes={
+              recetas.find((r) => r.id === elQueSeComprueba.receta_id)?.ingredientes ?? []
+            }
+            listas={listas}
+            alGuardar={(f) => yaComprobado(elQueSeComprueba.id, f)}
+            cerrar={() => setComprobando(null)}
+          />
+        </div>
+      )}
+
+      {/* Y la de la tanda, igual: debajo, a lo ancho, y sólo la que
+          se ha abierto. */}
+      {laTandaAbierta && (
+        <div className="mt-3 hidden rounded-[16px] border border-borde bg-superficie px-5 py-4 lg:block">
+          <p className="t-cuerpo leading-snug">
+            <strong className="text-tinta">{laTandaAbierta.que}</strong>
+            {laTandaAbierta.repite_hasta
+              ? ` está puesto hasta el ${comoSeLlamaElDia(laTandaAbierta.repite_hasta)}.`
+              : ' se repite.'}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2.5">
+            <BotonSecundario
+              onClick={() => alargarLaTanda(laTandaAbierta.grupo_id!)}
+              desactivado={conLaTanda}
+            >
+              {conLaTanda ? 'Un momento…' : 'Alargar tres meses más'}
+            </BotonSecundario>
+            <BotonDestructivo
+              onClick={() => quitarLaTanda(laTandaAbierta.grupo_id!)}
+              desactivado={conLaTanda}
+            >
+              Quitar los que vienen
+            </BotonDestructivo>
+          </div>
+          <p className="t-apoyo mt-2 leading-snug">
+            Lo de días pasados se queda: es lo que se comió.
+          </p>
+        </div>
+      )}
+
+      {/*
+        ── LA TIRA DE LA COMPRA ──
+
+        Lo que falta en TODA la semana, junto y en un sitio. Suelto,
+        día por día, son cuatro avisos que hay que ir recogiendo; aquí
+        es una frase y un botón.
+
+        Y es lo único de color de la pantalla, a propósito: de once
+        manchas se ha bajado a ésta.
+      */}
+      {loQueFaltaEstaSemana.length > 0 && (
+        <div className="mt-3 hidden items-center gap-3 rounded-[14px] border border-borde bg-fondo px-4 py-2.5 lg:flex">
+          <span className="shrink-0 text-[14px] font-extrabold" style={{ color: 'var(--t-alerta)' }}>
+            Faltan {loQueFaltaEstaSemana.length}{' '}
+            {loQueFaltaEstaSemana.length === 1 ? 'cosa' : 'cosas'} esta semana
+          </span>
+          <span className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+            {loQueFaltaEstaSemana.slice(0, 9).map((c) => (
+              <span
+                key={c}
+                className="truncate rounded-full border border-borde bg-superficie px-2.5 py-0.5 text-[13px] text-tinta-suave"
+              >
+                {c}
+              </span>
+            ))}
+            {loQueFaltaEstaSemana.length > 9 && (
+              <span className="self-center text-[13px] text-tenue">
+                y {loQueFaltaEstaSemana.length - 9} más
+              </span>
+            )}
+          </span>
+          <button
+            onClick={pasarloALaCompra}
+            disabled={pasando}
+            className="objetivo shrink-0 rounded-full bg-accion px-4 text-[13.5px] font-extrabold tracking-wide text-accion-tinta disabled:opacity-50"
+          >
+            {pasando ? 'Un momento…' : 'PASARLO A LA COMPRA'}
+          </button>
+        </div>
+      )}
+
       {/* ── Los siete días ── */}
-      <ul className="mt-4 space-y-2.5">
+      <ul className="mt-4 space-y-2.5 lg:hidden">
         {dias.map((fecha) => (
           <li key={fecha} className="rounded-[20px] border border-borde bg-superficie px-4 py-3.5">
             <p className="rotulo">{comoSeLlamaElDia(fecha)}</p>
@@ -785,9 +1108,21 @@ export default function Semana() {
 function Renglon({
   valor,
   alSalir,
+  corto = false,
 }: {
   valor: string
   alSalir: (v: string) => void
+  /*
+    El mismo campo, en una columna de 154 px. Lo único que cambia es
+    el aire: 8 px de lado en vez de 12, y 40 de alto en vez de 48.
+
+    Y 40 y no menos porque 44 es el suelo de objetivo con ratón y esto
+    tiene el hueco de la columna alrededor — que también es zona de
+    clic del campo. Por debajo de eso no se baja aunque quepan tres
+    líneas más: escribir la cena del jueves es LA acción de esta
+    pantalla.
+  */
+  corto?: boolean
 }) {
   const [texto, setTexto] = useState(valor)
   const ultimo = useRef(valor)
@@ -812,8 +1147,13 @@ function Renglon({
       }}
       placeholder="—"
       maxLength={200}
-      className="t-cuerpo min-w-0 flex-1 rounded-[16px] border border-transparent bg-fondo px-3 py-3 font-extrabold text-tinta placeholder:font-semibold placeholder:text-apagado focus:outline-none"
-      style={{ minHeight: 48 }}
+      className={
+        'min-w-0 flex-1 rounded-[16px] border border-transparent bg-fondo font-extrabold text-tinta placeholder:font-semibold placeholder:text-apagado focus:outline-none ' +
+        (corto
+          ? 'w-full rounded-[10px] px-2 py-1.5 text-[14px] leading-snug'
+          : 't-cuerpo px-3 py-3')
+      }
+      style={{ minHeight: corto ? 40 : 48 }}
       onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--color-accion)')}
       onBlurCapture={(e) => (e.currentTarget.style.borderColor = 'transparent')}
     />

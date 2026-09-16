@@ -42,6 +42,11 @@ export type Cerrada = {
   seccion_id: string | null
   cerrada: string | null
   cosas: number
+  /* Las seis primeras cosas que llevaba. Sólo las usa la columna de
+     contexto de escritorio; en el móvil no cabrían. Puede venir vacío
+     —una lista cerrada sin nada, o una base vieja— y entonces la fila
+     enseña sólo la fecha, como antes. */
+  primeras?: string[]
   ticket_id: string | null
 }
 
@@ -503,8 +508,38 @@ export default function Pantalla({
     setRecuperando(null)
   }
 
+  /*
+    ═══════════════════════════════════════════════════════════════
+    LAS DOS MANERAS DE LLENAR LA LISTA SIN ESCRIBIRLA
+    ═══════════════════════════════════════════════════════════════
+
+    «De otras semanas» y «Lo que soléis comprar» son lo mismo: dos
+    maneras de poner cosas en la lista sin teclearlas. En el móvil van
+    al final, una detrás de otra, y está bien: allí hay una columna y
+    lo de abajo es lo que se mira cuando se ha terminado con lo de
+    arriba.
+
+    En grande se van a un lado. Y con un tratamiento distinto, que es
+    lo que costó verlo al componerlo: **no era el ancho lo que las
+    hacía competir con la lista, era el marco.** Cuatro tarjetas con
+    borde y un «Copiar» encendido en cada una, al lado de una lista
+    principal sin un solo botón, se leen como una segunda aplicación
+    puesta al lado.
+
+    Aquí llevan el mismo tratamiento que «En la casa» del Inicio: sin
+    tarjeta, directamente sobre el papel, rótulo pequeño, separadores
+    casi invisibles y la acción **sólo en la fila bajo el cursor**. Con
+    el dedo siguen visibles todas, porque con el dedo no existe «pasar
+    por encima».
+
+    Es contexto, no una aplicación.
+  */
+  const deOtrasSemanas =
+    pendientes.length === 0 && !recienCerrada && anterioresDeAqui.length > 0
+
   return (
-    <>
+    <div className="lg:flex lg:items-start lg:gap-8">
+    <div className="min-w-0 lg:flex-1">
       {/*
         ── PARA QUÉ ES ──
 
@@ -954,7 +989,7 @@ export default function Pantalla({
 
       {/*
         ═══════════════════════════════════════════════════════
-        ¿RECUPERAS UNA DE OTRA SEMANA?
+        ¿RECUPERAS UNA DE OTRA SEMANA? · Y LO DE SIEMPRE
         ═══════════════════════════════════════════════════════
 
         La compra de casa se repite casi igual: leche, pan, huevos,
@@ -962,69 +997,230 @@ export default function Pantalla({
         inventado — y es donde se olvidan cosas, porque se escribe de
         memoria en vez de mirar la de la semana pasada.
 
-        Sale solo con la lista VACÍA. Con cosas apuntadas ya se está
-        haciendo la de esta semana, y ofrecerlo ahí sería un botón que
-        estorba en la pantalla donde más prisa hay.
+        «De otras semanas» sale solo con la lista VACÍA. Con cosas
+        apuntadas ya se está haciendo la de esta semana, y ofrecerlo
+        ahí sería un botón que estorba en la pantalla donde más prisa
+        hay. Y lo repetido no entra dos veces: la que se recupera se
+        cruza con lo que ya haya puesto.
 
-        Y lo repetido no entra dos veces: la que se recupera se cruza
-        con lo que ya haya puesto.
+        En el móvil, aquí abajo, como siempre. En grande esto no se
+        pinta: vive en la columna de al lado.
       */}
-      {pendientes.length === 0 && !recienCerrada && anterioresDeAqui.length > 0 && (
-        <section className="mt-6">
-          <h2 className="rotulo">¿Recuperas una de otra semana?</h2>
-          <p className="t-apoyo mt-1.5">
-            Se copian sus cosas aquí. La de aquel día se queda como está.
-          </p>
-          <ul className="mt-3 space-y-2">
-            {anterioresDeAqui.map((c) => (
-              <li key={c.id}>
-                <button
-                  onClick={() => recuperar(c)}
-                  disabled={recuperando !== null || !listaId}
-                  className="flex min-h-[76px] w-full items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-3 text-left disabled:opacity-50"
-                >
-                  <span className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px] bg-fondo text-tinta-suave">
-                    <Ico nombre="bolsa" tam={21} grosor={2.1} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="t-tarjeta block truncate">
-                      {cuandoSeCerro(c.cerrada)}
-                    </span>
-                    <span className="t-apoyo mt-0.5 block truncate">
-                      {c.cosas === 1 ? '1 cosa' : `${c.cosas} cosas`}
-                      {c.ticket_id ? ' · con ticket' : ''}
-                    </span>
-                  </span>
-                  <Ico nombre="mas" tam={20} grosor={2.4} className="shrink-0 text-tinta-suave" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <div className="lg:hidden">
+        {deOtrasSemanas && (
+          <DeOtrasSemanas
+            cerradas={anterioresDeAqui}
+            alRecuperar={recuperar}
+            parada={recuperando !== null || !listaId}
+          />
+        )}
+        {habituales.length > 0 && (
+          <LoDeSiempre cosas={habituales} alAnadir={anadir} />
+        )}
+      </div>
+    </div>
 
-      {/* ── Lo de siempre ── */}
-      {habituales.length > 0 && (
-        <>
-          <h2 className="rotulo mt-8">Lo que soléis comprar</h2>
-          <p className="mt-1.5 text-[15px] font-semibold leading-snug text-tenue">
-            Toca para añadirlo sin escribirlo.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {habituales.map((h) => (
+    {/*
+      ── LA COLUMNA DE AL LADO ──
+
+      380 px a 1440. A 1800 se parte en dos —380 y 340— y las dos
+      maneras de llenar la lista sin escribir se ven a la vez: de qué
+      semana copiarla, y lo que siempre se compra.
+
+      `sticky`: la lista de la compra se hace larga y esto tiene que
+      seguir a mano al bajar. Sin barra propia, que es lo que convierte
+      una pantalla en un programa de trabajo.
+
+      Y no se pinta si no hay nada que enseñar: una columna vacía
+      reservada al lado de la lista es peor que no tenerla.
+    */}
+    {(deOtrasSemanas || habituales.length > 0) && (
+      <aside className="hidden shrink-0 self-start lg:sticky lg:top-2 lg:block lg:w-[380px] monitor:grid monitor:w-[740px] monitor:grid-cols-[380px_340px] monitor:items-start monitor:gap-8">
+        {deOtrasSemanas ? (
+          <DeOtrasSemanas
+            silencioso
+            cerradas={anterioresDeAqui}
+            alRecuperar={recuperar}
+            parada={recuperando !== null || !listaId}
+          />
+        ) : (
+          <div />
+        )}
+        {habituales.length > 0 && (
+          <LoDeSiempre silencioso cosas={habituales} alAnadir={anadir} />
+        )}
+      </aside>
+    )}
+    </div>
+  )
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  DE OTRAS SEMANAS
+  ═══════════════════════════════════════════════════════════════
+
+  La misma información con dos pesos visuales, y el `silencioso` es
+  todo lo que los separa.
+
+  EN EL MÓVIL (sin `silencioso`) es una tarjeta con su icono, su borde
+  y su ＋. Ahí está bien: es lo único que hay en la pantalla en ese
+  momento, porque la lista está vacía.
+
+  EN GRANDE está AL LADO de la lista, y ahí la misma tarjeta compite.
+  Cuatro fichas con borde y un botón encendido en cada una, frente a
+  una lista principal sin un solo botón, se leen como una segunda
+  aplicación. Así que pierde la caja, el icono y el borde, y se queda
+  en tres renglones de texto separados por una raya casi invisible.
+
+  ── EL PEOR DEFECTO QUE ESTO ARREGLA ──
+
+  Cuatro filas que ponían «La del sábado». Indistinguibles. Ahora cada
+  una lleva su fecha completa y **sus seis primeras cosas**, que es lo
+  único que permite decidir cuál copiar sin abrir las cuatro.
+*/
+function DeOtrasSemanas({
+  cerradas,
+  alRecuperar,
+  parada,
+  silencioso = false,
+}: {
+  cerradas: Cerrada[]
+  alRecuperar: (c: Cerrada) => void
+  parada: boolean
+  silencioso?: boolean
+}) {
+  if (!silencioso) {
+    return (
+      <section className="mt-6">
+        <h2 className="rotulo">¿Recuperas una de otra semana?</h2>
+        <p className="t-apoyo mt-1.5">
+          Se copian sus cosas aquí. La de aquel día se queda como está.
+        </p>
+        <ul className="mt-3 space-y-2">
+          {cerradas.map((c) => (
+            <li key={c.id}>
               <button
-                key={h}
-                onClick={() => anadir(h)}
-                className="t-cuerpo flex h-[48px] items-center gap-1.5 rounded-full border border-borde bg-superficie px-4 font-extrabold text-tinta"
+                onClick={() => alRecuperar(c)}
+                disabled={parada}
+                className="flex min-h-[76px] w-full items-center gap-3.5 rounded-[20px] border border-borde bg-superficie px-4 py-3 text-left disabled:opacity-50"
               >
-                <Ico nombre="mas" tam={17} grosor={2.6} className="text-tenue" />
-                {h}
+                <span className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px] bg-fondo text-tinta-suave">
+                  <Ico nombre="bolsa" tam={21} grosor={2.1} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="t-tarjeta block truncate">{cuandoSeCerro(c.cerrada)}</span>
+                  <span className="t-apoyo mt-0.5 block truncate">
+                    {c.cosas === 1 ? '1 cosa' : `${c.cosas} cosas`}
+                    {c.ticket_id ? ' · con ticket' : ''}
+                  </span>
+                </span>
+                <Ico nombre="mas" tam={20} grosor={2.4} className="shrink-0 text-tinta-suave" />
               </button>
-            ))}
-          </div>
-        </>
-      )}
-    </>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  return (
+    <section className="min-w-0">
+      <p className="rotulo">De otras semanas</p>
+      <ul className="mt-1">
+        {cerradas.map((c) => (
+          <li key={c.id} className="group border-b border-borde/50 last:border-b-0">
+            <button
+              onClick={() => alRecuperar(c)}
+              disabled={parada}
+              className="objetivo roza -mx-2 flex w-[calc(100%+1rem)] items-center gap-3 rounded-[10px] px-2 py-2 text-left disabled:opacity-50"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14px] font-bold text-tinta-suave">
+                  {cuandoSeCerro(c.cerrada)} · {c.cosas === 1 ? '1 cosa' : `${c.cosas} cosas`}
+                </span>
+                {/* Las seis primeras. Es lo que convierte cuatro filas
+                    iguales en cuatro filas distintas. */}
+                {c.primeras && c.primeras.length > 0 && (
+                  <span className="mt-0.5 block truncate text-[13px] text-tenue">
+                    {c.primeras.slice(0, 6).join(', ')}
+                    {c.cosas > c.primeras.slice(0, 6).length && '…'}
+                  </span>
+                )}
+              </span>
+              {/*
+                «Copiar» sólo en la fila bajo el cursor. Con dedo
+                —donde no existe pasar por encima— se queda visible
+                siempre: `group-hover` sólo se activa con puntero fino,
+                y por debajo de eso el `lg:` ni siquiera pinta esto.
+              */}
+              <span className="shrink-0 text-[13px] font-extrabold text-tenue opacity-0 transition-opacity group-hover:opacity-100">
+                Copiar
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+/*
+  LO QUE SOLÉIS COMPRAR.
+
+  Aquí el silencio cambia menos, porque unos chips ya son ligeros de
+  por sí: lo que pierden es el borde y bajan de 48 a 34 px de alto.
+  Siguen siendo pulsables de sobra porque en grande el suelo es 44 y
+  el hueco alrededor entra en el objetivo.
+*/
+function LoDeSiempre({
+  cosas,
+  alAnadir,
+  silencioso = false,
+}: {
+  cosas: string[]
+  alAnadir: (q: string) => void
+  silencioso?: boolean
+}) {
+  if (!silencioso) {
+    return (
+      <>
+        <h2 className="rotulo mt-8">Lo que soléis comprar</h2>
+        <p className="mt-1.5 text-[15px] font-semibold leading-snug text-tenue">
+          Toca para añadirlo sin escribirlo.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {cosas.map((h) => (
+            <button
+              key={h}
+              onClick={() => alAnadir(h)}
+              className="t-cuerpo flex h-[48px] items-center gap-1.5 rounded-full border border-borde bg-superficie px-4 font-extrabold text-tinta"
+            >
+              <Ico nombre="mas" tam={17} grosor={2.6} className="text-tenue" />
+              {h}
+            </button>
+          ))}
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <section className="mt-6 min-w-0 monitor:mt-0">
+      <p className="rotulo">Lo que soléis comprar</p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {cosas.map((h) => (
+          <button
+            key={h}
+            onClick={() => alAnadir(h)}
+            className="roza flex h-[34px] items-center gap-1 rounded-full bg-superficie px-3 text-[14px] font-bold text-tinta-suave"
+          >
+            <Ico nombre="mas" tam={14} grosor={2.6} className="text-apagado" />
+            {h}
+          </button>
+        ))}
+      </div>
+    </section>
   )
 }
 

@@ -10,6 +10,10 @@ import Barra from './barra'
 import Cabecera from './cabecera'
 import Encabezado from './encabezado'
 import { Ico, type Icono } from './iconos'
+/* `Cifra` viene renombrada: esta pantalla ya tiene una suya —la
+   de los números grandes del balance— y son dos cosas distintas. La
+   de la tabla es una celda; la de aquí, un titular. */
+import { Tabla, Renglon, Nombre, Dato, Cifra as CeldaCifra } from './tabla'
 import {
   Aviso,
   BotonPrincipal,
@@ -623,17 +627,47 @@ export default async function Cuentas({
                 desglosar no está mal: está a medias, y eso es
                 atención, no alerta. */}
             {cuentaImpuesto.sinDesglosar > 0 && (
-              <div className="mt-3">
-                <Aviso
-                  tono="atencion"
-                  titulo={
-                    cuentaImpuesto.sinDesglosar === 1
+              <>
+                {/* En el móvil, el aviso de siempre. */}
+                <div className="mt-3 lg:hidden">
+                  <Aviso
+                    tono="atencion"
+                    titulo={
+                      cuentaImpuesto.sinDesglosar === 1
+                        ? 'Hay 1 apunte sin desglosar'
+                        : `Hay ${cuentaImpuesto.sinDesglosar} apuntes sin desglosar`
+                    }
+                    explicacion="No están contados en esta cuenta. Al ponerles el tipo, entran solos."
+                  />
+                </div>
+
+                {/*
+                  ── EL ÁMBAR MARCA, NO ENVUELVE ──
+
+                  En grande el recuadro ámbar se va y queda una raya de
+                  color y dos líneas de texto.
+
+                  El motivo se vio al componer la pantalla: este aviso
+                  está DENTRO de la caja del IVA, que ya tiene su borde.
+                  Una caja de color dentro de otra caja son dos marcos
+                  concéntricos, y el de dentro grita más que la cifra a
+                  la que pertenece. La raya dice lo mismo —«mira esto»—
+                  sin volver a encajonar nada.
+                */}
+                <div
+                  className="mt-3 hidden border-l-[3px] pl-3 lg:block"
+                  style={{ borderColor: 'var(--t-atencion)' }}
+                >
+                  <p className="text-[14px] font-extrabold" style={{ color: 'var(--t-atencion)' }}>
+                    {cuentaImpuesto.sinDesglosar === 1
                       ? 'Hay 1 apunte sin desglosar'
-                      : `Hay ${cuentaImpuesto.sinDesglosar} apuntes sin desglosar`
-                  }
-                  explicacion="No están contados en esta cuenta. Al ponerles el tipo, entran solos."
-                />
-              </div>
+                      : `Hay ${cuentaImpuesto.sinDesglosar} apuntes sin desglosar`}
+                  </p>
+                  <p className="mt-0.5 text-[13px] leading-snug text-tinta-suave">
+                    No están contados en esta cuenta. Al ponerles el tipo, entran solos.
+                  </p>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -813,7 +847,79 @@ export default async function Cuentas({
               />
             </div>
           ) : (
-            <ul className="mt-3 space-y-2.5">
+            <>
+            {/*
+              ═══════════════════════════════════════════════════
+              LOS MOVIMIENTOS, EN UNA TABLA
+              ═══════════════════════════════════════════════════
+
+              Es la pantalla donde más se nota el cambio, porque es la
+              única donde la gente viene **a comparar**: cuánto, cuándo,
+              de qué. Y comparar exige que las cosas estén alineadas.
+
+              La rejilla de tarjetas enseñaba ocho movimientos en una
+              pantalla; esto enseña veinte, y con los euros en columna,
+              que es lo único que permite ver de un vistazo que el de
+              agosto fue el doble que el de julio.
+
+              Y la fila entera lleva al papel del movimiento cuando lo
+              tiene. Los que no tienen papel no llevan a ningún sitio:
+              no se pinta una promesa que no se puede cumplir.
+
+              ── LO QUE NO CAMBIA ──
+
+              El signo lo dicen el color Y el símbolo. Quien no
+              distinga verde de coral sigue viendo el + y el −. Esa
+              regla es del producto entero y no se toca al cambiar de
+              forma.
+            */}
+            <div className="mt-3">
+              <Tabla
+                columnas="minmax(0,1fr) 104px 150px 120px"
+                cabecera={['Movimiento', 'Fecha', 'Dónde', <span key="i" className="block text-right">Importe</span>]}
+                pie={
+                  movimientos.length >= 200
+                    ? 'Se enseñan los primeros 200 de este periodo.'
+                    : undefined
+                }
+              >
+                {movimientos.map((m) => {
+                  const donde = m.categoria_id && porId.get(m.categoria_id)
+                    ? porId.get(m.categoria_id)!.nombre
+                    : casas
+                      ? (m.unidad_id
+                          ? (nombreDeUnidad.get(m.unidad_id) ?? 'Toda la casa')
+                          : nombreApartamento(m.apartamento))
+                      : '—'
+
+                  return (
+                    <Renglon key={m.id} href={m.documento_id ? `/documentos/${m.documento_id}` : undefined}>
+                      <Nombre
+                        pie={
+                          m.noches != null
+                            ? `${m.noches} ${m.noches === 1 ? 'noche' : 'noches'}${
+                                m.personas != null
+                                  ? ` · ${m.personas} ${m.personas === 1 ? 'persona' : 'personas'}`
+                                  : ''
+                              }`
+                            : undefined
+                        }
+                      >
+                        {m.concepto}
+                      </Nombre>
+                      <Dato>{fechaBreve(m.fecha)}</Dato>
+                      <Dato>{donde}</Dato>
+                      <CeldaCifra color={m.tipo === 'ingreso' ? 'bien' : 'alerta'}>
+                        {m.tipo === 'ingreso' ? '+' : '−'}
+                        {euros(m.importe)}
+                      </CeldaCifra>
+                    </Renglon>
+                  )
+                })}
+              </Tabla>
+            </div>
+
+            <ul className="mt-3 space-y-2.5 lg:hidden">
               {movimientos.map((m) => (
                 <li
                   key={m.id}
@@ -863,6 +969,7 @@ export default async function Cuentas({
                 </li>
               ))}
             </ul>
+            </>
           )}
         </section>
         </div>
