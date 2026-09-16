@@ -77,7 +77,7 @@ export default async function PaginaPagos() {
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho>
+      <Cabecera trabajo>
         <div className="lg:hidden">
           <Volver href="/cuentas" />
           <h1 className="t-titulo mt-2.5">Pagos fijos</h1>
@@ -86,7 +86,7 @@ export default async function PaginaPagos() {
         <Encabezado icono="euro" ambito="pizarra" titulo="Pagos fijos" volver="/cuentas" />
       </Cabecera>
 
-      <div className="columna">
+      <div className="ancho-trabajo">
         <Fijos
           partidas={hojas.map((c) => ({
             id: c.id,

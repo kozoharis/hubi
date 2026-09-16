@@ -233,7 +233,7 @@ export default async function Seccion({
     <main className="min-h-dvh pb-40 lg:pb-16">
       {/* El título vive en la cabecera (D6): aquí estaba en el cuerpo
           y se perdía al hacer scroll. */}
-      <Cabecera ancho>
+      <Cabecera trabajo>
         {/* La del móvil, intacta. Por encima de 1024 px no se pinta. */}
         <div className="lg:hidden">
           <Volver href="/documentos" />
@@ -260,7 +260,7 @@ export default async function Seccion({
         />
       </Cabecera>
 
-      <div className="columna">
+      <div className="ancho-trabajo">
 
         {averia && (
           <div className="mt-4">

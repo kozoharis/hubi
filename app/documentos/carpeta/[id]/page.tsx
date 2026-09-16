@@ -124,7 +124,7 @@ export default async function Carpeta({
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho>
+      <Cabecera trabajo>
         <div className="lg:hidden">
           <Volver href={volver} />
           <div className="mt-2.5 flex items-center gap-3">
@@ -150,7 +150,7 @@ export default async function Carpeta({
         />
       </Cabecera>
 
-      <div className="columna">
+      <div className="ancho-trabajo">
 
         {averia ? (
           <div className="mt-6">

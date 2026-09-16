@@ -92,7 +92,7 @@ export default async function PaginaNotas({
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho>
+      <Cabecera trabajo>
         <div className="lg:hidden">
           <Volver href="/dia" />
           <div className="flex h-12 items-center">
@@ -103,7 +103,7 @@ export default async function PaginaNotas({
         <Encabezado icono="chincheta" ambito="arena" titulo="Notas" volver="/dia" />
       </Cabecera>
 
-      <div className="columna pt-2">
+      <div className="ancho-trabajo pt-2">
         <Notas
           hayPantalla={hayPantalla}
           notas={conFecha(notas)}

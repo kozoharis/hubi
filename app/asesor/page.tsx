@@ -201,7 +201,7 @@ export default async function DelAsesor() {
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho>
+      <Cabecera trabajo>
         <div className="lg:hidden">
           <Volver href="/dia" />
           <div className="flex h-14 items-center gap-3">
@@ -223,7 +223,7 @@ export default async function DelAsesor() {
         />
       </Cabecera>
 
-      <div className="columna pt-2">
+      <div className="ancho-trabajo pt-2">
         <Hilo
           cosas={cosas}
           paraQuien={suyo.id}

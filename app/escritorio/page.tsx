@@ -86,7 +86,7 @@ export default async function Escritorio() {
           única medida de MAPPEL que no salía del sistema, y centrada
           además, o sea flotando al lado del rail. Ahora es la columna
           de siempre —1100 a la izquierda— y la banda de siempre. */}
-      <Cabecera ancho>
+      <Cabecera trabajo>
         <div className="lg:hidden">
           <Volver href="/" />
           <div className="flex h-14 items-center">
@@ -103,7 +103,7 @@ export default async function Escritorio() {
         />
       </Cabecera>
 
-      <div className="columna pt-1">
+      <div className="ancho-trabajo pt-1">
         <p className="t-apoyo">
           {unaSola
             ? 'Aquí saldrán todas tus casas juntas. Ahora mismo tienes una.'

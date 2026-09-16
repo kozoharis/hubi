@@ -31,7 +31,7 @@ export default async function PaginaMenus() {
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho>
+      <Cabecera panoramica>
         <div className="lg:hidden">
           <Volver href="/dia" />
           <h1 className="t-titulo mt-2.5">Menús</h1>
@@ -40,7 +40,7 @@ export default async function PaginaMenus() {
         <Encabezado icono="taza" ambito="arena" titulo="Menús" volver="/dia" />
       </Cabecera>
 
-      <div className="columna">
+      <div className="ancho-panoramica">
         <Semana />
       </div>
 

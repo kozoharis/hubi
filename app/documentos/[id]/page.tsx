@@ -187,7 +187,7 @@ export default async function Documento({
         arriba, así que la misma zona hacía dos cosas distintas en
         pantallas contiguas.
       */}
-      <Cabecera ancho>
+      <Cabecera panoramica>
         <div className="lg:hidden">
           <Volver href={volver} />
           <h1 className="t-titulo mt-2.5 line-clamp-2">{d.titulo}</h1>
@@ -213,7 +213,7 @@ export default async function Documento({
         />
       </Cabecera>
 
-      <div className="columna">
+      <div className="ancho-panoramica">
 
         {/*
           ── EL PAPEL A UN LADO Y SUS DATOS AL OTRO ──

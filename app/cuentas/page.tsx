@@ -100,7 +100,7 @@ export default async function Cuentas() {
           vista y el Inicio está a un toque, siempre en el mismo sitio.
           Una flecha atrás encima de una navegación permanente es un
           segundo camino para lo mismo. */}
-      <Cabecera ancho>
+      <Cabecera trabajo>
         <div className="lg:hidden">
           {/*
             AQUÍ NO VA UN «VOLVER».
@@ -130,7 +130,7 @@ export default async function Cuentas() {
         />
       </Cabecera>
 
-      <div className="columna pt-1">
+      <div className="ancho-trabajo pt-1">
         {/*
           La caja de MAPPEL. La misma que en Inicio y en Papeles, con la
           sugerencia de aquí: lo que cambia entre pantallas es lo que

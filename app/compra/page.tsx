@@ -245,7 +245,7 @@ export default async function Compra() {
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho>
+      <Cabecera trabajo>
         <div className="flex h-14 items-center gap-3 lg:hidden">
           {/* Era `#0EA5E9`, el cian que no está declarado en la
               paleta. La compra es de la casa, y la casa lleva arena. */}
@@ -256,7 +256,7 @@ export default async function Compra() {
         <Encabezado icono="bolsa" ambito="arena" titulo="La compra" volver="/dia" />
       </Cabecera>
 
-      <div className="columna pt-1">
+      <div className="ancho-trabajo pt-1">
         {/*
           ── AQUÍ NO VA LA CAJA DE MAPPEL, Y ES A PROPÓSITO ──
 

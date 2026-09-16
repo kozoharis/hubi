@@ -51,28 +51,44 @@
 
   Es `.ancho-panoramica`, del sistema de anchos de `globals.css`.
 */
+/*
+  ── `trabajo` ──
+
+  La postura de las pantallas que son LISTA: Papeles, Cuentas, Compra,
+  Notas, el escritorio de casas, el Inicio.
+
+  Es lo que hasta ahora hacía `ancho`, pero con la escalera puesta:
+  1100 · 1280 · 1500 en vez de 1100 y parar. Y son dos cosas distintas
+  a propósito — `ancho` se queda para lo que NO debe crecer, que hoy es
+  Ajustes: una columna de bloques de configuración a 1500 px es una
+  fila de ajustes con medio metro de aire en medio.
+*/
 export default function Cabecera({
   children,
   ancho = false,
   formulario = false,
   texto = false,
+  trabajo = false,
   panoramica = false,
 }: {
   children: React.ReactNode
   ancho?: boolean
   formulario?: boolean
   texto?: boolean
+  trabajo?: boolean
   panoramica?: boolean
 }) {
   const medida = panoramica
     ? 'ancho-panoramica'
-    : ancho
-      ? 'columna'
-      : texto
-        ? 'columna-texto'
-        : formulario
-          ? 'columna-formulario'
-          : 'mx-auto w-full max-w-md px-5'
+    : trabajo
+      ? 'ancho-trabajo'
+      : ancho
+        ? 'columna'
+        : texto
+          ? 'columna-texto'
+          : formulario
+            ? 'columna-formulario'
+            : 'mx-auto w-full max-w-md px-5'
 
   return (
     <div className="cabecera">
