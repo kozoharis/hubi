@@ -70,7 +70,25 @@ export const metadata: Metadata = {
   */
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
+      /*
+        ── AQUÍ NO VA `/favicon.ico`, Y ES A PROPÓSITO ──
+
+        Estaba puesto, y salía DOS VECES en el `<head>`:
+
+            <link rel="icon" sizes="256x256" href="/favicon.ico?favicon.0nv-…">
+            <link rel="icon" sizes="any"     href="/favicon.ico">
+
+        La primera la pone Next él solo, sin que nadie se lo pida, por
+        el mero hecho de que exista `app/favicon.ico` — y además le
+        cuelga una huella en la dirección para que al cambiarlo el
+        navegador se entere. La segunda era ésta, escrita a mano.
+
+        O sea que la nuestra no añadía nada y encima era la peor de las
+        dos: sin huella, un navegador que se la quede en caché no se
+        entera nunca de que el icono ha cambiado.
+
+        Los PNG de abajo sí hacen falta: ésos Next no los deduce.
+      */
       { url: '/icono-32.png', type: 'image/png', sizes: '32x32' },
       { url: '/icono-192.png', type: 'image/png', sizes: '192x192' },
       { url: '/icono-512.png', type: 'image/png', sizes: '512x512' },
