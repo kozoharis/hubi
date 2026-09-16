@@ -4,7 +4,8 @@ import { usePathname } from 'next/navigation'
 import Link from './enlace'
 import { Ico, Logo, Palabra } from './iconos'
 import { useCasa } from './actividades-contexto'
-import { pestanasDe } from './pestanas'
+import { pestanasDe, puedeHablar } from './pestanas'
+import { DEGRADADO } from '@/lib/voz-mappel'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -122,10 +123,53 @@ export default function Rail() {
         Ahora son las dos piezas de siempre, `Logo` y `Palabra`, que ya
         van por el alto y ya se recolorean solas con el modo.
       */}
-      <div className="flex items-center gap-3 px-3 pb-6">
+      <div className="flex items-center gap-3 px-3 pb-5">
         <Logo tam={26} />
         <Palabra alto={16} />
       </div>
+
+      {/*
+        ── HABLAR, AQUÍ Y EN TODAS ──
+
+        La caja de «Pregunta a mappel» hace dos trabajos distintos:
+        BUSCAR dentro de una pantalla y MANDARLE algo a MAPPEL. El
+        primero sólo tiene sentido donde hay mucho de lo mismo y no cabe
+        todo a la vista —Papeles, la Agenda, las Cuentas—; el segundo lo
+        tiene siempre, porque no busca dentro de nada: crea algo.
+
+        Ponerla entera en las trece cabeceras resolvía el segundo
+        pagando el precio del primero: en los Menús, una caja de 420 px
+        que dice «busca algo» al lado de una semana que ya está entera a
+        la vista es ruido, y encima promete algo que ahí no existe.
+
+        Así que se separan. La caja se queda en las cinco pantallas
+        donde buscar significa algo, y HABLAR baja al rail, que es donde
+        vive lo que es del producto y no de la pantalla. Una línea, y
+        está en todas.
+
+        ── A QUIEN NO ──
+
+        Al asesor y a quien sólo mira, no: la voz sirve para apuntar y
+        para preguntar, y a quien no puede escribir nada le daría un
+        botón grande que falla en cuanto lo use. Es la misma regla que
+        ya aplica la barra del móvil, y por eso se llama a la misma
+        función y no a otra escrita aquí.
+      */}
+      {puedeHablar(rol) && (
+        <Link
+          href="/hablar"
+          className="tocable objetivo mb-4 flex items-center gap-3 rounded-[14px] border border-borde bg-fondo px-3 text-[16px] font-extrabold text-tinta hover:velo-chip"
+        >
+          <span
+            aria-hidden
+            className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full text-white"
+            style={{ background: DEGRADADO }}
+          >
+            <Ico nombre="onda" tam={15} grosor={2.6} />
+          </span>
+          <span>Hablar</span>
+        </Link>
+      )}
 
       <div className="flex flex-col gap-1">
         {pestanas.map((p) => {

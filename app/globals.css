@@ -45,6 +45,21 @@
   --font-texto:  var(--fuente), "Segoe UI", system-ui, sans-serif;
 
   /*
+    LOS DOS PELDAÑOS QUE FALTABAN
+
+    Tailwind trae `lg` en 1024 y `xl` en 1280, y con eso el escritorio
+    de MAPPEL sólo tenía un peldaño: el diseño decidido para un portátil
+    de 1024 era exactamente el mismo que salía en un monitor de 1920.
+
+    `ancha` y `monitor` son los otros dos. Los números no son redondos
+    por gusto: 1440 es donde empiezan a caber tres zonas, y 1800 es
+    donde el ancho de trabajo llega a su techo de 1500 y lo que sobra
+    se queda de margen.
+  */
+  --breakpoint-ancha:   1440px;
+  --breakpoint-monitor: 1800px;
+
+  /*
     ═════════════════════════════════════════════════════════
     MAPPEL DESIGN SYSTEM v1
     ═════════════════════════════════════════════════════════
@@ -443,6 +458,179 @@ body {
     padding-inline: 2.25rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   EL SISTEMA DE ANCHOS · tres nombres y una escalera
+   ═══════════════════════════════════════════════════════════
+
+   El ancho deja de ponerse a mano en cada pantalla: LA PANTALLA LO
+   DECLARA y el sistema decide la medida según el tamaño. Así una
+   pantalla nueva no tiene que saber de puntos de corte, y cambiar la
+   escalera se hace en un sitio.
+
+       LECTURA      448 · 650                    prosa; no crece nunca
+       FICHA        448 · 560                    formularios y fichas
+       TRABAJO      448 · 1100 · 1280 · 1500     listas, tablas, zonas
+       PANORÁMICA   448 · fluido                 lo que ES una rejilla
+
+   ── POR QUÉ TRABAJO TIENE TECHO Y PANORÁMICA NO ──
+
+   Son dos oficios distintos. Una fila de tabla de 2 200 px obliga al
+   ojo a viajar de un extremo al otro y se pierde el renglón: por eso
+   Trabajo corta en 1 500, que con el rail de 248 y los márgenes cabe
+   exacto en un monitor de 1 800 — y lo que sobra se queda de margen,
+   que está bien. Una rejilla de siete días quiere justo lo contrario:
+   cada columna se ensancha pero el ojo nunca recorre la fila entera,
+   así que cuanto más ancha, más legible.
+
+   Meter las dos en el mismo cajón obliga a estropear una.
+
+   ── LO QUE NO CAMBIA HOY ──
+
+   `.columna`, `.columna-formulario` y `.columna-texto` se quedan
+   EXACTAMENTE como estaban, y ninguna pantalla usa todavía estas
+   clases. O sea que esta tanda no mueve un píxel de nada: pone el
+   sistema, y cada pantalla se pasa a su ancho cuando le toque su
+   turno. Si algo se rompe en las tandas siguientes, se sabe de qué
+   pantalla es. */
+.ancho-lectura,
+.ancho-ficha,
+.ancho-trabajo,
+.ancho-panoramica {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 28rem;
+  padding-inline: 1.25rem;
+}
+
+/* Pegadas a la izquierda, por lo mismo que `.columna`: a la izquierda
+   está el rail, y una columna centrada deja un pasillo vacío entre la
+   navegación y lo que se lee. */
+@media (min-width: 1024px) {
+  .ancho-lectura,
+  .ancho-ficha,
+  .ancho-trabajo,
+  .ancho-panoramica {
+    margin-inline: 0;
+    padding-inline: 2.25rem;
+  }
+
+  .ancho-lectura { max-width: 650px; }
+  .ancho-ficha   { max-width: 560px; }
+  .ancho-trabajo { max-width: 1100px; }
+  /* Panorámica no lleva `max-width` a propósito: se queda con lo que
+     haya menos los márgenes. */
+}
+
+@media (min-width: 1440px) {
+  .ancho-trabajo { max-width: 1280px; }
+}
+
+@media (min-width: 1800px) {
+  .ancho-trabajo { max-width: 1500px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LA DENSIDAD · tres, y el ancho no decide ninguna
+   ═══════════════════════════════════════════════════════════
+
+   REGLA QUE MANDA SOBRE TODO LO DEMÁS: la densidad quita AIRE. Nunca
+   quita tamaño de letra, y nunca baja un objetivo de 44 px. El día que
+   «modo trabajo» signifique «letra de 13», el producto se rompió — y
+   por eso aquí sólo hay tres variables y ninguna de las tres es un
+   tamaño de texto.
+
+       touch        72 · 12 · 48   móvil, y todo lo que se toca
+       comfortable  56 · 10 · 44   tablet de cocina y escritorio normal
+       work         48 ·  8 · 44   quien trabaja con mucha información
+
+   ── EL PUNTERO PONE EL SUELO, NO EL ANCHO ──
+
+   Un iPad en horizontal mide 1 194 px y se toca con el dedo: decidir
+   por ancho a secas le daba densidad de ratón, que es el mismo error
+   que estamos arreglando, en el otro sentido. Con `pointer: fine` en
+   la condición, una tablet de cocina de 1 024 px se queda en `touch`
+   aunque sea ancha.
+
+   Y se resuelve en CSS y no en JavaScript a propósito: así no hay un
+   instante de la carga con la densidad equivocada.
+
+   ── LA PANTALLA PONE EL TECHO ──
+
+   `work` no llega nunca por tamaño: la pide la pantalla poniéndose
+   `.denso-trabajo`, y sólo pueden cinco —Papeles, Cuentas, el
+   escritorio de casas, Pagos y el mes de la Agenda—. Ninguna pantalla
+   del día a día de la casa entra en esa lista, y ésa es la protección.
+
+   ── Y LA PERSONA DECIDE DENTRO DE ESO ──
+
+   `data-densidad` en el `<html>`, que pondrá Ajustes sin usar la
+   palabra densidad: «¿Cuántas cosas quieres ver a la vez?». Manda
+   sobre lo anterior, también dentro de una pantalla de trabajo, y por
+   eso lleva los dos selectores. */
+:root {
+  --fila: 72px;
+  --hueco: 12px;
+  --toque: 48px;
+}
+
+@media (min-width: 1024px) and (pointer: fine) {
+  :root {
+    --fila: 56px;
+    --hueco: 10px;
+    --toque: 44px;
+  }
+}
+
+@media (min-width: 1440px) and (pointer: fine) {
+  .denso-trabajo {
+    --fila: 48px;
+    --hueco: 8px;
+    --toque: 44px;
+  }
+}
+
+:root[data-densidad='touch'],
+:root[data-densidad='touch'] .denso-trabajo {
+  --fila: 72px;
+  --hueco: 12px;
+  --toque: 48px;
+}
+
+:root[data-densidad='comfortable'],
+:root[data-densidad='comfortable'] .denso-trabajo {
+  --fila: 56px;
+  --hueco: 10px;
+  --toque: 44px;
+}
+
+:root[data-densidad='work'],
+:root[data-densidad='work'] .denso-trabajo {
+  --fila: 48px;
+  --hueco: 8px;
+  --toque: 44px;
+}
+
+/* El suelo, al final para que gane a todo lo anterior: con el dedo no
+   hay densidad de ratón ni aunque la pantalla sea de 2 000 px ni
+   aunque alguien haya elegido «muchas cosas a la vez» en otro
+   aparato. Esto es lo que protege la pantalla de la cocina. */
+@media (pointer: coarse) {
+  :root,
+  :root[data-densidad],
+  .denso-trabajo,
+  :root[data-densidad] .denso-trabajo {
+    --fila: 72px;
+    --hueco: 12px;
+    --toque: 48px;
+  }
+}
+
+/* Las tres únicas cosas que leen esas variables. Si aparece una
+   cuarta, conviene preguntarse por qué. */
+.fila-lista  { min-height: var(--fila); }
+.hueco-lista { gap: var(--hueco); }
+.objetivo    { min-height: var(--toque); min-width: var(--toque); }
 
 /* Nada importante depende de pasar el ratón por encima:
    el foco tiene que verse siempre, y verse mucho. */

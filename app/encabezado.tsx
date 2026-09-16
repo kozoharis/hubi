@@ -89,6 +89,7 @@ export default function Encabezado({
   caja,
   accion,
   extra,
+  pegajosa = false,
 }: {
   icono?: Icono
   ambito?: Ambito
@@ -123,11 +124,36 @@ export default function Encabezado({
   accion?: AccionDeEncabezado
   /** Algo suelto a la derecha del todo: el lápiz de editar, por ejemplo. */
   extra?: ReactNode
+  /*
+    Que la banda se quede arriba al desplazar.
+
+    Sólo en las pantallas de lista larga —Papeles, Cuentas, Agenda,
+    Notas, el escritorio de casas—. En una ficha o en un texto seguido
+    no: ahí robar ochenta píxeles de altura permanente no compra nada,
+    y en un portátil de 800 px útiles eso es el diez por ciento.
+  */
+  pegajosa?: boolean
 }) {
   return (
-    <div className="hidden lg:block">
-      <div className="flex items-center gap-5 pb-0.5 pt-1">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+    <div className={'hidden lg:block' + (pegajosa ? ' sticky top-0 z-20 bg-fondo' : '')}>
+      {/*
+        ── POR QUÉ ESTA FILA SE PUEDE PARTIR ──
+
+        `flex-wrap` con `gap-y-0` no cambia nada mientras todo quepa, y
+        es lo que deja que los segmentos vivan en la MISMA fila que el
+        título sin duplicarlos en el documento.
+
+        Hasta 1439 llevan `w-full`, que los echa a una segunda línea —
+        exactamente donde estaban—. A partir de 1440 pierden el ancho
+        completo y se colocan entre la caja y la acción, que es donde
+        hay sitio. Así se ahorra una franja entera de altura justo en
+        las pantallas que más lista tienen.
+
+        Un solo nodo y no dos con `hidden`: duplicar un control parte el
+        foco del teclado y obliga a repetir su identificador.
+      */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-0 pb-0.5 pt-1">
+        <div className="flex min-w-0 flex-1 items-center gap-3 ancha:order-1">
           {volver && (
             <Link
               href={volver}
@@ -149,10 +175,23 @@ export default function Encabezado({
         </div>
 
         {/* La caja, con su medida. No se estira. */}
-        {caja && <div className="w-[420px] shrink-0">{caja}</div>}
+        {caja && <div className="w-[420px] shrink-0 ancha:order-2">{caja}</div>}
+
+        {/* Los segmentos. Hasta 1439, `w-full` los echa a la segunda
+            línea con su medida de siempre; de 1440 en adelante entran
+            en la fila, entre la caja y la acción.
+
+            Y en las dos posturas con su tamaño: estirados a lo ancho de
+            la pantalla dejan de leerse como «elige una de tres» y
+            parecen tres botones distintos. */}
+        {controles && (
+          <div className="order-last mt-3 w-full max-w-[440px] ancha:order-3 ancha:mt-0 ancha:w-auto">
+            {controles}
+          </div>
+        )}
 
         {accion && (
-          <div className="shrink-0">
+          <div className="shrink-0 ancha:order-4">
             <BotonPrincipal
               href={accion.href}
               icono={accion.icono}
@@ -164,13 +203,8 @@ export default function Encabezado({
           </div>
         )}
 
-        {extra && <div className="shrink-0">{extra}</div>}
+        {extra && <div className="shrink-0 ancha:order-5">{extra}</div>}
       </div>
-
-      {/* Los segmentos, debajo del título y de su tamaño. Estirados a
-          lo ancho de la pantalla dejan de leerse como «elige una de
-          tres» y parecen tres botones distintos. */}
-      {controles && <div className="mt-3 max-w-[440px]">{controles}</div>}
     </div>
   )
 }
