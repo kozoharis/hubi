@@ -1,15 +1,14 @@
 import { hoyAqui } from '@/lib/tablon'
-import { elLunesDe } from '@/lib/menus'
 import { laPared, loApuntado, loDestacado, losMenus } from '@/lib/pared'
 import { loDeHoy } from '@/lib/rutinas'
+import { genteDeLaCasa } from '@/lib/gente'
 import { Ico } from '../iconos'
 import { pintaDe } from '../iconos'
 import { AMBITO, PastillaAmbito } from '../piezas'
 import Link from '@/app/enlace'
 import Cosa from './cosa'
-import Mes from './calendario/mes'
 import Rutinas from './rutinas'
-import Tiempo from './tiempo'
+import Fotos from './fotos'
 import LoQueQuepa from './lo-que-quepa'
 import { Nada, Rotulo } from './rotulo'
 
@@ -77,12 +76,7 @@ export default async function Hoy() {
   /* Hasta dentro de dos semanas: de ahí sale «después». */
   const dentroDeDos = sumarDias(hoy, 14)
 
-  /* Y el mes entero, solo para los puntitos del calendario pequeño. */
-  const [ano, mes] = hoy.split('-').map(Number)
-  const delMes = `${ano}-${String(mes).padStart(2, '0')}`
-  const ultimo = String(new Date(ano, mes, 0).getDate()).padStart(2, '0')
-
-  const [cosas, menus, destacado, laCompra, delMesEntero, rutinas, gente] = await Promise.all([
+  const [cosas, menus, destacado, laCompra, rutinas, gente] = await Promise.all([
     loApuntado(supabase, casa, hoy, dentroDeDos),
     losMenus(supabase, casa, hoy, hoy),
     loDestacado(supabase, casa),
@@ -108,24 +102,37 @@ export default async function Hoy() {
         return []
       }
     })(),
-    loApuntado(supabase, casa, `${delMes}-01`, `${delMes}-${ultimo}`),
     /* Lo que toca hoy. `loDeHoy` ya envuelve sus fallos y devuelve
        vacío si las tablas no están. */
     loDeHoy(supabase, casa),
-    /* Los nombres, para poder decir DE QUIÉN es cada rutina. En una
-       casa de dos da igual; en una con niños, «17:00 · Inglés» sin
-       decir de quién no sirve de nada. */
-    supabase.from('perfiles').select('id, nombre'),
+    /* Los nombres Y SUS COLORES, para poder decir DE QUIÉN es cada
+       cosa. En una casa de dos da igual; en una con niños, «17:00 ·
+       Inglés» sin decir de quién no sirve de nada.
+
+       `genteDeLaCasa` en vez de `perfiles` a secas: trae el color, que
+       es lo que la pared puede enseñar a dos metros —un nombre a esa
+       distancia no se lee—, y además se limita a esta casa. Ya viene
+       envuelto y con respaldo si falta la columna del color. */
+    genteDeLaCasa(supabase, casa).catch(() => []),
   ])
 
-  const nombreDe = new Map(
-    ((gente.data ?? []) as { id: string; nombre: string }[]).map((p) => [
-      p.id,
-      p.nombre.split(' ')[0],
-    ])
-  )
+  const nombreDe = new Map(gente.map((p) => [p.id, p.nombre.split(' ')[0]]))
 
-  const conAlgo = new Set(delMesEntero.map((c) => c.fecha).filter(Boolean) as string[])
+  /* La misma lista, con el color, para las caras de cada renglón. */
+  const losDeCasa = gente.map((g) => ({ id: g.id, nombre: g.nombre, color: g.color }))
+
+  /*
+    ── Y AQUÍ HABÍA UNA CONSULTA QUE YA NO HACE FALTA ──
+
+    `loApuntado` pedía TODO lo apuntado del mes entero, y era sólo para
+    poner un punto debajo de los días del calendario chico. Al irse el
+    mes de esta pantalla, esa consulta se quedaba pidiendo treinta días
+    de cosas para no pintar ninguna.
+
+    Una pared se recarga sola cada pocos minutos, así que una consulta
+    de menos aquí no es una micro-optimización: es una consulta menos
+    cada vez, todo el día, todos los días.
+  */
 
   const pendientes = cosas.filter((c) => c.estado !== 'hecho')
   const deHoy = pendientes.filter((c) => c.fecha === hoy)
@@ -215,7 +222,28 @@ export default async function Hoy() {
       `LoQueQuepa` mide el hueco de verdad y enseña los que caben.
       Aquí se le pasa TODO lo que hay.
     */
-    <div className="pt-6 lg:grid lg:h-full lg:grid-cols-[1.45fr_1fr_1fr] lg:gap-7 lg:overflow-hidden">
+    /*
+      ═══════════════════════════════════════════════════════════
+      DOS ZONAS, NO TRES COLUMNAS IGUALES
+      ═══════════════════════════════════════════════════════════
+
+      Eran tres de 1,45 · 1 · 1. Repartían el ANCHO, pero no repartían
+      la importancia: lo que hay que hacer hoy, lo que se come y en qué
+      día del mes estamos pesaban lo mismo en la pantalla, y no pesan
+      lo mismo en la vida.
+
+      Ahora son dos, 1,6 · 1, y lo de hoy manda. Lo que ha hecho sitio:
+
+        · el tiempo sube a la banda de arriba, con la hora;
+        · el mes se va — es lo que menos se mira y más ocupa, y está a
+          un toque en la pestaña de Calendario;
+        · «Después» baja a la segunda zona, con lo demás de la casa.
+
+      Y con el hueco que dejan entra lo que faltaba: las fotos, que
+      hasta ahora sólo salían en el descanso — o sea, cuando nadie
+      estaba mirando.
+    */
+    <div className="pt-6 lg:grid lg:h-full lg:grid-cols-[1.6fr_1fr] lg:gap-9 lg:overflow-hidden">
       {/* ══ 1 · LO QUE HAY QUE HACER ══ */}
       <div className="flex min-h-0 flex-col">
         <Rotulo>Hoy</Rotulo>
@@ -235,6 +263,8 @@ export default async function Hoy() {
                   titulo={c.titulo}
                   cuando={c.hora ? c.hora.slice(0, 5) : ''}
                   talla="hoy"
+                  dequienes={c.dequienes ?? []}
+                  gente={losDeCasa}
                 />
               )),
             ]}
@@ -267,6 +297,35 @@ export default async function Hoy() {
             />
           </>
         )}
+
+        {/*
+          ══════════════════════════════════════════════════════════
+          LAS FOTOS, ABAJO Y SIEMPRE PUESTAS
+          ══════════════════════════════════════════════════════════
+
+          Éste es el arreglo que más cambia lo que esta pantalla ES.
+
+          Las fotos ya estaban —paso 73—, pero sólo en el DESCANSO: a
+          los tres minutos de no tocar nada. O sea que la parte bonita
+          de la pared era el modo de no usarla, y mientras la casa la
+          miraba de verdad no había ni una cara.
+
+          Es la misma pieza, no una copia: `fotos.tsx` avisa de que dos
+          copias serían dos sitios donde arreglar el parpadeo la
+          próxima vez. Lo único que cambia es dónde vive y que aquí no
+          sube nada — subir se hace desde el móvil, y un botón de subir
+          en una pared es un botón que toca cualquiera que entre.
+
+          `mt-auto` para que se pegue abajo: lo de hoy crece desde
+          arriba y esto se queda en el suelo de la columna. Si un día
+          hay ocho cosas apuntadas, `LoQueQuepa` recorta la lista y las
+          fotos siguen donde estaban — no se mueven de sitio según el
+          día que sea, que en una pared que se mira de reojo importa
+          más que el tamaño.
+        */}
+        <div className="mt-auto hidden shrink-0 pt-7 lg:block">
+          <Fotos />
+        </div>
       </div>
 
       {/* ══ 2 · LA CASA ══ */}
@@ -336,32 +395,18 @@ export default async function Hoy() {
             </div>
           </>
         )}
-      </div>
 
-      {/* ══ 3 · LO QUE VIENE ══ */}
-      {/*
-        `pb-24` en grande y no en las otras dos: el micrófono está
-        fijo abajo a la derecha, o sea encima de esta columna. Sin ese
-        hueco se comería las dos últimas filas del mes.
-      */}
-      <div className="mt-9 flex min-h-0 flex-col lg:mt-0 lg:pb-24">
         {/*
-          ── EL TIEMPO ──
+          ── LO QUE VIENE, AQUÍ ──
 
-          Lo primero que mira cualquiera por la mañana en una cocina. Y
-          en una casa con finca no es curiosidad: es si hay que regar,
-          si se puede tender y si conviene adelantar la recogida.
-
-          Si la previsión no llega, este bloque no se pinta — ni cartel
-          de error ni hueco gris. Lo decide `tiempo.tsx`.
+          Estaba en la tercera columna, con el tiempo y el mes. Al
+          quedarse la pantalla en dos zonas se viene con lo demás de la
+          casa, que es donde encaja: qué se come, qué falta y qué viene
+          son las tres cosas que no son de HOY.
         */}
-        <div className="shrink-0">
-          <Tiempo />
-        </div>
-
         {luego.length > 0 && (
           <>
-            <div className="mt-9 shrink-0">
+            <div className="mt-8 shrink-0">
               <Rotulo>Después</Rotulo>
             </div>
             <LoQueQuepa>
@@ -376,24 +421,8 @@ export default async function Hoy() {
             </LoQueQuepa>
           </>
         )}
-
-        {/*
-          ── EL MES ──
-
-          Abajo del todo, la misma rejilla que en el Calendario: hoy en
-          círculo, un punto en los días que tienen algo, y la semana en
-          curso teñida.
-
-          No es repetir el Calendario: es la pregunta que ninguna de
-          las listas de esta pantalla contesta — «¿en qué parte del mes
-          estamos?» y «el día 4, ¿qué día cae?». Sin un mes delante eso
-          se cuenta con los dedos.
-        */}
-        <div className="mt-9 shrink-0">
-          <Rotulo>El mes</Rotulo>
-          <Mes hoy={hoy} conAlgo={conAlgo} lunes={elLunesDe(hoy)} />
-        </div>
       </div>
+
     </div>
   )
 }

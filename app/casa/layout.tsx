@@ -6,6 +6,7 @@ import VuelveAHoy from './vuelve-a-hoy'
 import Microfono from './microfono'
 import Descanso from './descanso'
 import Despierta from './despierta'
+import Tiempo from './tiempo'
 
 export const dynamic = 'force-dynamic'
 
@@ -137,10 +138,28 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
 
       <VuelveAHoy />
 
-      <header className="flex shrink-0 items-end justify-between gap-10">
-        {/* Izquierda: la hora y la fecha, y nada más. */}
-        <div className="min-w-0">
+      <header className="flex shrink-0 items-center justify-between gap-10">
+        {/*
+          ── LA BANDA DE ESTADO ──
+
+          Izquierda: la hora, la fecha y el tiempo. Los tres contestan
+          la MISMA pregunta —cómo está el mundo ahí fuera— y por eso
+          van juntos: separados, cada uno pedía su propio rótulo y su
+          propio sitio, y el tiempo acababa en la tercera columna,
+          abajo a la derecha, que es el último sitio al que llega la
+          vista en una pantalla que se mira de un vistazo.
+
+          Y juntos ocupan MENOS que la hora sola ocupaba antes.
+
+          El tiempo se pinta en las cinco pestañas, no sólo en Hoy. No
+          es un descuido: si hay que decidir si se tiende, da igual en
+          qué pestaña se esté mirando — y una cosa que aparece y
+          desaparece según la pestaña obliga a acordarse de dónde
+          estaba.
+        */}
+        <div className="flex min-w-0 items-center gap-10">
           <Reloj />
+          <Tiempo banda />
         </div>
 
         {/*

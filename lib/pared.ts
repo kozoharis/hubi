@@ -101,6 +101,20 @@ export type CosaDeLaPared = {
   /* De quién es. Hace falta desde el paso 79: para poder cambiarlo
      desde la pared hay que saber primero qué pone ahora. */
   asignado_a?: string | null
+  /*
+    ── Y DE QUIÉNES, EN PLURAL ──
+
+    Una cosa para dos personas son dos filas que se juntan en una sola
+    para enseñarla (`unaSolaVez`), y al juntarlas se perdía a todas
+    menos a la primera. Daba igual mientras la pared no dijera de quién
+    es nada; desde que lleva el color de cada uno, no: «Presentación
+    del cole de Paula» saldría con la cara de Julia como si fuera sólo
+    suya.
+
+    Aquí van todos los dueños de la cosa, sin repetir y sin los nulos.
+    Vacío = de la casa, de nadie en concreto.
+  */
+  dequienes?: string[]
 }
 
 /*
@@ -134,14 +148,27 @@ export type CosaDeLaPared = {
       grupo, y ésas cada una es la suya.
 */
 function unaSolaVez(cosas: CosaDeLaPared[]): CosaDeLaPared[] {
-  const vistos = new Set<string>()
+  const donde = new Map<string, number>()
   const salida: CosaDeLaPared[] = []
 
   for (const c of cosas) {
     const clave = c.grupo_id ?? c.id
-    if (vistos.has(clave)) continue
-    vistos.add(clave)
-    salida.push(c)
+    const ya = donde.get(clave)
+
+    /*
+      Si ya estaba, no se descarta a secas: se le suma su dueño a la
+      que sobrevive. Descartarla y ya —que es lo que hacía— tiraba la
+      única información que distinguía las dos filas.
+    */
+    if (ya !== undefined) {
+      if (c.asignado_a && !salida[ya].dequienes!.includes(c.asignado_a)) {
+        salida[ya].dequienes!.push(c.asignado_a)
+      }
+      continue
+    }
+
+    donde.set(clave, salida.length)
+    salida.push({ ...c, dequienes: c.asignado_a ? [c.asignado_a] : [] })
   }
 
   return salida

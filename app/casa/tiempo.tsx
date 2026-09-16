@@ -60,7 +60,7 @@ const COLOR: Record<Cielo, string> = {
 
 const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
 
-export default async function Tiempo() {
+export default async function Tiempo({ banda = false }: { banda?: boolean }) {
   const t = await elTiempo()
   if (!t || t.dias.length === 0) return null
 
@@ -70,6 +70,77 @@ export default async function Tiempo() {
 
   /* De los cuatro días que se piden, el primero es hoy. */
   const siguientes = t.dias.slice(1, 4)
+
+  /*
+    ═══════════════════════════════════════════════════════════════
+    EN LA BANDA DE ARRIBA, AL LADO DE LA HORA
+    ═══════════════════════════════════════════════════════════════
+
+    Vivía en la tercera columna, arriba a la derecha — el último sitio
+    al que llega la vista. Y este mismo archivo dice por qué eso estaba
+    mal: *«lo primero que mira cualquiera por la mañana en una cocina»*.
+
+    Ahora va junto al reloj, y no es sólo moverlo de sitio: la hora y
+    el tiempo contestan **la misma pregunta** —cómo está el mundo ahí
+    fuera— y juntos ocupan menos que la hora sola ocupaba antes. El
+    sitio que sueltan se lo queda lo de hoy, que es lo único que sólo
+    da esta pantalla.
+
+    Sin tarjeta, sin rótulo y sin los tres días grandes: en una banda,
+    una tarjeta dentro de otra son dos marcos para un dato.
+  */
+  if (banda) {
+    return (
+      <div className="flex items-center gap-5">
+        <span
+          className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[20px]"
+          style={{
+            background: `color-mix(in srgb, ${color} 16%, var(--t-superficie))`,
+            color,
+          }}
+        >
+          <Ico nombre={DIBUJO[cieloHoy]} tam={30} grosor={2} />
+        </span>
+
+        <div>
+          <p className="text-[38px] font-extrabold leading-none tabular-nums tracking-tight text-tinta">
+            {t.ahora}°
+          </p>
+          {/* El aviso de lluvia se queda, porque es lo único de aquí
+              que cambia lo que se hace ese día. Y sigue a partir del
+              50 %: por debajo es ruido. */}
+          <p
+            className="mt-1 text-[16px] font-extrabold leading-tight"
+            style={hoy.lluvia >= 50 ? { color: AMBITO.azul } : undefined}
+          >
+            {hoy.lluvia >= 50 ? 'Puede llover' : COMO_SE_LLAMA[cieloHoy]}
+          </p>
+        </div>
+
+        {/* Los tres días, en una columna estrecha de dos líneas. A dos
+            metros esto no se lee: se reconoce que hay o no hay cambio.
+            Quien quiera el detalle lo tiene en la pestaña del día. */}
+        <div className="flex gap-4 border-l border-borde pl-5">
+          {siguientes.map((d) => {
+            const cielo = elCielo(d.codigo)
+            return (
+              <div key={d.fecha} className="flex flex-col items-center gap-0.5">
+                <span className="text-[14px] font-extrabold uppercase tracking-wider text-tenue">
+                  {DIAS[new Date(`${d.fecha}T12:00:00`).getDay()]}
+                </span>
+                <span style={{ color: COLOR[cielo] }}>
+                  <Ico nombre={DIBUJO[cielo]} tam={20} grosor={2} />
+                </span>
+                <span className="text-[16px] font-extrabold tabular-nums text-tinta">
+                  {d.maxima}°
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <section>

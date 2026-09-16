@@ -94,8 +94,22 @@ export default function Reloj() {
 
         104 en grande, 84 en pequeño. Sigue leyéndose desde la puerta y
         deja de mandar.
+
+        ── Y BAJA OTRA VEZ, A 46 ──
+
+        El mismo razonamiento llevado hasta el final. La hora seguía
+        siendo el número más grande de la pared y es el dato que menos
+        falta hace en una cocina: la dan el horno, el microondas, el
+        móvil y probablemente un reloj colgado ahí mismo.
+
+        A 46 se sigue leyendo perfectamente desde la puerta —es más
+        grande que cualquier título de esta pantalla— y deja de ser lo
+        primero que se mira. Lo primero pasa a ser lo de hoy, que es lo
+        único que sólo da esta pared.
+
+        Y en tinta suave, no en tinta: es contexto, no contenido.
       */}
-      <p className="mt-1.5 text-[62px] font-extrabold leading-none tabular-nums tracking-tight text-tinta xl:text-[74px]">
+      <p className="text-[42px] font-extrabold leading-none tabular-nums tracking-tight text-tinta-suave xl:text-[46px]">
         {hh}:{mm}
       </p>
       {/*
@@ -103,7 +117,7 @@ export default function Reloj() {
         «Domingo 13 De Septiembre». En español la mayúscula es solo la
         primera, y ni los días ni los meses la llevan.
       */}
-      <p className="mt-1.5 text-[20px] font-extrabold text-tinta-suave xl:text-[22px]">
+      <p className="mt-1 text-[19px] font-extrabold text-tenue xl:text-[20px]">
         {enMayuscula(
           `${DIAS[ahora.getDay()]} ${ahora.getDate()} de ${MESES[ahora.getMonth()]}`
         )}

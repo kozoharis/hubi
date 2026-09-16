@@ -63,6 +63,7 @@ export default function Cosa({
   hora,
   para = null,
   gente = [],
+  dequienes = [],
 }: {
   /** Con identificador, se puede tachar. Sin él, es papel. */
   id?: string
@@ -78,6 +79,22 @@ export default function Cosa({
   hora?: string | null
   para?: string | null
   gente?: Quien[]
+  /*
+    ── DE QUIÉN ES, EN COLOR ──
+
+    La pared no decía de quién era nada, y era una decisión: los
+    nombres no se leen a dos metros y una cosa para dos personas se
+    junta en una sola fila.
+
+    Pero «de quién es» sí se lee a dos metros **si no es un nombre**.
+    Un círculo del color de cada uno —el mismo que ya llevan en el
+    corcho y en las notas— se ve de reojo desde la puerta de la
+    cocina, que es como se mira esto.
+
+    Vacío = de la casa. Y entonces no se pinta nada: un hueco gris
+    diciendo «de nadie» sería una pregunta donde no la hay.
+  */
+  dequienes?: string[]
 }) {
   const router = useRouter()
   const [marcada, setMarcada] = useState(hecha)
@@ -178,6 +195,42 @@ export default function Cosa({
           </span>
         )}
       </span>
+
+      {/*
+        ── LAS CARAS, ANTES DE LA CASILLA ──
+
+        Aquí y no al principio: el orden de lectura de esta tarjeta es
+        **cuándo · qué · de quién**, y el de quién es lo último que se
+        pregunta. Delante competiría con la hora, que es lo que se
+        busca desde la puerta.
+
+        Se solapan 10 px como en cualquier grupo de caras, y de tres en
+        adelante se corta: cuatro círculos en una fila dejan de contar
+        personas y pasan a ser una mancha.
+      */}
+      {dequienes.length > 0 && talla !== 'columna' && (
+        <span className="flex shrink-0 items-center">
+          {dequienes.slice(0, 3).map((q, i) => {
+            const suyo = gente.find((g) => g.id === q)
+            if (!suyo) return null
+            return (
+              <span
+                key={q}
+                title={suyo.nombre}
+                className={
+                  'rounded-full border-[3px] ' +
+                  (talla === 'hoy' ? 'h-[46px] w-[46px]' : 'h-[34px] w-[34px]')
+                }
+                style={{
+                  background: suyo.color,
+                  borderColor: 'var(--t-superficie)',
+                  marginLeft: i === 0 ? 0 : -10,
+                }}
+              />
+            )
+          })}
+        </span>
+      )}
 
       {/*
         La casilla, al final. No es lo que se toca —se toca la fila
