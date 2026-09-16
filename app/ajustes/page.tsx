@@ -545,7 +545,7 @@ export default async function Ajustes({
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho>
+      <Cabecera trabajo>
         {/* La de siempre, solo en el móvil. */}
         <div className="lg:hidden">
           <Volver href="/" />
@@ -561,7 +561,7 @@ export default async function Ajustes({
         />
       </Cabecera>
 
-      <div className="columna pt-1">
+      <div className="ancho-trabajo pt-1">
 
         {/* ══════════════ TÚ ══════════════ */}
         {!enLaCasa && (

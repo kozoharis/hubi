@@ -8,6 +8,7 @@ import { BotonPrincipal } from '../piezas'
 import { hoyAqui, type Recordatorio } from '@/lib/tablon'
 import { citasDeLaFamilia, calendariosVisibles } from '@/lib/agenda-google'
 import { elEspacioO } from '@/lib/espacio'
+import MesPequeno from '../mes-pequeno'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -160,8 +161,88 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
   const minutoAhora = ahora.getHours() * 60 + ahora.getMinutes()
   const enPantalla = esHoy && minutoAhora >= inicio * 60 && minutoAhora <= fin * 60
 
+  /*
+    ═══════════════════════════════════════════════════════════════
+    EL CONTEXTO DE AL LADO · la semana y el mes
+    ═══════════════════════════════════════════════════════════════
+
+    Un día suelto a lo ancho de un monitor era la pantalla más vacía
+    de MAPPEL: mil cien píxeles de rayas horarias y medio metro de
+    papel blanco al lado.
+
+    Y sobre todo, era un callejón sin salida: para pasar al miércoles
+    había que usar las flechitas de uno en uno, y para volver a la
+    semana, la pestaña de arriba. Un día no se mira solo — se mira
+    PARA SITUARLO, y situarlo es ver la semana y el mes alrededor.
+
+    Así que al lado van las dos cosas: la semana de ese día, para
+    saltar de uno a otro de un clic, y el mes entero debajo, para
+    moverse lejos sin volver a ninguna parte.
+
+    ── UNA CONSULTA, NO DOS ──
+
+    El rango que se pide cubre el mes Y la semana de golpe, porque una
+    semana puede cruzar de mes: el 30 de septiembre y el 1 de octubre
+    son la misma semana. Pedir dos rangos habría sido dos viajes a la
+    base y dos a Google para pintar una columna.
+
+    ── Y ESTO NO EXISTE EN EL MÓVIL ──
+
+    Allí el día ocupa la pantalla entera y está bien: se entra a un
+    día para ver ese día. La semana y el mes están a un toque en las
+    pestañas de arriba.
+  */
+  const [anioV, mesV] = fecha.split('-').map(Number)
+  const primeroDelMes = `${anioV}-${String(mesV).padStart(2, '0')}-01`
+  const ultimoDelMes = iso(new Date(anioV, mesV, 0))
+
+  const lunes = lunesDeLaSemana(fecha)
+  const domingo = sumarDias(lunes, 6)
+
+  const desdeCtx = lunes < primeroDelMes ? lunes : primeroDelMes
+  const hastaCtx = domingo > ultimoDelMes ? domingo : ultimoDelMes
+
+  const { data: alrededor } = await supabase
+    .from('recordatorios')
+    .select('fecha')
+    .eq('hogar_id', await elEspacioO(supabase))
+    .gte('fecha', desdeCtx)
+    .lte('fecha', hastaCtx)
+
+  const citasCtx = await citasDeLaFamilia(user.id, desdeCtx, hastaCtx, dueno)
+
+  /* Cuántas cosas hay cada día, contando lo de MAPPEL y lo de Google:
+     en un día se miran igual, así que se cuentan igual. */
+  const cuantasPorDia = new Map<string, number>()
+  for (const r of (alrededor ?? []) as { fecha: string | null }[]) {
+    if (!r.fecha) continue
+    cuantasPorDia.set(r.fecha, (cuantasPorDia.get(r.fecha) ?? 0) + 1)
+  }
+  for (const c of citasCtx) {
+    cuantasPorDia.set(c.fecha, (cuantasPorDia.get(c.fecha) ?? 0) + 1)
+  }
+
+  /* Los días del mes que tienen algo, como números: es lo que pide el
+     calendario chico. */
+  const ocupados = new Set<number>()
+  for (const [f, n] of cuantasPorDia) {
+    if (n > 0 && f.slice(0, 7) === fecha.slice(0, 7)) ocupados.add(Number(f.slice(8, 10)))
+  }
+
+  const laSemana = Array.from({ length: 7 }, (_, i) => {
+    const f = sumarDias(lunes, i)
+    return { fecha: f, cuantas: cuantasPorDia.get(f) ?? 0 }
+  })
+
   return (
-    <>
+    /*
+      Dos zonas desde `lg`: el día a la izquierda con todo el sitio
+      que quiera, y su contexto a la derecha en 300 px. El contexto
+      NO crece: un calendario de mes más ancho no dice más, sólo
+      separa más los números.
+    */
+    <div className="lg:flex lg:items-start lg:gap-8">
+    <div className="min-w-0 lg:flex-1">
       {/* ── De qué día estamos hablando ── */}
       <div className="mt-1 flex items-center gap-1">
         <Link
@@ -323,12 +404,93 @@ export default async function Dia({ dia, de }: { dia?: string; de?: string }) {
         )}
       </section>
 
-      <div className="mt-5">
+      {/* SOLO EN EL MÓVIL: en grande esta acción vive arriba en la
+          banda, con el resto. */}
+      <div className="mt-5 lg:hidden">
         <BotonPrincipal href="/tablon/nuevo" icono="mas">
           Apuntar algo
         </BotonPrincipal>
       </div>
-    </>
+    </div>
+
+    {/* ── Y al lado, dónde está este día ── */}
+    <aside className="hidden shrink-0 self-start lg:sticky lg:top-2 lg:block lg:w-[300px]">
+      <LaSemana dias={laSemana} hoyISO={hoyISO} mirando={fecha} de={dueno} />
+      <div className="mt-5">
+        <MesPequeno suelto hoyISO={fecha} ocupados={ocupados} />
+      </div>
+    </aside>
+    </div>
+  )
+}
+
+/*
+  LA SEMANA DE ESTE DÍA, PARA SALTAR DE UNO A OTRO.
+
+  Siete renglones con el nombre del día y cuántas cosas tiene. No es
+  la vista de Semana en pequeño —no lleva títulos ni horas—: contesta
+  una sola pregunta, «¿qué día miro ahora?», y por eso cabe en 300 px
+  sin recortar nada.
+
+  Los días vacíos se pintan igual, en gris. Que el sábado esté libre
+  es información, y sólo se ve si el sábado está dibujado.
+*/
+function LaSemana({
+  dias,
+  hoyISO,
+  mirando,
+  de,
+}: {
+  dias: { fecha: string; cuantas: number }[]
+  hoyISO: string
+  mirando: string
+  de: string | null
+}) {
+  return (
+    <section>
+      <p className="rotulo mb-2">La semana</p>
+      <div className="overflow-hidden rounded-[16px] border border-borde bg-superficie">
+        {dias.map((d) => {
+          const puesto = d.fecha === mirando
+          const esHoy = d.fecha === hoyISO
+          return (
+            <Link
+              key={d.fecha}
+              href={enlace(d.fecha, de)}
+              aria-current={puesto ? 'date' : undefined}
+              className={
+                'objetivo flex items-center gap-3 border-b border-borde/60 px-3 text-[15px] last:border-b-0 ' +
+                (puesto
+                  ? 'bg-verde-suave shadow-[inset_3px_0_0_var(--color-bien)] '
+                  : 'roza ')
+              }
+            >
+              <span
+                className={
+                  'w-[28px] shrink-0 text-right tabular-nums ' +
+                  (puesto || esHoy ? 'font-extrabold text-tinta' : 'font-bold text-tinta-suave')
+                }
+                style={esHoy && !puesto ? { color: 'var(--color-accion)' } : undefined}
+              >
+                {Number(d.fecha.slice(8, 10))}
+              </span>
+              <span className="min-w-0 flex-1 truncate font-semibold">
+                {DIAS[diaDeLaSemana(d.fecha)]}
+                {esHoy && <span className="text-[13px] font-bold text-tenue"> · hoy</span>}
+              </span>
+              <span
+                className={
+                  'shrink-0 text-[13px] tabular-nums ' +
+                  (d.cuantas === 0 ? 'text-apagado' : 'font-bold text-tenue')
+                }
+              >
+                {d.cuantas === 0 ? '—' : d.cuantas}
+              </span>
+            </Link>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
@@ -387,6 +549,21 @@ function enMinutos(hora: string | null): number {
 
 function enHora(minuto: number): string {
   return `${String(Math.floor(minuto / 60)).padStart(2, '0')}:${String(minuto % 60).padStart(2, '0')}`
+}
+
+/** "2026-09-16" de una fecha, en la hora de aquí. */
+function iso(f: Date): string {
+  return `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`
+}
+
+/* El lunes de la semana de esa fecha. A mediodía, como en el resto de
+   la casa: sumar días a medianoche se rompe la noche que cambia la
+   hora, porque 24 horas después de las 00:00 pueden ser las 23:00 del
+   mismo día. */
+function lunesDeLaSemana(f: string): string {
+  const d = new Date(`${f}T12:00:00`)
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  return iso(d)
 }
 
 function diaDeLaSemana(iso: string): number {

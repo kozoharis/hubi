@@ -49,11 +49,27 @@ const MESES = [
 export default function MesPequeno({
   hoyISO,
   ocupados,
+  suelto = false,
 }: {
-  /** Hoy donde viven ellos, no donde está el servidor. */
+  /*
+    Qué mes se pinta y qué día va marcado.
+
+    En el Inicio es hoy. En la vista de Día de la Agenda es EL DÍA QUE
+    SE ESTÁ MIRANDO, que es lo que hace falta ahí: el calendario de al
+    lado tiene que decir dónde estás, no dónde estarías si no te
+    hubieras movido.
+  */
   hoyISO: string
   /** Los días del mes que tienen algo apuntado: 1, 4, 17… */
   ocupados: Set<number>
+  /*
+    Sin el envoltorio del Inicio.
+
+    Allí esto va al final de una columna, con su margen de arriba y
+    escondido en el móvil. En la Agenda va dentro de una zona que ya
+    decide las dos cosas, y el margen de más la descuadraba.
+  */
+  suelto?: boolean
 }) {
   const [anio, mes, dia] = hoyISO.split('-').map(Number)
 
@@ -72,7 +88,7 @@ export default function MesPequeno({
   const mesISO = `${anio}-${String(mes).padStart(2, '0')}`
 
   return (
-    <section className="mt-6 hidden lg:block">
+    <section className={suelto ? '' : 'mt-6 hidden lg:block'}>
       <div className="flex items-baseline justify-between">
         <h2 className="t-seccion">{MESES[mes - 1]}</h2>
         <Link href={`/agenda?vista=mes&mes=${mesISO}`} className="t-apoyo font-bold">

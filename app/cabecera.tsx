@@ -63,11 +63,25 @@
   Ajustes: una columna de bloques de configuración a 1500 px es una
   fila de ajustes con medio metro de aire en medio.
 */
+/*
+  ── `ficha` ──
+
+  560 px y no crece nunca: el detalle de una tarea, la ficha de una
+  persona, los ajustes de una sección. Un documento corto —título,
+  cuándo, cuatro datos y dos botones— no se lee mejor a mil cien:
+  sólo alarga el recorrido del ojo entre la etiqueta y su valor, y
+  deja los botones con el ancho de la pantalla, que es cuando un
+  botón deja de parecer un botón y parece una franja de color.
+
+  Estaba escrito a mano —`lg:max-w-[560px] lg:px-9`— en tres sitios.
+  Tres sitios son tres medidas que se separan.
+*/
 export default function Cabecera({
   children,
   ancho = false,
   formulario = false,
   texto = false,
+  ficha = false,
   trabajo = false,
   panoramica = false,
 }: {
@@ -75,6 +89,7 @@ export default function Cabecera({
   ancho?: boolean
   formulario?: boolean
   texto?: boolean
+  ficha?: boolean
   trabajo?: boolean
   panoramica?: boolean
 }) {
@@ -82,13 +97,15 @@ export default function Cabecera({
     ? 'ancho-panoramica'
     : trabajo
       ? 'ancho-trabajo'
-      : ancho
-        ? 'columna'
-        : texto
-          ? 'columna-texto'
-          : formulario
-            ? 'columna-formulario'
-            : 'mx-auto w-full max-w-md px-5'
+      : ficha
+        ? 'ancho-ficha'
+        : ancho
+          ? 'columna'
+          : texto
+            ? 'columna-texto'
+            : formulario
+              ? 'columna-formulario'
+              : 'mx-auto w-full max-w-md px-5'
 
   return (
     <div className="cabecera">

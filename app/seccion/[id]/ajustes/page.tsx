@@ -178,7 +178,7 @@ export default async function AjustesDeLaSeccion({
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho>
+      <Cabecera ficha>
         <div className="lg:hidden">
           <Volver href={`/seccion/${id}`} />
           <div className="flex h-14 items-center gap-3">
@@ -207,7 +207,7 @@ export default async function AjustesDeLaSeccion({
 
       {/* Son ajustes: se rellenan, no se recorren. 560 px, pegados a la
           izquierda como todo lo demás. */}
-      <div className="mx-auto w-full max-w-md px-5 pt-1 lg:mx-0 lg:max-w-[560px] lg:px-9">
+      <div className="ancho-ficha pt-1">
         <Dividir
           seccionId={id}
           seccionNombre={nombre}

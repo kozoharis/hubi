@@ -10,6 +10,7 @@ import Lista from './lista'
 import Mes from './mes'
 import Dia from './dia'
 import { enlaceAgenda, lunesDeISO } from '@/lib/agenda-enlace'
+import { hoyAqui } from '@/lib/tablon'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,20 +61,21 @@ export default async function Agenda({
   const enDia = p.vista === 'dia'
 
   /*
-    ── LA SEMANA ES UNA REJILLA; EL MES Y EL DÍA, TODAVÍA NO ──
+    ── LA AGENDA ENTERA ES PANORÁMICA ──
 
-    La semana son siete columnas puestas a compararse, y eso quiere
-    todo el ancho que haya: a 1100 cada día mide 154 px, a 1600 mide
-    222 y cabe la hora y el sitio en la misma línea. Es el caso de
-    libro de PANORÁMICA.
+    Las tres vistas, no sólo la semana.
 
-    El mes y el día se quedan en `columna` — 1100 y a la izquierda —
-    hasta que les toque su tanda. No porque esté bien, sino porque
-    ensanchar una pantalla antes de haberla dibujado es como se
-    estiran las cosas sin querer: el mes pasaría de golpe a casillas
-    de 220 px sin que nadie haya decidido qué se escribe dentro.
+    Lo estuvo un rato: la semana panorámica y el mes y el día en
+    `columna`, «hasta que les tocara su tanda». Y era peor que el
+    fallo que arreglaba — dentro de la MISMA pantalla, dos de las tres
+    pestañas medían 1100 y la otra llegaba al borde, así que pasar de
+    Semana a Mes movía todo de sitio.
+
+    Una pantalla no puede tener dos anchos según la pestaña. O es
+    panorámica o no lo es, y la Agenda lo es: el mes es una rejilla de
+    siete columnas con su lista al lado, y el día son las horas con su
+    contexto al lado. Las tres quieren el ancho entero.
   */
-  const rejilla = !enMes && !enDia
 
   /*
     ── Y CAMBIAR DE ESCALA NO BORRA DÓNDE ESTABAS ──
@@ -112,10 +114,32 @@ export default async function Agenda({
     cada uno. Copiarlos sería tener dos sitios donde arreglar el mismo
     enlace, y el enlace de éstos ya se arregló una vez.
 
-    Las dos formas de mirar lo mismo. Con texto, no solo icono: un
-    dibujo suelto obliga a adivinar. Y son la píldora del sistema: la
-    puesta se rellena de tinta, igual que en cualquier otra pantalla.
+    ─────────────────────────────────────────────────────────
+    LAS TRES ESTÁN SIEMPRE
+
+    «El día» sólo se pintaba estando dentro de un día, con este
+    razonamiento: *es una escala a la que se entra, no una entre la
+    que elegir*. Suena bien y es falso en la práctica — el resultado
+    era que la fila de pestañas cambiaba de número al moverte, y una
+    pestaña que aparece y desaparece deja de leerse como pestaña.
+
+    Ahora son tres siempre, y «El día» lleva al día que estés mirando
+    o, si no estás en ninguno, a hoy. Que es lo que cualquiera espera
+    que haga un botón que pone «El día».
+
+    ─────────────────────────────────────────────────────────
+    Y SE LEEN ENTERAS
+
+    `flex-1` sólo en el móvil, que es donde la fila ocupa el ancho de
+    la pantalla y repartirla a partes iguales es lo correcto. En
+    grande, cada una mide LO QUE MIDE SU PALABRA: con `flex-1` dentro
+    de una banda apretada se encogían hasta salir «Se…» donde pone
+    «Semana».
+
+    Una pastilla que hay que adivinar no es una pastilla.
   */
+  const diaDestino = p.dia ?? hoyAqui()
+
   const segmentos = (
     <div className="flex gap-2" role="group" aria-label="Cómo verlo">
       {/* «Semana» y no «Lista»: las dos vistas acaban enseñando una
@@ -124,7 +148,7 @@ export default async function Agenda({
           abarcan. */}
       <Pildora
         puesta={!enMes && !enDia}
-        className="flex-1"
+        className="flex-1 lg:flex-none"
         href={enlaceAgenda(actuales, {
           vista: null, mes: null, dia: null, semana: semanaDestino,
         })}
@@ -133,33 +157,28 @@ export default async function Agenda({
       </Pildora>
       <Pildora
         puesta={enMes}
-        className="flex-1"
+        className="flex-1 lg:flex-none"
         href={enlaceAgenda(actuales, {
           vista: 'mes', mes: mesDestino, ver: null, semana: null, dia: null,
         })}
       >
         Mes
       </Pildora>
-      {/* El día solo sale cuando estás dentro de uno: es una escala a
-          la que se entra, no una entre la que elegir. Y así se puede
-          volver a la semana de un toque. */}
-      {enDia && (
-        <Pildora
-          puesta
-          className="flex-1"
-          href={enlaceAgenda(actuales, {
-            vista: 'dia', ver: null, mes: null, semana: null,
-          })}
-        >
-          El día
-        </Pildora>
-      )}
+      <Pildora
+        puesta={enDia}
+        className="flex-1 lg:flex-none"
+        href={enlaceAgenda(actuales, {
+          vista: 'dia', dia: diaDestino, ver: null, mes: null, semana: null,
+        })}
+      >
+        El día
+      </Pildora>
     </div>
   )
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho={!rejilla} panoramica={rejilla}>
+      <Cabecera panoramica>
         {/* En el móvil, la cabecera de siempre. */}
         <div className="lg:hidden">
           <div className="flex h-14 items-center gap-3">
@@ -182,7 +201,7 @@ export default async function Agenda({
         />
       </Cabecera>
 
-      <div className={(rejilla ? 'ancho-panoramica' : 'columna') + ' pt-2'}>
+      <div className="ancho-panoramica pt-2">
         {/* La caja de MAPPEL, con la sugerencia de aquí. Lo que cambia
             entre pantallas es lo que se propone, no lo que hace.
 

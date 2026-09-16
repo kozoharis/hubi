@@ -131,7 +131,7 @@ export default async function DiaADia() {
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho>
+      <Cabecera trabajo>
         <div className="lg:hidden">
           {/* El volver, solo en el móvil: en grande el rail ya lleva
               al Inicio y está siempre a la vista. */}
@@ -165,7 +165,7 @@ export default async function DiaADia() {
         />
       </Cabecera>
 
-      <div className="columna pt-1">
+      <div className="ancho-trabajo pt-1">
         {/*
           La caja de MAPPEL. La misma que en Inicio y en Papeles, con la
           sugerencia de aquí: lo que cambia entre pantallas es lo que

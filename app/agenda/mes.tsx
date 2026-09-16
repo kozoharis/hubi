@@ -224,7 +224,24 @@ export default async function Mes({
         JUNTOS. Es la diferencia entre saber que hay algo y saber qué
         hay, y era lo único que la vista de mes no conseguía.
       */}
-      <div className="lg:grid lg:grid-cols-[minmax(0,500px)_minmax(0,1fr)] lg:items-start lg:gap-8">
+      {/*
+          ── EL MES LLENA, PERO SU CONTENIDO TIENE TECHO ──
+
+          La pantalla es panorámica —las tres vistas de la Agenda lo
+          son— pero eso no quiere decir que todo lo de dentro crezca
+          sin freno. Aquí crecen las dos cosas hasta donde SIRVE:
+
+            la rejilla   hasta 620. Una casilla más grande se lee
+                         mejor, así que este ancho sí compra algo.
+            la lista     hasta 720. Una tarjeta de «12:00 · Reunión
+                         semanal» de 1 300 px no se lee mejor: se lee
+                         peor, porque la hora y el título quedan en
+                         dos extremos de la pantalla.
+
+          Lo que sobre se queda de margen, que es lo correcto. Es la
+          misma razón por la que el ancho de Trabajo corta en 1 500.
+        */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,620px)_minmax(0,720px)] lg:items-start lg:gap-8">
 
         <div>
       {/* ── La cuadrícula ── */}

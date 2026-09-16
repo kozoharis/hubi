@@ -147,7 +147,7 @@ export default async function Detalle({
         ordenador seguía enseñando la cabecera del móvil: la flecha
         redonda de volver y el emoji a tamaño de pulgar.
       */}
-      <div className="columna">
+      <div className="ancho-ficha">
         <Encabezado
           icono={iconoBanda(r.tipo)}
           ambito="pizarra"
@@ -172,7 +172,7 @@ export default async function Detalle({
         una tarea el ojo no tenga que buscarla en otro sitio. Es la
         misma regla que las demás; lo que cambia es el ancho.
       */}
-      <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-[560px] lg:px-9">
+      <div className="ancho-ficha">
         {/* La cabecera del móvil, intacta. Arriba de 1024 px lo dice la
             banda, y sin este `lg:hidden` el título saldría dos veces. */}
         <div className="lg:hidden">

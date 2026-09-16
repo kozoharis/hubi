@@ -191,8 +191,21 @@ export default function Encabezado({
             Y en las dos posturas con su tamaño: estirados a lo ancho de
             la pantalla dejan de leerse como «elige una de tres» y
             parecen tres botones distintos. */}
+        {/*
+          ── Y `shrink-0`, QUE FALTABA ──
+
+          Sin él, este bloque era un elemento flexible más de la fila y
+          se encogía cuando la caja y el botón pedían sitio. Dentro, los
+          segmentos llevan `flex-1`, así que al encogerse el envoltorio
+          se colapsaban y salía **«Se…»** donde pone «Semana».
+
+          Un control que no se puede leer no es un control. Aquí manda
+          la palabra: este bloque mide lo que midan sus palabras y no se
+          encoge nunca. Si algún día no cabe, lo que se parte es la
+          fila —para eso está `flex-wrap`—, no la palabra.
+        */}
         {controles && (
-          <div className="order-last mt-3 w-full max-w-[440px] ancha:order-3 ancha:mt-0 ancha:w-auto">
+          <div className="order-last mt-3 w-full ancha:order-3 ancha:mt-0 ancha:w-auto ancha:shrink-0">
             {controles}
           </div>
         )}

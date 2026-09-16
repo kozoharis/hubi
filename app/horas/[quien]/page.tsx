@@ -98,7 +98,7 @@ export default async function HorasDeAlguien({
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera ancho>
+      <Cabecera ficha>
         <div className="lg:hidden">
           <Volver href="/lacasa" />
           <h1 className="t-titulo">
@@ -114,7 +114,7 @@ export default async function HorasDeAlguien({
         />
       </Cabecera>
 
-      <div className="mx-auto w-full max-w-md px-5 lg:mx-0 lg:max-w-[560px] lg:px-9">
+      <div className="ancho-ficha">
         {/* ── El mes ── */}
         <div className="mt-4 flex items-center gap-2">
           <Link
