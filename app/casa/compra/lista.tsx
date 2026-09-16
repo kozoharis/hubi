@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import { useAlDia } from '@/lib/al-dia'
 import { Ico } from '../../iconos'
 import { AMBITO } from '../../piezas'
 
@@ -88,7 +89,22 @@ export default function Lista({
 }) {
   const router = useRouter()
 
-  const [locales, setLocales] = useState(grupos.flatMap((g) => g.cosas))
+  /*
+    ── LO QUE HAY, Y LO QUE SE ACABA DE TOCAR ──
+
+    `useAlDia` y no `useState` a secas, y ésa es la diferencia entre
+    que la leche se vea al apuntarla o no se vea nunca. Está contado
+    entero en `lib/al-dia.ts`: la copia local se sigue pintando al
+    instante, pero ahora vuelve a mirar al servidor cuando el servidor
+    trae algo distinto.
+
+    La firma lleva el `id` y si está comprado: lo único que puede
+    cambiar de una cosa de la compra y que esta pantalla pinte.
+  */
+  const delServidor = grupos.flatMap((g) => g.cosas)
+  const firma = delServidor.map((c) => `${c.id}${c.comprado ? '1' : '0'}`).join('|')
+  const [locales, setLocales] = useAlDia(delServidor, firma)
+
   const [texto, setTexto] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)

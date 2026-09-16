@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import { useAlDia } from '@/lib/al-dia'
 import { Ico } from '../iconos'
 import { AMBITO } from '../piezas'
 import LoQueQuepa from './lo-que-quepa'
@@ -68,7 +69,14 @@ export type RutinaEnLaPared = {
 
 export default function Rutinas({ rutinas }: { rutinas: RutinaEnLaPared[] }) {
   const router = useRouter()
-  const [locales, setLocales] = useState(rutinas)
+  /* Igual que en la compra: la copia local se pinta al instante, pero
+     vuelve a mirar al servidor cuando llega algo distinto. Si no, una
+     rutina tachada desde el móvil no se enteraría aquí jamás — la
+     pared se refresca sola sin recargar. Ver `lib/al-dia.ts`. */
+  const [locales, setLocales] = useAlDia(
+    rutinas,
+    rutinas.map((r) => `${r.id}${r.hecha ? '1' : '0'}`).join('|')
+  )
   const [fallo, setFallo] = useState<string | null>(null)
 
   async function tachar(r: RutinaEnLaPared) {

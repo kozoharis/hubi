@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
+import { esDeNoche } from '@/lib/noche'
 import { Ico } from '../iconos'
 import SubirFoto from './subir-foto'
 
@@ -28,7 +29,7 @@ import SubirFoto from './subir-foto'
   ─────────────────────────────────────────────────────────────
   ⚠️  DE NOCHE NO PASA
 
-  A partir de las once la pared entera se atenúa (`reloj.tsx`). Un
+  A partir de las once la pared entera se atenúa (`noche.tsx`). Un
   carrusel cambiando en una cocina a oscuras no es una foto: es una luz
   que parpadea, y de las que se ven desde el pasillo.
 
@@ -104,10 +105,10 @@ export default function Fotos({
     if (!fotos || fotos.length < 2) return
 
     const paso = setInterval(() => {
-      const h = new Date().getHours()
-      /* De noche, quieta. La misma hora que usa `reloj.tsx` para bajar
-         el brillo — están en dos sitios y tienen que decir lo mismo. */
-      if (h >= 23 || h < 7) return
+      /* De noche, quieta. La hora la decide `lib/noche.ts`, que es el
+         único sitio donde está escrita: antes lo calculaban esta pieza,
+         el descanso y el reloj cada uno por su cuenta. */
+      if (esDeNoche()) return
 
       setEncima((e) => !e)
       setCual((c) => (c + 1) % fotos.length)

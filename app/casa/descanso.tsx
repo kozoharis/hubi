@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Fotos from './fotos'
+import { esDeNoche } from '@/lib/noche'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -54,7 +55,7 @@ import Fotos from './fotos'
   ─────────────────────────────────────────────────────────────
   Y DE NOCHE NO ENCIENDE LA COCINA
 
-  A partir de las once la pared entera baja a 45 % (`reloj.tsx`), y el
+  A partir de las once la pared entera se apaga (`noche.tsx`), y el
   carrusel se queda quieto en la foto que esté (`fotos.tsx`). El
   descanso hace lo tercero que faltaba: se pone casi negro y deja la
   foto muy apagada detrás de la hora.
@@ -118,8 +119,7 @@ export default function Descanso() {
 
   if (!dormida) return null
 
-  const h = ahora?.getHours() ?? 12
-  const deNoche = h >= 23 || h < 7
+  const deNoche = ahora ? esDeNoche(ahora) : false
 
   const hh = ahora ? String(ahora.getHours()).padStart(2, '0') : '--'
   const mm = ahora ? String(ahora.getMinutes()).padStart(2, '0') : '--'

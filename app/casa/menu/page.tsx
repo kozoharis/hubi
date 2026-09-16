@@ -17,18 +17,23 @@ export const dynamic = 'force-dynamic'
   a las siete de la tarde delante de la nevera.
 
   ─────────────────────────────────────────────────────────────
-  SE MIRA, NO SE ESCRIBE. Y ES UNA DECISIÓN, NO UNA FALTA
+  ⚠️  Y AQUÍ PONÍA QUE ESTO NO SE ESCRIBÍA
 
-  La base SÍ dejaría escribir: un aparato tiene `anadir` en el ámbito
-  `dia`, así que esta pantalla podría poner el menú del jueves.
+  Decía, literalmente: *«se mira, no se escribe. Y es una decisión, no
+  una falta»*. El argumento era que teclear «lentejas con chorizo» de
+  pie, con las manos mojadas, es peor que hacerlo sentado en el móvil.
 
-  No lo hace, y por una razón práctica: escribir «lentejas con chorizo»
-  en una pared es teclear de pie en un teclado en pantalla, con las
-  manos mojadas, en una tableta que no se mueve. El menú se pone desde
-  el teléfono, sentado, que es donde se decide.
+  Haris: *«no se puede editar el tema del menú, y eso es importante»*.
 
-  Lo que sí tendrá sentido el día que se pida es lo contrario: elegir de
-  un cajón de recetas ya escritas, que son tres toques y ninguna letra.
+  Lo curioso es que la salida ya estaba escrita en este mismo párrafo,
+  tres líneas más abajo: *«elegir de un cajón de recetas ya escritas,
+  que son tres toques y ninguna letra»*. O sea que el problema nunca
+  fue escribir en una pared: era haber supuesto que poner la cena
+  significaba escribir.
+
+  Ahora el nombre del plato es un botón y abre `poner.tsx`. Sin SQL:
+  `menus_escribir` pide `puedo_escribir(casa)`, y una pantalla de
+  cocina no es `lector`. El permiso llevaba meses dado.
 
   ─────────────────────────────────────────────────────────────
   Y LOS DÍAS PASADOS NO SE ESCONDEN
@@ -109,12 +114,25 @@ export default async function Menu() {
 
       <div className="mt-2 xl:grid xl:grid-cols-[1.35fr_1fr] xl:items-start xl:gap-12">
       <div>
-      {!hayAlguno ? (
-        <Nada>
-          Esta semana no hay menú puesto. Se pone desde el móvil, en El día a día → Menús.
-        </Nada>
-      ) : (
-        <ul className="mt-6 space-y-3">
+      {/*
+        ── Y LA SEMANA SE PINTA SIEMPRE, AUNQUE ESTÉ VACÍA ──
+
+        Antes, una semana sin nada puesto enseñaba un cartel en lugar de
+        los siete días. Tenía sentido cuando esto no se podía escribir;
+        ahora era justo lo contrario de lo que hace falta — la semana
+        vacía es cuando MÁS falta hacen los siete botones de «poner
+        algo».
+
+        El aviso se queda, arriba y en una línea: dice qué pasa sin
+        quitar de en medio lo que hay que tocar.
+      */}
+      {!hayAlguno && (
+        <div className="mt-6">
+          <Nada>Esta semana no hay nada puesto todavía. Toca un día y ponlo.</Nada>
+        </div>
+      )}
+
+      <ul className="mt-6 space-y-3">
           {dias.map((dia) => {
             const esHoy = dia === hoy
             const pasado = dia < hoy
@@ -158,6 +176,7 @@ export default async function Menu() {
                   }}
                   ingredientes={loQueLleva.get(comida?.receta_id ?? '') ?? []}
                   listas={listas}
+                  recetas={lasRecetas}
                   apagado={pasado}
                 />
                 <Plato
@@ -172,13 +191,13 @@ export default async function Menu() {
                   }}
                   ingredientes={loQueLleva.get(cena?.receta_id ?? '') ?? []}
                   listas={listas}
+                  recetas={lasRecetas}
                   apagado={pasado}
                 />
-              </li>
-            )
-          })}
-        </ul>
-      )}
+            </li>
+          )
+        })}
+      </ul>
       </div>
 
       {/*

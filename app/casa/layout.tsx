@@ -6,6 +6,7 @@ import VuelveAHoy from './vuelve-a-hoy'
 import Microfono from './microfono'
 import Descanso from './descanso'
 import Despierta from './despierta'
+import Noche from './noche'
 import Tiempo from './tiempo'
 
 export const dynamic = 'force-dynamic'
@@ -203,15 +204,19 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
     </div>
 
     {/*
-      ── Y EL DESCANSO, FUERA DE `#la-pared` ──
+      ── EL REGULADOR DE NOCHE, Y EL DESCANSO, LOS DOS FUERA ──
 
-      A propósito. `reloj.tsx` atenúa `#la-pared` al 45 % por la noche,
-      y el descanso ya se apaga por su cuenta al 28 %. Metido dentro,
-      las dos cosas se multiplicarían: 0,45 × 0,28 es negro.
+      A propósito, y el orden importa. `noche.tsx` pone un velo negro
+      por encima de la pared a partir de las once (y lo quita en cuanto
+      alguien la toca); el descanso ya se apaga por su cuenta al 28 %.
 
-      Cada uno apaga lo suyo, y el de las fotos sabe mejor cuánto
-      necesita — es lo único que ocupa la pantalla entera.
+      Si el velo cubriera también al descanso, las dos cosas se
+      sumarían y las fotos de la familia quedarían casi negras. Por eso
+      el velo es `z-55` y el descanso `z-60`: cada uno apaga lo suyo, y
+      el de las fotos sabe mejor cuánto necesita — es lo único que
+      ocupa la pantalla entera.
     */}
+    <Noche />
     <Descanso />
     </>
   )

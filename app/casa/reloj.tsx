@@ -30,9 +30,9 @@ const MESES = [
   Y sin ruedas girando. Una pantalla que se pasa el día diciendo que
   está trabajando es una pantalla que la gente deja de mirar.
 
-  **Y de noche baja.** A partir de las once, la pantalla entera se
-  atenúa. Una tableta a brillo de día en una cocina a oscuras es una
-  farola.
+  **Y de noche bajaba desde aquí.** Ya no: lo hace `noche.tsx`, que es
+  donde tenía que estar. El porqué está más abajo, y merece leerse —
+  era el fallo del «velo blanco».
 */
 /** «domingo 13 de septiembre» → «Domingo 13 de septiembre». Solo la primera. */
 function enMayuscula(texto: string): string {
@@ -51,27 +51,36 @@ export default function Reloj() {
       es justo la clase de cosa que hace dudar de si el aparato va
       bien—. Un hueco de medio segundo es mejor que una hora falsa.
     */
-    setAhora(new Date())
+    /* En un microtiempo, no en el cuerpo del efecto: llamar a
+       `setAhora` directamente encadena un repintado de más y lo avisa
+       el propio linter de React. */
+    const arranque = setTimeout(() => setAhora(new Date()), 0)
 
     const elReloj = setInterval(() => setAhora(new Date()), 20_000)
     const laVuelta = setInterval(() => router.refresh(), 5 * 60_000)
 
     return () => {
+      clearTimeout(arranque)
       clearInterval(elReloj)
       clearInterval(laVuelta)
     }
   }, [router])
 
-  /* De noche, más apagada. Se pinta sobre el `<main>` entero desde
-     aquí, que es el único sitio de esta pantalla que sabe qué hora es
-     de verdad. */
-  useEffect(() => {
-    if (!ahora) return
-    const h = ahora.getHours()
-    const deNoche = h >= 23 || h < 7
-    const pared = document.getElementById('la-pared')
-    if (pared) pared.style.opacity = deNoche ? '0.45' : '1'
-  }, [ahora])
+  /*
+    ── Y LO DE BAJAR EL BRILLO YA NO SE HACE AQUÍ ──
+
+    Aquí ponía:
+
+        pared.style.opacity = deNoche ? '0.45' : '1'
+
+    Y era el fallo del «velo blanco»: `opacity` no apaga, MEZCLA con lo
+    que hay detrás — y detrás de la pared está el papel claro de MAPPEL.
+    A las once de la noche la pantalla no se oscurecía, se desteñía.
+
+    Ahora lo hace `noche.tsx`, con un velo negro delante, que es lo que
+    hace un regulador de luz de verdad. Y de paso se despierta al
+    tocarla, que es lo que esto nunca hizo.
+  */
 
   if (!ahora) {
     /* El hueco mide lo mismo que la hora Y la fecha juntas, para que al

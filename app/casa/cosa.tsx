@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import { useAlDia } from '@/lib/al-dia'
 import { Ico, pintaDe } from '../iconos'
 import { AMBITO, PastillaAmbito } from '../piezas'
 
@@ -97,7 +98,10 @@ export default function Cosa({
   dequienes?: string[]
 }) {
   const router = useRouter()
-  const [marcada, setMarcada] = useState(hecha)
+  /* Se pinta al instante al tacharla, pero sin quedarse congelada: si
+     alguien la marca desde el móvil, la pared se entera en el
+     siguiente refresco. Ver `lib/al-dia.ts`. */
+  const [marcada, setMarcada] = useAlDia(hecha, `${id ?? ''}${hecha ? '1' : '0'}`)
   const [fallo, setFallo] = useState(false)
   const [editando, setEditando] = useState(false)
 

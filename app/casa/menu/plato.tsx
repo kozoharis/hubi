@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Ico } from '../../iconos'
 import { AMBITO } from '../../piezas'
 import ComprobarEnLaPared from './comprobar'
+import Poner from './poner'
+import type { Receta } from './recetas'
 import type { ListaDeCompra, MenuQueSeComprueba } from '@/lib/comprobar-menu'
 
 /*
@@ -31,6 +33,17 @@ import type { ListaDeCompra, MenuQueSeComprueba } from '@/lib/comprobar-menu'
   no entrando en siete fichas.
 
   ─────────────────────────────────────────────────────────────
+  Y AHORA EL PLATO SE TOCA
+
+  El nombre del plato es un botón. Se toca y se abre `poner.tsx`: el
+  cajón de recetas de la casa en botones grandes, y escribir debajo
+  para lo que no esté. Era lo que faltaba — la pared enseñaba la semana
+  entera y no dejaba cambiar la cena del jueves.
+
+  Los días pasados no. Cambiar lo que se comió el lunes no es una
+  función, es un despiste.
+
+  ─────────────────────────────────────────────────────────────
   Y SOLO SALE CUANDO HAY ALGO QUE COMPROBAR
 
   Si el plato no viene de una receta con ingredientes, aquí no hay nada
@@ -52,16 +65,22 @@ export default function Plato({
   plato,
   ingredientes,
   listas,
+  recetas = [],
   apagado = false,
 }: {
   etiqueta: string
   plato: PlatoDelDia
   ingredientes: string[]
   listas: ListaDeCompra[]
+  /** El cajón de la casa, para poder poner el plato con un toque. */
+  recetas?: Receta[]
   apagado?: boolean
 }) {
   const router = useRouter()
   const [abierto, setAbierto] = useState(false)
+  const [poniendo, setPoniendo] = useState(false)
+  /* Lo puesto se pinta ya, igual que lo comprobado. */
+  const [nombre, setNombre] = useState<string | null>(plato.que)
   /* Lo comprobado se pinta ya, sin esperar a que vuelva la pantalla
      entera: en una pared, un toque que tarda medio segundo se repite. */
   const [faltan, setFaltan] = useState<string[] | null>(plato.faltan ?? null)
@@ -100,14 +119,37 @@ export default function Plato({
         </span>
         {/* Sin plato puesto se dice, no se esconde: que la cena esté sin
             poner es justamente lo que hace falta ver al pasar por la
-            cocina a las siete. */}
-        <span
-          className={`block text-[23px] font-extrabold leading-tight ${
-            plato.que ? 'text-tinta' : 'text-apagado'
-          }`}
-        >
-          {plato.que ?? 'Sin poner'}
-        </span>
+            cocina a las siete. Y ahora además se toca para ponerlo. */}
+        {apagado ? (
+          <span
+            className={`block text-[23px] font-extrabold leading-tight ${
+              nombre ? 'text-tinta' : 'text-apagado'
+            }`}
+          >
+            {nombre ?? 'Sin poner'}
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setPoniendo(true)}
+            className="tocable flex items-center gap-2.5 text-left"
+            style={{ minHeight: 44 }}
+          >
+            <span
+              className={`text-[23px] font-extrabold leading-tight ${
+                nombre ? 'text-tinta' : 'text-apagado'
+              }`}
+            >
+              {nombre ?? 'Poner algo'}
+            </span>
+            {/* El lápiz es lo que dice que esto se puede cambiar. Va
+                siempre, puesto o sin poner: una pared en la que unas
+                cosas se tocan y otras no tiene que decir cuáles. */}
+            <span aria-hidden className="shrink-0 text-apagado">
+              <Ico nombre="lapiz" tam={19} grosor={2.2} />
+            </span>
+          </button>
+        )}
 
         {sePuedeComprobar && (
           <button
@@ -131,6 +173,17 @@ export default function Plato({
           </button>
         )}
       </span>
+
+      {poniendo && (
+        <Poner
+          fecha={plato.fecha}
+          momento={plato.momento}
+          que={nombre}
+          recetas={recetas}
+          alPuesto={setNombre}
+          cerrar={() => setPoniendo(false)}
+        />
+      )}
 
       {abierto && menu && (
         <ComprobarEnLaPared
