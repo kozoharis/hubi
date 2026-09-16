@@ -91,12 +91,20 @@ export async function PATCH(peticion: NextRequest) {
     return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
   }
 
-  let cuerpo: Entrada & { id?: string; ticket_id?: string | null; solo_nombre?: boolean }
+  let cuerpo: Entrada & {
+    id?: string
+    ticket_id?: string | null
+    solo_nombre?: boolean
+    quien_ve?: string
+    quienes?: string[]
+  }
   try {
     cuerpo = (await peticion.json()) as Entrada & {
       id?: string
       ticket_id?: string | null
       solo_nombre?: boolean
+      quien_ve?: string
+      quienes?: string[]
     }
   } catch {
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
@@ -141,6 +149,86 @@ export async function PATCH(peticion: NextRequest) {
     }
 
     return NextResponse.json({ ok: true, ticket_id: ticket })
+  }
+
+  /*
+    ══════════════════════════════════════════════════════════════
+    ── QUIÉN VE ESTA LISTA ──
+    ══════════════════════════════════════════════════════════════
+
+    Otro camino corto, por el mismo motivo que el del ticket y el del
+    nombre: esto no toca ni la fecha ni la tarea de la Agenda.
+
+    ── LO QUE DE VERDAD PROTEGE NO ESTÁ AQUÍ ──
+
+    Está en la base de datos: `puedo_ver_lista()` y las políticas del
+    paso 84. Esta ruta solo GUARDA la decisión.
+
+    Se dice porque importa: si alguien mirara este archivo buscando
+    dónde se comprueba quién puede ver qué, no lo encontraría — y la
+    conclusión equivocada sería «esto no está protegido». Está
+    protegido una capa más abajo, que es la única capa que no se puede
+    saltar llamando a la API a mano.
+
+    Aquí abajo el `.select()` de siempre: un cambio que la seguridad
+    no permite contesta «todo bien» habiendo tocado cero filas.
+  */
+  if (cuerpo.quien_ve !== undefined) {
+    const nivel = String(cuerpo.quien_ve)
+    if (!['casa', 'familia', 'algunos'].includes(nivel)) {
+      return NextResponse.json({ error: 'Eso no es una opción.' }, { status: 400 })
+    }
+
+    const { data, error } = await supabase
+      .from('listas_compra')
+      .update({ quien_ve: nivel })
+      .eq('hogar_id', await elEspacioO(supabase))
+      .eq('id', id)
+      .select('id')
+
+    if (error || !data || data.length === 0) {
+      return NextResponse.json(
+        {
+          error: error?.message?.includes('quien_ve')
+            ? 'Esta casa todavía no tiene puesto quién ve cada lista.'
+            : 'No se ha podido cambiar quién la ve.',
+          detalle: error?.message ?? 'Cero filas.',
+        },
+        { status: 500 }
+      )
+    }
+
+    /*
+      Y las personas elegidas, sólo cuando son «algunos».
+
+      Se borra y se vuelve a poner en vez de calcular qué ha cambiado:
+      son tres o cuatro filas, y una diferencia mal calculada aquí deja
+      a alguien viendo una lista de la que se le acaba de sacar.
+
+      Al pasar a `casa` o a `familia` NO se borran: si mañana se vuelve
+      a «algunos», las personas que estaban siguen estando. Y da igual
+      que se queden, porque mientras el nivel no sea `algunos` la base
+      ni las mira.
+    */
+    if (nivel === 'algunos') {
+      await supabase.from('listas_compra_quien').delete().eq('lista_id', id)
+
+      const quienes = (cuerpo.quienes ?? []).filter((q) => typeof q === 'string' && q.length > 0)
+      if (quienes.length > 0) {
+        const { error: falloQuien } = await supabase
+          .from('listas_compra_quien')
+          .insert(quienes.map((perfil_id) => ({ lista_id: id, perfil_id })))
+
+        if (falloQuien) {
+          return NextResponse.json(
+            { error: 'No se ha podido guardar quiénes la ven.', detalle: falloQuien.message },
+            { status: 500 }
+          )
+        }
+      }
+    }
+
+    return NextResponse.json({ ok: true, quien_ve: nivel })
   }
 
   /*

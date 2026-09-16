@@ -27,6 +27,12 @@ export type ListaCompra = {
   fecha: string | null
   hora: string | null
   asignado_a: string | null
+  /*
+    Quién la ve. Del SQL 84, y puede no venir: si esa casa todavía no
+    lo tiene puesto, se comporta como `casa` — que es como se
+    comportaban todas antes de que existiera.
+  */
+  quien_ve?: 'casa' | 'familia' | 'algunos'
 }
 
 type Seccion = { id: string; nombre: string; segmento: string }
@@ -183,6 +189,12 @@ export default function Pantalla({
      se podían crear listas y no tocarlas nunca más. */
   const [tocando, setTocando] = useState(false)
   const [otroNombre, setOtroNombre] = useState('')
+  /* Quién ve la lista que se está tocando, y quiénes cuando son
+     algunos. Vive aparte del nombre porque se guarda aparte: cambiar
+     el nombre no puede tocar los permisos ni al revés. */
+  const [quienVe, setQuienVe] = useState<'casa' | 'familia' | 'algunos'>('casa')
+  const [losElegidos, setLosElegidos] = useState<string[]>([])
+  const [guardandoQuien, setGuardandoQuien] = useState(false)
   const [seguroQuitar, setSeguroQuitar] = useState(false)
 
   /*
@@ -262,6 +274,46 @@ export default function Pantalla({
 
   const cuantasEnLista = (id: string) =>
     cosas.filter((c) => !c.comprado && c.lista_id === id).length
+
+  /*
+    ── GUARDAR QUIÉN LA VE ──
+
+    Aparte de renombrar, y a propósito: son dos decisiones distintas y
+    mezclarlas haría que corregir una falta de ortografía tocara los
+    permisos. Es la misma razón por la que en la API son dos caminos
+    cortos separados.
+
+    Y al terminar se recarga la pantalla del servidor. No es cortesía:
+    si acabas de quitarte a ti mismo de una lista —que se puede, si la
+    creó otro— esa lista tiene que desaparecer de tu pantalla en ese
+    momento. Dejarla pintada sería enseñarte algo que la base ya no te
+    da.
+  */
+  async function guardarQuienVe() {
+    if (!laLista) return
+    setGuardandoQuien(true)
+    setAviso(null)
+
+    const r = await fetch(api('/api/compra/listas'), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: laLista.id,
+        quien_ve: quienVe,
+        quienes: quienVe === 'algunos' ? losElegidos : undefined,
+      }),
+    })
+    setGuardandoQuien(false)
+
+    if (!r.ok) {
+      const d = (await r.json().catch(() => ({}))) as { error?: string; detalle?: string }
+      setAviso(d.error ?? 'No se ha podido guardar quién la ve.')
+      return
+    }
+
+    setTocando(false)
+    empezar(() => router.refresh())
+  }
 
   async function renombrar() {
     const nombre = otroNombre.trim()
@@ -611,6 +663,8 @@ export default function Pantalla({
           <button
             onClick={() => {
               setOtroNombre(laLista.nombre)
+              setQuienVe(laLista.quien_ve ?? 'casa')
+              setLosElegidos([])
               setSeguroQuitar(false)
               setTocando(true)
             }}
@@ -641,6 +695,122 @@ export default function Pantalla({
             >
               Guardar
             </button>
+          </div>
+
+          {/*
+            ══════════════════════════════════════════════════════════
+            ¿QUIÉN VE ESTA LISTA?
+            ══════════════════════════════════════════════════════════
+
+            Haris: *«si hay algunas compras que son más delicadas que
+            aparezcan sólo para los que intervienen en ella»*.
+
+            ── LO QUE SE DICE Y LO QUE NO ──
+
+            Tres opciones y ni una palabra de permisos, roles ni
+            privacidad. Lo que se elige es **quién la ve**, que es lo
+            que de verdad se está decidiendo, y cada opción dice
+            debajo exactamente a quién deja fuera. Una opción que
+            esconde algo y no dice a quién es una opción que nadie se
+            atreve a tocar.
+
+            ── Y ESTO NO ES LO QUE PROTEGE ──
+
+            Lo que protege son las políticas del paso 84. Esto sólo
+            GUARDA la decisión. Si alguien entrara por la API a mano,
+            la base seguiría sin darle la lista — y ésa es la única
+            razón por la que este selector se puede poner aquí, en
+            una pantalla, sin estar mintiendo.
+          */}
+          <div className="mt-4 border-t border-borde pt-3.5">
+            <p className="rotulo">¿Quién ve esta lista?</p>
+
+            <div className="mt-2 space-y-2">
+              {(
+                [
+                  ['casa', 'Toda la casa', 'La ve todo el mundo, incluida quien ayuda.'],
+                  ['familia', 'Solo la familia', 'Queda fuera quien ayuda en casa y el asesor.'],
+                  ['algunos', 'Solo algunas personas', 'La ven las que elijas, y tú siempre.'],
+                ] as const
+              ).map(([valor, texto, pie]) => {
+                const puesta = quienVe === valor
+                return (
+                  <button
+                    key={valor}
+                    onClick={() => setQuienVe(valor)}
+                    aria-pressed={puesta}
+                    className={
+                      'flex w-full items-start gap-3 rounded-[16px] border px-3.5 py-3 text-left ' +
+                      (puesta ? 'border-tinta bg-fondo' : 'border-borde bg-superficie')
+                    }
+                  >
+                    {/* Un círculo y no una casilla: son tres opciones
+                        de las que se elige UNA, y una casilla dice
+                        «puedes marcar varias». */}
+                    <span
+                      aria-hidden
+                      className={
+                        'mt-0.5 flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full border-2 ' +
+                        (puesta ? 'border-tinta' : 'border-borde')
+                      }
+                    >
+                      {puesta && <span className="h-[10px] w-[10px] rounded-full bg-tinta" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="t-cuerpo block font-extrabold">{texto}</span>
+                      <span className="t-apoyo mt-0.5 block">{pie}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Y quiénes, sólo cuando hace falta elegir. */}
+            {quienVe === 'algunos' && (
+              <div className="mt-3">
+                <p className="t-apoyo">
+                  Toca a quién se la enseñas. Tú la ves siempre, aunque no te marques.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {Object.entries(nombres)
+                    .filter(([id]) => id !== yo)
+                    .map(([id, nombre]) => {
+                      const puesta = losElegidos.includes(id)
+                      return (
+                        <button
+                          key={id}
+                          onClick={() =>
+                            setLosElegidos((x) =>
+                              x.includes(id) ? x.filter((q) => q !== id) : [...x, id]
+                            )
+                          }
+                          aria-pressed={puesta}
+                          className={
+                            'objetivo flex items-center gap-1.5 rounded-full border px-4 text-[15px] font-extrabold ' +
+                            (puesta
+                              ? 'border-tinta bg-tinta text-fondo'
+                              : 'border-borde bg-superficie text-tinta-suave')
+                          }
+                        >
+                          {puesta && <Ico nombre="check" tam={15} grosor={2.6} />}
+                          {nombre.split(' ')[0]}
+                        </button>
+                      )
+                    })}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-3">
+              <button
+                onClick={guardarQuienVe}
+                disabled={guardandoQuien}
+                className="t-cuerpo h-[56px] w-full rounded-[16px] font-extrabold disabled:opacity-40"
+                style={{ background: 'var(--color-accion)', color: 'var(--color-accion-tinta)' }}
+              >
+                {guardandoQuien ? 'Guardando…' : 'Guardar quién la ve'}
+              </button>
+            </div>
           </div>
 
           {/*

@@ -75,12 +75,37 @@ export default async function Compra() {
 
      Si la tabla todavía no existe —el SQL sin ejecutar— esto viene
      vacío y la pantalla funciona igual, con una sola lista. */
-  const { data: listas } = await supabase
+  /*
+    ── QUIÉN VE CADA UNA ──
+
+    `quien_ve` es del SQL 84. Y aquí va la regla de siempre, por
+    cuarta vez en este proyecto: si la columna todavía no está,
+    Postgres no dice «esa columna no existe» — rechaza la consulta
+    ENTERA, y la compra se quedaría sin listas.
+
+    Se pide con ella, y si no puede ser, sin ella. Sin la columna,
+    todas se comportan como `casa`, que es exactamente como se
+    comportaban antes de que existiera.
+
+    Lo que NO hace falta pedir es quién ve qué: la base ya no devuelve
+    las listas que no te tocan. Filtrar aquí sería hacer dos veces el
+    mismo trabajo, y el de aquí es el que se puede saltar.
+  */
+  const conQuienVe = await supabase
     .from('listas_compra')
-    .select('id, nombre, seccion_id, fecha, hora, asignado_a')
+    .select('id, nombre, seccion_id, fecha, hora, asignado_a, quien_ve')
     .eq('hogar_id', await elEspacioO(supabase))
     .is('archivada_en', null)
     .order('creada_en')
+
+  const { data: listas } = conQuienVe.error
+    ? await supabase
+        .from('listas_compra')
+        .select('id, nombre, seccion_id, fecha, hora, asignado_a')
+        .eq('hogar_id', await elEspacioO(supabase))
+        .is('archivada_en', null)
+        .order('creada_en')
+    : conQuienVe
 
   /*
     ── LAS COMPRAS QUE YA SE HICIERON ──
