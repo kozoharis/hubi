@@ -246,7 +246,7 @@ export default async function Lista({
             pantalla que más se mira.
           */}
           {tarde.length > 0 && (
-            <section className="mt-4">
+            <section className="mt-4 lg:hidden">
               <Aviso
                 titulo={
                   tarde.length === 1
@@ -260,6 +260,50 @@ export default async function Lista({
                   <Tarjeta key={r.id} r={r} nombres={nombres} yo={user.id} />
                 ))}
               </ul>
+            </section>
+          )}
+
+          {/*
+            ── LO MISMO, EN UNA SOLA LÍNEA ──
+
+            En el móvil lo vencido son tarjetas enteras, y está bien:
+            ahí hay una columna y el sitio se gasta en lo importante.
+
+            En grande eso mismo eran DOS TARJETONES de novecientos
+            píxeles con la píldora de «Hecho» a un palmo del texto al
+            que pertenece — y encima empujaban la semana fuera de la
+            pantalla, que es lo único que se viene a ver aquí.
+
+            Comprimido a una línea sigue siendo lo primero que se lee
+            —es lo único con fondo de color de toda la pantalla— y deja
+            la altura para la semana.
+          */}
+          {tarde.length > 0 && (
+            <section className="mt-4 hidden items-center gap-3 rounded-[14px] border border-alerta-velo bg-alerta-velo px-4 py-2.5 lg:flex">
+              <span className="shrink-0 font-extrabold text-alerta">
+                {tarde.length === 1
+                  ? 'Una cosa se pasó de fecha'
+                  : `${tarde.length} cosas se pasaron de fecha`}
+              </span>
+              <span className="flex min-w-0 flex-wrap gap-2">
+                {tarde.slice(0, 4).map((r) => (
+                  <Link
+                    key={r.id}
+                    href={`/tablon/${r.id}`}
+                    className="roza max-w-[260px] truncate rounded-full border border-borde bg-superficie px-3 py-1 text-[14px] text-tinta-suave"
+                  >
+                    {r.titulo}
+                  </Link>
+                ))}
+                {tarde.length > 4 && (
+                  <span className="self-center text-[13px] text-tenue">
+                    y {tarde.length - 4} más
+                  </span>
+                )}
+              </span>
+              <span className="ml-auto shrink-0 text-[13px] text-tenue">
+                Tócalas para marcarlas o cambiarles el día
+              </span>
             </section>
           )}
 
@@ -297,8 +341,15 @@ export default async function Lista({
             </Link>
           </div>
 
-          {/* ── La semana entera, en una fila ── */}
-          <Tira dias={dias} hoyISO={hoyISO} de={dueno} />
+          {/* ── La semana entera, en una fila ──
+
+              `lg:hidden`: en grande la semana se ve entera ahí abajo,
+              en sus siete columnas, y la tira sería decir dos veces lo
+              mismo en la misma pantalla — una con puntitos y otra con
+              palabras. */}
+          <div className="lg:hidden">
+            <Tira dias={dias} hoyISO={hoyISO} de={dueno} />
+          </div>
 
           {/*
             ═══════════════════════════════════════════════════
@@ -320,6 +371,96 @@ export default async function Lista({
             Y el día se abre entrando: el título de cada día lleva a su
             pantalla de horas.
           */}
+          {/*
+            ══════════════════════════════════════════════════════
+            LA SEMANA EN SIETE COLUMNAS · sólo en grande
+            ══════════════════════════════════════════════════════
+
+            Una semana es horizontal. En el móvil no cabe y por eso se
+            recorre hacia abajo; en un ordenador, recorrerla hacia
+            abajo es tirar la única ventaja que tiene la pantalla.
+
+            Dos diferencias con lo de abajo, y las dos importan:
+
+            · SE PINTAN LOS SIETE, también los vacíos. Abajo los días
+              sin nada no se pintan —cuatro renglones diciendo «nada»
+              se comen media pantalla de móvil—, pero aquí el hueco ES
+              la información: que el fin de semana esté libre se ve sin
+              leer una palabra, y sólo se ve si está dibujado.
+
+            · CADA DÍA ES UNA COLUMNA y no una sección. Así se compara
+              el jueves con el viernes de un vistazo, que es la razón
+              por la que alguien abre la semana en vez del día.
+          */}
+          <div className="denso-trabajo mt-4 hidden grid-cols-7 gap-2 lg:grid">
+            {dias.map((d) => {
+              const cosas = d.lista.length + d.google.length
+              const esHoy = d.fecha === hoyISO
+              return (
+                <div key={d.fecha} className="flex min-w-0 flex-col gap-2">
+                  <Link
+                    href={`/agenda?vista=dia&dia=${d.fecha}${dueno ? `&de=${dueno}` : ''}`}
+                    className="roza rounded-[10px] py-1 text-center"
+                  >
+                    <span className="rotulo block">{nombreDelDia(d.fecha)}</span>
+                    <span
+                      className={
+                        'block text-[19px] tabular-nums ' +
+                        (esHoy ? 'font-extrabold' : 'font-bold') +
+                        (cosas === 0 && !esHoy ? ' text-tenue' : '')
+                      }
+                      style={esHoy ? { color: 'var(--color-accion)' } : undefined}
+                    >
+                      {Number(d.fecha.slice(8, 10))}
+                      {esHoy && <span className="text-[14px]"> · hoy</span>}
+                    </span>
+                  </Link>
+
+                  {cosas === 0 ? (
+                    /* El hueco, dibujado. Una raya discontinua y nada
+                       más: no dice «no hay nada», lo enseña. */
+                    <div
+                      aria-hidden
+                      className="min-h-[92px] flex-1 rounded-[11px] border border-dashed border-borde"
+                    />
+                  ) : (
+                    <>
+                      {d.lista.map((r) => (
+                        <Cosita
+                          key={r.id}
+                          href={`/tablon/${r.id}`}
+                          hora={r.hora}
+                          titulo={r.titulo}
+                          color={AMBITO[pintaDe(r.titulo).ambito]}
+                          hecha={r.estado === 'hecho'}
+                          pie={
+                            r.asignado_a
+                              ? (nombres[r.asignado_a] ?? '').split(' ')[0]
+                              : null
+                          }
+                        />
+                      ))}
+                      {d.google.map((c) => (
+                        <Cosita
+                          key={c.uid}
+                          hora={c.hora}
+                          titulo={c.titulo}
+                          color={c.color}
+                          pie={
+                            [calendarios.length > 1 ? c.de.split(' ')[0] : null, c.lugar]
+                              .filter(Boolean)
+                              .join(' · ') || null
+                          }
+                        />
+                      ))}
+                    </>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="lg:hidden">
           {conAlgo.length === 0 ? (
             <Vacio
               texto={enEstaSemana ? 'Nada más esta semana.' : 'Nada esta semana.'}
@@ -406,6 +547,7 @@ export default async function Lista({
               ))}
             </div>
           )}
+          </div>
 
           {/*
             ── DE QUIÉN SON LAS CITAS, Y ACTUALIZAR ──
@@ -548,6 +690,98 @@ function Renglon({
       {hecha && (
         <span className="shrink-0" style={{ color: 'var(--t-bien)' }}>
           <Ico nombre="check" tam={17} grosor={2.6} />
+        </span>
+      )}
+    </span>
+  )
+
+  if (!href) return <span className="block">{dentro}</span>
+  return (
+    <Link href={href} className="block">
+      {dentro}
+    </Link>
+  )
+}
+
+/*
+  ───────────────────────────────────────────────────────────────
+  LA MISMA COSA, PERO EN UNA COLUMNA DE 154 PX
+  ───────────────────────────────────────────────────────────────
+
+  El `Renglon` de arriba no sirve en la semana panorámica: allí la
+  hora vive en una columna fija de 42 px a la izquierda, y en una
+  columna de día eso deja 90 px para el título. «Recoger la
+  medicación en la farmacia» se convierte en «Recoger la…».
+
+  Así que aquí la hora sube: va encima del título, pequeña y en el
+  color del ámbito, y el título se queda con el ancho entero de la
+  columna. Se pierde la alineación vertical de las horas —que era
+  toda la gracia del renglón de móvil—, pero en la semana la
+  alineación que importa es la otra: la de los días entre sí.
+
+  Lo demás es idéntico a propósito, porque es la misma cosa vista
+  de otra manera: la rayita de 3 px del ámbito a la izquierda, el
+  tachado y el tic cuando está hecha, el pie con el nombre corto de
+  quien la tiene. Dos alturas distintas para lo mismo, no dos
+  lenguajes distintos.
+*/
+function Cosita({
+  href,
+  hora,
+  titulo,
+  color,
+  pie,
+  hecha = false,
+}: {
+  href?: string
+  hora: string | null
+  titulo: string
+  color: string
+  pie: string | null
+  hecha?: boolean
+}) {
+  const dentro = (
+    <span
+      className={
+        'flex gap-2 rounded-[11px] border border-borde bg-superficie px-2 py-1.5 ' +
+        (hecha ? 'opacity-55' : '')
+      }
+    >
+      <span
+        aria-hidden
+        className="w-[3px] shrink-0 self-stretch rounded-full"
+        style={{ background: hecha ? 'var(--t-bien)' : color }}
+      />
+      <span className="min-w-0 flex-1">
+        {hora && (
+          <span
+            className="block text-[12px] font-extrabold tabular-nums leading-tight"
+            style={{ color }}
+          >
+            {hora.slice(0, 5)}
+          </span>
+        )}
+        <span
+          /*
+            Dos líneas y no más. Truncar a una deja «Llevar los
+            papeles del…» en la mitad de los casos; dejarlo libre
+            hace que un título largo estire su columna y desencaje
+            las otras seis.
+          */
+          className="block text-[14px] font-bold leading-snug [display:-webkit-box] [overflow:hidden] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]"
+          style={hecha ? { textDecorationLine: 'line-through' } : undefined}
+        >
+          {titulo}
+        </span>
+        {pie && (
+          <span className="mt-0.5 block truncate text-[12px] font-bold text-tenue">
+            {pie}
+          </span>
+        )}
+      </span>
+      {hecha && (
+        <span className="shrink-0 self-start" style={{ color: 'var(--t-bien)' }}>
+          <Ico nombre="check" tam={14} grosor={2.6} />
         </span>
       )}
     </span>
@@ -810,6 +1044,20 @@ function diaEnPalabras(fecha: string, hoyISO: string): string {
   if (fecha === hoyISO) return `Hoy · ${nombre} ${f.getDate()}`
   if (fecha === manana) return `Mañana · ${nombre} ${f.getDate()}`
   return `${nombre.charAt(0).toUpperCase() + nombre.slice(1)} ${f.getDate()}`
+}
+
+/*
+  "Lunes" · "Martes" · … — el rótulo de encima de cada columna en la
+  semana panorámica.
+
+  Entero y no la inicial: las iniciales (L M X J V S D) valen en la
+  tira del móvil, donde hay 44 px por casilla y el día elegido va
+  relleno. En una columna de 154 px no hay ninguna razón para
+  abreviar, y «X» es de las cosas que hay que saberse.
+*/
+function nombreDelDia(fecha: string): string {
+  const nombre = SEMANA[deISO(fecha).getDay()]
+  return nombre.charAt(0).toUpperCase() + nombre.slice(1)
 }
 
 /** "2026-09" → "Septiembre" · "Enero de 2027" si cambia el año */
