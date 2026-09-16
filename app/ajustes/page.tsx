@@ -10,6 +10,7 @@ import Encabezado from '../encabezado'
 import { Ico, Logo, Volver, type Icono } from '../iconos'
 import { ambitoDe, AMBITO, type Ambito, PastillaAmbito, Pildora } from '../piezas'
 import SelectorTema from '../tema'
+import SelectorDensidad from '../densidad'
 import { leerPerfil } from '@/lib/perfil'
 import { mandaEnSuCasa } from '@/lib/hogar'
 import { planDeLaCasa, type Rutina } from '@/lib/rutinas'
@@ -657,6 +658,29 @@ export default async function Ajustes({
         <h2 className="rotulo mt-5">Cómo se ve</h2>
         <div className="mt-2.5">
           <SelectorTema />
+        </div>
+
+        {/*
+          ── Y CUÁNTAS COSAS SE VEN A LA VEZ ──
+
+          La palabra «densidad» no sale, y no es un capricho: es una
+          palabra nuestra. Lo que se decide es cuántas cosas caben en
+          una pantalla, y así es como se pregunta.
+
+          Va sólo en ordenador y tablet grande: en el móvil no cambia
+          nada, porque ahí manda el dedo y el dedo necesita sus 72 px
+          midan lo que midan. Enseñar un botón que no hace nada sería
+          peor que no tenerlo.
+        */}
+        <div className="mt-5 hidden lg:block">
+          <h2 className="rotulo">¿Cuántas cosas quieres ver a la vez?</h2>
+          <div className="mt-2.5">
+            <SelectorDensidad />
+          </div>
+          <p className="t-apoyo mt-2">
+            Cambia las listas largas: Papeles, Cuentas, la compra. En el móvil no
+            cambia nada, ahí todo se queda grande para el dedo.
+          </p>
         </div>
 
         </div>

@@ -539,8 +539,27 @@ body {
   .ancho-lectura { max-width: 650px; }
   .ancho-ficha   { max-width: 560px; }
   .ancho-trabajo { max-width: 1100px; }
-  /* Panorámica no lleva `max-width` a propósito: se queda con lo que
-     haya menos los márgenes. */
+
+  /*
+    ── PANORÁMICA SE SUELTA, Y HAY QUE DECÍRSELO ──
+
+    Aquí había un comentario que decía «panorámica no lleva
+    `max-width` a propósito» y nada más. Pero el bloque de arriba —el
+    de móvil, que vale para las cuatro— ya le había puesto
+    `max-width: 28rem`, y un comentario no lo quita.
+
+    Resultado: en un ordenador, panorámica medía 448 px. La semana de
+    la Agenda repartía siete columnas en 380 px útiles —54 cada una—,
+    los nombres de los días se montaban unos encima de otros y la
+    banda del título se partía en cuatro renglones. Menús y el Visor,
+    lo mismo.
+
+    Y no daba error, claro: es CSS. Se veía una pantalla estrecha y
+    parecía que la culpa era del reparto.
+
+    `max-width: none` es lo que el comentario creía estar diciendo.
+  */
+  .ancho-panoramica { max-width: none; }
 }
 
 @media (min-width: 1440px) {

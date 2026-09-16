@@ -472,7 +472,7 @@ export default async function Lista({
                     href={`/agenda?vista=dia&dia=${d.fecha}${dueno ? `&de=${dueno}` : ''}`}
                     className="roza rounded-[10px] py-1 text-center"
                   >
-                    <span className="rotulo block">{nombreDelDia(d.fecha)}</span>
+                    <span className="rotulo block truncate">{nombreDelDia(d.fecha)}</span>
                     <span
                       className={
                         'block text-[19px] tabular-nums ' +

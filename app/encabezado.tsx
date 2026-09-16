@@ -89,7 +89,6 @@ export default function Encabezado({
   caja,
   accion,
   extra,
-  pegajosa = false,
 }: {
   icono?: Icono
   ambito?: Ambito
@@ -125,17 +124,25 @@ export default function Encabezado({
   /** Algo suelto a la derecha del todo: el lápiz de editar, por ejemplo. */
   extra?: ReactNode
   /*
-    Que la banda se quede arriba al desplazar.
+    ── AQUÍ HABÍA UN `pegajosa`, Y SE HA IDO ──
 
-    Sólo en las pantallas de lista larga —Papeles, Cuentas, Agenda,
-    Notas, el escritorio de casas—. En una ficha o en un texto seguido
-    no: ahí robar ochenta píxeles de altura permanente no compra nada,
-    y en un portátil de 800 px útiles eso es el diez por ciento.
+    Lo puse en el primer paso del escritorio para que la banda se
+    quedara arriba al desplazar en las pantallas de lista larga. Al
+    ir a enchufarlo en Papeles, Cuentas y el escritorio, resultó que
+    ya lo hacía: `.cabecera` —el contenedor que envuelve esto en
+    TODAS las pantallas— es `position: sticky; top: 0` desde hace
+    meses.
+
+    O sea que era un interruptor para encender una luz que ya estaba
+    encendida. Ninguna pantalla llegó a pasarlo, así que quitarlo no
+    cambia un píxel — pero dejarlo puesto sí habría costado algo: el
+    día que alguien quiera la banda pegajosa, lo pasaría, no vería
+    ningún cambio, y se pondría a buscar el fallo en el sitio
+    equivocado.
   */
-  pegajosa?: boolean
 }) {
   return (
-    <div className={'hidden lg:block' + (pegajosa ? ' sticky top-0 z-20 bg-fondo' : '')}>
+    <div className="hidden lg:block">
       {/*
         ── POR QUÉ ESTA FILA SE PUEDE PARTIR ──
 

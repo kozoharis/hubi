@@ -291,6 +291,25 @@ export default async function RootLayout({
         />
 
         {/*
+          Y lo mismo con cuántas cosas se ven a la vez. Antes de pintar
+          y por el mismo motivo: si esto fuera un efecto de React, la
+          lista de Papeles saldría con filas de 56 y saltaría a 48 un
+          instante después. Doscientas filas moviéndose a la vez se ve
+          como un tirón, y en una pantalla que está leyendo alguien
+          mayor eso es peor que cualquier fallo de medida.
+
+          Sin nada guardado no se pone atributo, y sin atributo manda
+          el puntero — que es la regla de serie y la buena para casi
+          todo el mundo.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var d=localStorage.getItem('mappel-densidad');if(d==='touch'||d==='comfortable'||d==='work')document.documentElement.dataset.densidad=d}catch(e){}",
+          }}
+        />
+
+        {/*
           ── LA PANTALLA QUE SALE MIENTRAS ARRANCA, EN EL iPHONE ──
 
           Al tocar mappel en la pantalla de inicio, Safari enseña un

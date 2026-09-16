@@ -158,7 +158,7 @@ export default function Rail() {
       {puedeHablar(rol) && (
         <Link
           href="/hablar"
-          className="tocable objetivo mb-4 flex items-center gap-3 rounded-[14px] border border-borde bg-fondo px-3 text-[16px] font-extrabold text-tinta hover:velo-chip"
+          className="tocable objetivo mb-4 flex items-center gap-3 rounded-[14px] border border-borde bg-fondo px-3 text-[16px] font-extrabold text-tinta roza"
         >
           <span
             aria-hidden
@@ -186,7 +186,7 @@ export default function Rail() {
                    tinta del tema para que funcione en claro y oscuro. */
                 (aqui
                   ? 'velo-chip text-tinta'
-                  : 'text-tinta-suave hover:velo-chip')
+                  : 'text-tinta-suave roza')
               }
             >
               <Ico nombre={p.icono} tam={22} />
@@ -233,7 +233,7 @@ export default function Rail() {
           aria-current={ruta.replace(/^\/e\/[0-9a-fA-F-]{36}/, '').startsWith('/ajustes')
             ? 'page'
             : undefined}
-          className="tocable flex items-center gap-3 rounded-[14px] border border-borde bg-fondo px-3 py-2.5 text-[16px] font-extrabold text-tinta hover:velo-chip"
+          className="tocable flex items-center gap-3 rounded-[14px] border border-borde bg-fondo px-3 py-2.5 text-[16px] font-extrabold text-tinta roza"
         >
           <Ico nombre="mandos" tam={21} />
           <span>Ajustes</span>

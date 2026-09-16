@@ -145,7 +145,7 @@ export default function DosZonas({
                   /* `objetivo` es la variable de densidad: 44 px con
                      ratón, 48 con el dedo. Nunca menos, por muy pequeña
                      que sea la equis. */
-                  className="tocable objetivo -mr-2 flex items-center justify-center rounded-full text-[22px] leading-none text-tenue hover:velo-chip"
+                  className="tocable objetivo -mr-2 flex items-center justify-center rounded-full text-[22px] leading-none text-tenue roza"
                 >
                   ×
                 </button>
