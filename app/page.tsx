@@ -895,7 +895,25 @@ export default async function Inicio({
           la más larga: tres avisos estirados para igualar a doce
           tareas son aire con borde.
         */}
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8">
+        {/*
+          ── Y EN UN MONITOR, TRES ──
+
+          La columna de la derecha pasa de 380 a 780 y se parte en dos:
+          el mes y «Próximamente» en una, «En la casa» y los últimos
+          papeles en la otra. Es lo que el dibujo pedía a 1920 y lo que
+          hace que la pantalla llene sin estirar nada.
+
+          Porque estirar no es llenar: la columna de la izquierda se
+          queda en unos 900 px, que es lo que mide una tarjeta de «Hoy»
+          antes de que el chevrón de la derecha quede a un palmo del
+          texto al que pertenece.
+
+          Columnas de altura libre y no una rejilla de dos, por lo
+          mismo que el corcho de Notas: los bloques miden cosas muy
+          distintas y una rejilla los igualaría a la altura del más
+          alto.
+        */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8 monitor:grid-cols-[minmax(0,1fr)_780px]">
           <div>
         {/* ── Hoy ── */}
         {ve.agenda && hoy.length > 0 && (
@@ -994,7 +1012,11 @@ export default async function Inicio({
 
           </div>
 
-          <div>
+          {/* La columna de contexto. En un monitor se parte en dos
+              columnas de altura libre; hasta ahí, una sola. Cada
+              bloque lleva `break-inside-avoid` para que no se corte
+              por la mitad al pasar de columna. */}
+          <div className="[&>section]:break-inside-avoid monitor:columns-2 monitor:gap-8">
         {/*
           ── EL MES DE UN VISTAZO ──
 

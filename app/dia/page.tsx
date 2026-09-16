@@ -3,13 +3,16 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { elEspacio } from '@/lib/espacio'
 import { genteDeLaCasa, elAsesor } from '@/lib/gente'
-import { cuantasNotas } from '@/lib/notas'
+import { cuantasNotas, notasDe, conFecha } from '@/lib/notas'
 import { loDeHoy } from '@/lib/rutinas'
 import { hoyAqui } from '@/lib/tablon'
 import Barra from '../barra'
 import MappelCaja from '../mappel-caja'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
+import Link from '@/app/enlace'
+import { Ico, type Icono } from '../iconos'
+import type { Ambito } from '@/lib/ambitos'
 import { ambitoDeColor, PastillaAmbito, TarjetaAccion } from '../piezas'
 
 export const dynamic = 'force-dynamic'
@@ -83,13 +86,26 @@ export default async function DiaADia() {
 
   /* Las cuatro cuentas, a la vez. Ninguna necesita el resultado de la
      anterior: en fila serían cuatro esperas donde basta una. */
-  const [{ count: porComprar }, notas, deHoy, laGestoria] = await Promise.all([
+  const [{ count: porComprar, data: laCompra }, notas, deHoy, laGestoria, elMenu, elCorcho] = await Promise.all([
+    /*
+      ── LAS COSAS, NO SÓLO CUÁNTAS ──
+
+      En el móvil bastaba el número: la tarjeta dice «3 cosas por
+      coger» y se entra. En grande hay sitio para enseñarlas, y
+      enseñarlas ahorra el viaje entero — la mitad de las veces se
+      entra en la compra sólo para acordarse de qué falta.
+
+      Se piden ocho y el recuento exacto a la vez: `count` sin `head`
+      devuelve las dos cosas en una sola consulta.
+    */
     supabase
       .from('compra')
-      .select('id', { count: 'exact', head: true })
+      .select('id, que, cantidad', { count: 'exact' })
       .eq('hogar_id', hogarId)
       .eq('comprado', false)
-      .is('archivado_en', null),
+      .is('archivado_en', null)
+      .order('creado_en', { ascending: true })
+      .limit(8),
 
     cuantasNotas(supabase, user.id),
 
@@ -118,9 +134,34 @@ export default async function DiaADia() {
         return { nombre: suyo.nombre.split(' ')[0], color: suyo.color, esperando: 0 }
       }
     })(),
+
+    /*
+      ── LO QUE SE COME HOY ──
+
+      La comida y la cena de hoy, nada más. Envuelto porque las tablas
+      son del SQL 48: sin ellas esto contesta una lista vacía y la
+      pantalla sale igual.
+    */
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('menus')
+          .select('momento, que')
+          .eq('hogar_id', hogarId)
+          .eq('fecha', hoyAqui())
+        return (data ?? []) as { momento: string; que: string }[]
+      } catch {
+        return []
+      }
+    })(),
+
+    /* Y las cuatro últimas del corcho. `notasDe` ya viene envuelto. */
+    notasDe(supabase).then((n) => conFecha(n).slice(0, 4)),
   ])
 
   const hechas = deHoy.filter((r) => r.hecha).length
+  const laComida = elMenu.find((m) => m.momento === 'comida')?.que ?? null
+  const laCena = elMenu.find((m) => m.momento === 'cena')?.que ?? null
 
   /*
     La compra, los menús y lo de hoy los ve todo el mundo. El asesor,
@@ -198,7 +239,9 @@ export default async function DiaADia() {
           hermanos y dentro de una rejilla eso desencaja las filas. En
           grande manda `gap`, que es lo que sabe de rejillas.
         */}
-        <div className="space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
+        {/* ── LAS CINCO PUERTAS · SÓLO EN EL MÓVIL ──
+            En grande, debajo, la pantalla enseña lo que hay dentro. */}
+        <div className="space-y-2.5 lg:hidden">
         {/*
           ── LA COMPRA, LA PRIMERA ──
 
@@ -304,9 +347,281 @@ export default async function DiaADia() {
           />
         )}
         </div>
+
+        {/*
+          ═══════════════════════════════════════════════════════════
+          EN GRANDE, LA CASA DE HOY · no un menú de cinco botones
+          ═══════════════════════════════════════════════════════════
+
+          Ésta era la pantalla más vacía de MAPPEL en un ordenador:
+          cinco tarjetas grandes en la esquina de arriba y medio metro
+          de papel debajo. Y el motivo no era el ancho — era que la
+          pantalla no tenía contenido: su único trabajo era llevar a
+          otras cinco.
+
+          En un teléfono eso está bien, porque no cabe otra cosa y
+          porque cada tarjeta ya dice cómo está lo suyo. En un
+          ordenador, donde el rail de la izquierda ya lleva a todas
+          partes, una pantalla cuyo único trabajo es llevar a otro
+          sitio es un paso de más.
+
+          Así que en grande deja de ser un menú y contesta la pregunta
+          por la que se entra: **¿qué pasa hoy en casa?** Lo que falta
+          por comprar, lo que toca hacer, lo que se come y lo que os
+          habéis dejado escrito. Sin pulsar nada.
+
+          ── COLUMNAS DE ALTURA LIBRE ──
+
+          Dos a 1024, tres en un monitor. Y `columns` y no una rejilla
+          por lo mismo que en el corcho de Notas: la compra puede
+          tener ocho renglones y el menú dos, y una rejilla igualaría
+          las dos a la altura de la más alta dejando un palmo de papel
+          en blanco.
+
+          ── Y CADA BLOQUE SIGUE SIENDO UNA PUERTA ──
+
+          El título de cada uno lleva a su pantalla. Lo que cambia es
+          que ya no hay que entrar para saber qué hay.
+        */}
+        <div className="hidden lg:block">
+          <div className="[&>section]:mb-4 [&>section]:break-inside-avoid lg:columns-2 lg:gap-4 monitor:columns-3">
+            {usaCompra && (
+              <Bloque
+                titulo="La compra"
+                icono="bolsa"
+                ambito="arena"
+                href="/compra"
+                pie={
+                  (porComprar ?? 0) === 0
+                    ? 'La lista está vacía'
+                    : `${porComprar} ${porComprar === 1 ? 'cosa' : 'cosas'} por coger`
+                }
+              >
+                {(laCompra ?? []).length === 0 ? (
+                  <Callado>No hay nada apuntado.</Callado>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {(laCompra as { id: string; que: string; cantidad: string | null }[]).map((c) => (
+                      <li key={c.id} className="flex items-baseline gap-2 text-[15px]">
+                        <span aria-hidden className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-apagado" />
+                        <span className="min-w-0 flex-1 truncate font-semibold">{c.que}</span>
+                        {c.cantidad && (
+                          <span className="shrink-0 text-[13px] text-tenue">{c.cantidad}</span>
+                        )}
+                      </li>
+                    ))}
+                    {(porComprar ?? 0) > (laCompra ?? []).length && (
+                      <li className="text-[13px] text-tenue">
+                        y {(porComprar ?? 0) - (laCompra ?? []).length} más
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </Bloque>
+            )}
+
+            <Bloque
+              titulo="La casa hoy"
+              icono="check"
+              ambito="verde"
+              href="/lacasa"
+              pie={
+                deHoy.length === 0
+                  ? 'Hoy no toca nada'
+                  : `${hechas} de ${deHoy.length} hechos`
+              }
+            >
+              {deHoy.length === 0 ? (
+                <Callado>Hoy no hay nada puesto en el plan.</Callado>
+              ) : (
+                <ul className="space-y-1.5">
+                  {deHoy.map((r) => (
+                    <li key={r.id} className="flex items-center gap-2 text-[15px]">
+                      {/* El tic no es un botón: esta pantalla cuenta lo
+                          que hay, y marcar se hace donde se está
+                          haciendo el trabajo. Un control que parece
+                          pulsable y no lo es sería peor que ninguno. */}
+                      <span
+                        aria-hidden
+                        className={
+                          'flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-full ' +
+                          (r.hecha ? 'text-white' : 'border border-borde')
+                        }
+                        style={r.hecha ? { background: 'var(--t-bien)' } : undefined}
+                      >
+                        {r.hecha && <Ico nombre="check" tam={11} grosor={3} />}
+                      </span>
+                      <span
+                        className={
+                          'min-w-0 flex-1 truncate font-semibold ' +
+                          (r.hecha ? 'text-tenue line-through' : '')
+                        }
+                      >
+                        {r.que}
+                      </span>
+                      {r.hora && (
+                        <span className="shrink-0 text-[13px] tabular-nums text-tenue">
+                          {r.hora.slice(0, 5)}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Bloque>
+
+            <Bloque
+              titulo="Hoy se come"
+              icono="hoja"
+              ambito="oliva"
+              href="/menus"
+              pie="Lo que toca esta semana"
+            >
+              {!laComida && !laCena ? (
+                <Callado>Hoy no hay nada puesto.</Callado>
+              ) : (
+                <dl className="space-y-2">
+                  <div>
+                    <dt className="rotulo">Comida</dt>
+                    <dd className="text-[15px] font-semibold">
+                      {laComida ?? <span className="text-apagado">Sin poner</span>}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="rotulo">Cena</dt>
+                    <dd className="text-[15px] font-semibold">
+                      {laCena ?? <span className="text-apagado">Sin poner</span>}
+                    </dd>
+                  </div>
+                </dl>
+              )}
+            </Bloque>
+
+            <Bloque
+              titulo={notas.paraMi > 0
+                ? notas.paraMi === 1 ? 'Hay una nota para ti' : `Hay ${notas.paraMi} notas para ti`
+                : 'El corcho'}
+              icono="chincheta"
+              ambito="ciruela"
+              href="/notas"
+              destacado={notas.paraMi > 0}
+              pie={
+                notas.puestas === 0
+                  ? 'Deja un recado'
+                  : `${notas.puestas} ${notas.puestas === 1 ? 'puesta' : 'puestas'}`
+              }
+            >
+              {elCorcho.length === 0 ? (
+                <Callado>No hay ninguna nota puesta.</Callado>
+              ) : (
+                <ul className="space-y-2">
+                  {elCorcho.map((n) => (
+                    <li key={n.id} className="text-[15px] leading-snug">
+                      <span className="line-clamp-2 font-semibold">{n.texto}</span>
+                      <span className="mt-0.5 block text-[13px] text-tenue">{n.cuando}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Bloque>
+
+            {veAsesor && laGestoria && (
+              <Bloque
+                titulo={laGestoria.nombre}
+                icono="papel"
+                ambito={ambitoDeColor(laGestoria.color)}
+                href="/asesor"
+                destacado={laGestoria.esperando > 0}
+                pie={
+                  laGestoria.esperando > 0
+                    ? laGestoria.esperando === 1
+                      ? 'Te ha dejado algo'
+                      : `Te ha dejado ${laGestoria.esperando} cosas`
+                    : 'Lo que os habéis dejado'
+                }
+              >
+                <Callado>
+                  {laGestoria.esperando > 0
+                    ? 'Entra a verlo cuando puedas.'
+                    : 'Nada nuevo por ahora.'}
+                </Callado>
+              </Bloque>
+            )}
+          </div>
+        </div>
       </div>
 
       <Barra activa="dia" />
     </main>
   )
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  UN BLOQUE DE LA CASA
+  ═══════════════════════════════════════════════════════════════
+
+  Cabecera con su pastilla de color y su título —que es un enlace a la
+  pantalla de esa cosa—, el estado en una línea, y debajo LO QUE HAY.
+
+  ── LA PASTILLA SE QUEDA, EL CHEVRÓN SE VA ──
+
+  La pastilla identifica: reconocer la compra por el color arena es
+  lo mismo que se hace en el móvil, en el Inicio y en la pared, y
+  quitarlo aquí rompería el idioma.
+
+  El chevrón no: un chevrón promete «te llevo a otra pantalla», y este
+  bloque ya te está enseñando lo que hay dentro. Lo que lleva es el
+  título, que es lo que se pulsa cuando de verdad hace falta entrar.
+
+  ── Y SÓLO SE ENCIENDE LO QUE TE ESPERA A TI ──
+
+  `destacado` es para las notas que te han dejado y para lo que ha
+  dejado el asesor. Es lo único de esta pantalla que reclama algo de
+  una persona concreta, y por eso es lo único que puede llevar color
+  de fondo. Cinco bloques encendidos serían cinco bloques apagados.
+*/
+function Bloque({
+  titulo,
+  pie,
+  icono,
+  ambito,
+  href,
+  destacado = false,
+  children,
+}: {
+  titulo: string
+  pie: string
+  icono: Icono
+  ambito: Ambito
+  href: string
+  destacado?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <section
+      className={
+        'rounded-[20px] border px-4 py-4 ' +
+        (destacado ? 'border-atencion-velo bg-atencion-velo' : 'border-borde bg-superficie')
+      }
+    >
+      <div className="flex items-start gap-3">
+        <PastillaAmbito icono={icono} ambito={ambito} tam={36} />
+        <div className="min-w-0 flex-1">
+          <Link href={href} className="block">
+            <span className="t-tarjeta block truncate">{titulo}</span>
+          </Link>
+          <span className="mt-0.5 block truncate text-[13.5px] font-bold text-tenue">{pie}</span>
+        </div>
+      </div>
+
+      <div className="mt-3 border-t border-borde/60 pt-3">{children}</div>
+    </section>
+  )
+}
+
+/** Lo que se dice cuando no hay nada que enseñar. En gris y en una
+    línea: un bloque vacío no puede ocupar lo que uno lleno. */
+function Callado({ children }: { children: React.ReactNode }) {
+  return <p className="text-[14px] leading-snug text-tenue">{children}</p>
 }
