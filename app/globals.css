@@ -632,6 +632,28 @@ body {
 .hueco-lista { gap: var(--hueco); }
 .objetivo    { min-height: var(--toque); min-width: var(--toque); }
 
+/* ── EL RENGLÓN BAJO EL CURSOR ─────────────────────────────
+   Un tono de papel por debajo del blanco, y nada más: ni borde, ni
+   sombra, ni botones que asoman.
+
+   SÓLO CON RATÓN, y por una razón que se ve en cuanto se prueba con el
+   dedo: en una pantalla táctil no existe «pasar por encima», así que el
+   navegador deja la fila pintada DESPUÉS de tocarla — y se lee como si
+   siguiera elegida, justo al lado de otra que sí lo está.
+
+   Y va como clase propia y no como `hover:` de Tailwind por un motivo
+   comprobado en el CSS generado: `hover:velo-chip` NO GENERA NADA.
+   `velo-chip` es una clase normal, no una utilidad de Tailwind, y
+   prefijarla con `hover:` produce un nombre que el compilador no
+   reconoce y descarta en silencio. Está así en el rail desde hace
+   meses: sus cinco entradas no responden al cursor y nadie lo ha visto,
+   porque un hover que falta no se nota — sólo se echa de menos. */
+@media (hover: hover) and (pointer: fine) {
+  .roza:hover {
+    background: color-mix(in srgb, var(--t-tinta) 4%, transparent);
+  }
+}
+
 /* Nada importante depende de pasar el ratón por encima:
    el foco tiene que verse siempre, y verse mucho. */
 :focus-visible {
