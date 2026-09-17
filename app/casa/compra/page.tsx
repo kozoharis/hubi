@@ -1,4 +1,4 @@
-import { laPared } from '@/lib/pared'
+import { laPared, lasQueSeVenEnLaCocina } from '@/lib/pared'
 import { loQueSeOfrece } from '@/lib/lo-de-siempre'
 import { Rotulo } from '../rotulo'
 import Lista, { type Cosa, type Grupo } from './lista'
@@ -57,26 +57,15 @@ export default async function Compra() {
       .order('creado_en', { ascending: true })
       .limit(120),
     /*
-      Las listas que alguien ha querido que se vean aquí (paso 77).
-      Envuelto: sin ese paso la columna no existe y Postgres rechaza la
-      consulta ENTERA — la pared se quedaría sin compra por una casilla
-      que todavía no está.
+      Las listas que se ven aquí: la de siempre de la casa —que es
+      donde apunta esta misma pantalla— y las que alguien haya marcado
+      (paso 77).
+
+      ⚠️  Antes aquí SOLO estaban las marcadas, y ése era el fallo de
+      «apunto la leche y no sale»: la pared apuntaba en una lista y
+      miraba en otra. Está contado entero en `lasQueSeVenEnLaCocina`.
     */
-    (async () => {
-      try {
-        const { data, error } = await supabase
-          .from('listas_compra')
-          .select('id, nombre')
-          .eq('hogar_id', casa)
-          .is('archivada_en', null)
-          .eq('visible_en_casa', true)
-          .order('fecha', { ascending: true, nullsFirst: false })
-        if (error) return []
-        return (data ?? []) as { id: string; nombre: string | null }[]
-      } catch {
-        return []
-      }
-    })(),
+    lasQueSeVenEnLaCocina(supabase, casa),
     /*
       Lo ya comprado en esta casa, para poder ofrecerlo sin escribirlo.
       Es la misma fuente que en el móvil: la compra archivada. Si falla,

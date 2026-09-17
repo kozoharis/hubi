@@ -1,5 +1,5 @@
 import { hoyAqui } from '@/lib/tablon'
-import { laPared, loApuntado, loDestacado, losMenus } from '@/lib/pared'
+import { laPared, lasQueSeVenEnLaCocina, loApuntado, loDestacado, losMenus } from '@/lib/pared'
 import { loDeHoy } from '@/lib/rutinas'
 import { genteDeLaCasa } from '@/lib/gente'
 import { Ico } from '../iconos'
@@ -88,12 +88,33 @@ export default async function Hoy() {
     */
     (async () => {
       try {
-        const { data, error } = await supabase
+        /*
+          Y las MISMAS listas que la pestaña de la compra, no todas.
+
+          Antes esto pedía la compra entera sin mirar de qué lista era,
+          y la pestaña de al lado sí miraba. O sea que una lista que
+          alguien no quiere ver en la cocina no salía en La compra… y
+          salía aquí, en letra grande, en la primera pantalla. Dos
+          pantallas de la misma pared contestando distinto a la misma
+          pregunta.
+        */
+        const cuales = await lasQueSeVenEnLaCocina(supabase, casa)
+
+        let pide = supabase
           .from('compra')
           .select('id, que')
           .eq('hogar_id', casa)
           .eq('comprado', false)
           .is('archivado_en', null)
+
+        /* Lo que no está en ninguna lista es de la casa y sale siempre.
+           Ver `lasQueSeVenEnLaCocina`. */
+        pide =
+          cuales.length > 0
+            ? pide.or(`lista_id.is.null,lista_id.in.(${cuales.map((l) => l.id).join(',')})`)
+            : pide.is('lista_id', null)
+
+        const { data, error } = await pide
           .order('creado_en', { ascending: true })
           .limit(30)
         if (error) return []

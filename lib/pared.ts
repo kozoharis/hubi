@@ -346,3 +346,108 @@ export async function lasListasDeCompra(
     return []
   }
 }
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  QUÉ LISTAS DE LA COMPRA SE VEN EN LA COCINA
+  ═══════════════════════════════════════════════════════════════
+
+  ⚠️  ESTO ARREGLA EL FALLO DE «APUNTO LA LECHE Y NO SALE»
+
+  Haris lo dijo dos veces, y las dos veces tenía razón y las dos veces
+  arreglé otra cosa: *«le digo que falta algo, lo añado, y no se ve en
+  la pantalla… pero sí que lo registra, lo veo en el móvil»*.
+
+  La primera vez arreglé la copia congelada de `lib/al-dia.ts`. Era un
+  fallo de verdad, pero no ERA ÉSTE. Éste estaba más abajo y es de los
+  que sólo se ven leyendo las dos puntas a la vez.
+
+  ─────────────────────────────────────────────────────────────
+  LO QUE PASABA
+
+  Cuando se apunta algo sin decir en qué lista, `/api/compra` **no lo
+  deja suelto**: busca la lista de siempre de la casa —la que no es de
+  ninguna sección— y, si no hay ninguna, la crea. Lo hace a propósito y
+  está explicado allí: lo dictado por voz quedaría suelto y podía no
+  salir en ninguna pantalla.
+
+  Y la pared, por su parte, enseñaba dos cosas: lo que no está en
+  ninguna lista, y las listas marcadas con `visible_en_casa` (paso 77).
+
+  O sea que la pared **apuntaba en un sitio y miraba en otro**. La
+  leche entraba en «La compra» de la casa, esa lista no estaba marcada
+  para verse en la cocina, y por tanto no salía. En el móvil sí, porque
+  el móvil no filtra por esa casilla.
+
+  Lo peor del fallo es que se comportaba como un fallo de refresco: se
+  apuntaba, desaparecía el botón, no pasaba nada, y al recargar seguía
+  sin estar. Cualquiera habría mirado donde miré yo.
+
+  ─────────────────────────────────────────────────────────────
+  LA REGLA QUE SALE DE AQUÍ
+
+      UNA PANTALLA TIENE QUE ENSEÑAR AQUELLO EN LO QUE ESCRIBE.
+
+  Así que la lista donde la pared apunta se ve en la pared SIEMPRE, esté
+  marcada o no. `visible_en_casa` sigue mandando en todas las demás —la
+  del sábado, la de la ferretería, la de la finca—, que es para lo que
+  se hizo.
+*/
+export async function lasQueSeVenEnLaCocina(
+  supabase: SupabaseClient,
+  casa: string
+): Promise<{ id: string; nombre: string | null }[]> {
+  /*
+    La de siempre de la casa: sin sección y la más antigua. Es
+    exactamente la que busca `/api/compra` cuando nadie dice en cuál
+    va, y tiene que ser la misma consulta o volvemos a tener dos sitios
+    que se creen el mismo.
+  */
+  const laDeSiempre = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('listas_compra')
+        .select('id, nombre')
+        .eq('hogar_id', casa)
+        .is('archivada_en', null)
+        .is('seccion_id', null)
+        .order('creada_en', { ascending: true })
+        .limit(1)
+      if (error) return null
+      return (data?.[0] ?? null) as { id: string; nombre: string | null } | null
+    } catch {
+      return null
+    }
+  }
+
+  /*
+    Las marcadas. Envuelto: sin el paso 77 la columna no existe y
+    Postgres rechaza la consulta ENTERA — la pared se quedaría sin
+    compra por una casilla que todavía no está.
+  */
+  const lasMarcadas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('listas_compra')
+        .select('id, nombre')
+        .eq('hogar_id', casa)
+        .is('archivada_en', null)
+        .eq('visible_en_casa', true)
+        .order('fecha', { ascending: true, nullsFirst: false })
+      if (error) return []
+      return (data ?? []) as { id: string; nombre: string | null }[]
+    } catch {
+      return []
+    }
+  }
+
+  const [siempre, marcadas] = await Promise.all([laDeSiempre(), lasMarcadas()])
+
+  /* La de siempre primero: es donde va la leche, y es lo que se apunta
+     desde aquí. Y sin repetirla si además estaba marcada. */
+  const salida = siempre ? [siempre] : []
+  for (const l of marcadas) {
+    if (!salida.some((x) => x.id === l.id)) salida.push(l)
+  }
+  return salida
+}

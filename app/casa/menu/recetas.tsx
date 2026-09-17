@@ -7,6 +7,7 @@ import { deDondeEs } from '@/lib/menus'
 import { paraLaVentana, SANDBOX } from '@/lib/enlace-seguro'
 import { Ico } from '../../iconos'
 import { AMBITO } from '../../piezas'
+import GuardarReceta from './guardar-receta'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -64,6 +65,9 @@ export default function Recetas({ recetas }: { recetas: Receta[] }) {
   const [abierta, setAbierta] = useState<Receta | null>(null)
   const [grande, setGrande] = useState(false)
   const [compra, setCompra] = useState<'quieto' | 'yendo' | 'hecho' | 'fallo'>('quieto')
+  /* Guardar una receta desde la cocina, que es donde se apuntan. Ver
+     `guardar-receta.tsx`. */
+  const [guardando, setGuardando] = useState(false)
 
   /*
     ── LOS INGREDIENTES, A LA COMPRA DE UN TOQUE ──
@@ -115,14 +119,34 @@ export default function Recetas({ recetas }: { recetas: Receta[] }) {
 
   return (
     <>
-      <div className="flex items-baseline gap-4">
-        <h2 className="text-[20px] font-extrabold uppercase tracking-[0.2em] text-tenue">
-          Recetas
-        </h2>
-        {recetas.length > 0 && (
-          <p className="text-[19px] font-extrabold text-tinta-suave">{recetas.length}</p>
-        )}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-baseline gap-4">
+          <h2 className="text-[20px] font-extrabold uppercase tracking-[0.2em] text-tenue">
+            Recetas
+          </h2>
+          {recetas.length > 0 && (
+            <p className="text-[19px] font-extrabold text-tinta-suave">{recetas.length}</p>
+          )}
+        </div>
+
+        {/*
+          ── Y AQUÍ SE GUARDAN, NO SOLO SE MIRAN ──
+
+          El botón va arriba y con su palabra, no un «+» suelto en una
+          esquina: el punto 5 del planteamiento, los iconos siempre
+          acompañados de texto.
+        */}
+        <button
+          type="button"
+          onClick={() => setGuardando(true)}
+          className="tocable flex h-[60px] shrink-0 items-center gap-3 rounded-full border border-borde bg-superficie px-6 text-[18px] font-extrabold text-tinta"
+        >
+          <Ico nombre="mas" tam={22} grosor={2.6} />
+          Guardar una receta
+        </button>
       </div>
+
+      {guardando && <GuardarReceta cerrar={() => setGuardando(false)} />}
 
       {/* ── La ventana ── */}
       {abierta && (
@@ -316,7 +340,8 @@ export default function Recetas({ recetas }: { recetas: Receta[] }) {
             Todavía no hay recetas guardadas.
           </p>
           <p className="mt-2 text-[18px] font-bold leading-snug text-tenue">
-            Se guardan desde el móvil, en El día a día → Menús.
+            Toca «Guardar una receta» aquí arriba y se guarda. Después, poner la cena del jueves
+            será un toque.
           </p>
         </div>
       ) : (
