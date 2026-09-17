@@ -71,7 +71,21 @@ type Manejadores = {
      está dado, pero lo tiene cogido otra aplicación. Mandar a esa
      persona a los ajustes del navegador es mandarla a un sitio donde
      no hay nada que arreglar. */
-  alFallar: (motivo: 'sin-permiso' | 'sin-micro' | 'ocupado' | 'vacio') => void
+  /*
+    `mudo` es distinto de `vacio` y hace falta que lo sea.
+
+    `vacio`  se ha grabado menos de un segundo. Alguien tocó dos veces
+             seguidas, o le dio a «ya está» antes de hablar.
+    `mudo`   se ha grabado el tiempo entero y no ha entrado NADA. El
+             archivo pesa lo que pesa el silencio comprimido, o sea
+             nada. Eso no es «no te he oído bien»: es que el micrófono
+             de ese aparato no está cogiendo sonido.
+
+    Las dos decían lo mismo —«no se ha oído nada, prueba otra vez»— y
+    mandaban a repetirlo indefinidamente. Es exactamente lo que le
+    pasó a la tableta de la cocina.
+  */
+  alFallar: (motivo: 'sin-permiso' | 'sin-micro' | 'ocupado' | 'vacio' | 'mudo') => void
 }
 
 /* Lo que se espera callado antes de preguntar "¿algo más?". Dos
@@ -198,6 +212,33 @@ export async function grabarVoz(manejadores: Manejadores): Promise<Grabando | nu
   let analizador: AnalyserNode
   try {
     contexto = new AudioContext()
+
+    /*
+      ── Y ESTO FALTABA, Y ES LO QUE DEJABA LA BARRA MUERTA ──
+
+      Un `AudioContext` recién creado nace **suspendido** en Android y
+      en iOS si no hay un gesto reciente de la persona. Y aquí no lo
+      hay: entre el toque en el botón y esta línea está el
+      `await getUserMedia`, que la primera vez abre el cartel de
+      permiso del sistema y se lleva por delante los segundos de
+      gracia del gesto.
+
+      Suspendido, el analizador contesta ceros. Para siempre. Y como
+      la barra se pinta con lo que dice el analizador, la barra no se
+      mueve nunca — aunque el micrófono esté grabando perfectamente.
+
+      Quien está delante ve una barra quieta y concluye lo único que
+      se puede concluir: «no me oye». Y entonces toca «ya está» a los
+      dos segundos, sin haber hablado, que es la otra mitad del
+      problema.
+
+      `resume()` es lo único que hacía falta. No se espera su promesa
+      con `await` a ciegas: si el navegador la rechaza —porque de
+      verdad no hay gesto— el medidor se queda como estaba y la
+      grabación sigue su curso, que es lo que importa.
+    */
+    contexto.resume().catch(() => {})
+
     const fuente = contexto.createMediaStreamSource(micro)
     analizador = contexto.createAnalyser()
     analizador.fftSize = 1024
@@ -254,10 +295,30 @@ export async function grabarVoz(manejadores: Manejadores): Promise<Grabando | nu
 
       const bruto = new Blob(trozos, { type: grabadora.mimeType || 'audio/webm' })
 
-      /* Menos de un segundo, o cuatro bytes: no se ha dicho nada. Se
-         dice ahora y no después de un viaje al servidor. */
-      if (segundos < 1 || bruto.size < 2000) {
+      /*
+        Dos cosas distintas, y hasta ahora se contestaban igual.
+
+        Menos de un segundo: no ha dado tiempo a decir nada. Se dice
+        ahora y no después de un viaje al servidor.
+      */
+      if (segundos < 1) {
         manejadores.alFallar('vacio')
+        return
+      }
+
+      /*
+        Y esto otro: se ha grabado el tiempo entero y el archivo pesa
+        lo que pesa el silencio. Opus comprime el silencio digital a
+        casi nada, así que siete segundos de micrófono mudo caben en
+        unos cientos de bytes.
+
+        No es que no se haya entendido: es que por ese micrófono no
+        entró nada. Repetirlo más alto no lo va a arreglar, y decir
+        «prueba otra vez» es mandar a alguien a repetir una cosa que
+        no puede funcionar.
+      */
+      if (bruto.size < 2000) {
+        manejadores.alFallar('mudo')
         return
       }
 

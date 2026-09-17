@@ -130,6 +130,16 @@ export default function Microfono() {
         grabando.current = null
         setNivel(0)
         setPaso({ que: 'quieto' })
+        /*
+          Cinco causas y cinco frases. La que faltaba —y es la que se
+          llevó a Haris toda una tarde— es `mudo`: el micrófono está
+          abierto, el permiso está dado, la grabación dura lo que tiene
+          que durar, y por ahí no entra nada.
+
+          Eso decía «no se ha oído nada, prueba otra vez», que manda a
+          repetir en voz más alta una cosa que no puede funcionar por
+          mucho que se grite.
+        */
         setFallo(
           motivo === 'sin-permiso'
             ? 'Esta pantalla no tiene permiso para usar el micrófono. Se le da desde los ajustes del navegador de la tableta.'
@@ -137,7 +147,9 @@ export default function Microfono() {
               ? 'El micrófono lo está usando otra aplicación de la tableta. Ciérrala y prueba otra vez.'
               : motivo === 'sin-micro'
                 ? 'Esta pantalla no tiene micrófono.'
-                : 'No se ha oído nada. Prueba otra vez.'
+                : motivo === 'mudo'
+                  ? 'Por el micrófono de la tableta no está entrando nada. Mira que no esté tapado y que el navegador tenga permiso para usarlo en los ajustes de la tableta.'
+                  : 'Ha sido muy corto. Toca, di lo que quieras, y luego «Ya está».'
         )
       },
     })

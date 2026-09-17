@@ -211,7 +211,12 @@ export default function Grabar({
               ? 'El micrófono lo está usando otra aplicación. Cierra la llamada o la grabadora y prueba otra vez.'
               : motivo === 'sin-micro'
                 ? 'Este navegador no puede grabar. Escríbelo aquí abajo y te entiendo igual.'
-                : 'No he oído nada. Prueba a acercarte un poco al teléfono.'
+                : /* Grabó el tiempo entero y no entró nada: no es que se
+                     haya oído mal, es que por ahí no entra. Repetirlo más
+                     alto no lo arregla. */
+                  motivo === 'mudo'
+                  ? 'Por el micrófono no está entrando nada. Mira que no lo tape la funda ni un dedo, y que no lo tenga cogido otra aplicación.'
+                  : 'Ha sido muy corto. Habla y luego dale a parar.'
         )
       },
       })
