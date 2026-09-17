@@ -98,10 +98,13 @@ export default async function Tiempo({ banda = false }: { banda?: boolean }) {
       de abajo de las pestañas— y lo que cada bloque mida por arriba da
       igual. Está explicado en `layout.tsx`.
 
-      Y la palabra de abajo sube de 16 a 19, que es lo que mide la
-      fecha: dos renglones a la misma altura con dos tamaños distintos
-      se siguen viendo desalineados aunque sus cajas acaben en el mismo
-      sitio.
+      Y las tres palabras de abajo —ésta, la fecha y los grados de los
+      tres días— llevan el MISMO tamaño y `leading-none`. Las dos cosas
+      hacen falta: el tamaño para que las letras midan igual, y el
+      `leading` para que la caja acabe donde acaba la letra. Sin lo
+      segundo, tres cajas perfectamente alineadas enseñan tres
+      renglones a tres alturas distintas — que es exactamente lo que
+      Haris estaba viendo.
     */
     return (
       <div className="flex shrink-0 items-end gap-6">
@@ -124,7 +127,7 @@ export default async function Tiempo({ banda = false }: { banda?: boolean }) {
                 que cambia lo que se hace ese día. Y sigue a partir del
                 50 %: por debajo es ruido. */}
             <p
-              className="mt-1 text-[19px] font-extrabold leading-tight text-tenue xl:text-[20px]"
+              className="mt-1 text-[19px] font-extrabold leading-none text-tenue xl:text-[20px]"
               style={hoy.lluvia >= 50 ? { color: AMBITO.azul } : undefined}
             >
               {hoy.lluvia >= 50 ? 'Puede llover' : COMO_SE_LLAMA[cieloHoy]}
@@ -151,7 +154,7 @@ export default async function Tiempo({ banda = false }: { banda?: boolean }) {
                 <span style={{ color: COLOR[cielo] }}>
                   <Ico nombre={DIBUJO[cielo]} tam={22} grosor={2} />
                 </span>
-                <span className="text-[18px] font-extrabold leading-tight tabular-nums text-tinta">
+                <span className="text-[18px] font-extrabold leading-none tabular-nums text-tinta">
                   {d.maxima}°
                 </span>
               </div>

@@ -92,9 +92,9 @@ export default function Reloj() {
       banda hinchada y un salto al aparecer la hora — pequeño, pero en
       una pared que se enciende sola cada mañana se ve todos los días.
 
-      86 = 56 de hora + 4 + 26 de fecha. 91 en pantalla grande.
+      88 = 56 de hora + 12 + 20 de fecha. Lo mismo que una pestaña.
     */
-    return <div className="h-[86px] xl:h-[91px]" aria-hidden />
+    return <div className="h-[88px]" aria-hidden />
   }
 
   const hh = String(ahora.getHours()).padStart(2, '0')
@@ -132,7 +132,7 @@ export default function Reloj() {
 
         Y en tinta suave, no en tinta: es contexto, no contenido.
       */}
-      <p className="text-[56px] font-extrabold leading-none tabular-nums tracking-tight text-tinta-suave xl:text-[60px]">
+      <p className="text-[56px] font-extrabold leading-none tabular-nums tracking-tight text-tinta-suave">
         {hh}:{mm}
       </p>
       {/*
@@ -140,10 +140,34 @@ export default function Reloj() {
         «Domingo 13 De Septiembre». En español la mayúscula es solo la
         primera, y ni los días ni los meses la llevan.
       */}
-      {/* `whitespace-nowrap`: si la banda se estrecha, «Jueves 17 de
-          septiembre» se parte en dos renglones y se lleva por delante
-          la línea común de abajo. Antes de partirse, que empuje. */}
-      <p className="mt-1 whitespace-nowrap text-[19px] font-extrabold text-tenue xl:text-[20px]">
+      {/*
+        ── `leading-none`, Y ES LO QUE FALTABA PARA QUE SE VIERA RECTO ──
+
+        Haris, con una raya pintada encima de la captura: *«hay que
+        bajar la hora y lo del jueves 17 de septiembre… colócalas
+        alineadas por la parte baja»*.
+
+        Y la caja YA estaba alineada — el problema es que una caja de
+        texto no acaba donde acaba el texto. Sin `leading`, esta línea
+        heredaba el 1,5 del sistema: una caja de 30 px para una letra
+        de 20, con 9 px de aire por debajo de la última letra. La caja
+        tocaba la línea de las pestañas; la palabra se quedaba 9 px por
+        encima, y eso es lo que se ve.
+
+        Es el fallo de alineación más común que hay y no se arregla
+        moviendo nada: se arregla haciendo que la caja mida lo que mide
+        la letra. `leading-none` deja la caja en 20 px y entonces la
+        línea de base cae justo donde acaban las pestañas.
+
+        Los 12 px de separación con la hora no son decorativos:
+        56 + 12 + 20 = 88, que es exactamente lo que miden las
+        pestañas. La banda es un rectángulo por los cuatro lados.
+
+        Y `whitespace-nowrap`: si la banda se estrecha, «Jueves 17 de
+        septiembre» se parte en dos renglones y se lleva por delante la
+        línea común. Antes de partirse, que empuje.
+      */}
+      <p className="mt-3 whitespace-nowrap text-[19px] font-extrabold leading-none text-tenue xl:text-[20px]">
         {enMayuscula(
           `${DIAS[ahora.getDay()]} ${ahora.getDate()} de ${MESES[ahora.getMonth()]}`
         )}
