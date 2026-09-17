@@ -90,7 +90,19 @@ export default function Pestanas() {
             key={s.href}
             href={s.href}
             aria-current={aqui ? 'page' : undefined}
-            className="flex h-[72px] min-w-[142px] flex-col items-center justify-center gap-1.5 rounded-[24px] border transition-colors"
+            /*
+              88 y no 72. Dos razones y las dos buenas:
+
+              · Es lo que este proyecto tenía escrito desde el
+                principio —«a 88 px, casi el doble del suelo de
+                MAPPEL»— y se había quedado en 72 sin que nadie lo
+                decidiera.
+              · Y a 88 la pestaña mide exactamente lo mismo que el
+                bloque de la hora y la fecha, así que la banda entera
+                empieza y acaba en la misma línea por arriba Y por
+                abajo. Un rectángulo, no una escalera.
+            */
+            className="flex h-[88px] min-w-[142px] flex-col items-center justify-center gap-1.5 rounded-[24px] border transition-colors"
             style={
               aqui
                 ? {

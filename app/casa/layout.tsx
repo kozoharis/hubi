@@ -60,15 +60,14 @@ export const dynamic = 'force-dynamic'
   nombre a la cuenta del aparato sería además mentira — se llama «La
   cocina».
 
-  **La hora, grande pero menos.** Bajó de 132 px a 104. A 132 era lo
-  único que se veía: el número se comía la pantalla y las listas
-  quedaban de acompañamiento, cuando lo que hace falta saber en una
-  cocina es qué pasa hoy, no qué hora es — para eso hay un reloj en
-  todas las paredes desde hace doscientos años.
+  **La hora, grande pero no lo más grande.** 132 → 104 → 42 → 56. El
+  viaje entero está contado en `reloj.tsx`, y el final es 56 porque a
+  42 se había pasado de frenada: la hora dejó de mandar, que era lo
+  que se buscaba, pero también dejó de ser el ancla de la banda.
 
-  **Las cinco pestañas.** Hoy, Semana, Menú, Tareas y Notas. A 88 px,
-  casi el doble del suelo de MAPPEL: esto se toca de pie, de lado y con
-  las manos ocupadas.
+  **Las cinco pestañas.** Hoy, Calendario, Menú, Compra y Notas. A 72
+  px, bastante por encima del suelo de MAPPEL: esto se toca de pie, de
+  lado y con las manos ocupadas.
 
   ─────────────────────────────────────────────────────────────
   Y LO QUE SIGUE SIN LLEVAR
@@ -139,18 +138,67 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
 
       <VuelveAHoy />
 
-      <header className="flex shrink-0 items-center justify-between gap-10">
+      {/*
+        ═══════════════════════════════════════════════════════════
+        LA BANDA, EN DOS RENGLONES Y CON UN SUELO COMÚN
+        ═══════════════════════════════════════════════════════════
+
+        Haris, con la pared delante: *«veo que la parte de arriba está
+        desalineada… estaría bien que esté todo en la misma línea, por
+        lo menos la parte baja»*.
+
+        Tenía razón y el motivo era de bulto. Era un `flex` con
+        `items-center`, y las dos mitades no miden lo mismo: a la
+        izquierda la hora y el tiempo, unos 70 px; a la derecha la
+        marca, un hueco y las pestañas, unos 120. Centrar la pequeña
+        dentro de la grande deja la hora flotando a media altura y
+        cada cosa acabando donde le toca. Cuatro renglones de texto a
+        cuatro alturas distintas, en la única banda que se lee de un
+        vistazo desde la puerta.
+
+        Ahora es una rejilla de dos renglones:
+
+            ·                                          marca
+            hora · el tiempo · tres días               pestañas
+
+        Con `items-end`, todo lo del segundo renglón **acaba en la
+        misma línea**: la fecha, «Despejado», los grados de los tres
+        días y el borde de abajo de las pestañas. Es un suelo común, y
+        es lo que hace que una banda parezca una banda.
+
+        Y encima de ese suelo cada cosa puede medir lo que necesite —
+        la hora vuelve a ser grande sin descolocar nada, que es lo
+        otro que pedía.
+      */}
+      <header className="grid shrink-0 grid-cols-[1fr_auto] items-end gap-x-10 gap-y-4">
+        {/* ── Renglón 1 · sólo la marca, arriba a la derecha ── */}
+        <div aria-hidden />
+
         {/*
-          ── LA BANDA DE ESTADO ──
+          La marca arriba del todo. Estaba encima del reloj y Haris lo
+          vio a la primera: «veo eso muy apretado». La marca dice de
+          quién es esto, el reloj dice qué hora es: no tienen por qué
+          tocarse.
 
-          Izquierda: la hora, la fecha y el tiempo. Los tres contestan
-          la MISMA pregunta —cómo está el mundo ahí fuera— y por eso
-          van juntos: separados, cada uno pedía su propio rótulo y su
-          propio sitio, y el tiempo acababa en la tercera columna,
-          abajo a la derecha, que es el último sitio al que llega la
-          vista en una pantalla que se mira de un vistazo.
+          Arriba a la derecha es además donde una marca no estorba: se
+          ve al entrar y deja de verse enseguida. Identifica, no
+          reclama.
+        */}
+        <p className="flex items-center justify-end gap-3.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-mappel.png" alt="mappel" className="block h-[30px] w-auto" />
+          <span className="truncate text-[19px] font-extrabold uppercase tracking-[0.22em] text-tenue">
+            {nombre}
+          </span>
+        </p>
 
-          Y juntos ocupan MENOS que la hora sola ocupaba antes.
+        {/* ── Renglón 2 · cómo está el mundo, y adónde se va ── */}
+        {/*
+          La hora, la fecha y el tiempo contestan la MISMA pregunta
+          —cómo está el mundo ahí fuera— y por eso van juntos.
+          Separados, cada uno pedía su propio rótulo y su propio sitio,
+          y el tiempo acababa en la tercera columna, abajo a la
+          derecha, que es el último sitio al que llega la vista.
 
           El tiempo se pinta en las cinco pestañas, no sólo en Hoy. No
           es un descuido: si hay que decidir si se tiende, da igual en
@@ -158,29 +206,18 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
           desaparece según la pestaña obliga a acordarse de dónde
           estaba.
         */}
-        <div className="flex min-w-0 items-center gap-10">
+        <div className="flex min-w-0 items-end gap-9">
           <Reloj />
           <Tiempo banda />
         </div>
 
         {/*
-          Derecha: la marca arriba del todo y las pestañas debajo.
-
           Las pestañas van arriba y no abajo como en el teléfono. En un
           móvil la barra va abajo porque ahí llega el pulgar; en una
           pared de 27 pulgadas, abajo es la esquina que hay que
           agacharse a mirar.
         */}
-        <div className="flex shrink-0 flex-col items-end gap-5">
-          <p className="flex items-center gap-3.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-mappel.png" alt="mappel" className="block h-[30px] w-auto" />
-            <span className="truncate text-[19px] font-extrabold uppercase tracking-[0.22em] text-tenue">
-              {nombre}
-            </span>
-          </p>
-          <Pestanas />
-        </div>
+        <Pestanas />
       </header>
 
       {/* El hueco que queda. `min-h-0` es imprescindible: sin él, un

@@ -90,48 +90,68 @@ export default async function Tiempo({ banda = false }: { banda?: boolean }) {
     una tarjeta dentro de otra son dos marcos para un dato.
   */
   if (banda) {
-    return (
-      <div className="flex items-center gap-5">
-        <span
-          className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[20px]"
-          style={{
-            background: `color-mix(in srgb, ${color} 16%, var(--t-superficie))`,
-            color,
-          }}
-        >
-          <Ico nombre={DIBUJO[cieloHoy]} tam={30} grosor={2} />
-        </span>
+    /*
+      ── Y TODO ACABA EN LA MISMA LÍNEA ──
 
-        <div>
-          <p className="text-[38px] font-extrabold leading-none tabular-nums tracking-tight text-tinta">
-            {t.ahora}°
-          </p>
-          {/* El aviso de lluvia se queda, porque es lo único de aquí
-              que cambia lo que se hace ese día. Y sigue a partir del
-              50 %: por debajo es ruido. */}
-          <p
-            className="mt-1 text-[16px] font-extrabold leading-tight"
-            style={hoy.lluvia >= 50 ? { color: AMBITO.azul } : undefined}
+      `items-end` y no `items-center`. La banda tiene un suelo común
+      —la fecha, esta palabra, los grados de los tres días y el borde
+      de abajo de las pestañas— y lo que cada bloque mida por arriba da
+      igual. Está explicado en `layout.tsx`.
+
+      Y la palabra de abajo sube de 16 a 19, que es lo que mide la
+      fecha: dos renglones a la misma altura con dos tamaños distintos
+      se siguen viendo desalineados aunque sus cajas acaben en el mismo
+      sitio.
+    */
+    return (
+      <div className="flex shrink-0 items-end gap-6">
+        <div className="flex items-center gap-4">
+          <span
+            className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[20px]"
+            style={{
+              background: `color-mix(in srgb, ${color} 16%, var(--t-superficie))`,
+              color,
+            }}
           >
-            {hoy.lluvia >= 50 ? 'Puede llover' : COMO_SE_LLAMA[cieloHoy]}
-          </p>
+            <Ico nombre={DIBUJO[cieloHoy]} tam={30} grosor={2} />
+          </span>
+
+          <div>
+            <p className="text-[38px] font-extrabold leading-none tabular-nums tracking-tight text-tinta xl:text-[42px]">
+              {t.ahora}°
+            </p>
+            {/* El aviso de lluvia se queda, porque es lo único de aquí
+                que cambia lo que se hace ese día. Y sigue a partir del
+                50 %: por debajo es ruido. */}
+            <p
+              className="mt-1 text-[19px] font-extrabold leading-tight text-tenue xl:text-[20px]"
+              style={hoy.lluvia >= 50 ? { color: AMBITO.azul } : undefined}
+            >
+              {hoy.lluvia >= 50 ? 'Puede llover' : COMO_SE_LLAMA[cieloHoy]}
+            </p>
+          </div>
         </div>
 
-        {/* Los tres días, en una columna estrecha de dos líneas. A dos
+        {/* Los tres días, en columnas estrechas de tres líneas. A dos
             metros esto no se lee: se reconoce que hay o no hay cambio.
-            Quien quiera el detalle lo tiene en la pestaña del día. */}
-        <div className="flex gap-4 border-l border-borde pl-5">
+            Quien quiera el detalle lo tiene en la pestaña del día.
+
+            `self-stretch` para que la raya de la izquierda llegue de
+            arriba abajo del bloque: una raya a media altura entre dos
+            cosas parece un descuido, y de rayas a medias venía la
+            queja. */}
+        <div className="flex self-stretch items-end gap-4 border-l border-borde pl-6">
           {siguientes.map((d) => {
             const cielo = elCielo(d.codigo)
             return (
               <div key={d.fecha} className="flex flex-col items-center gap-0.5">
-                <span className="text-[14px] font-extrabold uppercase tracking-wider text-tenue">
+                <span className="text-[15px] font-extrabold uppercase tracking-wider text-tenue">
                   {DIAS[new Date(`${d.fecha}T12:00:00`).getDay()]}
                 </span>
                 <span style={{ color: COLOR[cielo] }}>
-                  <Ico nombre={DIBUJO[cielo]} tam={20} grosor={2} />
+                  <Ico nombre={DIBUJO[cielo]} tam={22} grosor={2} />
                 </span>
-                <span className="text-[16px] font-extrabold tabular-nums text-tinta">
+                <span className="text-[18px] font-extrabold leading-tight tabular-nums text-tinta">
                   {d.maxima}°
                 </span>
               </div>

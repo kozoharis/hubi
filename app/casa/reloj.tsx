@@ -83,10 +83,18 @@ export default function Reloj() {
   */
 
   if (!ahora) {
-    /* El hueco mide lo mismo que la hora Y la fecha juntas, para que al
-       llegar no empuje nada hacia abajo. Medía 104 cuando ya ocupaban
-       más: la pantalla daba un salto al segundo de encenderse. */
-    return <div className="h-[134px] xl:h-[156px]" aria-hidden />
+    /*
+      El hueco mide lo mismo que la hora Y la fecha juntas, para que al
+      llegar no empuje nada hacia abajo.
+
+      ⚠️  Y llevaba mal desde que la hora bajó de tamaño: seguía
+      reservando 134 px para algo que mide 86. Medio segundo con la
+      banda hinchada y un salto al aparecer la hora — pequeño, pero en
+      una pared que se enciende sola cada mañana se ve todos los días.
+
+      86 = 56 de hora + 4 + 26 de fecha. 91 en pantalla grande.
+    */
+    return <div className="h-[86px] xl:h-[91px]" aria-hidden />
   }
 
   const hh = String(ahora.getHours()).padStart(2, '0')
@@ -104,21 +112,27 @@ export default function Reloj() {
         104 en grande, 84 en pequeño. Sigue leyéndose desde la puerta y
         deja de mandar.
 
-        ── Y BAJA OTRA VEZ, A 46 ──
+        ── BAJÓ A 46, Y SE PASÓ DE FRENADA ──
 
-        El mismo razonamiento llevado hasta el final. La hora seguía
-        siendo el número más grande de la pared y es el dato que menos
-        falta hace en una cocina: la dan el horno, el microondas, el
-        móvil y probablemente un reloj colgado ahí mismo.
+        El razonamiento era bueno: la hora seguía siendo el número más
+        grande de la pared y es el dato que menos falta hace en una
+        cocina — la dan el horno, el microondas, el móvil y
+        probablemente un reloj colgado ahí mismo.
 
-        A 46 se sigue leyendo perfectamente desde la puerta —es más
-        grande que cualquier título de esta pantalla— y deja de ser lo
-        primero que se mira. Lo primero pasa a ser lo de hoy, que es lo
-        único que sólo da esta pared.
+        Pero a 42 dejó de mandar Y dejó de anclar. Una banda necesita
+        una pieza que la sujete, y ésta es la única candidata: es lo
+        que se mira desde la puerta antes de acercarse.
+
+        ── 56, QUE ES EL SITIO ──
+
+        Haris, viendo la pared: *«la hora, si quieres, puede ser más
+        grande»*. 56 es la mitad justa de los 104 de antes y sigue
+        siendo más pequeña que cualquier cifra de las listas. Manda en
+        su banda y no manda en la pantalla.
 
         Y en tinta suave, no en tinta: es contexto, no contenido.
       */}
-      <p className="text-[42px] font-extrabold leading-none tabular-nums tracking-tight text-tinta-suave xl:text-[46px]">
+      <p className="text-[56px] font-extrabold leading-none tabular-nums tracking-tight text-tinta-suave xl:text-[60px]">
         {hh}:{mm}
       </p>
       {/*
@@ -126,7 +140,10 @@ export default function Reloj() {
         «Domingo 13 De Septiembre». En español la mayúscula es solo la
         primera, y ni los días ni los meses la llevan.
       */}
-      <p className="mt-1 text-[19px] font-extrabold text-tenue xl:text-[20px]">
+      {/* `whitespace-nowrap`: si la banda se estrecha, «Jueves 17 de
+          septiembre» se parte en dos renglones y se lleva por delante
+          la línea común de abajo. Antes de partirse, que empuje. */}
+      <p className="mt-1 whitespace-nowrap text-[19px] font-extrabold text-tenue xl:text-[20px]">
         {enMayuscula(
           `${DIAS[ahora.getDay()]} ${ahora.getDate()} de ${MESES[ahora.getMonth()]}`
         )}
