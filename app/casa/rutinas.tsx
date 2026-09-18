@@ -67,7 +67,40 @@ export type RutinaEnLaPared = {
   dequien: string | null
 }
 
-export default function Rutinas({ rutinas }: { rutinas: RutinaEnLaPared[] }) {
+export default function Rutinas({
+  rutinas,
+  enElDia = false,
+  sePuedeTachar = true,
+}: {
+  rutinas: RutinaEnLaPared[]
+  /*
+    ── EL MISMO BLOQUE, EN DOS SITIOS QUE MIDEN DISTINTO ──
+
+    En Hoy esta lista comparte columna con lo apuntado y las dos se
+    reparten un hueco de alto fijo: por eso crece con `flex-1` y recorta
+    con `LoQueQuepa`.
+
+    Al abrir un día desde el Calendario no hay tal hueco — esa pantalla
+    se desplaza—, y un `flex-1` dentro de algo que no es flex mide cero.
+    Con `enElDia` se pinta la lista entera y ya está.
+
+    Es el mismo bloque y no una copia, por lo de siempre: dos copias
+    serían dos sitios donde arreglar lo de tachar la próxima vez.
+  */
+  enElDia?: boolean
+  /*
+    ── Y EN UN DÍA QUE NO ES HOY, NO SE TACHA ──
+
+    Marcar una rutina dice «esto se ha hecho HOY» — la API no manda
+    fecha, y no es un descuido: `rutinas_hechas` lleva la del día. Dejar
+    tachar el martes que viene pondría que se hizo hoy algo que aún no
+    ha pasado.
+
+    Así que en otro día se lee y no se toca, exactamente igual que las
+    cosas de la semana en `cosa.tsx`.
+  */
+  sePuedeTachar?: boolean
+}) {
   const router = useRouter()
   /* Igual que en la compra: la copia local se pinta al instante, pero
      vuelve a mirar al servidor cuando llega algo distinto. Si no, una
@@ -116,7 +149,7 @@ export default function Rutinas({ rutinas }: { rutinas: RutinaEnLaPared[] }) {
       hijo de flex no baja de lo que mida su contenido — o sea que el
       recorte de arriba no serviría de nada.
     */
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className={enElDia ? 'flex flex-col' : 'flex min-h-0 flex-1 flex-col'}>
       <div className="flex shrink-0 items-baseline gap-4">
         <h2 className="text-[20px] font-extrabold uppercase tracking-[0.2em] text-tenue">
           Lo de cada día
@@ -134,56 +167,97 @@ export default function Rutinas({ rutinas }: { rutinas: RutinaEnLaPared[] }) {
 
       <div className="h-3 shrink-0" />
 
-      <LoQueQuepa elResto="y {n} más de cada día">
-        {locales.map((r) => (
-          <div key={r.id}>
-            {/*
-              Se toca la fila entera, no una casilla. Se hace de pie y
-              muchas veces con una mano ocupada: el sitio donde hay que
-              dar es el sitio donde está la palabra.
-            */}
-            <button
-              type="button"
-              onClick={() => tachar(r)}
-              className={`tocable flex w-full items-center gap-5 rounded-[28px] border bg-superficie px-6 py-4 text-left ${
-                r.hecha ? 'opacity-45' : ''
-              }`}
-              style={{
-                borderColor: 'var(--t-borde)',
-                borderLeft: `6px solid ${r.hecha ? 'var(--t-borde)' : AMBITO.verde}`,
-              }}
-            >
-              <span
-                className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px] border-2"
-                style={{
-                  borderColor: r.hecha ? 'transparent' : 'var(--t-borde)',
-                  background: r.hecha ? AMBITO.verde : 'transparent',
-                  color: '#FFFFFF',
-                }}
-              >
-                {r.hecha && <Ico nombre="check" tam={26} grosor={2.6} />}
-              </span>
-
-              <span className="min-w-0 flex-1">
-                {(r.hora || r.dequien) && (
-                  <span className="block text-[15px] font-extrabold uppercase tracking-wider text-tenue">
-                    {r.hora && <span className="tabular-nums normal-case">{r.hora.slice(0, 5)}</span>}
-                    {r.hora && r.dequien && <span className="mx-2">·</span>}
-                    {r.dequien}
-                  </span>
-                )}
-                <span
-                  className={`block text-[24px] font-extrabold leading-tight text-tinta ${
-                    r.hecha ? 'line-through' : ''
-                  }`}
-                >
-                  {r.que}
-                </span>
-              </span>
-            </button>
-          </div>
-        ))}
-      </LoQueQuepa>
+      {/*
+        En Hoy, lo que quepa y ni uno más. En el día, la lista entera:
+        esa pantalla se desplaza, y recortar ahí escondería cosas por
+        nada.
+      */}
+      {enElDia ? (
+        <div className="space-y-3">
+          {locales.map((r) => (
+            <Fila key={r.id} rutina={r} alTocar={sePuedeTachar ? () => tachar(r) : null} />
+          ))}
+        </div>
+      ) : (
+        <LoQueQuepa elResto="y {n} más de cada día">
+          {locales.map((r) => (
+            <Fila key={r.id} rutina={r} alTocar={sePuedeTachar ? () => tachar(r) : null} />
+          ))}
+        </LoQueQuepa>
+      )}
     </div>
+  )
+}
+
+/*
+  UNA RUTINA, EN SU RENGLÓN.
+
+  Se toca la fila entera, no una casilla. Se hace de pie y muchas veces
+  con una mano ocupada: el sitio donde hay que dar es el sitio donde
+  está la palabra.
+
+  Y sin `alTocar` es un `div`, no un botón apagado. Un botón que no
+  hace nada se toca igual — y en una pared se toca dos y tres veces
+  antes de creerse que no hace nada.
+*/
+function Fila({
+  rutina: r,
+  alTocar,
+}: {
+  rutina: RutinaEnLaPared
+  alTocar: (() => void) | null
+}) {
+  const marco = `flex w-full items-center gap-5 rounded-[28px] border bg-superficie px-6 py-4 text-left ${
+    r.hecha ? 'opacity-45' : ''
+  }`
+  const pinta = {
+    borderColor: 'var(--t-borde)',
+    borderLeft: `6px solid ${r.hecha ? 'var(--t-borde)' : AMBITO.verde}`,
+  }
+
+  const dentro = (
+    <>
+      <span
+        className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px] border-2"
+        style={{
+          borderColor: r.hecha ? 'transparent' : 'var(--t-borde)',
+          background: r.hecha ? AMBITO.verde : 'transparent',
+          color: '#FFFFFF',
+        }}
+      >
+        {r.hecha && <Ico nombre="check" tam={26} grosor={2.6} />}
+      </span>
+
+      <span className="min-w-0 flex-1">
+        {(r.hora || r.dequien) && (
+          <span className="block text-[15px] font-extrabold uppercase tracking-wider text-tenue">
+            {r.hora && <span className="tabular-nums normal-case">{r.hora.slice(0, 5)}</span>}
+            {r.hora && r.dequien && <span className="mx-2">·</span>}
+            {r.dequien}
+          </span>
+        )}
+        <span
+          className={`block text-[24px] font-extrabold leading-tight text-tinta ${
+            r.hecha ? 'line-through' : ''
+          }`}
+        >
+          {r.que}
+        </span>
+      </span>
+    </>
+  )
+
+  if (!alTocar) {
+    return (
+      <div className={marco} style={pinta}>
+        {dentro}
+      </div>
+    )
+  }
+
+  return (
+    <button type="button" onClick={alTocar} className={`tocable ${marco}`} style={pinta}>
+      {dentro}
+    </button>
   )
 }

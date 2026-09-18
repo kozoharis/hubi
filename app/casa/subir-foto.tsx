@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { api } from '@/lib/api'
 import { encoger } from '@/lib/encoger'
 import { Ico } from '../iconos'
+import CamaraDeLaPared from './camara'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -18,6 +19,22 @@ import { Ico } from '../iconos'
   Por eso el botón tiene que ser inconfundible y estar en un solo sitio.
   Un segundo sitio desde el que subir sería un segundo camino que
   mantener, y en una pared nadie va a buscar el otro.
+
+  ─────────────────────────────────────────────────────────────
+  ⚠️  Y LA CÁMARA SE ABRE DENTRO, NO FUERA
+
+  Haris: *«debería tener como un marco o algo así, o un botón de salir
+  o atrás, por si entras sin querer»*.
+
+  Esto abría la cámara de Android, que es OTRA APLICACIÓN: no se le
+  puede poner un marco ni un «Salir» de mappel, y en una pared que va a
+  pantalla completa y sin barras, quien tocaba sin querer se quedaba
+  fuera de mappel y sin camino de vuelta a la vista.
+
+  Ahora el botón abre `camara.tsx`, que es una pantalla nuestra con su
+  marco, su «Salir» siempre puesto y la foto enseñada antes de
+  guardarla. El `<input>` de abajo NO se va: es el camino de repuesto
+  para el aparato que no deje abrir la cámara desde el navegador.
 
   ─────────────────────────────────────────────────────────────
   `capture` ABRE LA CÁMARA, Y SI NO HAY, ABRE LOS ARCHIVOS
@@ -38,6 +55,7 @@ import { Ico } from '../iconos'
 */
 export default function SubirFoto({ alTerminar }: { alTerminar: () => void }) {
   const campo = useRef<HTMLInputElement>(null)
+  const [abierta, setAbierta] = useState(false)
   const [subiendo, setSubiendo] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
 
@@ -75,6 +93,20 @@ export default function SubirFoto({ alTerminar }: { alTerminar: () => void }) {
 
   return (
     <div className="flex items-center gap-4">
+      {abierta && (
+        <CamaraDeLaPared
+          alGuardar={alTerminar}
+          cerrar={() => setAbierta(false)}
+          /* Si esta tableta no deja abrir la cámara desde el
+             navegador, se cae al camino de antes en vez de dejar a
+             nadie mirando un aviso. */
+          alUsarLaDelSistema={() => {
+            setAbierta(false)
+            campo.current?.click()
+          }}
+        />
+      )}
+
       {fallo && (
         <p className="text-[17px] font-bold" style={{ color: 'var(--t-alerta)' }}>
           {fallo}
@@ -97,7 +129,7 @@ export default function SubirFoto({ alTerminar }: { alTerminar: () => void }) {
 
       <button
         type="button"
-        onClick={() => campo.current?.click()}
+        onClick={() => setAbierta(true)}
         disabled={subiendo}
         className="tocable flex h-[60px] items-center gap-3 rounded-full border border-borde bg-fondo px-6 text-[18px] font-extrabold text-tinta disabled:opacity-60"
       >

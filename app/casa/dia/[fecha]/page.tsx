@@ -3,10 +3,12 @@ import { notFound } from 'next/navigation'
 import { hoyAqui } from '@/lib/tablon'
 import { elLunesDe } from '@/lib/menus'
 import { laPared, loApuntado, losMenus, type CosaDeLaPared } from '@/lib/pared'
+import { loDeHoy } from '@/lib/rutinas'
 import { Ico } from '../../../iconos'
 import { AMBITO } from '../../../piezas'
 import { colorApagado } from '@/lib/gente'
 import Cosa from '../../cosa'
+import Rutinas from '../../rutinas'
 import Mes from '../../calendario/mes'
 import { Rotulo } from '../../rotulo'
 import Apuntar, { type Quien } from './apuntar'
@@ -97,10 +99,32 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
   const delMes = `${ano}-${String(mes).padStart(2, '0')}`
   const ultimo = String(new Date(ano, mes, 0).getDate()).padStart(2, '0')
 
-  const [cosas, menus, delMesEntero, puedeApuntar, gente, puedeCambiar] = await Promise.all([
+  const [cosas, menus, delMesEntero, rutinas, puedeApuntar, gente, puedeCambiar] =
+    await Promise.all([
     loApuntado(supabase, casa, fecha, fecha),
     losMenus(supabase, casa, fecha, fecha),
     loApuntado(supabase, casa, `${delMes}-01`, `${delMes}-${ultimo}`),
+    /*
+      ── Y LO DE CADA DÍA ──
+
+      Haris: *«¿no falta el tema de tareas, de las cosas que hay que
+      hacer en casa, o rutinas?»*.
+
+      No faltaba, pero estaba a medias: las rutinas solo salían en Hoy.
+      O sea que la pared sabía lo que tocaba HOY y no sabía decir lo que
+      toca el jueves — y «lo de cada día» es justamente lo que se
+      pregunta cuando se mira un día de la semana que viene.
+
+      Va aquí, con lo demás del día, y no en una pestaña nueva: es el
+      punto 18 del planteamiento, y es lo que ya decidimos cuando
+      Tareas se fue al Calendario. Para Juan Miguel y Conchita todo son
+      **cosas que tengo que recordar**, y una sexta pestaña volvería a
+      pedirles que distingan entre una tarea y una rutina antes de
+      saber dónde mirar.
+
+      Y en Hoy se quedan donde estaban: esto añade, no mueve.
+    */
+    loDeHoy(supabase, casa, null, fecha),
     /*
       ¿Puede esta pantalla apuntar? Se pregunta a la BASE y no se deduce
       aquí. Si el paso 75 no está dado, la función no existe, esto
@@ -184,6 +208,10 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
 
   const d = new Date(`${fecha}T12:00:00`)
   const esHoy = fecha === hoy
+
+  /* El nombre de pila de cada uno, para poder decir de quién es una
+     rutina. Sale de `gente`, que ya se ha pedido arriba. */
+  const comoSeLlama = new Map(gente.map((g) => [g.id, g.nombre]))
 
   const horas: number[] = []
   for (let h = DESDE; h <= HASTA; h++) horas.push(h)
@@ -295,11 +323,41 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
           {puedeApuntar && <Apuntar fecha={fecha} gente={gente} />}
         </div>
 
-        {/* ── El mes, con este día marcado ── */}
-        <div>
-          <Rotulo>El mes</Rotulo>
-          <div className="mt-5">
-            <Mes hoy={hoy} senalado={fecha} conAlgo={conAlgo} lunes={elLunesDe(fecha)} />
+        <div className="space-y-12">
+          {/*
+            ── LO DE CADA DÍA ──
+
+            En la columna de la derecha y encima del mes: lo de la
+            izquierda es lo que pasa ESE día a una hora, y esto es lo
+            que se repite. Juntarlos en la misma tira haría que «sacar
+            la basura» y «médico a las diez y media» se leyeran como la
+            misma clase de cosa.
+
+            Se tacha SOLO si el día es hoy. Marcar una rutina significa
+            «esto se ha hecho hoy» —la fecha la pone la base—, así que
+            en el jueves que viene se lee y no se toca. Está explicado
+            en `rutinas.tsx`.
+          */}
+          {rutinas.length > 0 && (
+            <Rutinas
+              enElDia
+              sePuedeTachar={esHoy}
+              rutinas={rutinas.map((r) => ({
+                id: r.id,
+                que: r.que,
+                hora: r.hora,
+                hecha: r.hecha,
+                dequien: r.para ? (comoSeLlama.get(r.para) ?? null) : null,
+              }))}
+            />
+          )}
+
+          {/* ── El mes, con este día marcado ── */}
+          <div>
+            <Rotulo>El mes</Rotulo>
+            <div className="mt-5">
+              <Mes hoy={hoy} senalado={fecha} conAlgo={conAlgo} lunes={elLunesDe(fecha)} />
+            </div>
           </div>
         </div>
       </div>
