@@ -74,6 +74,18 @@ export default function Semana() {
 
   // ── El cajón de ideas ──
   const [abierto, setAbierto] = useState(false)
+  /*
+    ── CUÁL SE ESTÁ CAMBIANDO ──
+
+    Haris: *«los menús deben poder editarse, por si quieres hacer
+    alguna corrección o ajuste»*.
+
+    Nulo quiere decir «una nueva». Con identificador, el MISMO
+    formulario de abajo sale relleno y guarda encima de ésa. Un segundo
+    formulario para corregir sería la misma pantalla escrita dos veces,
+    y la próxima casilla que se añada solo aparecería en una.
+  */
+  const [cambiando, setCambiando] = useState<string | null>(null)
   const [titulo, setTitulo] = useState('')
   const [url, setUrl] = useState('')
   /* La receta escrita, para las que no tienen enlace — y también para
@@ -323,6 +335,7 @@ export default function Semana() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        id: cambiando ?? undefined,
         titulo: titulo.trim(),
         url: url.trim(),
         nota: nota.trim(),
@@ -344,12 +357,41 @@ export default function Semana() {
       return
     }
 
-    setRecetas((x) => [d.receta!, ...x])
+    /* Cambiada: se queda donde estaba. Sacarla a lo alto del cajón por
+       haberle corregido una letra movería el sitio de todo lo demás. */
+    setRecetas((x) =>
+      cambiando ? x.map((r) => (r.id === cambiando ? d.receta! : r)) : [d.receta!, ...x]
+    )
+    cerrarElCajon()
+  }
+
+  /* El formulario se cierra siempre igual: vaciarlo a mano en cada
+     salida es como se acaba teniendo un campo que conserva lo de la vez
+     anterior. */
+  function cerrarElCajon() {
     setTitulo('')
     setUrl('')
     setNota('')
     setLoQueLleva('')
+    setCambiando(null)
     setAbierto(false)
+  }
+
+  /*
+    ── CORREGIR UNA ──
+
+    Se abre el mismo formulario con lo que hay dentro. Y se hace aquí y
+    no en la API: lo que ya está en la pantalla no hace falta volver a
+    pedirlo.
+  */
+  function corregir(r: Receta) {
+    setTitulo(r.titulo)
+    setUrl(r.url ?? '')
+    setNota(r.nota ?? '')
+    setLoQueLleva((r.ingredientes ?? []).join('\n'))
+    setCambiando(r.id)
+    setAbierto(true)
+    setAviso(null)
   }
 
   async function quitarIdea(id: string) {
@@ -1086,15 +1128,34 @@ export default function Semana() {
                 </button>
               )}
 
-              {/* Era texto suelto de 14 px: 20 px de alto en una lista
-                  donde todo lo demás pasa de 48. */}
-              <button
-                onClick={() => quitarIdea(r.id)}
-                className="t-apoyo mt-1 flex h-12 items-center font-extrabold"
-                style={{ color: 'var(--t-alerta)' }}
-              >
-                Quitar
-              </button>
+              {/*
+                ── CORREGIRLA ──
+
+                Delante de «Quitar», y no al revés: hasta ahora la única
+                manera de arreglar una receta era quitarla y volver a
+                escribirla, y eso además dejaba sin enlazar los menús
+                que ya la usaban. El botón de al lado es el que hace
+                daño; éste tiene que ir antes.
+              */}
+              <div className="mt-1 flex items-center gap-5">
+                <button
+                  onClick={() => corregir(r)}
+                  className="t-apoyo flex h-12 items-center gap-1.5 font-extrabold text-tinta"
+                >
+                  <Ico nombre="lapiz" tam={18} grosor={2.4} />
+                  Cambiarla
+                </button>
+
+                {/* Era texto suelto de 14 px: 20 px de alto en una lista
+                    donde todo lo demás pasa de 48. */}
+                <button
+                  onClick={() => quitarIdea(r.id)}
+                  className="t-apoyo flex h-12 items-center font-extrabold"
+                  style={{ color: 'var(--t-alerta)' }}
+                >
+                  Quitar
+                </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -1108,6 +1169,11 @@ export default function Semana() {
         </div>
       ) : (
         <div className="mt-4 rounded-[20px] border border-borde bg-superficie px-4 py-4">
+          {/* Qué se está haciendo, escrito. El mismo formulario sirve
+              para guardar una nueva y para corregir una, y sin esta
+              línea no habría manera de saber cuál de las dos. */}
+          {cambiando && <p className="t-tarjeta mb-3">Cambiar esta receta</p>}
+
           <label className="block">
             <span className="rotulo">¿Qué es?</span>
             <input
@@ -1191,9 +1257,9 @@ export default function Semana() {
               desactivado={guardando || titulo.trim().length < 2}
               porQue={titulo.trim().length < 2 ? 'Ponle un nombre para reconocerlo.' : undefined}
             >
-              {guardando ? 'Guardando…' : 'Guardar'}
+              {guardando ? 'Guardando…' : cambiando ? 'Guardar los cambios' : 'Guardar'}
             </BotonPrincipal>
-            <BotonSecundario onClick={() => setAbierto(false)}>Dejarlo</BotonSecundario>
+            <BotonSecundario onClick={cerrarElCajon}>Dejarlo</BotonSecundario>
           </div>
         </div>
       )}

@@ -50,12 +50,33 @@ import { Ico } from '../../iconos'
   Ninguna ruta nueva: es el mismo `POST /api/menus` que usa el móvil.
 */
 
-export default function GuardarReceta({ cerrar }: { cerrar: () => void }) {
+export default function GuardarReceta({
+  receta,
+  cerrar,
+}: {
+  /*
+    ── Y TAMBIÉN SIRVE PARA CORREGIRLA ──
+
+    Haris: *«los menús deben poder editarse, por si quieres hacer
+    alguna corrección o ajuste»*.
+
+    Con receta, el formulario sale relleno y guarda encima de ésa. Sin
+    ella, es una nueva. El mismo formulario y no otro: un segundo
+    sitio donde escribir lo mismo es un segundo sitio donde arreglar
+    la próxima casilla.
+
+    Corregir sí y borrar no —lo de abajo sigue igual— y no es una
+    contradicción: una receta corregida sigue estando; una borrada,
+    no.
+  */
+  receta?: { id: string; titulo: string; url: string | null; nota: string | null; ingredientes?: string[] | null } | null
+  cerrar: () => void
+}) {
   const router = useRouter()
-  const [titulo, setTitulo] = useState('')
-  const [url, setUrl] = useState('')
-  const [nota, setNota] = useState('')
-  const [lleva, setLleva] = useState('')
+  const [titulo, setTitulo] = useState(receta?.titulo ?? '')
+  const [url, setUrl] = useState(receta?.url ?? '')
+  const [nota, setNota] = useState(receta?.nota ?? '')
+  const [lleva, setLleva] = useState((receta?.ingredientes ?? []).join('\n'))
   const [trabajando, setTrabajando] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
 
@@ -71,6 +92,7 @@ export default function GuardarReceta({ cerrar }: { cerrar: () => void }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: receta?.id,
           titulo: nombre,
           url: url.trim(),
           nota: nota.trim(),
@@ -109,10 +131,10 @@ export default function GuardarReceta({ cerrar }: { cerrar: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-[20px] font-extrabold uppercase tracking-[0.2em] text-tenue">
-          Una receta más
+          {receta ? 'Esta receta' : 'Una receta más'}
         </p>
         <p className="mt-1 text-[36px] font-extrabold leading-tight text-tinta">
-          Guardarla en la casa
+          {receta ? 'Cambiarla' : 'Guardarla en la casa'}
         </p>
 
         <Casilla
@@ -161,7 +183,7 @@ export default function GuardarReceta({ cerrar }: { cerrar: () => void }) {
         <div className="mt-8 flex flex-wrap gap-3">
           <Boton principal onClick={guardar} desactivado={trabajando || titulo.trim().length < 2}>
             <Ico nombre="check" tam={26} grosor={2.6} />
-            {trabajando ? 'Un momento…' : 'Guardarla'}
+            {trabajando ? 'Un momento…' : receta ? 'Guardar los cambios' : 'Guardarla'}
           </Boton>
           <Boton onClick={cerrar} desactivado={trabajando}>
             Ahora no

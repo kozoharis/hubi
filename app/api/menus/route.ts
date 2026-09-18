@@ -374,13 +374,44 @@ export async function PATCH(peticion: NextRequest) {
   })
 }
 
-// ── UNA IDEA NUEVA PARA EL CAJÓN ─────────────────────────────
+// ── UNA IDEA NUEVA PARA EL CAJÓN, O UNA CORRECCIÓN ───────────
+/*
+  ═══════════════════════════════════════════════════════════════
+  Y AHORA TAMBIÉN SIRVE PARA CAMBIARLA
+  ═══════════════════════════════════════════════════════════════
+
+  Haris: *«los menús deben poder editarse, algo que veo que ahora no se
+  puede, por si quieres hacer alguna corrección o ajuste»*.
+
+  Y tenía razón: se podían guardar y se podían quitar, y nada más. Una
+  receta escrita en casa se corrige SIEMPRE —falta un ingrediente, el
+  enlace era otro, el nombre no era ése—, y la única salida era
+  quitarla y volver a escribirla entera. Eso además rompe cosas: al
+  quitarla, los menús que la usaban se quedan sin `receta_id`, y con
+  ellos «¿tienes lo que lleva?» y las tandas que la repetían.
+
+  O sea que la falta de un botón de cambiar no era un hueco: era una
+  manera de perder datos sin que se notara.
+
+  ─────────────────────────────────────────────────────────────
+  LA MISMA PUERTA, Y NO UNA NUEVA
+
+  Con `id` cambia esa receta; sin `id`, guarda una nueva. Las
+  comprobaciones —el nombre, el enlace, las líneas repetidas, el tope
+  de treinta— son las mismas y están escritas una sola vez. Dos rutas
+  serían dos sitios donde arreglar la próxima validación.
+
+  `creado_por` NO se toca al cambiar: quien escribió la receta la
+  escribió, aunque la corrija otro.
+*/
 export async function POST(peticion: NextRequest) {
   const supabase = await clienteSesion()
   const user = await quien(supabase)
   if (!user) return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
 
   const cuerpo = (await peticion.json().catch(() => ({}))) as {
+    /** Con identificador se cambia ésa. Sin él, es una nueva. */
+    id?: string
     titulo?: string
     url?: string
     nota?: string
@@ -418,31 +449,60 @@ export async function POST(peticion: NextRequest) {
     ),
   ].slice(0, 30)
 
+  const casa = await elEspacioO(supabase)
+  const cual = String(cuerpo.id ?? '').trim()
+
   const laFila = {
-    hogar_id: await elEspacioO(supabase),
     titulo,
     url: url || null,
     /* 2000 y no 500: una receta escrita entera no cabe en 500 letras,
        y ésa es justo la que no tiene enlace. */
     nota: String(cuerpo.nota ?? '').trim().slice(0, 2000) || null,
-    creado_por: user.id,
   }
 
-  let { data, error } = await supabase
-    .from('recetas')
-    .insert({ ...laFila, ingredientes })
-    .select('id, titulo, url, nota, ingredientes')
+  const VUELVE = 'id, titulo, url, nota, ingredientes'
+  const VUELVE_SIN = 'id, titulo, url, nota'
 
   /*
-    Si la rechaza por la columna nueva, se guarda SIN ella. Perder los
-    ingredientes es un incordio; perder la receta que alguien acaba de
-    escribir, no.
+    Cambiar o guardar. La red de los ingredientes es la misma en los dos
+    caminos y por lo mismo: si la base todavía no tiene esa columna, se
+    guarda sin ella. Perder los ingredientes es un incordio; perder la
+    receta que alguien acaba de escribir, no.
+
+    Es la cuarta vez que hace falta esta red en el proyecto: **una
+    columna nueva nunca puede ser obligatoria para lo que ya
+    funcionaba.**
   */
-  if (error && /ingredientes/.test(error.message)) {
+  let data: { id: string }[] | null = null
+  let error: { message: string } | null = null
+
+  if (cual) {
     ;({ data, error } = await supabase
       .from('recetas')
-      .insert(laFila)
-      .select('id, titulo, url, nota'))
+      .update({ ...laFila, ingredientes })
+      .eq('hogar_id', casa)
+      .eq('id', cual)
+      .select(VUELVE))
+
+    if (error && /ingredientes/.test(error.message)) {
+      ;({ data, error } = await supabase
+        .from('recetas')
+        .update(laFila)
+        .eq('hogar_id', casa)
+        .eq('id', cual)
+        .select(VUELVE_SIN))
+    }
+  } else {
+    const nueva = { ...laFila, hogar_id: casa, creado_por: user.id }
+
+    ;({ data, error } = await supabase
+      .from('recetas')
+      .insert({ ...nueva, ingredientes })
+      .select(VUELVE))
+
+    if (error && /ingredientes/.test(error.message)) {
+      ;({ data, error } = await supabase.from('recetas').insert(nueva).select(VUELVE_SIN))
+    }
   }
 
   if (error) {
@@ -452,8 +512,17 @@ export async function POST(peticion: NextRequest) {
     )
   }
   if (!data || data.length === 0) {
+    /*
+      Con `.select()`: un cambio que la seguridad no permite no da error
+      en Postgres — cambia CERO filas y calla. Sin esto, la pantalla
+      diría «guardado» y la receta seguiría como estaba.
+    */
     return NextResponse.json(
-      { error: 'No se ha podido guardar. Los menús todavía no están disponibles en esta casa.' },
+      {
+        error: cual
+          ? 'Esa receta ya no está.'
+          : 'No se ha podido guardar. Los menús todavía no están disponibles en esta casa.',
+      },
       { status: 409 }
     )
   }

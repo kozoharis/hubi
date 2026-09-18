@@ -63,6 +63,8 @@ export type Receta = {
 export default function Recetas({ recetas }: { recetas: Receta[] }) {
   const router = useRouter()
   const [abierta, setAbierta] = useState<Receta | null>(null)
+  /* Cuál se está corrigiendo. Nula, ninguna. */
+  const [corrigiendo, setCorrigiendo] = useState<Receta | null>(null)
   const [grande, setGrande] = useState(false)
   const [compra, setCompra] = useState<'quieto' | 'yendo' | 'hecho' | 'fallo'>('quieto')
   /* Guardar una receta desde la cocina, que es donde se apuntan. Ver
@@ -147,6 +149,11 @@ export default function Recetas({ recetas }: { recetas: Receta[] }) {
       </div>
 
       {guardando && <GuardarReceta cerrar={() => setGuardando(false)} />}
+
+      {/* Y la misma ventana, con la receta dentro, para corregirla. */}
+      {corrigiendo && (
+        <GuardarReceta receta={corrigiendo} cerrar={() => setCorrigiendo(null)} />
+      )}
 
       {/* ── La ventana ── */}
       {abierta && (
@@ -315,6 +322,23 @@ export default function Recetas({ recetas }: { recetas: Receta[] }) {
               )}
             </div>
           )}
+
+          {/*
+            ── CAMBIARLA ──
+
+            Dentro de la ventana y no en la lista: la lista es para
+            encontrar una receta, y ahí un botón de cambiar por renglón
+            sería un botón peligroso al lado de cada cosa que se busca.
+            Aquí ya se está mirando ÉSA.
+          */}
+          <button
+            type="button"
+            onClick={() => setCorrigiendo(abierta)}
+            className="tocable mt-5 flex h-[64px] items-center gap-3 rounded-full border border-borde bg-superficie px-7 text-[19px] font-extrabold text-tinta"
+          >
+            <Ico nombre="lapiz" tam={22} grosor={2.4} />
+            Cambiar esta receta
+          </button>
 
           {/*
             El aviso de lo que no podemos evitar. Muchas páginas se
