@@ -356,22 +356,41 @@ export default async function Hoy() {
           más que el tamaño.
         */}
         {/*
-          ── Y CON UN ALTO, NO CON UNA PROPORCIÓN ──
+          ── Y SIN NINGÚN ALTO ESCRITO A MANO ──
 
-          Llevaba la proporción de 16 por 10, que en una tableta ancha
-          son más de 550 px: cabía justo, y dejó de caber en cuanto
-          Android puso sus dos barras. La foto se cortaba contra el
-          borde de abajo.
+          Haris: *«que se ajuste al espacio que brinde cualquier
+          dispositivo»*. Tiene razón, y este trozo ha tenido ya dos
+          altos inventados:
 
-          Ahora el hueco manda: un tercio de la pantalla como mucho, y
-          nunca más de 380 px. Dentro, la foto llena lo que haya y se
-          recorta desde el centro. Lo de arriba —lo de hoy y lo de cada
-          día— se reparte el resto, que ya sabe hacerlo solo.
+            1 · la proporción de 16 por 10, que en una tableta ancha
+                son más de 550 px. Cabía justo, y dejó de caber en
+                cuanto Android puso sus barras;
+            2 · `min(34vh, 380px)`, que es lo mismo con otra cara: dos
+                números elegidos mirando UNA pantalla. Y encima con
+                `vh`, que mide la ventana entera y no esta columna —
+                o sea que ni siquiera medía lo que hacía falta.
+
+          Un alto escrito a mano es una pantalla concreta metida en el
+          código. Siempre acaba igual: en la tableta de al lado sobra
+          medio cristal en blanco, o falta.
+
+          ── AHORA LA FOTO ES LO QUE SOBRE ──
+
+          `flex-1` con `min-h-0`: se queda con el hueco que dejan lo de
+          hoy y lo de cada día, sea el que sea. Un día sin nada
+          apuntado —como hoy— la foto es grande y llena la columna, que
+          es justo lo que uno querría ver en una cocina cuando no hay
+          nada que hacer. Un día con ocho cosas, la foto encoge y lo
+          que hay que hacer manda.
+
+          Y no puede desaparecer: `LoQueQuepa` pesa 2 y esto 1, así que
+          del hueco libre siempre le toca un trozo.
+
+          `mt-auto` se va con el alto fijo. Servía para pegarla abajo
+          cuando medía lo que medía; algo que crece no necesita que lo
+          empujen.
         */}
-        <div
-          className="mt-auto hidden shrink-0 pt-7 lg:block"
-          style={{ height: 'min(34vh, 380px)' }}
-        >
+        <div className="hidden min-h-0 flex-1 pt-7 lg:block">
           <Fotos alto />
         </div>
       </div>

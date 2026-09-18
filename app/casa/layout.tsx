@@ -9,6 +9,7 @@ import Despierta from './despierta'
 import Noche from './noche'
 import Tiempo from './tiempo'
 import PantallaCompleta from './pantalla-completa'
+import AltoDeVerdad from './alto-de-verdad'
 
 export const dynamic = 'force-dynamic'
 
@@ -150,7 +151,21 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
       incluidas. Lo entienden todos los navegadores desde 2022.
     */}
     <div
-      className="flex h-dvh flex-col overflow-hidden bg-fondo px-10 py-8 xl:px-14 xl:py-10"
+      className="flex flex-col overflow-hidden bg-fondo px-10 py-8 xl:px-14 xl:py-10"
+      /*
+        ── Y NI SIQUIERA `100dvh` ES SIEMPRE LO QUE SE VE ──
+
+        Era `h-dvh`. `100dvh` arregló lo de `100vh` y sigue siendo el
+        suelo de esto, pero en Android la barra de gestos se pinta
+        ENCIMA de la página y la ventana se declara como si no
+        estuviera: la pared mide unos 40 px de más y lo que sobra sale
+        por abajo, que es donde están la foto y la compra.
+
+        `--alto-pared` lo pone `alto-de-verdad.tsx` desde
+        `visualViewport`, que es lo que el navegador enseña de verdad.
+        Y mientras no llegue, `100dvh`: nunca se queda sin alto.
+      */
+      style={{ height: 'var(--alto-pared, 100dvh)' }}
       id="la-pared"
     >
       {/*
@@ -165,6 +180,9 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
           toque. El porqué —y por qué hace falta un toque— está en
           `pantalla-completa.tsx`. */}
       <PantallaCompleta />
+
+      {/* Tampoco pinta: apunta el alto que de verdad se ve. */}
+      <AltoDeVerdad />
 
       <VuelveAHoy />
 
