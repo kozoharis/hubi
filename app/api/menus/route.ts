@@ -39,12 +39,17 @@ export async function GET(peticion: NextRequest) {
     'id, fecha, momento, que, receta_id, grupo_id, cada_semanas, repite_hasta, comprobado_en, faltan'
   const MENU_SIN = 'id, fecha, momento, que, receta_id'
 
+  /* Por `creado_en`: desde el paso 85, en una comida caben varios
+     platos, y el orden en que se escribieron es el orden en que se
+     comen. Sin esto, el primero y el segundo salen como quiera la
+     base — y cambian de sitio entre una carga y otra. */
   let { data, error } = await supabase
     .from('menus')
     .select(MENU_CON)
     .eq('hogar_id', casa)
     .gte('fecha', dias[0])
     .lte('fecha', dias[6])
+    .order('creado_en', { ascending: true })
 
   if (error) {
     const segunda = await supabase
@@ -53,6 +58,7 @@ export async function GET(peticion: NextRequest) {
       .eq('hogar_id', casa)
       .gte('fecha', dias[0])
       .lte('fecha', dias[6])
+      .order('creado_en', { ascending: true })
     data = segunda.data as typeof data
     error = segunda.error
   }
@@ -124,19 +130,49 @@ export async function GET(peticion: NextRequest) {
   })
 }
 
-// ── PONER O CAMBIAR LO DE UN DÍA ─────────────────────────────
+// ── PONER, CAMBIAR O QUITAR UN PLATO ─────────────────────────
+/*
+  ═══════════════════════════════════════════════════════════════
+  EN UNA COMIDA CABEN VARIOS PLATOS
+  ═══════════════════════════════════════════════════════════════
+
+  Haris: *«en una cena o comida pueden haber varios platos, no sólo
+  uno»*.
+
+  Hasta el paso 85, la base tenía un índice único de una comida y una
+  cena por día, y esta ruta estaba escrita para eso: buscaba la fila de
+  ese día y ese momento, y la cambiaba o la creaba. Un menú era un
+  hueco que se pisaba.
+
+  Ahora un menú es **un plato**, y en una comida caben los que hagan
+  falta. Eso cambia lo que significa cada llamada, y conviene tenerlo
+  escrito porque de aquí cuelgan cuatro pantallas:
+
+      que con texto  ·  con id   →  se cambia ESE plato
+                     ·  sin id   →  se añade un plato más
+
+      que vacío      ·  con id   →  se quita ESE plato
+                     ·  sin id   →  se quita TODO lo de esa comida
+
+  El último caso es el de antes, y se conserva a propósito: «borra el
+  texto y ese día se queda sin nada» es lo que espera cualquiera, y es
+  lo que sigue haciendo la pantalla del móvil cuando se vacía el campo
+  del único plato que había.
+*/
 export async function PUT(peticion: NextRequest) {
   const supabase = await clienteSesion()
   const user = await quien(supabase)
   if (!user) return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
 
   const cuerpo = (await peticion.json().catch(() => ({}))) as {
+    id?: string
     fecha?: string
     momento?: string
     que?: string
     receta_id?: string | null
   }
 
+  const id = String(cuerpo.id ?? '').trim() || null
   const fecha = String(cuerpo.fecha ?? '')
   const momento = cuerpo.momento === 'cena' ? 'cena' : 'comida'
   const que = String(cuerpo.que ?? '').trim().slice(0, 200)
@@ -145,21 +181,24 @@ export async function PUT(peticion: NextRequest) {
     return NextResponse.json({ error: 'La fecha no es válida.' }, { status: 400 })
   }
 
+  const casa = await elEspacioO(supabase)
+
   /*
     VACÍO SIGNIFICA QUITARLO.
 
-    Es lo que espera cualquiera: borras el texto y ese día se queda sin
-    nada. Guardar una cadena vacía dejaría un menú fantasma que ocupa
-    sitio, sale en la pantalla como un renglón en blanco y encima
-    bloquea el índice único de ese día.
+    Con identificador se quita ese plato y los demás se quedan. Sin
+    identificador se quita la comida entera, que es lo que hacía antes
+    y lo que sigue esperando quien borra el texto de un campo.
+
+    Guardar una cadena vacía dejaría un plato fantasma que ocupa sitio
+    y sale en la pantalla como un renglón en blanco.
   */
   if (!que) {
-    const { error } = await supabase
-      .from('menus')
-      .delete()
-      .eq('hogar_id', await elEspacioO(supabase))
-      .eq('fecha', fecha)
-      .eq('momento', momento)
+    const quitar = supabase.from('menus').delete().eq('hogar_id', casa)
+
+    const { error } = id
+      ? await quitar.eq('id', id)
+      : await quitar.eq('fecha', fecha).eq('momento', momento)
 
     if (error) {
       return NextResponse.json(
@@ -170,22 +209,8 @@ export async function PUT(peticion: NextRequest) {
     return NextResponse.json({ bien: true, quitado: true })
   }
 
-  /*
-    Se busca y se cambia, o se crea. Con `upsert` haría falta declarar
-    el índice único aquí, y el día que ese índice cambie de nombre esto
-    fallaría en silencio. Dos pasos son más largos y no dependen de
-    cómo se llame nada.
-  */
-  const { data: yaHay } = await supabase
-    .from('menus')
-    .select('id')
-    .eq('hogar_id', await elEspacioO(supabase))
-    .eq('fecha', fecha)
-    .eq('momento', momento)
-    .maybeSingle()
-
   const campos = {
-    hogar_id: await elEspacioO(supabase),
+    hogar_id: casa,
     fecha,
     momento,
     que,
@@ -193,14 +218,37 @@ export async function PUT(peticion: NextRequest) {
     creado_por: user.id,
   }
 
-  const { data, error } = yaHay
+  /*
+    Con identificador se cambia ESE plato; sin él se añade uno más.
+
+    Ya no se busca la fila por día y momento: eso era el modelo viejo
+    —un hueco por comida— y aplicado ahora pisaría el primer plato cada
+    vez que alguien quisiera poner el segundo.
+  */
+  const { data, error } = id
     ? await supabase
         .from('menus')
         .update(campos)
-        .eq('hogar_id', await elEspacioO(supabase))
-        .eq('id', yaHay.id)
+        .eq('hogar_id', casa)
+        .eq('id', id)
         .select('id')
     : await supabase.from('menus').insert(campos).select('id')
+
+  /*
+    EL PLATO REPETIDO, DICHO CON PALABRAS.
+
+    El índice del paso 85 impide dos veces el mismo plato en la misma
+    comida — que es el duplicado de un toque de más. Sin esto, eso
+    llegaría a la pantalla como «no se ha podido guardar», que hace
+    pensar que falla la aplicación cuando lo que pasa es que ya está
+    puesto.
+  */
+  if (error && /menus_sin_repetir_plato|duplicate key/.test(error.message)) {
+    return NextResponse.json(
+      { error: `«${que}» ya está puesto en esa ${momento}.` },
+      { status: 409 }
+    )
+  }
 
   /* Con `.select()`: un escrito que la seguridad no permite contesta
      «todo bien» habiendo tocado cero filas. */

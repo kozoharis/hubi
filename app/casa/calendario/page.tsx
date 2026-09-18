@@ -64,6 +64,20 @@ export const dynamic = 'force-dynamic'
   para decir «ésta, entre sus vecinas».
 */
 
+/*
+  Los platos de una comida, en un renglón. Un punto medio entre ellos,
+  que no se confunde con el nombre de un plato como sí hace la coma
+  («lentejas con chorizo, y arroz»). Desde el paso 85 una comida puede
+  tener varios.
+*/
+function juntos(menus: { momento: string; que: string | null }[], cual: string): string | null {
+  const nombres = menus
+    .filter((m) => m.momento === cual)
+    .map((m) => (m.que ?? '').trim())
+    .filter(Boolean)
+  return nombres.length > 0 ? nombres.join(' · ') : null
+}
+
 export default async function Calendario({
   searchParams,
 }: {
@@ -161,8 +175,9 @@ export default async function Calendario({
         {dias.map((dia) => {
           const esHoy = dia === hoy
           const suyas = cosas.filter((c) => c.fecha === dia)
-          const comida = menus.find((m) => m.fecha === dia && m.momento === 'comida')?.que ?? null
-          const cena = menus.find((m) => m.fecha === dia && m.momento === 'cena')?.que ?? null
+          const delDia = menus.filter((m) => m.fecha === dia)
+          const comida = juntos(delDia, 'comida')
+          const cena = juntos(delDia, 'cena')
 
           return (
             /*

@@ -56,6 +56,20 @@ export const dynamic = 'force-dynamic'
   que no lleva a ningún sitio no se lee como «esto no es para ti», se
   lee como «esto está roto».
 */
+/*
+  Los platos de una comida, en un renglón. Un punto medio entre ellos,
+  que no se confunde con el nombre de un plato como sí hace la coma
+  («lentejas con chorizo, y arroz»). Desde el paso 85 una comida puede
+  tener varios.
+*/
+function juntos(menus: { momento: string; que: string | null }[], cual: string): string | null {
+  const nombres = menus
+    .filter((m) => m.momento === cual)
+    .map((m) => (m.que ?? '').trim())
+    .filter(Boolean)
+  return nombres.length > 0 ? nombres.join(' · ') : null
+}
+
 export default async function DiaADia() {
   const supabase = await clienteSesion()
   const user = await quien(supabase)
@@ -160,8 +174,8 @@ export default async function DiaADia() {
   ])
 
   const hechas = deHoy.filter((r) => r.hecha).length
-  const laComida = elMenu.find((m) => m.momento === 'comida')?.que ?? null
-  const laCena = elMenu.find((m) => m.momento === 'cena')?.que ?? null
+  const laComida = juntos(elMenu, 'comida')
+  const laCena = juntos(elMenu, 'cena')
 
   /*
     La compra, los menús y lo de hoy los ve todo el mundo. El asesor,

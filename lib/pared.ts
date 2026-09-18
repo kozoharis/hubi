@@ -294,12 +294,15 @@ export async function losMenus(
   const SIN = 'fecha, momento, que'
 
   try {
+    /* Ordenados por cuándo se escribieron: desde el paso 85 en una
+       comida caben varios platos, y ése es el orden en que se comen. */
     const { data, error } = await supabase
       .from('menus')
       .select(CON)
       .eq('hogar_id', casa)
       .gte('fecha', desde)
       .lte('fecha', hasta)
+      .order('creado_en', { ascending: true })
 
     if (!error) return (data ?? []) as MenuDelDia[]
 

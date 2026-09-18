@@ -159,8 +159,17 @@ export default async function Hoy() {
   const deHoy = pendientes.filter((c) => c.fecha === hoy)
   const luego = pendientes.filter((c) => c.fecha !== hoy).slice(0, 4)
 
-  const comida = menus.find((m) => m.momento === 'comida') ?? null
-  const cena = menus.find((m) => m.momento === 'cena') ?? null
+  /*
+    ── LOS PLATOS DE HOY, EN PLURAL ──
+
+    Desde el paso 85 una comida puede tener varios platos. Aquí no se
+    abre una fila por plato: esta pantalla tiene que caber entera, y lo
+    que hace falta saber al pasar por la cocina es QUÉ SE COME, no
+    cuántas cosas son. Así que se juntan en un renglón —«Lentejas ·
+    Merluza»— y lo que lleva cada uno se suma.
+  */
+  const comida = menus.filter((m) => m.momento === 'comida')
+  const cena = menus.filter((m) => m.momento === 'cena')
 
   /*
     ── Y SI LO DE HOY SE PUEDE HACER ──
@@ -173,7 +182,9 @@ export default async function Hoy() {
     rechazaría la consulta entera y esta pantalla se quedaría sin
     menús por una casilla que no existe.
   */
-  const conReceta = [comida?.receta_id, cena?.receta_id].filter(Boolean) as string[]
+  const conReceta = [...comida, ...cena]
+    .map((m) => m.receta_id)
+    .filter(Boolean) as string[]
   const loQueLleva = await (async () => {
     if (conReceta.length === 0) return new Map<string, string[]>()
     try {
@@ -369,23 +380,23 @@ export default async function Hoy() {
       <div className="mt-9 flex min-h-0 flex-col lg:mt-0">
         <Rotulo>Qué se come</Rotulo>
 
-        {!comida && !cena ? (
+        {comida.length === 0 && cena.length === 0 ? (
           <Nada>Hoy no hay menú puesto.</Nada>
         ) : (
           <div className="shrink-0 space-y-2.5">
             <Plato
               momento="Comida"
-              que={comida?.que ?? null}
-              lleva={loQueLleva.get(comida?.receta_id ?? '')?.length ?? 0}
-              mirado={Boolean(comida?.comprobado_en)}
-              faltan={comida?.faltan?.length ?? 0}
+              que={juntos(comida)}
+              lleva={cuantoLleva(comida, loQueLleva)}
+              mirado={comida.length > 0 && comida.every((m) => m.comprobado_en)}
+              faltan={comida.reduce((n, m) => n + (m.faltan?.length ?? 0), 0)}
             />
             <Plato
               momento="Cena"
-              que={cena?.que ?? null}
-              lleva={loQueLleva.get(cena?.receta_id ?? '')?.length ?? 0}
-              mirado={Boolean(cena?.comprobado_en)}
-              faltan={cena?.faltan?.length ?? 0}
+              que={juntos(cena)}
+              lleva={cuantoLleva(cena, loQueLleva)}
+              mirado={cena.length > 0 && cena.every((m) => m.comprobado_en)}
+              faltan={cena.reduce((n, m) => n + (m.faltan?.length ?? 0), 0)}
             />
           </div>
         )}
@@ -510,6 +521,24 @@ function ALaVista({
   cena esté sin poner es justamente lo que alguien necesita ver al pasar
   por la cocina a las siete.
 */
+/*
+  Los platos de una comida, en un renglón. Un punto medio entre ellos y
+  no una coma: la coma se confunde con el nombre del plato —«lentejas
+  con chorizo, y arroz»— y el punto medio no se confunde con nada.
+*/
+function juntos(platos: { que: string | null }[]): string | null {
+  const nombres = platos.map((p) => (p.que ?? '').trim()).filter(Boolean)
+  return nombres.length > 0 ? nombres.join(' · ') : null
+}
+
+/** Cuántos ingredientes hay que comprobar entre todos los platos. */
+function cuantoLleva(
+  platos: { receta_id?: string | null }[],
+  loQueLleva: Map<string, string[]>
+): number {
+  return platos.reduce((n, p) => n + (loQueLleva.get(p.receta_id ?? '')?.length ?? 0), 0)
+}
+
 function Plato({
   momento,
   que,

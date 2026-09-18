@@ -67,6 +67,20 @@ const MESES = [
 const DESDE = 7
 const HASTA = 22
 
+/*
+  Los platos de una comida, en un renglón. Un punto medio entre ellos,
+  que no se confunde con el nombre de un plato como sí hace la coma
+  («lentejas con chorizo, y arroz»). Desde el paso 85 una comida puede
+  tener varios.
+*/
+function juntos(menus: { momento: string; que: string | null }[], cual: string): string | null {
+  const nombres = menus
+    .filter((m) => m.momento === cual)
+    .map((m) => (m.que ?? '').trim())
+    .filter(Boolean)
+  return nombres.length > 0 ? nombres.join(' · ') : null
+}
+
 export default async function ElDia({ params }: { params: Promise<{ fecha: string }> }) {
   const { fecha } = await params
 
@@ -160,8 +174,8 @@ export default async function ElDia({ params }: { params: Promise<{ fecha: strin
 
   const conAlgo = new Set(delMesEntero.map((c) => c.fecha).filter(Boolean) as string[])
 
-  const comida = menus.find((m) => m.momento === 'comida')?.que ?? null
-  const cena = menus.find((m) => m.momento === 'cena')?.que ?? null
+  const comida = juntos(menus, 'comida')
+  const cena = juntos(menus, 'cena')
 
   /* Lo que no tiene hora, y lo que cae fuera de la franja: arriba, con
      su hora escrita si la lleva. No se pierde nada. */

@@ -64,18 +64,23 @@ import type { Receta } from './recetas'
 export default function Poner({
   fecha,
   momento,
+  id = null,
   que,
   recetas,
-  alPuesto,
   cerrar,
 }: {
   fecha: string
   momento: 'comida' | 'cena'
-  /** Lo que hay puesto ahora, si hay algo. */
+  /*
+    CUÁL de los platos de esa comida se está poniendo.
+
+    Nulo quiere decir uno nuevo — desde el paso 85 en una comida caben
+    varios—. Con identificador se cambia ése y los demás se quedan.
+  */
+  id?: string | null
+  /** Lo que hay puesto ahora en ESE plato, si hay algo. */
   que: string | null
   recetas: Receta[]
-  /** Para pintarlo YA, sin esperar a que vuelva la pantalla entera. */
-  alPuesto: (nuevo: string | null) => void
   cerrar: () => void
 }) {
   const router = useRouter()
@@ -92,7 +97,7 @@ export default function Poner({
       const r = await fetch(api('/api/menus'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fecha, momento, que: nuevo, receta_id: receta }),
+        body: JSON.stringify({ id: id ?? undefined, fecha, momento, que: nuevo, receta_id: receta }),
       })
       const d = (await r.json().catch(() => null)) as { error?: string } | null
 
@@ -102,9 +107,8 @@ export default function Poner({
         return
       }
 
-      /* Vacío significa quitarlo: lo decide la API, y aquí se pinta
-         igual. */
-      alPuesto(nuevo.trim() ? nuevo.trim() : null)
+      /* Vacío significa quitarlo. Con identificador se quita ese
+         plato; los demás de esa comida se quedan. Lo decide la API. */
       router.refresh()
       cerrar()
     } catch {
@@ -139,7 +143,7 @@ export default function Poner({
             que ? 'text-tinta' : 'text-apagado'
           }`}
         >
-          {que ?? 'Sin poner'}
+          {que ?? 'Otro plato'}
         </p>
 
         {/* ── 1 · EL CAJÓN, QUE ES EL CAMINO CORTO ── */}

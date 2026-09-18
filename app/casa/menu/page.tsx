@@ -4,7 +4,7 @@ import { laPared, lasListasDeCompra, losMenus } from '@/lib/pared'
 import { AMBITO } from '../../piezas'
 import { Nada, Rotulo } from '../rotulo'
 import Recetas, { type Receta } from './recetas'
-import Plato from './plato'
+import Comida from './plato'
 
 export const dynamic = 'force-dynamic'
 
@@ -136,8 +136,11 @@ export default async function Menu() {
           {dias.map((dia) => {
             const esHoy = dia === hoy
             const pasado = dia < hoy
-            const comida = menus.find((m) => m.fecha === dia && m.momento === 'comida')
-            const cena = menus.find((m) => m.fecha === dia && m.momento === 'cena')
+            /* En plural: desde el paso 85, en una comida caben varios
+               platos. Vienen ya ordenados por cuándo se escribieron,
+               que es el orden en que se comen. */
+            const comida = menus.filter((m) => m.fecha === dia && m.momento === 'comida')
+            const cena = menus.filter((m) => m.fecha === dia && m.momento === 'cena')
 
             return (
               <li
@@ -164,32 +167,38 @@ export default async function Menu() {
                   </span>
                 </span>
 
-                <Plato
+                <Comida
                   etiqueta="Comida"
-                  plato={{
-                    id: comida?.id,
-                    que: comida?.que ?? null,
-                    momento: 'comida',
+                  fecha={dia}
+                  momento="comida"
+                  platos={comida.map((m) => ({
+                    id: m.id,
+                    que: m.que ?? null,
+                    momento: 'comida' as const,
                     fecha: dia,
-                    comprobado_en: comida?.comprobado_en ?? null,
-                    faltan: comida?.faltan ?? null,
-                  }}
-                  ingredientes={loQueLleva.get(comida?.receta_id ?? '') ?? []}
+                    comprobado_en: m.comprobado_en ?? null,
+                    faltan: m.faltan ?? null,
+                    receta_id: m.receta_id ?? null,
+                  }))}
+                  ingredientesDe={(r) => loQueLleva.get(r ?? '') ?? []}
                   listas={listas}
                   recetas={lasRecetas}
                   apagado={pasado}
                 />
-                <Plato
+                <Comida
                   etiqueta="Cena"
-                  plato={{
-                    id: cena?.id,
-                    que: cena?.que ?? null,
-                    momento: 'cena',
+                  fecha={dia}
+                  momento="cena"
+                  platos={cena.map((m) => ({
+                    id: m.id,
+                    que: m.que ?? null,
+                    momento: 'cena' as const,
                     fecha: dia,
-                    comprobado_en: cena?.comprobado_en ?? null,
-                    faltan: cena?.faltan ?? null,
-                  }}
-                  ingredientes={loQueLleva.get(cena?.receta_id ?? '') ?? []}
+                    comprobado_en: m.comprobado_en ?? null,
+                    faltan: m.faltan ?? null,
+                    receta_id: m.receta_id ?? null,
+                  }))}
+                  ingredientesDe={(r) => loQueLleva.get(r ?? '') ?? []}
                   listas={listas}
                   recetas={lasRecetas}
                   apagado={pasado}

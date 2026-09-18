@@ -118,8 +118,24 @@ export default function Semana() {
     void traer()
   }, [])
 
-  function loDe(fecha: string, momento: Momento): Menu | undefined {
-    return menus.find((m) => m.fecha === fecha && m.momento === momento)
+  /*
+    ── LOS PLATOS DE ESA COMIDA. EN PLURAL ──
+
+    Haris: *«en una cena o comida pueden haber varios platos, no sólo
+    uno»*.
+
+    Esto era `loDe`, en singular, y devolvía el menú de ese día y ese
+    momento. No era un descuido de esta pantalla: la base tenía un
+    índice único de una comida y una cena por día desde el paso 48, y
+    todo lo de arriba estaba escrito contra esa idea.
+
+    El paso 85 lo cambia por otro que permite varios platos y sigue
+    impidiendo el mismo dos veces. Aquí se nota en una línea — `filter`
+    en vez de `find` — y en que cada comida pinta una fila por plato y
+    una más, vacía, para el siguiente.
+  */
+  function losDe(fecha: string, momento: Momento): Menu[] {
+    return menus.filter((m) => m.fecha === fecha && m.momento === momento)
   }
 
   /*
@@ -130,23 +146,69 @@ export default function Semana() {
     «macarron». Al salir del campo se manda una vez y lo que hay
     escrito es lo que queda.
   */
-  async function guardar(fecha: string, momento: Momento, que: string, recetaId?: string | null) {
-    const antes = loDe(fecha, momento)
-    if ((antes?.que ?? '') === que.trim() && recetaId === undefined) return
+  async function guardar(
+    fecha: string,
+    momento: Momento,
+    que: string,
+    recetaId?: string | null,
+    /*
+      CUÁL de los platos de esa comida.
+
+      Nulo quiere decir «uno nuevo», y es lo que manda la fila vacía
+      que hay debajo del último. Sin este dato habría que adivinar, y
+      adivinar aquí significa pisar el primer plato cada vez que
+      alguien quiere poner el segundo.
+    */
+    id?: string | null
+  ) {
+    const antes = id ? menus.find((m) => m.id === id) : undefined
+    const limpio = que.trim()
+
+    if (antes && (antes.que ?? '') === limpio && recetaId === undefined) return
+    /* Una fila vacía que se deja vacía no es nada que guardar. */
+    if (!antes && !limpio) return
+
+    /*
+      Mientras se guarda, el plato nuevo lleva un identificador de
+      mentira. Lleva el plato dentro porque ahora puede haber dos a la
+      vez en la misma comida, y hacen falta dos identificadores
+      distintos.
+
+      Y lleva el plato, y no la hora, porque el índice del paso 85
+      garantiza que en una comida no hay dos veces lo mismo: el texto ya
+      es único ahí. `Date.now()` también valdría, pero es una función
+      impura y esto se escribe durante el render.
+    */
+    const deMentira = `nuevo-${fecha}-${momento}-${limpio}`
 
     /* Se pinta ya y se manda después: escribir la cena y ver el texto
        parpadear medio segundo después hace dudar de si se ha guardado. */
     setMenus((lista) => {
-      const otros = lista.filter((m) => !(m.fecha === fecha && m.momento === momento))
-      if (!que.trim()) return otros
+      if (antes) {
+        if (!limpio) return lista.filter((m) => m.id !== antes.id)
+        return lista.map((m) =>
+          m.id === antes.id
+            ? {
+                ...m,
+                que: limpio,
+                receta_id: recetaId !== undefined ? recetaId : m.receta_id,
+                /* Si cambia el plato, lo comprobado deja de valer: los
+                   ingredientes son otros. */
+                comprobado_en: null,
+                faltan: null,
+              }
+            : m
+        )
+      }
+      if (!limpio) return lista
       return [
-        ...otros,
+        ...lista,
         {
-          id: antes?.id ?? `nuevo-${fecha}-${momento}`,
+          id: deMentira,
           fecha,
           momento,
-          que: que.trim(),
-          receta_id: recetaId !== undefined ? recetaId : (antes?.receta_id ?? null),
+          que: limpio,
+          receta_id: recetaId ?? null,
         },
       ]
     })
@@ -155,9 +217,10 @@ export default function Semana() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        id: antes?.id,
         fecha,
         momento,
-        que: que.trim(),
+        que: limpio,
         receta_id: recetaId !== undefined ? recetaId : (antes?.receta_id ?? null),
       }),
     })
@@ -184,9 +247,8 @@ export default function Semana() {
       sobre un menú que se acaba de poner.
     */
     if (d.id) {
-      setMenus((lista) =>
-        lista.map((m) => (m.fecha === fecha && m.momento === momento ? { ...m, id: d.id! } : m))
-      )
+      const cual = antes?.id ?? deMentira
+      setMenus((lista) => lista.map((m) => (m.id === cual ? { ...m, id: d.id! } : m)))
     }
   }
 
@@ -482,8 +544,23 @@ export default function Semana() {
           <div key={fecha} className="min-w-0">
             <p className="rotulo mb-1.5 truncate text-center">{comoSeLlamaElDia(fecha)}</p>
             <div className="flex flex-col gap-2 rounded-[14px] border border-borde bg-superficie p-2">
-              {MOMENTOS.map(({ valor, texto }) => {
-                const puesto = loDe(fecha, valor)
+              {MOMENTOS.flatMap(({ valor, texto }) => {
+                /*
+                  ── UNA FILA POR PLATO, Y UNA MÁS PARA EL SIGUIENTE ──
+
+                  En una comida caben varios platos (paso 85). La fila
+                  vacía del final es el «añadir otro»: se escribe en
+                  ella y se apunta uno más.
+
+                  Sólo aparece cuando ya hay algo puesto. Un día sin
+                  menú sigue teniendo UNA fila vacía y ni una más — con
+                  siete días y dos comidas, catorce huecos de más serían
+                  media pantalla de nada.
+                */
+                const puestos = losDe(fecha, valor)
+                const filas: (Menu | null)[] = puestos.length > 0 ? [...puestos, null] : [null]
+
+                return filas.map((puesto, i) => {
                 const suya = puesto?.receta_id
                   ? recetas.find((r) => r.id === puesto.receta_id)
                   : undefined
@@ -493,9 +570,15 @@ export default function Semana() {
                 const faltan = puesto?.faltan ?? []
 
                 return (
-                  <div key={valor} className="min-w-0">
+                  <div
+                    key={`${valor}-${puesto?.id ?? `otro-${puestos.length}`}`}
+                    className="min-w-0"
+                  >
                     <div className="mb-1 flex items-center justify-between gap-1">
-                      <span className="rotulo">{texto}</span>
+                      {/* El rótulo sólo encima del primero: «COMIDA»
+                          repetido en cada plato es la misma palabra
+                          diciendo dos cosas distintas. */}
+                      <span className="rotulo">{i === 0 ? texto : ''}</span>
                       {/* El desplegable de platos guardados, en pequeño.
                           Mismo `select` del sistema que en el móvil: lo
                           que cambia es el tamaño del tirador, no la
@@ -510,7 +593,7 @@ export default function Semana() {
                             value=""
                             onChange={(e) => {
                               const r = recetas.find((x) => x.id === e.target.value)
-                              if (r) guardar(fecha, valor, r.titulo, r.id)
+                              if (r) guardar(fecha, valor, r.titulo, r.id, puesto?.id ?? null)
                             }}
                             className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                           >
@@ -533,7 +616,7 @@ export default function Semana() {
 
                     <Renglon
                       valor={puesto?.que ?? ''}
-                      alSalir={(v) => guardar(fecha, valor, v)}
+                      alSalir={(v) => guardar(fecha, valor, v, undefined, puesto?.id ?? null)}
                       corto
                     />
 
@@ -591,7 +674,8 @@ export default function Semana() {
                       </button>
                     )}
                   </div>
-                )
+                  )
+                })
               })}
             </div>
           </div>
@@ -705,8 +789,23 @@ export default function Semana() {
             <p className="rotulo">{comoSeLlamaElDia(fecha)}</p>
 
             <div className="mt-2 space-y-2">
-              {MOMENTOS.map(({ valor, texto }) => {
-                const puesto = loDe(fecha, valor)
+              {MOMENTOS.flatMap(({ valor, texto }) => {
+                /*
+                  ── UNA FILA POR PLATO, Y UNA MÁS PARA EL SIGUIENTE ──
+
+                  En una comida caben varios platos (paso 85). La fila
+                  vacía del final es el «añadir otro»: se escribe en
+                  ella y se apunta uno más.
+
+                  Sólo aparece cuando ya hay algo puesto. Un día sin
+                  menú sigue teniendo UNA fila vacía y ni una más — con
+                  siete días y dos comidas, catorce huecos de más serían
+                  media pantalla de nada.
+                */
+                const puestos = losDe(fecha, valor)
+                const filas: (Menu | null)[] = puestos.length > 0 ? [...puestos, null] : [null]
+
+                return filas.map((puesto, i) => {
                 const suya = puesto?.receta_id
                   ? recetas.find((r) => r.id === puesto.receta_id)
                   : undefined
@@ -716,14 +815,17 @@ export default function Semana() {
                 const faltan = puesto?.faltan ?? []
 
                 return (
-                  <div key={valor}>
+                  <div key={`${valor}-${puesto?.id ?? `otro-${puestos.length}`}`}>
                     <div className="flex items-center gap-2.5">
+                      {/* El rótulo sólo delante del primero. El hueco se
+                          queda, para que los platos de una misma comida
+                          sigan alineados en columna. */}
                       <span className="t-apoyo w-[62px] shrink-0 font-extrabold">
-                        {texto}
+                        {i === 0 ? texto : ''}
                       </span>
                       <Renglon
                         valor={puesto?.que ?? ''}
-                        alSalir={(v) => guardar(fecha, valor, v)}
+                        alSalir={(v) => guardar(fecha, valor, v, undefined, puesto?.id ?? null)}
                       />
                       {/*
                         ── EL DESPLEGABLE ──
@@ -752,7 +854,7 @@ export default function Semana() {
                             value=""
                             onChange={(e) => {
                               const r = recetas.find((x) => x.id === e.target.value)
-                              if (r) guardar(fecha, valor, r.titulo, r.id)
+                              if (r) guardar(fecha, valor, r.titulo, r.id, puesto?.id ?? null)
                             }}
                             className="absolute inset-0 h-full w-full opacity-0"
                           >
@@ -883,7 +985,8 @@ export default function Semana() {
                       />
                     )}
                   </div>
-                )
+                  )
+                })
               })}
             </div>
           </li>
