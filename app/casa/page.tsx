@@ -344,8 +344,24 @@ export default async function Hoy() {
           día que sea, que en una pared que se mira de reojo importa
           más que el tamaño.
         */}
-        <div className="mt-auto hidden shrink-0 pt-7 lg:block">
-          <Fotos />
+        {/*
+          ── Y CON UN ALTO, NO CON UNA PROPORCIÓN ──
+
+          Llevaba la proporción de 16 por 10, que en una tableta ancha
+          son más de 550 px: cabía justo, y dejó de caber en cuanto
+          Android puso sus dos barras. La foto se cortaba contra el
+          borde de abajo.
+
+          Ahora el hueco manda: un tercio de la pantalla como mucho, y
+          nunca más de 380 px. Dentro, la foto llena lo que haya y se
+          recorta desde el centro. Lo de arriba —lo de hoy y lo de cada
+          día— se reparte el resto, que ya sabe hacerlo solo.
+        */}
+        <div
+          className="mt-auto hidden shrink-0 pt-7 lg:block"
+          style={{ height: 'min(34vh, 380px)' }}
+        >
+          <Fotos alto />
         </div>
       </div>
 

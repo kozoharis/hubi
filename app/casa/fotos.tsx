@@ -64,9 +64,26 @@ export default function Fotos({
     proporción fija — la foto llena lo que haya.
   */
   pantallaCompleta = false,
+  /*
+    ── LLENANDO EL HUECO QUE LE DEN ──
+
+    En la pared, las fotos van abajo del todo de la primera columna, y
+    ahí el alto NO lo decide la foto: lo decide lo que sobre.
+
+    Con la proporción fija de 16 por 10, en una tableta ancha la caja
+    salía de más de 550 px de alto, y bastaba con que Android pusiera
+    sus dos barras —unos 100 px menos de pantalla— para que la foto no
+    cupiera y se cortara contra el borde de abajo. Una foto cortada por
+    el borde no parece una decisión: parece una avería.
+
+    Con `alto`, la caja mide lo que le den y la foto se recorta desde
+    el centro, que es donde está la gente.
+  */
+  alto = false,
 }: {
   puedeSubir?: boolean
   pantallaCompleta?: boolean
+  alto?: boolean
 }) {
   const [fotos, setFotos] = useState<Foto[] | null>(null)
   const [cual, setCual] = useState(0)
@@ -154,7 +171,9 @@ export default function Fotos({
       className={
         pantallaCompleta
           ? 'relative h-full w-full overflow-hidden bg-black'
-          : 'relative overflow-hidden rounded-[28px] border border-borde bg-superficie'
+          : `relative overflow-hidden rounded-[28px] border border-borde bg-superficie${
+              alto ? ' h-full' : ''
+            }`
       }
     >
       {/*
@@ -164,7 +183,13 @@ export default function Fotos({
 
         A pantalla completa manda la pantalla, que ya tiene su forma.
       */}
-      <div className={pantallaCompleta ? 'relative h-full w-full' : 'relative aspect-[16/10] w-full'}>
+      <div
+        className={
+          pantallaCompleta || alto
+            ? 'relative h-full w-full'
+            : 'relative aspect-[16/10] w-full'
+        }
+      >
         {[anterior, actual].map((f, i) => {
           /* La de abajo y la de encima se turnan para que el fundido
              cruce siempre en el mismo sentido. */

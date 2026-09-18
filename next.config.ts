@@ -103,6 +103,11 @@ const CABECERAS = [
       'microphone=(self)',
       'camera=(self)',
       'geolocation=()',
+      /* La pared se pone a pantalla completa para que Android le quite
+         las barras. Va explícito aunque el valor por defecto ya sea
+         éste: una cabecera que enumera unas y calla otras invita a
+         suponer que lo callado está prohibido. */
+      'fullscreen=(self)',
       'payment=()',
       'usb=()',
       /* Que nadie pueda medir desde fuera cuánto tarda MAPPEL en pintar
