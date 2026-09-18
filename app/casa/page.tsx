@@ -79,7 +79,7 @@ export default async function Hoy() {
   /* Hasta dentro de dos semanas: de ahí sale «después». */
   const dentroDeDos = sumarDias(hoy, 14)
 
-  const [cosas, menus, destacado, laCompra, rutinas, gente] = await Promise.all([
+  const [cosas, menus, destacado, laCompra, rutinas, notas, gente] = await Promise.all([
     loApuntado(supabase, casa, hoy, dentroDeDos),
     losMenus(supabase, casa, hoy, hoy),
     loDestacado(supabase, casa),
@@ -147,6 +147,36 @@ export default async function Hoy() {
     /* Lo que toca hoy. `loDeHoy` ya envuelve sus fallos y devuelve
        vacío si las tablas no están. */
     loDeHoy(supabase, casa),
+    /*
+      ── EL CORCHO ──
+
+      Haris: *«veo que las notas no salen en el inicio, creo que
+      deberían, por lo menos un aviso»*.
+
+      Y tiene razón: una nota clavada en el corcho de una cocina existe
+      para que la vea quien pase, y quien pasa mira la pantalla de
+      Inicio — no se va a la pestaña de Notas a comprobar si hay algo.
+      Un corcho que hay que ir a consultar no es un corcho.
+
+      Aquí NO se decide cuáles salen: la restrictiva del paso 63 ya
+      filtra, igual que en la pestaña. `guardada_en is null` sí, que es
+      otra cosa: una nota retirada no cuelga de ninguna pared.
+    */
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('notas')
+          .select('id, texto')
+          .eq('hogar_id', casa)
+          .is('guardada_en', null)
+          .order('creada_en', { ascending: false })
+          .limit(8)
+        if (error) return [] as { id: string; texto: string }[]
+        return (data ?? []) as { id: string; texto: string }[]
+      } catch {
+        return [] as { id: string; texto: string }[]
+      }
+    })(),
     /* Los nombres Y SUS COLORES, para poder decir DE QUIÉN es cada
        cosa. En una casa de dos da igual; en una con niños, «17:00 ·
        Inglés» sin decir de quién no sirve de nada.
@@ -492,7 +522,7 @@ export default async function Hoy() {
         {loQueUrge.length > 0 && (
           <Link
             href="/casa/compra"
-            className="tocable mb-5 flex shrink-0 items-center gap-4 rounded-[24px] border px-6 py-4"
+            className="tocable mb-4 flex shrink-0 items-center gap-4 rounded-[22px] border px-6 py-3.5"
             style={{
               background: `color-mix(in srgb, var(--t-alerta) 12%, var(--t-superficie))`,
               borderColor: `color-mix(in srgb, var(--t-alerta) 45%, transparent)`,
@@ -554,32 +584,99 @@ export default async function Hoy() {
         */}
         {laCompra.length > 0 && (
           <>
-            <div className="mt-9 flex shrink-0 items-baseline gap-4">
+            <div className="mt-7 flex shrink-0 items-baseline gap-4">
               <Rotulo>Falta en casa</Rotulo>
               <p className="mb-3 text-[19px] font-extrabold text-tinta-suave">
                 {laCompra.length === 1 ? '1 cosa' : `${laCompra.length} cosas`}
               </p>
             </div>
 
+            {/*
+              ── EN DOS COLUMNAS ──
+
+              Haris: *«tal vez lo de falta en casa puede dividirse en dos
+              columnas verticales, para que puedan entrar cosas»*.
+
+              Y es la manera de que quepa el doble sin encoger la letra.
+              «Papas» ocupa un tercio del ancho de esta columna; el
+              resto era papel en blanco a la derecha de cada renglón.
+
+              Dos `LoQueQuepa` y no uno partido en dos: cada uno mide SU
+              columna. Un solo medidor con una rejilla dentro contaría
+              mal, porque los renglones dejarían de ir uno debajo de
+              otro — y entonces el recorte se equivocaría justo el día
+              que hay muchas cosas, que es el día que importa.
+            */}
             <div
-              className="flex min-h-0 flex-1 flex-col rounded-[28px] border bg-superficie px-6 py-4"
+              className="flex min-h-0 flex-1 gap-6 rounded-[24px] border bg-superficie px-6 py-4"
               style={{ borderColor: 'var(--t-borde)', borderLeft: `6px solid ${AMBITO.oliva}` }}
             >
-              <LoQueQuepa hueco={4}>
-                {laCompra.map((c) => (
-                  <p
-                    key={c.id}
-                    className="flex items-start gap-2.5 text-[21px] font-extrabold leading-snug text-tinta"
-                  >
-                    <span
-                      className="mt-[10px] block h-[7px] w-[7px] shrink-0 rounded-full"
-                      style={{ background: AMBITO.oliva }}
-                    />
-                    <span className="min-w-0">{c.que}</span>
-                  </p>
-                ))}
-              </LoQueQuepa>
+              {[laCompra.slice(0, Math.ceil(laCompra.length / 2)),
+                laCompra.slice(Math.ceil(laCompra.length / 2))].map((mitad, n) =>
+                mitad.length === 0 ? null : (
+                  <div key={n} className="flex min-h-0 min-w-0 flex-1 flex-col">
+                    <LoQueQuepa hueco={4} elResto="y {n} más">
+                      {mitad.map((c) => (
+                        <p
+                          key={c.id}
+                          className="flex items-start gap-2.5 text-[20px] font-extrabold leading-snug text-tinta"
+                        >
+                          <span
+                            className="mt-[9px] block h-[7px] w-[7px] shrink-0 rounded-full"
+                            style={{ background: AMBITO.oliva }}
+                          />
+                          <span className="min-w-0">{c.que}</span>
+                        </p>
+                      ))}
+                    </LoQueQuepa>
+                  </div>
+                )
+              )}
             </div>
+          </>
+        )}
+
+        {/*
+          ══════════════════════════════════════════════════════════
+          EL CORCHO, EN INICIO
+          ══════════════════════════════════════════════════════════
+
+          Haris: *«veo que las notas no salen en el inicio, creo que
+          deberían, por lo menos un aviso»*.
+
+          Y el argumento es el propio corcho: una nota clavada en la
+          cocina existe para que la vea quien pase. Quien pasa mira
+          Inicio — no se va a la pestaña de Notas a comprobar si hay
+          algo. Un corcho que hay que ir a consultar no es un corcho:
+          es un cajón.
+
+          Va entero y no como un contador («tienes 3 notas»), porque un
+          contador obliga a ir a leerlas: dice que hay algo y no dice
+          qué, que es lo único que hacía falta. Lo que no quepa lo
+          recorta `LoQueQuepa` y lo dice con todas las letras.
+        */}
+        {notas.length > 0 && (
+          <>
+            <div className="mt-6 shrink-0">
+              <Rotulo>En el corcho</Rotulo>
+            </div>
+            <LoQueQuepa hueco={8}>
+              {notas.map((n) => (
+                <p
+                  key={n.id}
+                  className="flex items-start gap-3 rounded-[18px] border bg-superficie px-5 py-2.5 text-[20px] font-extrabold leading-snug text-tinta"
+                  style={{
+                    borderColor: 'var(--t-borde)',
+                    borderLeft: `5px solid ${AMBITO.rosa}`,
+                  }}
+                >
+                  {/* Una nota puede ser larga y esto es un resumen: se
+                      corta en dos renglones. Para leerla entera está la
+                      pestaña, a un toque. */}
+                  <span className="line-clamp-2 min-w-0">{n.texto}</span>
+                </p>
+              ))}
+            </LoQueQuepa>
           </>
         )}
 
@@ -593,7 +690,7 @@ export default async function Hoy() {
         */}
         {luego.length > 0 && (
           <>
-            <div className="mt-8 shrink-0">
+            <div className="mt-6 shrink-0">
               <Rotulo>Después</Rotulo>
             </div>
             <LoQueQuepa>
@@ -707,22 +804,26 @@ function Plato({
   const hayQueComprobar = lleva > 0
 
   const cuerpo = (
+    /*
+      ── Y SIN LA TACITA, TAMBIÉN AQUÍ ──
+
+      Haris: *«puedes hacer la parte de qué se come y falta en casa algo
+      más pequeñas»*.
+
+      Lo primero que sobraba eran las dos pastillas de 48 px con la
+      misma taza dibujada, una encima de otra. Dos iconos idénticos no
+      distinguen la comida de la cena — eso ya lo hace la palabra
+      «COMIDA» y «CENA». Lo que hacían era robar 64 px de ancho al
+      plato y 12 de alto a la columna entera, que es justo lo que hacía
+      falta para que quepa el corcho.
+    */
     <div
-      className="flex items-center gap-4 rounded-[24px] border bg-superficie px-5 py-3.5"
+      className="flex items-center gap-4 rounded-[20px] border bg-superficie px-5 py-3"
       style={{
         borderColor: 'var(--t-borde)',
         borderLeft: `6px solid ${AMBITO.arena}`,
       }}
     >
-      <span
-        className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[16px]"
-        style={{
-          background: `color-mix(in srgb, ${AMBITO.arena} 16%, var(--t-superficie))`,
-          color: AMBITO.arena,
-        }}
-      >
-        <Ico nombre="taza" tam={24} grosor={2.1} />
-      </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[14.5px] font-extrabold uppercase tracking-wider text-tenue">
           {momento}
