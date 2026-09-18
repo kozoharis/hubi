@@ -54,6 +54,19 @@ export type PlatoDelDia = {
   comprobado_en?: string | null
   faltan?: string[] | null
   receta_id?: string | null
+  /*
+    LO QUE LLEVA ESE PLATO, YA RESUELTO.
+
+    Viene dentro del plato y no como una función que lo busque, y no es
+    un capricho: esta pantalla la pinta el servidor y esto es un
+    componente de cliente. Entre los dos sólo pasan DATOS — una función
+    no se puede mandar, y Next lo para en el momento de abrir la
+    pantalla, no al compilar.
+
+    Es el error que rompió el menú la primera vez que se pusieron
+    varios platos.
+  */
+  ingredientes: string[]
 }
 
 export default function Comida({
@@ -61,7 +74,6 @@ export default function Comida({
   fecha,
   momento,
   platos,
-  ingredientesDe,
   listas,
   recetas = [],
   apagado = false,
@@ -71,8 +83,6 @@ export default function Comida({
   momento: 'comida' | 'cena'
   /** Los platos de esa comida, en el orden en que se escribieron. */
   platos: PlatoDelDia[]
-  /** Lo que lleva cada receta, para el «¿tienes lo que lleva?». */
-  ingredientesDe: (recetaId: string | null | undefined) => string[]
   listas: ListaDeCompra[]
   /** El cajón de la casa, para poder poner un plato con un toque. */
   recetas?: Receta[]
@@ -131,7 +141,7 @@ export default function Comida({
             <UnPlato
               key={p.id ?? p.que}
               plato={p}
-              ingredientes={ingredientesDe(p.receta_id)}
+              ingredientes={p.ingredientes}
               listas={listas}
               apagado={apagado}
               alTocar={() => setPoniendo(p.id ?? null)}

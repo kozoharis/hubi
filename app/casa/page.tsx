@@ -283,7 +283,7 @@ export default async function Hoy() {
         {destacado.length === 0 && deHoySinRepetir.length === 0 ? (
           <Nada>Hoy no hay nada apuntado.</Nada>
         ) : (
-          <LoQueQuepa peso={2} elResto={(n) => `y ${n} más para hoy`}>
+          <LoQueQuepa peso={2} elResto="y {n} más para hoy">
             {[
               ...destacado.map((c) => <ALaVista key={c.id} cosa={c} />),
               ...deHoySinRepetir.map((c) => (

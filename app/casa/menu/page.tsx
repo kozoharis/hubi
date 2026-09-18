@@ -179,8 +179,10 @@ export default async function Menu() {
                     comprobado_en: m.comprobado_en ?? null,
                     faltan: m.faltan ?? null,
                     receta_id: m.receta_id ?? null,
+                    /* Lo que lleva, ya resuelto aqui: entre el servidor
+                       y la pantalla solo pasan datos. */
+                    ingredientes: loQueLleva.get(m.receta_id ?? '') ?? [],
                   }))}
-                  ingredientesDe={(r) => loQueLleva.get(r ?? '') ?? []}
                   listas={listas}
                   recetas={lasRecetas}
                   apagado={pasado}
@@ -197,8 +199,10 @@ export default async function Menu() {
                     comprobado_en: m.comprobado_en ?? null,
                     faltan: m.faltan ?? null,
                     receta_id: m.receta_id ?? null,
+                    /* Lo que lleva, ya resuelto aqui: entre el servidor
+                       y la pantalla solo pasan datos. */
+                    ingredientes: loQueLleva.get(m.receta_id ?? '') ?? [],
                   }))}
-                  ingredientesDe={(r) => loQueLleva.get(r ?? '') ?? []}
                   listas={listas}
                   recetas={lasRecetas}
                   apagado={pasado}

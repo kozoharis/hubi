@@ -52,8 +52,15 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 export default function LoQueQuepa({
   children,
-  /** Cómo se dice lo que no cabe. Recibe cuántos se han quedado fuera. */
-  elResto = (n) => `y ${n} más`,
+  /*
+    Cómo se dice lo que no cabe. `{n}` es cuántos se han quedado fuera.
+
+    ES UN TEXTO Y NO UNA FUNCIÓN, Y ES A PROPÓSITO. Esto lo pinta una
+    pantalla de cliente, pero quien lo usa suele ser el servidor
+    (`casa/page.tsx`), y entre los dos SÓLO PASAN DATOS: mandar una
+    función se compila sin una queja y revienta al abrir la pantalla.
+  */
+  elResto = 'y {n} más',
   /** Separación entre renglones, en píxeles. La misma que use la lista. */
   hueco = 10,
   /*
@@ -65,7 +72,7 @@ export default function LoQueQuepa({
   peso = 1,
 }: {
   children: ReactNode[]
-  elResto?: (cuantos: number) => string
+  elResto?: string
   hueco?: number
   peso?: number
 }) {
@@ -162,7 +169,7 @@ export default function LoQueQuepa({
           className="text-[19px] font-bold text-tenue"
           style={{ marginTop: hueco, height: ALTO_DEL_RESTO, lineHeight: `${ALTO_DEL_RESTO}px` }}
         >
-          {elResto(cortados)}
+          {elResto.replace('{n}', String(cortados))}
         </p>
       )}
     </div>

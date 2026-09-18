@@ -134,7 +134,7 @@ export default function Rutinas({ rutinas }: { rutinas: RutinaEnLaPared[] }) {
 
       <div className="h-3 shrink-0" />
 
-      <LoQueQuepa elResto={(n) => `y ${n} más de cada día`}>
+      <LoQueQuepa elResto="y {n} más de cada día">
         {locales.map((r) => (
           <div key={r.id}>
             {/*
