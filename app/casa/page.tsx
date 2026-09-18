@@ -55,15 +55,12 @@ type ConMenu = { id: string; que: string; para_menu_id?: string | null }
       ¿Y lo que viene?     → los próximos días, en pequeño
 
   ─────────────────────────────────────────────────────────────
-  DOS COLUMNAS, Y NO POR SIMETRÍA
+  Y SE MIRA, NO SE LEE
 
-  A la izquierda lo de HOY y lo destacado: son las dos cosas que llevan
-  frases largas y que hay que leer enteras. A la derecha lo que se
-  contesta con tres palabras — qué se come, qué falta, qué viene.
-
-  El reparto es 1,4 a 1 y no la mitad y la mitad: una lista de tareas
-  con títulos de diez palabras necesita sitio; «Lentejas con chorizo»,
-  no.
+  La rejilla que reparte todo eso —dos filas, cada una partida por la
+  mitad, y la foto pequeña dentro— está explicada donde se dibuja, en
+  el `return`. Aquí basta con la idea: cada cosa tiene un sitio fijo,
+  para que nadie tenga que recorrer la pantalla buscándola.
 
   ─────────────────────────────────────────────────────────────
   LO QUE SE PIDE, Y LO QUE NO SE FILTRA
@@ -336,377 +333,505 @@ export default async function Hoy() {
   return (
     /*
       ═══════════════════════════════════════════════════════════
-      TRES COLUMNAS, Y LA PANTALLA MANDA
+      DOS FILAS, Y CADA UNA PARTIDA POR LA MITAD
       ═══════════════════════════════════════════════════════════
 
-      Haris: *«habría que intentar comprimirlo para que no tengan que
-      desplazar hacia abajo… se ve mejor todo en una única pantalla»*.
+      Haris, con la pared delante: *«la imagen se parte… lo de hoy me
+      parece demasiado grande… hay como un popurrí de cosas»*. Y luego
+      lo que quería: *«haría la foto, pero en pequeño, que esté dentro;
+      lo otro lo organizaría en dos filas, y esas dos filas pueden
+      partirse alguna a la mitad — por ejemplo compra y en casa (las
+      tareas del hogar)»*.
 
-      Antes eran dos columnas **a partir de 1280 px**, y ahí estaba
-      medio problema: una tableta de 10 u 11 pulgadas en horizontal
-      mide entre 1024 y 1194, o sea que esta pantalla nunca llegaba a
-      tener dos columnas en el sitio para el que se hizo. Todo caía en
-      una sola y había que desplazarse un metro.
+      Los tres problemas eran uno solo, y conviene dejarlo escrito.
 
-      Ahora son tres desde 1024. Por debajo de eso se apila y se
-      desplaza, y está bien: por debajo de 1024 no hay ninguna pared —
-      quien abre esto en un teléfono acaba en `/en-la-cocina`.
+      ── EL POPURRÍ ──
 
-      ─────────────────────────────────────────────────────────
-      Y NINGUNA LISTA TIENE UN TOPE ESCRITO A MANO
+      Eran dos columnas, y por la derecha caían cinco bloques uno
+      detrás de otro: aviso, menú, compra, corcho, después. Cinco
+      rótulos en fila india. Una columna con cinco secciones no es una
+      columna organizada: es una lista de secciones, y hay que LEERLA
+      para saber dónde está cada cosa. En una pared que se mira dos
+      segundos desde la puerta, eso es no enseñar nada.
 
-      La primera versión traía topes fijos —tres recados, tres
-      rutinas, ocho de la compra— calculados para 800 px de alto. Haris
-      lo tiró, con razón: *«que sea adaptable… todas las tabletas son
-      de 1920, 2K o incluso 4K»*. Un tope escrito a mano es una
-      pantalla concreta metida en el código, y resuelve la pequeña
-      estropeando la grande.
+      Lo que arregla el popurrí no es quitar cosas —todas hacen falta—
+      sino **darle a cada una un sitio fijo en una rejilla**. En una
+      rejilla no se lee: se mira donde uno ya sabe que está.
 
-      `LoQueQuepa` mide el hueco de verdad y enseña los que caben.
-      Aquí se le pasa TODO lo que hay.
+      ── LA REJILLA ──
+
+          ╔═══════════════════════════════════════════════╗
+          ║  ⚠ NO TE OLVIDES DE COMPRAR · sólo si corre   ║
+          ╚═══════════════════════════════════════════════╝
+          ┌──────────────┬──────────────┬───────────────┐
+          │  HOY         │ LO DE CADA   │  QUÉ SE COME  │
+          │  lo de hoy   │ DÍA          │  comida       │
+          │  y lo que    │ las rutinas  │  cena         │
+          │  viene       │              │               │
+          ├──────────────┼──────────────┼───────────────┤
+          │  FALTA EN    │ EN EL CORCHO │               │
+          │  CASA        │ las notas    │   [la foto]   │
+          │  la compra   │              │               │
+          └──────────────┴──────────────┴───────────────┘
+
+      Dos filas iguales. A la izquierda, lo ancho partido en dos
+      mitades —que es exactamente el ejemplo que puso él, la compra y
+      las tareas de casa—; a la derecha, una columna estrecha de punta
+      a punta. Y encima de todo, cuando hace falta, el aviso cruzando
+      la pantalla.
+
+      ── Y POR QUÉ ESA COLUMNA ESTRECHA ──
+
+      Porque lo de la derecha se contesta con tres palabras:
+      «Lentejas», «mar 16 sep». Lo de la izquierda lleva frases enteras
+      —«Llevar la documentación a Silvia»— y necesita ancho. El reparto
+      es 1,6 a 1 y no la mitad y la mitad, por eso.
+
+      ── LO DE HOY YA NO ES LO MÁS GRANDE ──
+
+      Era una columna entera de arriba abajo. Ahora es un cuarto de la
+      pantalla, y no ha perdido nada: sigue siendo lo primero arriba a
+      la izquierda, que es donde empieza a mirar cualquiera. Lo que ha
+      perdido es el sitio que ocupaba sin usarlo — los días sin nada
+      apuntado eran medio cristal en blanco.
+
+      ── Y LAS MITADES SE CIERRAN SOLAS ──
+
+      Si hoy no hay rutinas, «Hoy» se queda con la fila ancha entera en
+      vez de dejar media en blanco. Igual con el corcho y la compra. Un
+      hueco vacío con forma de sección es lo que hace que una pantalla
+      parezca rota.
+
+      ── LO QUE NO CAMBIA ──
+
+      Ninguna lista tiene un tope escrito a mano. `LoQueQuepa` mide el
+      hueco de verdad y enseña los que caben, que es lo que Haris pidió
+      cuando tiró los topes fijos: *«que sea adaptable… todas las
+      tabletas son de 1920, 2K o incluso 4K»*. Aquí se le sigue pasando
+      TODO lo que hay.
+
+      Y por debajo de 1024 esto se apila y se desplaza, como siempre:
+      por debajo de 1024 no hay ninguna pared — quien abre esto en un
+      teléfono acaba en `/en-la-cocina`.
     */
-    /*
-      ═══════════════════════════════════════════════════════════
-      DOS ZONAS, NO TRES COLUMNAS IGUALES
-      ═══════════════════════════════════════════════════════════
+    <div className="flex flex-col gap-8 pt-5 lg:h-full lg:gap-6 lg:overflow-hidden">
+      {/*
+        ══════════════════════════════════════════════════════════
+        EL AVISO · UNA MARCA, NO UN CARTEL
+        ══════════════════════════════════════════════════════════
 
-      Eran tres de 1,45 · 1 · 1. Repartían el ANCHO, pero no repartían
-      la importancia: lo que hay que hacer hoy, lo que se come y en qué
-      día del mes estamos pesaban lo mismo en la pantalla, y no pesan
-      lo mismo en la vida.
+        Haris pidió el aviso —*«puede saltar un aviso en la pantalla de
+        inicio, automática: oye, no te olvides de comprar lo que
+        toque»*— y luego, viéndolo: *«el aviso rojo tan grande no me
+        gusta; hazlo visual para verlo, que quede elegante»*.
 
-      Ahora son dos, 1,6 · 1, y lo de hoy manda. Lo que ha hecho sitio:
+        Las dos cosas son ciertas a la vez, y la manera de que no se
+        peleen no es hacerlo más pequeño: es cambiar de QUÉ está hecho.
 
-        · el tiempo sube a la banda de arriba, con la hora;
-        · el mes se va — es lo que menos se mira y más ocupa, y está a
-          un toque en la pestaña de Calendario;
-        · «Después» baja a la segunda zona, con lo demás de la casa.
+        ── LO QUE FALLABA ──
 
-      Y con el hueco que dejan entra lo que faltaba: las fotos, que
-      hasta ahora sólo salían en el descanso — o sea, cuando nadie
-      estaba mirando.
-    */
-    <div className="pt-6 lg:grid lg:h-full lg:grid-cols-[1.6fr_1fr] lg:gap-9 lg:overflow-hidden">
-      {/* ══ 1 · LO QUE HAY QUE HACER ══ */}
-      <div className="flex min-h-0 flex-col">
-        <Rotulo>Hoy</Rotulo>
+        Era una banda roja de lado a lado. Y una banda de color cruzando
+        una pared entera no dice «mira esto»: dice «algo va mal». En
+        una cocina, todos los días, eso es una alarma de coche — a la
+        tercera vez nadie la mira, y entonces tampoco se mira el día
+        que sí importa. Además rompía lo que el punto 28 del
+        planteamiento pide de esta aplicación: sereno, cálido, con el
+        color usado con moderación.
 
-        {destacado.length === 0 && deHoySinRepetir.length === 0 ? (
-          <Nada>Hoy no hay nada apuntado.</Nada>
-        ) : (
-          <LoQueQuepa peso={2} elResto="y {n} más para hoy">
-            {[
-              ...destacado.map((c) => <ALaVista key={c.id} cosa={c} />),
-              ...deHoySinRepetir.map((c) => (
-                /* Con `id`: lo de HOY se tacha desde la pared, que es
-                   donde tachar significa algo. Lo de «Después», no. */
-                <Cosa
-                  key={c.id}
-                  id={c.id}
-                  titulo={c.titulo}
-                  cuando={c.hora ? c.hora.slice(0, 5) : ''}
-                  talla="hoy"
-                  dequienes={c.dequienes ?? []}
-                  gente={losDeCasa}
-                />
-              )),
-            ]}
-          </LoQueQuepa>
-        )}
+        ── LO QUE LO HACE VISIBLE AHORA ──
 
-        {/*
-          ── LO DE CADA DÍA, PEGADO Y SEPARADO POR UNA RAYA ──
+        No el tamaño: la ESCASEZ. En toda la pantalla no hay ni un solo
+        color saturado — papel cálido, tarjetas blancas, filos suaves de
+        arena, oliva y rosa al 6 px. Así que un círculo rojo de 42 px
+        es lo único encendido del cristal, y se ve desde la puerta
+        precisamente porque es lo único.
 
-          Era una sección con su rótulo y sus 44 px de aire. Y para
-          Juan Miguel y Conchita «lo de hoy» y «lo de cada día» son la
-          misma pregunta — es literalmente el punto 18 del
-          planteamiento: para ellos todo son *cosas que tengo que
-          recordar*.
+        Un número grande dentro y una frase corta al lado. Nada de
+        fondo de color, nada de borde rojo, nada de ancho completo:
+        una pastilla blanca como las demás tarjetas de la casa,
+        pegada al margen derecho —el mismo margen donde acaban las
+        pestañas y la columna del menú—, para que no parezca que
+        flota.
 
-          Una raya fina cuesta 1 px y dice lo mismo que una sección
-          entera: que esto es otra cosa, pero de la misma familia.
-        */}
-        {rutinas.length > 0 && (
-          <>
-            <div className="my-4 h-px shrink-0 bg-borde" />
-            <Rutinas
-              rutinas={rutinas.map((r) => ({
-                id: r.id,
-                que: r.que,
-                hora: r.hora,
-                hecha: r.hecha,
-                dequien: r.para ? (nombreDe.get(r.para) ?? null) : null,
-              }))}
-            />
-          </>
-        )}
+        ── Y SIGUE COSTANDO LO MISMO DE ALTO ──
 
-        {/*
-          ══════════════════════════════════════════════════════════
-          LAS FOTOS, ABAJO Y SIEMPRE PUESTAS
-          ══════════════════════════════════════════════════════════
-
-          Éste es el arreglo que más cambia lo que esta pantalla ES.
-
-          Las fotos ya estaban —paso 73—, pero sólo en el DESCANSO: a
-          los tres minutos de no tocar nada. O sea que la parte bonita
-          de la pared era el modo de no usarla, y mientras la casa la
-          miraba de verdad no había ni una cara.
-
-          Es la misma pieza, no una copia: `fotos.tsx` avisa de que dos
-          copias serían dos sitios donde arreglar el parpadeo la
-          próxima vez. Lo único que cambia es dónde vive y que aquí no
-          sube nada — subir se hace desde el móvil, y un botón de subir
-          en una pared es un botón que toca cualquiera que entre.
-
-          `mt-auto` para que se pegue abajo: lo de hoy crece desde
-          arriba y esto se queda en el suelo de la columna. Si un día
-          hay ocho cosas apuntadas, `LoQueQuepa` recorta la lista y las
-          fotos siguen donde estaban — no se mueven de sitio según el
-          día que sea, que en una pared que se mira de reojo importa
-          más que el tamaño.
-        */}
-        {/*
-          ── Y SIN NINGÚN ALTO ESCRITO A MANO ──
-
-          Haris: *«que se ajuste al espacio que brinde cualquier
-          dispositivo»*. Tiene razón, y este trozo ha tenido ya dos
-          altos inventados:
-
-            1 · la proporción de 16 por 10, que en una tableta ancha
-                son más de 550 px. Cabía justo, y dejó de caber en
-                cuanto Android puso sus barras;
-            2 · `min(34vh, 380px)`, que es lo mismo con otra cara: dos
-                números elegidos mirando UNA pantalla. Y encima con
-                `vh`, que mide la ventana entera y no esta columna —
-                o sea que ni siquiera medía lo que hacía falta.
-
-          Un alto escrito a mano es una pantalla concreta metida en el
-          código. Siempre acaba igual: en la tableta de al lado sobra
-          medio cristal en blanco, o falta.
-
-          ── AHORA LA FOTO ES LO QUE SOBRE ──
-
-          `flex-1` con `min-h-0`: se queda con el hueco que dejan lo de
-          hoy y lo de cada día, sea el que sea. Un día sin nada
-          apuntado —como hoy— la foto es grande y llena la columna, que
-          es justo lo que uno querría ver en una cocina cuando no hay
-          nada que hacer. Un día con ocho cosas, la foto encoge y lo
-          que hay que hacer manda.
-
-          Y no puede desaparecer: `LoQueQuepa` pesa 2 y esto 1, así que
-          del hueco libre siempre le toca un trozo.
-
-          `mt-auto` se va con el alto fijo. Servía para pegarla abajo
-          cuando medía lo que medía; algo que crece no necesita que lo
-          empujen.
-        */}
-        <div className="hidden min-h-0 flex-1 pt-7 lg:block">
-          <Fotos alto />
-        </div>
-      </div>
-
-      {/* ══ 2 · LA CASA ══ */}
-      <div className="mt-9 flex min-h-0 flex-col lg:mt-0">
-        {/*
-          ── EL AVISO, ARRIBA DEL TODO Y SOLO CUANDO CORRE ──
-
-          Va antes que «Qué se come» a propósito: si falta algo para la
-          cena de hoy, eso se lee ANTES que la cena de hoy. Es la única
-          cosa de esta columna que tiene hora.
-
-          Y es un enlace, no un cartel: quien lo lee está de pie
-          delante de la pared, y lo siguiente que quiere es ver qué
-          falta. Dejarlo sin tocar obligaría a buscar la pestaña.
-        */}
-        {loQueUrge.length > 0 && (
+        Unos 58 px, que es lo que hay que restarle a las dos filas. Por
+        eso sólo aparece cuando falta algo para HOY o para MAÑANA. Lo
+        del sábado no es un aviso: es una lista, y está en su pestaña.
+        Una pantalla que avisa siempre no avisa nunca.
+      */}
+      {loQueUrge.length > 0 && (
+        <div className="flex shrink-0 justify-end">
           <Link
             href="/casa/compra"
-            className="tocable mb-4 flex shrink-0 items-center gap-4 rounded-[22px] border px-6 py-3.5"
-            style={{
-              background: `color-mix(in srgb, var(--t-alerta) 12%, var(--t-superficie))`,
-              borderColor: `color-mix(in srgb, var(--t-alerta) 45%, transparent)`,
-              borderLeft: `6px solid var(--t-alerta)`,
-            }}
+            className="tocable flex items-center gap-4 rounded-full border border-borde bg-superficie py-2 pl-2 pr-6"
           >
-            <span className="shrink-0" style={{ color: 'var(--t-alerta)' }}>
-              <Ico nombre="bolsa" tam={28} grosor={2.3} />
+            {/*
+              El único disco de color de la pantalla. Relleno, no
+              contorno: a dos metros un contorno de 2 px desaparece y
+              un disco no.
+            */}
+            <span
+              className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full"
+              style={{ background: 'var(--t-alerta)', color: '#FFFFFF' }}
+            >
+              <Ico nombre="bolsa" tam={22} grosor={2.4} />
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[14.5px] font-extrabold uppercase tracking-wider text-tenue">
-                No te olvides de comprar
+
+            <span className="flex items-baseline gap-2.5">
+              {/* El número manda: es el dato. */}
+              <span
+                className="text-[27px] font-extrabold leading-none tabular-nums"
+                style={{ color: 'var(--t-alerta)' }}
+              >
+                {loQueUrge.length}
               </span>
-              <span className="block text-[22px] font-extrabold leading-tight text-tinta">
-                {loQueUrge.length === 1 ? '1 cosa' : `${loQueUrge.length} cosas`}
+              <span className="text-[19px] font-extrabold leading-none text-tinta-suave">
+                {loQueUrge.length === 1 ? 'cosa que comprar' : 'cosas que comprar'}
                 {paraCuando ? ` para ${paraCuando}` : ''}
               </span>
             </span>
+
             <span aria-hidden className="shrink-0 text-apagado">
-              <Ico nombre="flecha" tam={22} grosor={2.4} />
+              <Ico nombre="flecha" tam={20} grosor={2.4} />
             </span>
           </Link>
-        )}
+        </div>
+      )}
 
-        <Rotulo>Qué se come</Rotulo>
-
-        {comida.length === 0 && cena.length === 0 ? (
-          <Nada>Hoy no hay menú puesto.</Nada>
-        ) : (
-          <div className="shrink-0 space-y-2.5">
-            <Plato
-              momento="Comida"
-              que={juntos(comida)}
-              lleva={cuantoLleva(comida, loQueLleva)}
-              mirado={comida.length > 0 && comida.every((m) => m.comprobado_en)}
-              faltan={comida.reduce((n, m) => n + (m.faltan?.length ?? 0), 0)}
-            />
-            <Plato
-              momento="Cena"
-              que={juntos(cena)}
-              lleva={cuantoLleva(cena, loQueLleva)}
-              mirado={cena.length > 0 && cena.every((m) => m.comprobado_en)}
-              faltan={cena.reduce((n, m) => n + (m.faltan?.length ?? 0), 0)}
-            />
-          </div>
-        )}
-
-        {/*
-          ── LA COMPRA ──
-
-          Es la única de las cosas de esta pantalla que un aparato
-          PUEDE tocar: su nivel en `compra` es `anadir`, a propósito,
-          porque una tableta colgada en la cocina existe sobre todo
-          para apuntar que se ha acabado la leche.
-
-          En una columna y no en dos: la columna del centro mide ahora
-          un tercio de la pared, y «bolsas de basura» partido en dos
-          renglones dentro de media columna no se lee mejor que en una.
-        */}
-        {laCompra.length > 0 && (
-          <>
-            <div className="mt-7 flex shrink-0 items-baseline gap-4">
-              <Rotulo>Falta en casa</Rotulo>
-              <p className="mb-3 text-[19px] font-extrabold text-tinta-suave">
-                {laCompra.length === 1 ? '1 cosa' : `${laCompra.length} cosas`}
-              </p>
-            </div>
+      {/*
+        ══════════════════════════════════════════════════════════
+        FILA 1 · LO QUE PASA HOY
+        ══════════════════════════════════════════════════════════
+      */}
+      <div className="flex min-h-0 flex-col gap-8 lg:grid lg:flex-[1.25] lg:grid-cols-[1.6fr_1fr] lg:gap-9">
+        {/* ── Izquierda: lo apuntado | lo de cada día ── */}
+        <div
+          className={`grid min-h-0 gap-8 lg:gap-9 ${
+            rutinas.length > 0 ? 'lg:grid-cols-2' : ''
+          }`}
+        >
+          <div className="flex min-h-0 flex-col">
+            <Rotulo>Hoy</Rotulo>
 
             {/*
-              ── EN DOS COLUMNAS ──
+              ── HOY Y LO QUE VIENE, EN LA MISMA LISTA ──
 
-              Haris: *«tal vez lo de falta en casa puede dividirse en dos
-              columnas verticales, para que puedan entrar cosas»*.
+              «Después» estaba en la otra columna, con el menú y la
+              compra, y no es de esa familia. Es la misma pregunta que
+              «Hoy», sólo que un poco más lejos — el punto 18 del
+              planteamiento lo dice con todas las letras: para Juan
+              Miguel y Conchita no hay diferencia entre evento, tarea,
+              recordatorio y vencimiento. Todo son *cosas que tengo que
+              recordar*.
 
-              Y es la manera de que quepa el doble sin encoger la letra.
-              «Papas» ocupa un tercio del ancho de esta columna; el
-              resto era papel en blanco a la derecha de cada renglón.
+              ⚠️  Y VA EN UNA SOLA LISTA, NO EN DOS PEGADAS.
 
-              Dos `LoQueQuepa` y no uno partido en dos: cada uno mide SU
-              columna. Un solo medidor con una rejilla dentro contaría
-              mal, porque los renglones dejarían de ir uno debajo de
-              otro — y entonces el recorte se equivocaría justo el día
-              que hay muchas cosas, que es el día que importa.
+              Esto se probó primero con dos: «Hoy» arriba, una raya, el
+              rótulo «Después» y otra lista debajo. Medido en una
+              tableta de 924 px, no cabía — y no cabía de la peor
+              manera: las dos listas se repartían el hueco a 2 contra 1
+              y a la de abajo le tocaban 53 px para una tarjeta de 72.
+              `LoQueQuepa` enseña el primero aunque no quepa (y hace
+              bien: una columna vacía diciendo «y 3 más» es peor), así
+              que lo que se veía era una tarjeta cortada por la mitad.
+
+              Un rótulo y una raya cuestan 75 px de alto. Aquí eso es
+              una tarjeta entera, y lo que compran es decir con
+              palabras algo que las propias tarjetas ya dicen: las de
+              hoy llevan la hora —«10:30»— y las de después llevan el
+              día —«LUN 21 SEP»—. Nadie las confunde.
+
+              Así que una sola caja, una sola medida y ningún recorte
+              raro: primero lo de hoy, luego lo que viene, y lo que no
+              quepa lo dice el renglón del final.
             */}
-            <div
-              className="flex min-h-0 flex-1 gap-6 rounded-[24px] border bg-superficie px-6 py-4"
-              style={{ borderColor: 'var(--t-borde)', borderLeft: `6px solid ${AMBITO.oliva}` }}
-            >
-              {[laCompra.slice(0, Math.ceil(laCompra.length / 2)),
-                laCompra.slice(Math.ceil(laCompra.length / 2))].map((mitad, n) =>
-                mitad.length === 0 ? null : (
-                  <div key={n} className="flex min-h-0 min-w-0 flex-1 flex-col">
-                    <LoQueQuepa hueco={4} elResto="y {n} más">
-                      {mitad.map((c) => (
-                        <p
-                          key={c.id}
-                          className="flex items-start gap-2.5 text-[20px] font-extrabold leading-snug text-tinta"
-                        >
-                          <span
-                            className="mt-[9px] block h-[7px] w-[7px] shrink-0 rounded-full"
-                            style={{ background: AMBITO.oliva }}
-                          />
-                          <span className="min-w-0">{c.que}</span>
-                        </p>
-                      ))}
-                    </LoQueQuepa>
-                  </div>
-                )
-              )}
+            {destacado.length === 0 && deHoySinRepetir.length === 0 && luego.length === 0 ? (
+              <Nada>Hoy no hay nada apuntado.</Nada>
+            ) : (
+              <LoQueQuepa elResto="y {n} más apuntadas">
+                {[
+                  ...destacado.map((c) => <ALaVista key={c.id} cosa={c} />),
+                  ...deHoySinRepetir.map((c) => (
+                    /* Con `id`: lo de HOY se tacha desde la pared, que
+                       es donde tachar significa algo. Lo de después,
+                       no. */
+                    <Cosa
+                      key={c.id}
+                      id={c.id}
+                      titulo={c.titulo}
+                      cuando={c.hora ? c.hora.slice(0, 5) : ''}
+                      talla="hoy"
+                      dequienes={c.dequienes ?? []}
+                      gente={losDeCasa}
+                    />
+                  )),
+                  /* La raya que separa hoy de lo que viene. Va DENTRO
+                     de la lista, como un renglón más de 1 px: así la
+                     mide el mismo medidor y no puede quedarse colgando
+                     debajo de una lista recortada. Sólo cuando hay
+                     cosas a los dos lados — una raya con nada encima
+                     es un renglón que no dice nada. */
+                  ...(luego.length > 0 && (destacado.length > 0 || deHoySinRepetir.length > 0)
+                    ? [<div key="raya" className="h-px bg-borde" />]
+                    : []),
+                  ...luego.map((c) => (
+                    <Cosa
+                      key={c.id}
+                      titulo={c.titulo}
+                      cuando={diaCorto(c.fecha, Number(hoy.slice(0, 4)))}
+                      talla="columna"
+                    />
+                  )),
+                ]}
+              </LoQueQuepa>
+            )}
+          </div>
+
+          {/*
+            ── LO DE CADA DÍA, AL LADO Y NO DEBAJO ──
+
+            Estaba pegado bajo «Hoy», separado por una raya fina, y las
+            dos listas se repartían el alto de una columna: el día que
+            había cuatro recados y siete rutinas, las dos salían
+            recortadas a la vez.
+
+            Es el ejemplo que puso Haris —*«la compra y en casa, las
+            tareas del hogar»*— y funciona por lo mismo que allí: son
+            dos listas de renglones cortos, y dos listas cortas una al
+            lado de otra caben en la mitad de alto que una detrás de
+            otra.
+
+            Sigue siendo la misma pieza, con su propio rótulo y su
+            «Quedan 3» dentro.
+          */}
+          {rutinas.length > 0 && (
+            <div className="flex min-h-0 flex-col">
+              <Rutinas
+                rutinas={rutinas.map((r) => ({
+                  id: r.id,
+                  que: r.que,
+                  hora: r.hora,
+                  hecha: r.hecha,
+                  dequien: r.para ? (nombreDe.get(r.para) ?? null) : null,
+                }))}
+              />
             </div>
-          </>
-        )}
+          )}
+        </div>
 
-        {/*
-          ══════════════════════════════════════════════════════════
-          EL CORCHO, EN INICIO
-          ══════════════════════════════════════════════════════════
+        {/* ── Derecha: qué se come ── */}
+        <div className="flex min-h-0 flex-col">
+          <Rotulo>Qué se come</Rotulo>
 
-          Haris: *«veo que las notas no salen en el inicio, creo que
-          deberían, por lo menos un aviso»*.
+          {comida.length === 0 && cena.length === 0 ? (
+            <Nada>Hoy no hay menú puesto.</Nada>
+          ) : (
+            /*
+              ── LOS DOS PLATOS TAMBIÉN SE MIDEN ──
 
-          Y el argumento es el propio corcho: una nota clavada en la
-          cocina existe para que la vea quien pase. Quien pasa mira
-          Inicio — no se va a la pestaña de Notas a comprobar si hay
-          algo. Un corcho que hay que ir a consultar no es un corcho:
-          es un cajón.
+              Iban sueltos, con `shrink-0`: ocupaban lo que ocupaban y,
+              si no cabían, la cena se cortaba por la mitad contra el
+              borde de la fila. Una tarjeta partida no parece una
+              decisión, parece una avería — es literalmente lo que
+              Haris vio en la foto.
 
-          Va entero y no como un contador («tienes 3 notas»), porque un
-          contador obliga a ir a leerlas: dice que hay algo y no dice
-          qué, que es lo único que hacía falta. Lo que no quepa lo
-          recorta `LoQueQuepa` y lo dice con todas las letras.
-        */}
-        {notas.length > 0 && (
-          <>
-            <div className="mt-6 shrink-0">
-              <Rotulo>En el corcho</Rotulo>
-            </div>
-            <LoQueQuepa hueco={8}>
-              {notas.map((n) => (
-                <p
-                  key={n.id}
-                  className="flex items-start gap-3 rounded-[18px] border bg-superficie px-5 py-2.5 text-[20px] font-extrabold leading-snug text-tinta"
-                  style={{
-                    borderColor: 'var(--t-borde)',
-                    borderLeft: `5px solid ${AMBITO.rosa}`,
-                  }}
-                >
-                  {/* Una nota puede ser larga y esto es un resumen: se
-                      corta en dos renglones. Para leerla entera está la
-                      pestaña, a un toque. */}
-                  <span className="line-clamp-2 min-w-0">{n.texto}</span>
-                </p>
-              ))}
+              Con `LoQueQuepa` no se corta nada: o cabe entera, o se
+              dice «y 1 más en el Menú». En una pared de las normales
+              esto no salta nunca; salta en la pequeña, que es donde
+              antes se rompía en silencio.
+            */
+            <LoQueQuepa hueco={8} elResto="y {n} más, en el Menú">
+              {[
+                <Plato
+                  key="comida"
+                  momento="Comida"
+                  que={juntos(comida)}
+                  lleva={cuantoLleva(comida, loQueLleva)}
+                  mirado={comida.length > 0 && comida.every((m) => m.comprobado_en)}
+                  faltan={comida.reduce((n, m) => n + (m.faltan?.length ?? 0), 0)}
+                />,
+                <Plato
+                  key="cena"
+                  momento="Cena"
+                  que={juntos(cena)}
+                  lleva={cuantoLleva(cena, loQueLleva)}
+                  mirado={cena.length > 0 && cena.every((m) => m.comprobado_en)}
+                  faltan={cena.reduce((n, m) => n + (m.faltan?.length ?? 0), 0)}
+                />,
+              ]}
             </LoQueQuepa>
-          </>
-        )}
-
-        {/*
-          ── LO QUE VIENE, AQUÍ ──
-
-          Estaba en la tercera columna, con el tiempo y el mes. Al
-          quedarse la pantalla en dos zonas se viene con lo demás de la
-          casa, que es donde encaja: qué se come, qué falta y qué viene
-          son las tres cosas que no son de HOY.
-        */}
-        {luego.length > 0 && (
-          <>
-            <div className="mt-6 shrink-0">
-              <Rotulo>Después</Rotulo>
-            </div>
-            <LoQueQuepa>
-              {luego.map((c) => (
-                <Cosa
-                  key={c.id}
-                  titulo={c.titulo}
-                  cuando={diaCorto(c.fecha, Number(hoy.slice(0, 4)))}
-                  talla="columna"
-                />
-              ))}
-            </LoQueQuepa>
-          </>
-        )}
+          )}
+        </div>
       </div>
 
+      {/*
+        ══════════════════════════════════════════════════════════
+        FILA 2 · LO QUE HAY EN LA CASA
+        ══════════════════════════════════════════════════════════
+      */}
+      <div className="flex min-h-0 flex-col gap-8 lg:grid lg:flex-1 lg:grid-cols-[1.6fr_1fr] lg:gap-9">
+        {/* ── Izquierda: lo que falta | lo que hay clavado ── */}
+        <div
+          className={`grid min-h-0 gap-8 lg:gap-9 ${
+            laCompra.length > 0 && notas.length > 0 ? 'lg:grid-cols-2' : ''
+          }`}
+        >
+          {/*
+            ── LA COMPRA ──
+
+            Es la única de las cosas de esta pantalla que un aparato
+            PUEDE tocar: su nivel en `compra` es `anadir`, a propósito,
+            porque una tableta colgada en la cocina existe sobre todo
+            para apuntar que se ha acabado la leche.
+          */}
+          {laCompra.length > 0 && (
+            <div className="flex min-h-0 flex-col">
+              <div className="flex shrink-0 items-baseline gap-4">
+                <Rotulo>Falta en casa</Rotulo>
+                <p className="mb-3 text-[19px] font-extrabold text-tinta-suave">
+                  {laCompra.length === 1 ? '1 cosa' : `${laCompra.length} cosas`}
+                </p>
+              </div>
+
+              {/*
+                ── Y DENTRO, OTRAS DOS COLUMNAS ──
+
+                Haris: *«tal vez lo de falta en casa puede dividirse en
+                dos columnas verticales, para que puedan entrar
+                cosas»*.
+
+                Sigue teniendo sentido con media fila: «papas» ocupa un
+                tercio del ancho y el resto era papel en blanco a la
+                derecha de cada renglón. Y ahora hace más falta, porque
+                lo que se ha perdido con la rejilla es alto.
+
+                Dos `LoQueQuepa` y no uno partido en dos: cada uno mide
+                SU columna. Un solo medidor con una rejilla dentro
+                contaría mal, porque los renglones dejarían de ir uno
+                debajo de otro — y entonces el recorte se equivocaría
+                justo el día que hay muchas cosas, que es el día que
+                importa.
+              */}
+              <div
+                className="flex min-h-0 flex-1 gap-6 rounded-[24px] border bg-superficie px-6 py-4"
+                style={{ borderColor: 'var(--t-borde)', borderLeft: `6px solid ${AMBITO.oliva}` }}
+              >
+                {[laCompra.slice(0, Math.ceil(laCompra.length / 2)),
+                  laCompra.slice(Math.ceil(laCompra.length / 2))].map((mitad, n) =>
+                  mitad.length === 0 ? null : (
+                    <div key={n} className="flex min-h-0 min-w-0 flex-1 flex-col">
+                      <LoQueQuepa hueco={4} elResto="y {n} más">
+                        {mitad.map((c) => (
+                          <p
+                            key={c.id}
+                            className="flex items-start gap-2.5 text-[20px] font-extrabold leading-snug text-tinta"
+                          >
+                            <span
+                              className="mt-[9px] block h-[7px] w-[7px] shrink-0 rounded-full"
+                              style={{ background: AMBITO.oliva }}
+                            />
+                            <span className="min-w-0">{c.que}</span>
+                          </p>
+                        ))}
+                      </LoQueQuepa>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
+          {/*
+            ══════════════════════════════════════════════════════
+            EL CORCHO, EN INICIO
+            ══════════════════════════════════════════════════════
+
+            Haris: *«veo que las notas no salen en el inicio, creo que
+            deberían, por lo menos un aviso»*.
+
+            Y el argumento es el propio corcho: una nota clavada en la
+            cocina existe para que la vea quien pase. Quien pasa mira
+            Inicio — no se va a la pestaña de Notas a comprobar si hay
+            algo. Un corcho que hay que ir a consultar no es un corcho:
+            es un cajón.
+
+            Va entero y no como un contador («tienes 3 notas»), porque
+            un contador obliga a ir a leerlas: dice que hay algo y no
+            dice qué, que es lo único que hacía falta. Lo que no quepa
+            lo recorta `LoQueQuepa` y lo dice con todas las letras.
+          */}
+          {notas.length > 0 && (
+            <div className="flex min-h-0 flex-col">
+              <Rotulo>En el corcho</Rotulo>
+              <LoQueQuepa hueco={8}>
+                {notas.map((n) => (
+                  <p
+                    key={n.id}
+                    className="flex items-start gap-3 rounded-[18px] border bg-superficie px-5 py-2.5 text-[20px] font-extrabold leading-snug text-tinta"
+                    style={{
+                      borderColor: 'var(--t-borde)',
+                      borderLeft: `5px solid ${AMBITO.rosa}`,
+                    }}
+                  >
+                    {/* Una nota puede ser larga y esto es un resumen:
+                        se corta en dos renglones. Para leerla entera
+                        está la pestaña, a un toque. */}
+                    <span className="line-clamp-2 min-w-0">{n.texto}</span>
+                  </p>
+                ))}
+              </LoQueQuepa>
+            </div>
+          )}
+        </div>
+
+        {/*
+          ══════════════════════════════════════════════════════════
+          LA FOTO · PEQUEÑA, DENTRO, Y CON FORMA DE FOTO
+          ══════════════════════════════════════════════════════════
+
+          Haris: *«la imagen se parte»*, y *«haría la foto, pero en
+          pequeño, que esté dentro»*.
+
+          Lo de que se partía era de verdad y tenía una causa concreta.
+          La foto estaba abajo de la columna de Hoy, y esa columna era
+          la mitad ancha de la pantalla: 1.100 px de ancho por el alto
+          que sobrara, unos 300. Un rectángulo de casi cuatro a uno. La
+          foto se recorta desde el centro para llenar la caja que le
+          den, así que de una foto de familia se veía una franja: las
+          cabezas fuera por arriba y los pies por abajo.
+
+          No era un fallo de dibujo. Era pedirle a una foto que tuviera
+          la forma del hueco que sobrase.
+
+          ── AHORA TIENE SU PROPIA CASILLA ──
+
+          Un cuarto de la rejilla, la de abajo a la derecha, que es la
+          columna estrecha: mide entre 1,8 y 2 a 1 en todas las paredes
+          medidas —1280, 1480 y 1920—. Eso ya es una foto, no una
+          franja. Y el tope de ancho lo remata en las grandes: en una
+          pared de 1920 la casilla mediría 680 px de ancho y 360 de
+          alto, y con el tope se queda en 560 por 360, que es casi
+          exactamente el 16 por 10 de siempre.
+
+          Es la primera vez en esta pantalla que la foto tiene un sitio
+          en vez de quedarse con las sobras. Y era justo lo que fallaba:
+          las sobras no tienen forma.
+
+          ── Y SIGUE SIENDO LA MISMA PIEZA ──
+
+          `fotos.tsx`, no una copia: el carrusel, el fundido de dos
+          capas y la regla de que de noche no cambia son los mismos que
+          en el descanso. Aquí no sube nada — subir se hace desde el
+          móvil, y un botón de subir en una pared lo toca cualquiera
+          que entre.
+        */}
+        <div className="hidden min-h-0 lg:block">
+          <div className="ml-auto h-full w-full max-w-[440px]">
+            <Fotos alto />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -818,7 +943,7 @@ function Plato({
       falta para que quepa el corcho.
     */
     <div
-      className="flex items-center gap-4 rounded-[20px] border bg-superficie px-5 py-3"
+      className="flex items-center gap-4 rounded-[20px] border bg-superficie px-5 py-2.5"
       style={{
         borderColor: 'var(--t-borde)',
         borderLeft: `6px solid ${AMBITO.arena}`,
