@@ -354,8 +354,41 @@ export async function PATCH(peticion: NextRequest) {
     puede ser obligatoria para lo que ya funcionaba.**
   */
   let apuntados = 0
+  let porApuntar: string[] = []
+
   if (faltan.length > 0 && cuerpo.lista_id) {
-    const filas = faltan.map((que) => ({
+    /*
+      ── Y LO QUE YA ESTÁ APUNTADO, NO SE APUNTA OTRA VEZ ──
+
+      En la pared de la cocina se veía «6 dientes de ajo» dos veces
+      seguidas, y no era un despiste de nadie: comprobar el mismo menú
+      dos veces —o dos menús que llevan ajo— volvía a insertar lo
+      mismo. En el súper eso son doce dientes de ajo.
+
+      Se compara sin mayúsculas ni espacios de más, que es como lo
+      escribiría una persona, y solo contra lo que sigue abierto: lo
+      comprado hace tres semanas debe poder volver a apuntarse.
+    */
+    const { data: yaHay } = await supabase
+      .from('compra')
+      .select('que')
+      .eq('hogar_id', casa)
+      .eq('lista_id', cuerpo.lista_id)
+      .is('archivado_en', null)
+      .limit(300)
+
+    const puestas = new Set(
+      ((yaHay ?? []) as { que: string }[]).map((c) => c.que.trim().toLowerCase())
+    )
+
+    /* OJO: `faltan` NO se toca. Eso es lo que le falta a ESE menú y se
+       guarda entero en `menus.faltan`; lo que se recorta es solo lo que
+       hay que apuntar de nuevo en la compra. */
+    porApuntar = faltan.filter((q) => !puestas.has(q.trim().toLowerCase()))
+  }
+
+  if (porApuntar.length > 0 && cuerpo.lista_id) {
+    const filas = porApuntar.map((que) => ({
       hogar_id: casa,
       que,
       cantidad: null,
