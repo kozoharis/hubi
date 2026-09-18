@@ -1,7 +1,7 @@
 import { laPared } from '@/lib/pared'
-import { AMBITO } from '../../piezas'
 import { Nada, Rotulo } from '../rotulo'
 import Apuntar from './apuntar'
+import Nota, { type NotaDelCorcho } from './nota'
 import Fotos from '../fotos'
 
 export const dynamic = 'force-dynamic'
@@ -41,12 +41,6 @@ export const dynamic = 'force-dynamic'
   «He dejado los papeles en la mesa» no necesita firma para servir; con
   firma, además, cuenta quién estaba.
 */
-
-type Nota = {
-  id: string
-  texto: string
-  creada_en: string | null
-}
 
 export default async function Notas() {
   const { supabase, casa } = await laPared()
@@ -101,7 +95,22 @@ export default async function Notas() {
     }
   })()
 
-  const notas = (data ?? []) as Nota[]
+  /*
+    ¿Y puede retirarlas del corcho? (paso 86). Otra pregunta distinta,
+    y a la base otra vez: dejar clavar una nota y dejar quitarla son
+    dos permisos, y uno puede estar dado y el otro no.
+  */
+  const puedeQuitarNotas = await (async () => {
+    try {
+      const { data, error } = await supabase.rpc('la_cocina_quita_notas', { casa })
+      if (error) return false
+      return data === true
+    } catch {
+      return false
+    }
+  })()
+
+  const notas = (data ?? []) as NotaDelCorcho[]
 
   return (
     <section className="mt-12">
@@ -117,21 +126,7 @@ export default async function Notas() {
         */
         <div className="mt-6 gap-4 xl:columns-3 [&>*]:mb-4 [&>*]:break-inside-avoid">
           {notas.map((n) => (
-            <div
-              key={n.id}
-              className="rounded-[28px] border bg-superficie px-6 py-5"
-              style={{
-                borderColor: 'var(--t-borde)',
-                borderLeft: `6px solid ${AMBITO.rosa}`,
-              }}
-            >
-              <p className="whitespace-pre-wrap text-[24px] font-extrabold leading-snug text-tinta">
-                {n.texto}
-              </p>
-              {n.creada_en && (
-                <p className="mt-2.5 text-[16px] font-bold text-tenue">{haceCuanto(n.creada_en)}</p>
-              )}
-            </div>
+            <Nota key={n.id} nota={n} sePuedeQuitar={puedeQuitarNotas} />
           ))}
         </div>
       )}
@@ -173,22 +168,4 @@ export default async function Notas() {
       </div>
     </section>
   )
-}
-
-/*
-  «Hoy», «Ayer», «Hace 3 días».
-
-  Y no la fecha exacta: en un corcho lo que importa es si es de esta
-  mañana o de la semana pasada. «12/09/2026» obliga a restar.
-*/
-function haceCuanto(iso: string): string {
-  const cuando = new Date(iso)
-  const dias = Math.floor((Date.now() - cuando.getTime()) / 86_400_000)
-
-  if (dias <= 0) return 'Hoy'
-  if (dias === 1) return 'Ayer'
-  if (dias < 7) return `Hace ${dias} días`
-  if (dias < 14) return 'Hace una semana'
-  if (dias < 31) return `Hace ${Math.floor(dias / 7)} semanas`
-  return 'Hace más de un mes'
 }

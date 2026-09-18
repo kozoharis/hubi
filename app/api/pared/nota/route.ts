@@ -98,3 +98,89 @@ export async function POST(peticion: NextRequest) {
 
   return NextResponse.json({ ok: true, nota: data })
 }
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  Y RETIRARLA DEL CORCHO
+  ═══════════════════════════════════════════════════════════════
+
+  Haris: *«las notas desde la cocina, si están asignadas a la pared
+  deberían poder darse por buenas y eliminarlas»*.
+
+  Un corcho del que no se puede quitar nada acaba siendo una pared de
+  papeles viejos que ya nadie lee — y entonces tampoco se lee el que
+  importa. Está razonado entero en el `sql/86`.
+
+  ─────────────────────────────────────────────────────────────
+  QUITAR NO BORRA
+
+  Pone fecha en `guardada_en`, que es exactamente lo que hace «Quitar»
+  desde el móvil. La nota sale de la pared, sigue guardada, y desde el
+  móvil se ve y se recupera.
+
+  Una pantalla colgada en una cocina la toca cualquiera que entre en la
+  casa. Un botón de borrar de verdad ahí es un botón que un día se
+  lleva por delante el único sitio donde estaba escrito algo.
+
+  ─────────────────────────────────────────────────────────────
+  Y AQUÍ TAMPOCO SE COMPRUEBA QUIÉN ERES
+
+  Manda la base: la política del 86 solo deja tocar las notas que
+  cuelgan de esa pared, y el disparador solo deja tocar `guardada_en`.
+  Si mañana se quitara, esto empezaría a fallar solo — que es lo que
+  tiene que pasar.
+*/
+export async function PATCH(peticion: NextRequest) {
+  const supabase = await clienteSesion()
+  const user = await quien(supabase)
+  if (!user) return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
+
+  const hogarId = await elEspacio(supabase)
+  if (!hogarId) return NextResponse.json({ error: 'No se sabe de qué casa.' }, { status: 403 })
+
+  const cuerpo = (await peticion.json().catch(() => null)) as
+    | { id?: string; que?: string }
+    | null
+
+  const id = String(cuerpo?.id ?? '')
+  if (!id) return NextResponse.json({ error: 'Falta la nota.' }, { status: 400 })
+
+  const que = String(cuerpo?.que ?? '')
+  if (que !== 'quitar' && que !== 'volver-a-ponerla') {
+    return NextResponse.json({ error: 'No sé qué hacer con esa nota.' }, { status: 400 })
+  }
+
+  /*
+    Con `.select()`: un cambio que la seguridad no permite no da error
+    en Postgres, cambia CERO filas y calla. Sin esto, la pared diría
+    «hecho» y la nota seguiría colgada.
+  */
+  const { data, error } = await supabase
+    .from('notas')
+    .update({ guardada_en: que === 'quitar' ? new Date().toISOString() : null })
+    .eq('id', id)
+    .eq('hogar_id', hogarId)
+    .select('id')
+
+  if (error) {
+    console.error('[MAPPEL] La pared no ha podido retirar una nota:', error)
+    return NextResponse.json(
+      {
+        error: /row-level security|policy|check_violation/i.test(error.message)
+          ? 'Esta pantalla todavía no puede quitar notas.'
+          : 'No se ha podido quitar la nota.',
+        detalle: error.message,
+      },
+      { status: 403 }
+    )
+  }
+
+  if (!data || data.length === 0) {
+    return NextResponse.json(
+      { error: 'Esa nota no cuelga de esta pared.' },
+      { status: 403 }
+    )
+  }
+
+  return NextResponse.json({ ok: true })
+}
