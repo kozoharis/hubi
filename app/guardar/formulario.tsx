@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { cadena, type Categoria } from '@/lib/rutas'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { cadena, cuelgaDe, type Categoria } from '@/lib/rutas'
 import { Ico, Volver } from '../iconos'
 import {
   Aviso,
@@ -60,6 +60,7 @@ export default function Formulario({
   categorias,
   esPropietario = false,
   enCarpeta = null,
+  raizFijada = null,
   paraLista = null,
 }: {
   categorias: Categoria[]
@@ -87,6 +88,26 @@ export default function Formulario({
     sigue estando y se puede cambiar.
   */
   enCarpeta?: string | null
+  /*
+    ═══════════════════════════════════════════════════════════════
+    LA SECCIÓN DE LA QUE NO SE SALE
+    ═══════════════════════════════════════════════════════════════
+
+    Cuando se entra a guardar DESDE una actividad —Weaver, la Finca—
+    el papel se queda dentro de ella. Está contado entero en
+    `page.tsx`; aquí lo que importa es que hace tres cosas:
+
+      · el árbol de carpetas se abre YA DENTRO de la sección, no en la
+        lista de todas las secciones de la casa;
+      · el botón de atrás no sube por encima de ella;
+      · y lo que proponga el lector se descarta si cae fuera.
+
+    Ese tercero es el que arreglaba el fallo. Los otros dos son para
+    que no haya dos verdades en la misma pantalla: una regla que el
+    sistema aplica por dentro y la pantalla no enseña es una regla que
+    parece un fallo.
+  */
+  raizFijada?: string | null
 }) {
   const [paso, setPaso] = useState<Paso>('archivo')
 
@@ -114,7 +135,11 @@ export default function Formulario({
   const [archivo, setArchivo] = useState<File | null>(null)
   const [vista, setVista] = useState<string | null>(null)
 
-  const [padre, setPadre] = useState<string | null>(null)
+  /* Dónde está abierto el árbol de carpetas. Con sección fijada
+     empieza DENTRO de ella: quien entra desde Weaver no tiene por qué
+     ver la lista de todas las secciones de la casa para volver a
+     entrar en Weaver. */
+  const [padre, setPadre] = useState<string | null>(raizFijada)
   const [aviso, setAviso] = useState<string | null>(null)
 
   /* El motivo técnico, cuando el servidor lo manda. No se le enseña a
@@ -273,6 +298,17 @@ export default function Formulario({
   const rutaElegida = datos.categoriaId
     ? cadena(categorias, datos.categoriaId).map((c) => c.nombre).join(' → ')
     : null
+
+  /* La sección en la que queda fijado, para poder nombrarla. */
+  const laSeccion = raizFijada ? (porId.get(raizFijada) ?? null) : null
+
+  /* ¿Esta carpeta está dentro de la sección fijada? Sin sección
+     fijada, todas valen. */
+  const dentro = useCallback(
+    (id: string | null | undefined) =>
+      !raizFijada || (!!id && cuelgaDe(categorias, id, raizFijada)),
+    [categorias, raizFijada]
+  )
 
   const migas = useMemo(() => {
     const camino: Categoria[] = []
@@ -524,6 +560,9 @@ export default function Formulario({
         try {
           const cuerpo = new FormData()
           cuerpo.append('archivo', paraElModelo)
+          /* Y de dónde viene, para que sólo le ofrezca las carpetas de
+             esa sección. Ver `raizFijada`. */
+          if (raizFijada) cuerpo.append('raiz', raizFijada)
           const conFoto = await fetch(api('/api/analizar'), { method: 'POST', body: cuerpo })
           if (abandonado.current) return
 
@@ -575,7 +614,7 @@ export default function Formulario({
           const r = await fetch(api('/api/analizar'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ texto: textoDelMovil }),
+            body: JSON.stringify({ texto: textoDelMovil, raiz: raizFijada ?? undefined }),
           })
           if (abandonado.current) return
           if (r.ok) leido = await r.json()
@@ -634,9 +673,32 @@ export default function Formulario({
           : ESTANCIA_VACIA
       )
 
+      /*
+        ── LO QUE PROPONE EL LECTOR, SI CAE DONDE TIENE QUE CAER ──
+
+        Con una sección fijada, una carpeta de fuera no se acepta ni
+        aunque el modelo esté seguro. Al lector ya se le ofrecen sólo
+        las de dentro (`/api/analizar`), así que esto casi nunca salta
+        — pero es la comprobación que de verdad manda, y va aquí por lo
+        de siempre: lo que no sostiene una comprobación es verdad por
+        casualidad.
+
+        Si se descarta, se cae a la carpeta de la que se venía; y si no
+        se venía de ninguna, se pregunta.
+      */
+      const propuesta = dentro(leido.categoria_id) ? (leido.categoria_id ?? null) : null
+      const laCarpeta = propuesta ?? enCarpeta ?? null
+
+      if (leido.categoria_id && !propuesta && laSeccion) {
+        avisar(
+          `Dime en qué carpeta de ${laSeccion.nombre} va y lo guardo ahí.`,
+          'Lo he leído, pero no dónde guardarlo'
+        )
+      }
+
       setDatos({
         titulo: leido.titulo ?? '',
-        categoriaId: leido.categoria_id ?? null,
+        categoriaId: laCarpeta,
         fecha: leido.fecha ?? HOY(),
         importe: leido.importe != null ? String(leido.importe) : '',
         proveedor: leido.proveedor ?? '',
@@ -651,7 +713,7 @@ export default function Formulario({
         tipo: leido.tipo ?? null,
       })
 
-      setPaso(leido.categoria_id ? 'encontrado' : 'categoria')
+      setPaso(laCarpeta ? 'encontrado' : 'categoria')
     } catch (e) {
       if (abandonado.current) return
       avisar('Dime tú dónde va y lo guardo igual.', 'No he podido leer este papel')
@@ -675,7 +737,7 @@ export default function Formulario({
       return
     }
     setDatos((d) => ({ ...d, categoriaId: c.id, titulo: d.titulo || c.nombre }))
-    setPadre(null)
+    setPadre(raizFijada)
     setPaso(datos.confianza ? 'editar' : 'encontrado')
   }
 
@@ -1410,7 +1472,9 @@ export default function Formulario({
         {/* ══ 6 · CARPETA ══ */}
         {paso === 'categoria' && (
           <>
-            <h1 className="t-titulo mt-8">¿Dónde lo guardamos?</h1>
+            <h1 className="t-titulo mt-8">
+              {laSeccion ? `¿Dónde lo guardamos en ${laSeccion.nombre}?` : '¿Dónde lo guardamos?'}
+            </h1>
             {migas.length > 0 && (
               <p className="t-apoyo mt-2">{migas.map((m) => m.nombre).join(' → ')}</p>
             )}
@@ -1462,8 +1526,18 @@ export default function Formulario({
   )
 
   function atras() {
-    if (paso === 'categoria' && padre) {
-      setPadre(migas.length > 1 ? migas[migas.length - 2].id : null)
+    /*
+      Con sección fijada, el árbol nace en ella y NO se sube por
+      encima: en el primer nivel de dentro, atrás sale del paso de
+      elegir carpeta en vez de enseñar las secciones de la casa. Si se
+      pudiera subir, el candado sería mentira — y un candado que se
+      abre tocando atrás es peor que no tenerlo, porque el papel acaba
+      fuera sin que nadie note que ha pasado.
+    */
+    const enElTecho = padre === raizFijada
+
+    if (paso === 'categoria' && padre && !enElTecho) {
+      setPadre(migas.length > 1 ? migas[migas.length - 2].id : raizFijada)
     } else if (paso === 'categoria') {
       setPaso(datos.confianza ? 'editar' : 'archivo')
     } else if (paso === 'editar') {

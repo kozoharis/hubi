@@ -805,6 +805,34 @@ export default async function Cuentas({
           </div>
         )}
 
+        {/*
+          ── Y GUARDAR UNO, DESDE AQUÍ ──
+
+          Haris: *«si estás en cuentas y escaneas un documento, la raíz
+          donde va a ir es esa cuenta»*. Para que eso se cumpla hacía
+          falta, antes que nada, **una manera de escanear desde aquí**:
+          hasta ahora había que salir a Apuntar un movimiento y de ahí
+          a «Tengo el papel», y ese camino llegaba a guardar sin decir
+          de dónde venía.
+
+          El enlace lleva la sección puesta. Lo que pase después está
+          contado en `app/guardar/page.tsx`: el papel se queda dentro.
+        */}
+        {raiz && (
+          <div className="mt-2.5">
+            <Fila href={`/guardar?raiz=${raiz.id}`} alto="alta">
+              <PastillaAmbito icono="foto" ambito={seccion.ambito} />
+              <span className="min-w-0 flex-1">
+                <span className="t-tarjeta block truncate">Guardar un papel</span>
+                <span className="t-apoyo block truncate">
+                  Hazle una foto y se queda en {seccion.nombre}
+                </span>
+              </span>
+              <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-apagado" />
+            </Fila>
+          </div>
+        )}
+
         {/* ── Cada unidad ── */}
         {casas && casas.casas.length > 0 && (
           <section className="mt-5">

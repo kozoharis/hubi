@@ -35,6 +35,7 @@ export default function Apuntar({
     parámetro con el que se entró, sea el que sea.
   */
   seccion = null,
+  raizId = null,
   /* IGIC, IVA o nada. Apagado de serie: en una casa que no factura,
      esto no aparece por ningún lado. */
   impuesto = 'ninguno',
@@ -45,6 +46,9 @@ export default function Apuntar({
   volver?: string
   conApartamentos?: boolean
   seccion?: string | null
+  /* La sección de la que se viene. Viaja a «Guardar un papel» para que
+     el papel no se salga de ella. Ver `app/guardar/page.tsx`. */
+  raizId?: string | null
   impuesto?: Impuesto
 }) {
   const [paso, setPaso] = useState<Paso>('tipo')
@@ -175,12 +179,20 @@ export default function Apuntar({
               abajo. Al 12 % era relleno; al 5 % es un matiz.
             */}
             <div className="mt-5">
-              <Fila href="/guardar" alto="alta" ambito="verde" tinte className="!min-h-[80px]">
+              <Fila
+                href={raizId ? `/guardar?raiz=${raizId}` : '/guardar'}
+                alto="alta"
+                ambito="verde"
+                tinte
+                className="!min-h-[80px]"
+              >
                 <PastillaAmbito icono="foto" ambito="verde" />
                 <span className="min-w-0 flex-1">
                   <span className="t-tarjeta block">Tengo el papel</span>
                   <span className="t-apoyo block leading-snug">
-                    Hazle una foto: leo el importe y lo apunto solo
+                    {raizId
+                      ? `Hazle una foto: leo el importe y lo apunto en ${nombre}`
+                      : 'Hazle una foto: leo el importe y lo apunto solo'}
                   </span>
                 </span>
                 <Ico nombre="flecha" tam={22} grosor={2.2} className="shrink-0 text-apagado" />

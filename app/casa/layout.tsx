@@ -8,8 +8,33 @@ import Descanso from './descanso'
 import Despierta from './despierta'
 import Noche from './noche'
 import Tiempo from './tiempo'
+import PantallaCompleta from './pantalla-completa'
 
 export const dynamic = 'force-dynamic'
+
+/*
+  ── EL MANIFIESTO DE LA PARED, Y NO EL DE LA APLICACIÓN ──
+
+  La aplicación normal se instala en `standalone`: con la barra de
+  estado de Android puesta, que en un teléfono es lo correcto — la
+  hora y la batería hacen falta.
+
+  Una tableta colgada en una cocina es lo contrario. Aquí esas dos
+  franjas negras no sirven para nada, estropean la banda de arriba y
+  ponen un botón de atrás al alcance de cualquiera que pase.
+
+  Éste declara `display: "fullscreen"`, y como el navegador se queda
+  con el manifiesto de la página DESDE LA QUE se instala, una tableta
+  instalada desde la pared se abre sin barras y la instalada desde el
+  Inicio sigue con las suyas. Dos comportamientos, sin ningún ajuste
+  que nadie tenga que encontrar.
+
+  Lleva además `orientation: "landscape"` y su propio `id`, para que
+  Android la trate como lo que es: otra cosa, no la misma aplicación.
+*/
+export const metadata = {
+  manifest: '/pared.webmanifest',
+}
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -135,6 +160,11 @@ export default async function ArmazonDeLaPared({ children }: { children: ReactNo
         nunca, porque Android apagaba a los dos.
       */}
       <Despierta />
+
+      {/* Tampoco pinta nada: esconde las barras de Android al primer
+          toque. El porqué —y por qué hace falta un toque— está en
+          `pantalla-completa.tsx`. */}
+      <PantallaCompleta />
 
       <VuelveAHoy />
 

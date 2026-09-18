@@ -137,6 +137,16 @@ export default async function PaginaApuntar({
       /* El mismo parámetro con el que se entró, para que «Apuntar otro»
          vuelva a ESTA sección y no a una escrita a mano. */
       seccion={seccion ?? null}
+      /*
+        La raíz de esta sección, para que «Tengo el papel» entre a
+        guardar DENTRO de ella.
+
+        Sin esto, el papel de Weaver salía de Weaver: el enlace era un
+        `/guardar` pelado y el lector proponía carpeta mirando sólo el
+        papel, así que una factura de la luz acababa en las carpetas de
+        la casa. Estaba contado en `app/guardar/page.tsx`.
+      */
+      raizId={deCasa ? null : (raiz?.id ?? null)}
     />
   )
 }

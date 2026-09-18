@@ -4,7 +4,7 @@ import { quien } from '@/lib/supabase/quien'
 import { leerDocumento } from '@/lib/ocr'
 import { entenderPapel, type Conocido } from '@/lib/entender'
 import { tipoDe, TIPOS_BUENOS } from '@/lib/archivos'
-import { cadena, type Categoria } from '@/lib/rutas'
+import { cadena, cuelgaDe, type Categoria } from '@/lib/rutas'
 import { elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
@@ -40,10 +40,25 @@ export async function POST(peticion: NextRequest) {
   const tipoPeticion = peticion.headers.get('content-type') ?? ''
   let textoDelMovil: string | null = null
   let archivo: File | null = null
+  /*
+    ── DE DÓNDE VIENE QUIEN ESTÁ GUARDANDO ──
+
+    Si el papel se está guardando DESDE una actividad —desde Weaver,
+    desde la Finca— viene su raíz. Y entonces al modelo solo se le
+    ofrecen las carpetas de esa actividad.
+
+    No es una preferencia: es la corrección de un fallo real. Antes se
+    le ofrecían las carpetas de la casa ENTERA, así que una factura de
+    Weaver leída desde Weaver acababa en «Casa → Facturas» porque al
+    modelo le parecía una factura de casa. Y tenía razón: nadie le
+    había dicho dónde estaba la persona.
+  */
+  let raizPedida: string | null = null
 
   if (tipoPeticion.includes('application/json')) {
-    const cuerpo = (await peticion.json().catch(() => ({}))) as { texto?: string }
+    const cuerpo = (await peticion.json().catch(() => ({}))) as { texto?: string; raiz?: string }
     textoDelMovil = (cuerpo.texto ?? '').trim() || null
+    raizPedida = (cuerpo.raiz ?? '').trim() || null
 
     if (!textoDelMovil) {
       return NextResponse.json(
@@ -58,6 +73,8 @@ export async function POST(peticion: NextRequest) {
     } catch {
       return NextResponse.json({ error: 'El archivo es demasiado grande.' }, { status: 413 })
     }
+
+    raizPedida = (String(formulario.get('raiz') ?? '')).trim() || null
 
     const subido = formulario.get('archivo')
     if (!(subido instanceof File) || subido.size === 0) {
@@ -96,7 +113,29 @@ export async function POST(peticion: NextRequest) {
   // Al modelo solo se le ofrecen las categorías finales: las que no tienen
   // hijas. Son las únicas donde puede acabar un documento.
   const conHijas = new Set(categorias.map((c) => c.padre_id).filter(Boolean))
-  const hojas = categorias.filter((c) => !conHijas.has(c.id))
+  let hojas = categorias.filter((c) => !conHijas.has(c.id))
+
+  /*
+    Y si se está guardando desde una actividad, solo las suyas.
+
+    La raíz se comprueba contra la lista que acaba de traer la BASE con
+    la sesión de quien pregunta: tiene que existir, ser de su casa y no
+    tener padre. Un identificador escrito a mano en la petición no
+    puede abrir las carpetas de otra familia — y si no cuadra, se
+    ignora y se ofrecen todas, que es como estaba.
+  */
+  const laRaiz = raizPedida
+    ? (categorias.find((c) => c.id === raizPedida && !c.padre_id) ?? null)
+    : null
+
+  if (laRaiz) {
+    const suyas = hojas.filter((c) => cuelgaDe(categorias, c.id, laRaiz.id))
+    /* Si la actividad todavía no tiene ni una carpeta final, se
+       dejan todas: es mejor que el modelo proponga algo aunque haya
+       que corregirlo, que dejarlo sin ninguna opción y que no proponga
+       nada. El candado de verdad está en la pantalla. */
+    if (suyas.length > 0) hojas = suyas
+  }
 
   const rutaDe = (c: Categoria) =>
     cadena(categorias, c.id)

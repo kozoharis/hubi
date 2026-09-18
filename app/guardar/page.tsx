@@ -7,7 +7,7 @@ import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
 import { Aviso, BotonSecundario } from '../piezas'
 import Formulario from './formulario'
-import type { Categoria } from '@/lib/rutas'
+import { raizDe, type Categoria } from '@/lib/rutas'
 import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
@@ -15,9 +15,9 @@ export const dynamic = 'force-dynamic'
 export default async function Guardar({
   searchParams,
 }: {
-  searchParams: Promise<{ en?: string; lista?: string }>
+  searchParams: Promise<{ en?: string; lista?: string; raiz?: string }>
 }) {
-  const { en, lista: laCompra } = await searchParams
+  const { en, lista: laCompra, raiz } = await searchParams
 
   const supabase = await clienteSesion()
 
@@ -99,11 +99,61 @@ export default async function Guardar({
   const lista = (categorias ?? []) as Categoria[]
   const enCarpeta = en && lista.some((c) => c.id === en) ? en : null
 
+  /*
+    ═══════════════════════════════════════════════════════════════
+    DE DÓNDE VIENE, Y POR QUÉ ESO MANDA
+    ═══════════════════════════════════════════════════════════════
+
+    Haris: *«cuando quieres apuntar un gasto con una foto desde
+    Cuentas —desde Weaver, que es la mía— no reconoce que es desde
+    Weaver: su lógica lo lleva a la carpeta de casa»*.
+
+    Y era exactamente eso. Guardar un papel abría el árbol ENTERO de
+    la casa y, sobre todo, el lector proponía carpeta mirando sólo el
+    papel: una factura de la luz de Weaver «es» una factura de la luz,
+    así que iba a Casa. El sitio desde el que se había entrado no
+    viajaba a ninguna parte.
+
+    Ahora sí, y con una regla que se dice en una frase:
+
+        SI SE ENTRA A GUARDAR DESDE UNA SECCIÓN,
+        EL PAPEL SE QUEDA DENTRO DE ESA SECCIÓN.
+
+    Se puede elegir en qué carpeta de dentro va. Lo que no se puede es
+    salirse: ni tocando, ni por lo que proponga el lector.
+
+    La raíz llega de dos maneras y las dos valen:
+
+      ?raiz=<id>   explícita. La manda Cuentas y «Tengo el papel».
+      ?en=<id>     la carpeta de la que se viene; se sube hasta su
+                   raíz. Es lo que ya mandaban Papeles y los tickets
+                   de la compra, así que esas dos entradas quedan
+                   arregladas sin tocarlas.
+
+    Se comprueba contra las categorías traídas CON LA SESIÓN, así que
+    un identificador escrito a mano no puede señalar a la casa de
+    otro: si no está en la lista, no hay candado y se guarda como
+    siempre.
+  */
+  const raizPedida = raiz && lista.some((c) => c.id === raiz && !c.padre_id) ? raiz : null
+  const raizDelOrigen = enCarpeta ? (raizDe(lista, enCarpeta)?.id ?? null) : null
+  const candidata = raizPedida ?? raizDelOrigen
+
+  /*
+    Y sólo se echa el candado si dentro hay dónde guardar. Una sección
+    recién creada, sin una sola carpeta debajo, dejaría la pantalla de
+    elegir carpeta en blanco y sin salida: encerrada en una habitación
+    sin puertas. En ese caso no se fija nada y se guarda como siempre.
+  */
+  const raizFijada =
+    candidata && lista.some((c) => c.padre_id === candidata) ? candidata : null
+
   return (
     <Formulario
       categorias={lista}
       esPropietario={Boolean(perfil?.es_propietario_drive)}
       enCarpeta={enCarpeta}
+      raizFijada={raizFijada}
       /* La compra a la que engancharle este ticket, si se ha venido
          desde ahí. Sin comprobar aquí que existe: si no existe, el
          enganche falla en silencio y el documento se guarda igual —

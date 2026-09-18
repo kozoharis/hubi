@@ -22,6 +22,30 @@ export function cadena(categorias: Categoria[], hojaId: string): Categoria[] {
 }
 
 /*
+  ═══════════════════════════════════════════════════════════════
+  LA RAÍZ DE UNA CARPETA
+  ═══════════════════════════════════════════════════════════════
+
+  De qué sección cuelga, subiendo hasta arriba: «Weaver → Gastos →
+  Luz» tiene por raíz Weaver. Una sección con cuentas ES una raíz —
+  una categoría sin padre con `lleva_cuentas` — así que preguntar por
+  la raíz es preguntar «¿de qué actividad es esto?».
+
+  Estaba escrito a mano en cuatro sitios, con un `while` distinto en
+  cada uno. Y en el quinto —el formulario de guardar un papel— no
+  estaba escrito, que es de donde salió el fallo de que un papel de
+  Weaver acabara en las carpetas de la casa.
+*/
+export function raizDe(categorias: Categoria[], id: string): Categoria | null {
+  return cadena(categorias, id)[0] ?? null
+}
+
+/** ¿Esta carpeta cuelga de esa raíz? La propia raíz cuenta. */
+export function cuelgaDe(categorias: Categoria[], id: string, raizId: string): boolean {
+  return cadena(categorias, id).some((c) => c.id === raizId)
+}
+
+/*
   LAS SECCIONES RESERVADAS · Salud y Personal.
 
   Se mira la RAÍZ del camino, así que una carpeta nueva dentro de Salud
