@@ -336,6 +336,23 @@ export async function PATCH(peticion: NextRequest) {
   }
 
   // ── 2 · Y lo que falta, a la compra ──
+  /*
+    ── Y QUEDA ESCRITO DE QUÉ MENÚ VIENE (paso 87) ──
+
+    Haris: *«si has seleccionado algún ingrediente desde el menú que te
+    haga falta, yo lo pondría: esto es para esto»*.
+
+    Antes, «cilantro» acababa en la lista entre el papel de cocina y las
+    bolsas de basura, sin nada que dijera para qué era. Con
+    `para_menu_id`, la pantalla de la cocina puede decir «para la cena
+    del jueves» y ordenar por el día — que es el único orden que importa
+    en una compra.
+
+    Y con la red de siempre: si la base todavía no tiene la columna, se
+    apunta SIN ella. Quedarse sin saber para qué era es un incordio;
+    quedarse sin apuntar el cilantro, no. **Una columna nueva nunca
+    puede ser obligatoria para lo que ya funcionaba.**
+  */
   let apuntados = 0
   if (faltan.length > 0 && cuerpo.lista_id) {
     const filas = faltan.map((que) => ({
@@ -347,10 +364,17 @@ export async function PATCH(peticion: NextRequest) {
       anadido_por: user.id,
     }))
 
-    const { data: puestos, error: falloCompra } = await supabase
+    let { data: puestos, error: falloCompra } = await supabase
       .from('compra')
-      .insert(filas)
+      .insert(filas.map((f) => ({ ...f, para_menu_id: id })))
       .select('id')
+
+    if (falloCompra && /para_menu_id/.test(falloCompra.message)) {
+      ;({ data: puestos, error: falloCompra } = await supabase
+        .from('compra')
+        .insert(filas)
+        .select('id'))
+    }
 
     if (falloCompra) {
       return NextResponse.json(
