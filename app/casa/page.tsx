@@ -32,6 +32,9 @@ import { Nada, Rotulo } from './rotulo'
 
 export const dynamic = 'force-dynamic'
 
+/** Una cosa de la compra, con el menú del que vino si lo tiene. */
+type ConMenu = { id: string; que: string; para_menu_id?: string | null }
+
 /*
   ═══════════════════════════════════════════════════════════════
   HOY · la pantalla en la que se queda la pared
@@ -102,7 +105,10 @@ export default async function Hoy() {
 
         let pide = supabase
           .from('compra')
-          .select('id, que')
+          /* Con `para_menu_id` (paso 87): es lo que permite avisar de
+             que falta algo para la cena de mañana. Si la base todavía
+             no lo tiene, se vuelve a pedir sin ello más abajo. */
+          .select('id, que, para_menu_id')
           .eq('hogar_id', casa)
           .eq('comprado', false)
           .is('archivado_en', null)
@@ -117,8 +123,23 @@ export default async function Hoy() {
         const { data, error } = await pide
           .order('creado_en', { ascending: true })
           .limit(30)
-        if (error) return []
-        return (data ?? []) as { id: string; que: string }[]
+
+        if (!error) return (data ?? []) as ConMenu[]
+
+        /* La red de siempre: sin la columna, Postgres rechaza la
+           consulta ENTERA. Se vuelve a pedir sin ella y la compra sigue
+           saliendo — solo se queda sin el aviso. */
+        const otra = await supabase
+          .from('compra')
+          .select('id, que')
+          .eq('hogar_id', casa)
+          .eq('comprado', false)
+          .is('archivado_en', null)
+          .order('creado_en', { ascending: true })
+          .limit(30)
+
+        if (otra.error) return []
+        return (otra.data ?? []) as ConMenu[]
       } catch {
         return []
       }
@@ -170,6 +191,66 @@ export default async function Hoy() {
   */
   const comida = menus.filter((m) => m.momento === 'comida')
   const cena = menus.filter((m) => m.momento === 'cena')
+
+  /*
+    ══════════════════════════════════════════════════════════════
+    «OYE, QUE HAY QUE COMPRAR ALGO PARA MAÑANA»
+    ══════════════════════════════════════════════════════════════
+
+    Haris: *«puede saltar un aviso en la pantalla de inicio, automática,
+    donde te avise: oye, no te olvides de comprar lo que toque»*.
+
+    Y es el remate de todo lo del paso 87. Saber que falta cilantro
+    sirve de poco si hay que entrar en la pestaña de la Compra para
+    enterarse: el único momento en que ese dato cambia algo es cuando
+    todavía se puede ir a comprarlo, y ése es justamente el momento en
+    que nadie está mirando la Compra.
+
+    ─────────────────────────────────────────────────────────────
+    SOLO LO DE HOY Y LO DE MAÑANA
+
+    Lo del sábado no es un aviso, es una lista. Un cartel permanente
+    diciendo que falta algo para algún día de la semana es un cartel
+    que a los tres días ya no se lee — y entonces tampoco se lee el
+    día que sí importa.
+
+    Si no hay nada que corra, aquí no aparece nada. Una pantalla que
+    avisa siempre no avisa nunca.
+  */
+  const mañana = (() => {
+    const d = new Date(`${hoy}T12:00:00`)
+    d.setDate(d.getDate() + 1)
+    return d.toISOString().slice(0, 10)
+  })()
+
+  const conMenu = [...new Set(laCompra.map((c) => c.para_menu_id).filter(Boolean))] as string[]
+
+  const queCorren =
+    conMenu.length === 0
+      ? []
+      : ((
+          await supabase
+            .from('menus')
+            .select('id, fecha, momento')
+            .eq('hogar_id', casa)
+            .in('id', conMenu)
+            .gte('fecha', hoy)
+            .lte('fecha', mañana)
+        ).data ?? []) as { id: string; fecha: string; momento: string }[]
+
+  const urgen = new Set(queCorren.map((m) => m.id))
+  const loQueUrge = laCompra.filter((c) => c.para_menu_id && urgen.has(c.para_menu_id))
+
+  /* Para qué comida es la más cercana, dicho como se dice en casa. */
+  const laPrimera = [...queCorren].sort((a, b) =>
+    a.fecha === b.fecha ? a.momento.localeCompare(b.momento) : a.fecha.localeCompare(b.fecha)
+  )[0]
+
+  const paraCuando = !laPrimera
+    ? ''
+    : `${laPrimera.momento === 'cena' ? 'la cena' : 'la comida'} de ${
+        laPrimera.fecha === hoy ? 'hoy' : 'mañana'
+      }`
 
   /*
     ── Y SI LO DE HOY SE PUEDE HACER ──
@@ -397,6 +478,45 @@ export default async function Hoy() {
 
       {/* ══ 2 · LA CASA ══ */}
       <div className="mt-9 flex min-h-0 flex-col lg:mt-0">
+        {/*
+          ── EL AVISO, ARRIBA DEL TODO Y SOLO CUANDO CORRE ──
+
+          Va antes que «Qué se come» a propósito: si falta algo para la
+          cena de hoy, eso se lee ANTES que la cena de hoy. Es la única
+          cosa de esta columna que tiene hora.
+
+          Y es un enlace, no un cartel: quien lo lee está de pie
+          delante de la pared, y lo siguiente que quiere es ver qué
+          falta. Dejarlo sin tocar obligaría a buscar la pestaña.
+        */}
+        {loQueUrge.length > 0 && (
+          <Link
+            href="/casa/compra"
+            className="tocable mb-5 flex shrink-0 items-center gap-4 rounded-[24px] border px-6 py-4"
+            style={{
+              background: `color-mix(in srgb, var(--t-alerta) 12%, var(--t-superficie))`,
+              borderColor: `color-mix(in srgb, var(--t-alerta) 45%, transparent)`,
+              borderLeft: `6px solid var(--t-alerta)`,
+            }}
+          >
+            <span className="shrink-0" style={{ color: 'var(--t-alerta)' }}>
+              <Ico nombre="bolsa" tam={28} grosor={2.3} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14.5px] font-extrabold uppercase tracking-wider text-tenue">
+                No te olvides de comprar
+              </span>
+              <span className="block text-[22px] font-extrabold leading-tight text-tinta">
+                {loQueUrge.length === 1 ? '1 cosa' : `${loQueUrge.length} cosas`}
+                {paraCuando ? ` para ${paraCuando}` : ''}
+              </span>
+            </span>
+            <span aria-hidden className="shrink-0 text-apagado">
+              <Ico nombre="flecha" tam={22} grosor={2.4} />
+            </span>
+          </Link>
+        )}
+
         <Rotulo>Qué se come</Rotulo>
 
         {comida.length === 0 && cena.length === 0 ? (
