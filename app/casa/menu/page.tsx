@@ -132,7 +132,7 @@ export default async function Menu() {
         </div>
       )}
 
-      <ul className="mt-6 space-y-3">
+      <ul className="mt-5 space-y-2.5">
           {dias.map((dia) => {
             const esHoy = dia === hoy
             const pasado = dia < hoy
@@ -145,8 +145,15 @@ export default async function Menu() {
             return (
               <li
                 key={dia}
-                className={`flex items-start gap-7 rounded-[28px] border px-7 py-5 ${
-                  pasado ? 'opacity-45' : ''
+                /*
+                  Menos aire y menos radio: eran 28 de radio con 28 de
+                  lado y 20 de alto, y con siete días eso se come la
+                  pantalla entera antes de llegar al domingo. Los
+                  pasados, además, a la mitad de fuerza: lo que se comió
+                  el lunes ya no es una decisión.
+                */
+                className={`flex items-start gap-6 rounded-[22px] border px-6 py-3.5 ${
+                  pasado ? 'opacity-40' : ''
                 }`}
                 style={{
                   background: esHoy
@@ -158,11 +165,27 @@ export default async function Menu() {
                   borderLeft: `6px solid ${esHoy ? AMBITO.arena : 'var(--t-borde)'}`,
                 }}
               >
-                <span className="w-[190px] shrink-0">
-                  <span className="block text-[15px] font-extrabold uppercase tracking-wider text-tenue">
-                    {esHoy ? 'Hoy' : nombreDelDia(dia)}
+                {/*
+                  ── EL DÍA, EN 104 PX EN VEZ DE 190 ──
+
+                  Eran 190 px para escribir «MIÉRCOLES» y un número, o
+                  sea casi un tercio del ancho de la fila ocupado por lo
+                  único que ya se sabe. Ahora el día va en corto —«MIÉ»—
+                  y el número al lado, en la misma línea.
+
+                  Hoy es la excepción y se dice entero, con su color: es
+                  la fila que se busca al pasar por la cocina, y una
+                  franja de color a la izquierda no basta para
+                  encontrarla de un vistazo desde la puerta.
+                */}
+                <span className="flex w-[104px] shrink-0 items-baseline gap-2">
+                  <span
+                    className="text-[15px] font-extrabold uppercase tracking-wider"
+                    style={{ color: esHoy ? AMBITO.arena : 'var(--t-tenue)' }}
+                  >
+                    {esHoy ? 'Hoy' : nombreDelDia(dia).slice(0, 3)}
                   </span>
-                  <span className="block text-[30px] font-extrabold leading-none tabular-nums text-tinta">
+                  <span className="text-[25px] font-extrabold leading-none tabular-nums text-tinta">
                     {Number(dia.slice(8, 10))}
                   </span>
                 </span>

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../../iconos'
-import { AMBITO } from '../../piezas'
 import ComprobarEnLaPared from './comprobar'
 import Poner from './poner'
 import type { Receta } from './recetas'
@@ -97,17 +96,24 @@ export default function Comida({
     : null
 
   return (
-    <span className="flex min-w-0 flex-1 items-start gap-3.5">
-      <span
-        className="mt-0.5 flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px]"
-        style={{
-          background: `color-mix(in srgb, ${AMBITO.arena} 16%, var(--t-superficie))`,
-          color: AMBITO.arena,
-        }}
-      >
-        <Ico nombre="taza" tam={22} grosor={2.1} />
-      </span>
+    /*
+      ── Y SIN LA TACITA ──
 
+      Haris: *«veo un poco bruto el menú… sobre todo la parte del
+      calendario»*.
+
+      Aquí había una pastilla de 44 px con una taza dibujada delante de
+      cada comida y de cada cena. Siete días por dos comidas son
+      **catorce tazas idénticas** bajando por la pantalla, todas
+      diciendo lo mismo que ya dice la palabra de al lado. Eso no es
+      iconografía: es ruido con forma de icono.
+
+      La regla del sistema es que un icono acompaña al texto cuando
+      AÑADE algo —distinguir una cosa de otra—. Catorce iguales no
+      distinguen nada; lo único que hacen es robarle 58 px de ancho a lo
+      que sí hay que leer, que es el plato.
+    */
+    <span className="flex min-w-0 flex-1 items-start">
       <span className="min-w-0 flex-1">
         <span className="block text-[13.5px] font-extrabold uppercase tracking-wider text-tenue">
           {etiqueta}
