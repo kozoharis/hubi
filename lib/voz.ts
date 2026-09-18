@@ -2,6 +2,13 @@ import type { Categoria } from '@/lib/rutas'
 
 const MODELO = 'gemini-3.5-flash'
 const RAZONAMIENTO = 'minimal'
+
+/*
+  Si este modelo no admite `thinking_level`, se apunta aquí y este
+  servidor deja de mandarlo mientras viva. El porqué, con el orden de
+  los intentos que lo destapó, está contado entero en `lib/ocr.ts`.
+*/
+let admiteRazonamiento = true
 /*
   ── CUÁNTO SE ESPERA A GEMINI ─────────────────────────────
 
@@ -686,25 +693,31 @@ export async function escuchar(opciones: {
   // El campo va en minúsculas con guion bajo: Google no reconoce
   // "thinkingLevel". Y si algún día este modelo dejara de admitirlo,
   // se reintenta sin él en vez de fallar.
-  async function pedir(conRazonamientoMinimo: boolean) {
+  async function pedir() {
     return fetch(`${API}/${MODELO}:generateContent`, {
       method: 'POST',
       signal: AbortSignal.timeout(dicho ? LIMITE_CON_TEXTO_MS : LIMITE_TRANSCRIBIENDO_MS),
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': clave! },
       body: JSON.stringify({
         ...contenido,
-        generationConfig: conRazonamientoMinimo
+        generationConfig: admiteRazonamiento
           ? { ...ajustes, thinking_level: RAZONAMIENTO }
           : ajustes,
       }),
     })
   }
 
-  let respuesta = await pedir(true)
+  let respuesta = await pedir()
 
-  if (respuesta.status === 400) {
+  /* Lo mismo que en `ocr.ts`, y por lo mismo: se apunta en el módulo
+     para que ningún reintento posterior lo deshaga. */
+  if (respuesta.status === 400 && admiteRazonamiento) {
     const detalle = await respuesta.clone().text()
-    if (/thinking/i.test(detalle)) respuesta = await pedir(false)
+    if (/thinking/i.test(detalle)) {
+      console.warn('[MAPPEL] Este modelo no admite thinking_level. No se vuelve a mandar.')
+      admiteRazonamiento = false
+      respuesta = await pedir()
+    }
   }
 
   if (!respuesta.ok) {

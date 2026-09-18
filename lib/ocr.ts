@@ -8,6 +8,42 @@ import type { Categoria } from '@/lib/rutas'
  * necesita. Extraer el importe de una factura no requiere reflexión, requiere
  * lectura. Este modelo sí admite "minimal" y responde en pocos segundos.
  */
+/*
+  ══════════════════════════════════════════════════════════════
+  SI ESTE MODELO NO ADMITE EL RAZONAMIENTO, SE APRENDE UNA VEZ
+  ══════════════════════════════════════════════════════════════
+
+  Google contesta a `thinking_level` con un 400 seco:
+
+      Unknown name "thinking_level" at 'generation_config'
+
+  Ya había un reintento sin el campo, y estaba bien pensado. Pero se
+  olvidaba en cuanto entraba en juego el OTRO reintento, el de «el
+  modelo está ocupado»:
+
+      1 · se pide CON razonamiento      → 400, campo desconocido
+      2 · se reintenta SIN él           → 503, ocupado
+      3 · se reintenta por lo ocupado   → **otra vez CON razonamiento**
+      4 · 400 → «el modelo no contesta»
+
+  El paso 3 tiraba a la basura lo aprendido en el 1. Y por eso el fallo
+  parecía aleatorio —«desde la cuenta no lee, desde Inicio sí»—: no
+  dependía de la pantalla, dependía de si el reintento del medio pillaba
+  a Google ocupado. Nada que ver con la cuenta; era el orden de los
+  intentos.
+
+  Ahora se apunta EN EL MÓDULO. Al primer 400 de estos, este servidor
+  deja de mandar el campo mientras viva, así que:
+
+    · no se vuelve a perder entre reintentos;
+    · y se ahorra un viaje entero en cada lectura, en vez de estrellarse
+      contra el mismo 400 una y otra vez.
+
+  Vuelve a `true` solo cuando arranca un servidor nuevo, que es
+  exactamente lo que hay que hacer el día que Google lo admita.
+*/
+let admiteRazonamiento = true
+
 const MODELO = 'gemini-3.5-flash'
 const RAZONAMIENTO = 'minimal'
 const LIMITE_MS = 45_000
@@ -231,7 +267,7 @@ export async function leerDocumento(opciones: {
     responseSchema: ESQUEMA,
   }
 
-  async function pedir(conRazonamientoMinimo: boolean) {
+  async function pedir() {
     const corte = AbortSignal.timeout(LIMITE_MS)
 
     return fetch(`${API}/${MODELO}:generateContent`, {
@@ -243,7 +279,7 @@ export async function leerDocumento(opciones: {
         // El campo va en minúsculas con guion bajo: Google no reconoce
         // "thinkingLevel". El reintento de abajo cubre el caso de que
         // este modelo deje de admitirlo.
-        generationConfig: conRazonamientoMinimo
+        generationConfig: admiteRazonamiento
           ? { ...ajustes, thinking_level: RAZONAMIENTO }
           : ajustes,
       }),
@@ -252,13 +288,17 @@ export async function leerDocumento(opciones: {
 
   let respuesta: Response
   try {
-    respuesta = await pedir(true)
+    respuesta = await pedir()
 
-    // Si este modelo dejara de admitir el ajuste de razonamiento,
-    // se reintenta sin él en vez de fallar.
-    if (respuesta.status === 400) {
+    /* Si este modelo no admite el ajuste de razonamiento, se apunta
+       para siempre y se reintenta sin él. Ver `admiteRazonamiento`. */
+    if (respuesta.status === 400 && admiteRazonamiento) {
       const detalle = await respuesta.clone().text()
-      if (/thinking/i.test(detalle)) respuesta = await pedir(false)
+      if (/thinking/i.test(detalle)) {
+        console.warn('[MAPPEL] Este modelo no admite thinking_level. No se vuelve a mandar.')
+        admiteRazonamiento = false
+        respuesta = await pedir()
+      }
     }
 
     /*
@@ -277,7 +317,10 @@ export async function leerDocumento(opciones: {
     */
     if (SE_REINTENTA.has(respuesta.status)) {
       await new Promise((r) => setTimeout(r, 1200))
-      respuesta = await pedir(true)
+      /* Sin argumento: `pedir` mira `admiteRazonamiento`, así que este
+         reintento ya no puede deshacer lo que se acaba de aprender.
+         Ése era el fallo. */
+      respuesta = await pedir()
     }
   } catch (e) {
     if (e instanceof Error && e.name === 'TimeoutError') throw new Error('DEMASIADO_LENTO')
