@@ -280,14 +280,55 @@ export async function POST(peticion: NextRequest) {
         }
       }
     } else if (archivo && process.env.GEMINI_API_KEY) {
-      // La foto, al modelo. Es el camino de las fotos, no la excepción.
-      lectura = await leerDocumento({
-        contenido: await archivo.arrayBuffer(),
-        tipoMime: archivo.type,
-        categorias: hojas,
-        rutaDe,
-      })
-      comoSeLeyo = 'modelo'
+      /*
+        ══════════════════════════════════════════════════════════
+        LA FOTO, AL MODELO — Y AHORA DICIENDO POR QUÉ CUANDO NO PUEDE
+        ══════════════════════════════════════════════════════════
+
+        Haris: *«desde la parte general va bien, pero si lo hago desde
+        una de las cuentas o desde la compra, no lo lee»*. Y en la
+        pantalla salía «No se ha podido leer el documento», que es la
+        frase que se dice cuando **no se sabe** qué ha pasado.
+
+        Aquí estaba el agujero, y es de los que se ven al mirar los dos
+        caminos juntos:
+
+            CON TEXTO  →  el modelo se intenta DENTRO de un `try`, y si
+                          falla se traduce el motivo (`enCristiano`), se
+                          lee con las reglas y se sigue.
+
+            CON FOTO   →  el modelo se intentaba A PELO. Cualquier
+                          tropiezo —el cupo del minuto, el modelo
+                          ocupado, una respuesta rara— se iba al `catch`
+                          de abajo y salía la frase genérica.
+
+        O sea: el mismo tropiezo era un aviso explicado en un camino y
+        un «no se ha podido» mudo en el otro. Y como la foto es EL
+        camino de una pared y de un móvil, el mudo era el que se veía.
+
+        Ahora también se traduce. Sin lectura no hay nada que salvar
+        —no hay texto al que aplicarle las reglas—, así que se sigue
+        contestando que no, pero **diciendo cuál de todas las cosas ha
+        sido**, que es lo único que permite arreglarla.
+      */
+      try {
+        lectura = await leerDocumento({
+          contenido: await archivo.arrayBuffer(),
+          tipoMime: archivo.type,
+          categorias: hojas,
+          rutaDe,
+        })
+        comoSeLeyo = 'modelo'
+      } catch (e) {
+        console.error('[MAPPEL] El modelo no ha podido con la foto:', e)
+        return NextResponse.json(
+          {
+            error: enCristiano(e),
+            detalle: e instanceof Error ? e.message.slice(0, 300) : undefined,
+          },
+          { status: 502 }
+        )
+      }
     } else {
       return NextResponse.json(
         { error: 'Este documento no se ha podido leer solo. Clasifícalo a mano.' },
