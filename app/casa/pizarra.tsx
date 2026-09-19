@@ -52,6 +52,41 @@ import { Ico } from '../iconos'
       vez en un lienzo de 1.600 y sale una foto del tamaño de una foto.
 
   ─────────────────────────────────────────────────────────────
+  LAS PEGATINAS SE COLOCAN, NO SE ESTAMPAN
+
+  Haris: *«los stickers sería bueno poder moverlos; ahora mismo están
+  como si fueran un lápiz, pero al colocarse sería bueno poder poner
+  tamaño y desplazarlo»*.
+
+  Y la diferencia no es una comodidad: es lo que son. Un trazo de lápiz
+  **ocurre** —se hace y se acabó, y si sale torcido se deshace—. Una
+  pegatina es un **objeto**: se pone, se mira, se mueve dos dedos a la
+  izquierda y se hace más grande. Eso es lo que hace un niño con una
+  pegatina de verdad antes de despegar el papel.
+
+  Estampándolas como si fueran lápiz, colocar una era acertar a la
+  primera. Y a la primera no acierta nadie.
+
+  ── EL PAPEL TIENE DOS MODOS, Y SE VE CUÁL ──
+
+  Con la bandeja de pegatinas abierta, el papel es de pegatinas: tocas
+  una que ya está y la coges, tocas el papel y pones la elegida.
+  Cerrando la bandeja —o tocando un color— el papel vuelve a ser de
+  pintar.
+
+  Un solo interruptor, y visible. La alternativa era adivinar la
+  intención según dónde cae el dedo, que es exactamente la clase de cosa
+  que hace que una pantalla parezca que tiene vida propia.
+
+  ── Y EL TAMAÑO CON BOTONES, NO PELLIZCANDO ──
+
+  Pellizcar con dos dedos es el gesto «natural» y aquí está descartado:
+  el punto 5 del planteamiento dice **nada basado exclusivamente en
+  gestos**. Dos botones grandes, «Más grande» y «Más pequeña», los
+  entiende un niño de cuatro años y una persona de ochenta. Y se pueden
+  tocar veinte veces sin miedo.
+
+  ─────────────────────────────────────────────────────────────
   LA GOMA NO BORRA: PINTA DEL COLOR DEL PAPEL
 
   Es un trazo más, del color del fondo. Parece un truco y es lo
@@ -102,8 +137,15 @@ const GOMA = 46
 const PEGATINAS = ['⭐', '❤️', '🌈', '☀️', '🐱', '🐶', '🌸', '🎈', '🦋', '🍀', '🚗', '🐟']
 
 type Trazo = { que: 'trazo'; color: string; grueso: number; puntos: [number, number][] }
-type Sello = { que: 'sello'; emoji: string; x: number; y: number; tam: number }
+type Sello = { que: 'sello'; id: string; emoji: string; x: number; y: number; tam: number }
 type Elemento = Trazo | Sello
+
+/* Lo que mide una pegatina recién puesta, y hasta dónde se la puede
+   llevar. El tope de arriba no es capricho: una pegatina de 600 px en
+   un papel de 900 no es una pegatina, es el dibujo. */
+const PEGATINA_AL_PONERLA = 110
+const PEGATINA_MENOR = 44
+const PEGATINA_MAYOR = 420
 
 /* Lo ancho que sale la foto. Una foto de pared, no un cartel. */
 const ANCHO_AL_GUARDAR = 1600
@@ -142,6 +184,29 @@ export default function Pizarra({
   const [pegatina, setPegatina] = useState<string | null>(null)
   const [conPegatinas, setConPegatinas] = useState(false)
 
+  /*
+    Cuál está cogida, si hay alguna.
+
+    Va en estado Y en `ref` a la vez, y no es un descuido: el estado es
+    lo que pinta la barra de «más grande / más pequeña», y la `ref` es
+    lo que lee `repintar()` para dibujar el recuadro. `repintar` se creó
+    una sola vez —está en un `useCallback`—, así que si mirara el estado
+    vería siempre el primero. Es el fallo de los que no dan la cara:
+    todo parece ir bien hasta que el recuadro se queda pegado a la
+    primera pegatina para siempre.
+  */
+  const [elegida, setElegida] = useState<string | null>(null)
+  const laElegida = useRef<string | null>(null)
+
+  /* Un número que sube. Vale como nombre y no depende del reloj ni del
+     azar, que en el pintado de React son funciones impuras. */
+  const contador = useRef(0)
+
+  /* Lo que se está arrastrando: qué pegatina, y por dónde se cogió —si
+     no se guarda el desvío, al empezar a mover la pegatina salta para
+     ponerse centrada bajo el dedo. */
+  const arrastre = useRef<{ id: string; dx: number; dy: number } | null>(null)
+
   /* Dos pasos para vaciar. Un niño que toca «Empezar de nuevo» sin
      querer pierde media tarde. */
   const [seguro, setSeguro] = useState(false)
@@ -157,7 +222,14 @@ export default function Pizarra({
     lo que se guarda sea exactamente lo que se ve: dos rutinas de pintar
     son dos sitios donde el trazo acaba siendo distinto.
   */
-  const pintarTodo = useCallback((pincel: CanvasRenderingContext2D, escala: number) => {
+  const pintarTodo = useCallback((
+    pincel: CanvasRenderingContext2D,
+    escala: number,
+    /* Cuál lleva el recuadro de «esta está cogida». En la foto va
+       siempre `null`: el recuadro es una ayuda para colocar, no parte
+       del dibujo. */
+    marcar: string | null = null
+  ) => {
     const { ancho, alto } = medida.current
     pincel.save()
     pincel.setTransform(escala, 0, 0, escala, 0, 0)
@@ -174,6 +246,18 @@ export default function Pizarra({
       if (e.que === 'sello') {
         pincel.font = `${e.tam}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",serif`
         pincel.fillText(e.emoji, e.x, e.y)
+
+        /* El recuadro de la cogida. A rayas y no relleno: tiene que
+           decir «ésta» sin taparla. */
+        if (marcar && e.id === marcar) {
+          const r = e.tam * 0.62
+          pincel.save()
+          pincel.setLineDash([10, 8])
+          pincel.lineWidth = 3
+          pincel.strokeStyle = '#2F6FD0'
+          pincel.strokeRect(e.x - r, e.y - r, r * 2, r * 2)
+          pincel.restore()
+        }
         continue
       }
 
@@ -206,7 +290,7 @@ export default function Pizarra({
     if (!c || !pincel) return
     pincel.setTransform(1, 0, 0, 1, 0, 0)
     pincel.clearRect(0, 0, c.width, c.height)
-    pintarTodo(pincel, c.width / Math.max(1, medida.current.ancho))
+    pintarTodo(pincel, c.width / Math.max(1, medida.current.ancho), laElegida.current)
   }, [pintarTodo])
 
   /* ── EL TAMAÑO DEL PAPEL ─────────────────────────────────── */
@@ -255,17 +339,87 @@ export default function Pizarra({
     return [e.clientX - caja.left, e.clientY - caja.top]
   }
 
+  /* Poner o quitar el recuadro. Los dos sitios a la vez: el estado
+     pinta la barra, la `ref` pinta el recuadro. */
+  function coger(id: string | null) {
+    laElegida.current = id
+    setElegida(id)
+  }
+
+  /*
+    ── QUÉ PEGATINA HAY DEBAJO DEL DEDO ──
+
+    De arriba abajo, o sea de la última puesta a la primera: si dos se
+    tocan, se coge la que se ve encima, que es la que la mano cree que
+    está cogiendo.
+
+    La caja es cuadrada y un pelo más grande que la letra (0,62 del
+    tamaño a cada lado). Un emoji no llena su cuadro, así que una caja
+    exacta obligaría a acertar en el dibujo; ésta perdona el borde, que
+    es lo que hace falta con un dedo.
+  */
+  function laDeAhi(punto: [number, number]): Sello | null {
+    for (let i = dibujo.current.length - 1; i >= 0; i--) {
+      const e = dibujo.current[i]
+      if (e.que !== 'sello') continue
+      const r = e.tam * 0.62
+      if (
+        punto[0] >= e.x - r && punto[0] <= e.x + r &&
+        punto[1] >= e.y - r && punto[1] <= e.y + r
+      ) return e
+    }
+    return null
+  }
+
   function empieza(e: React.PointerEvent<HTMLCanvasElement>) {
     /* Que el lienzo se quede con el dedo: sin esto, salirse del papel a
        media raya deja el trazo abierto y la siguiente vez que se entra
-       se sigue pintando solo. */
+       se sigue pintando solo. Y para arrastrar una pegatina vale
+       exactamente igual. */
     e.currentTarget.setPointerCapture(e.pointerId)
     const punto = dondeEsta(e)
     setSeguro(false)
 
-    if (pegatina) {
-      dibujo.current.push({ que: 'sello', emoji: pegatina, x: punto[0], y: punto[1], tam: 96 })
-      setCuantos(dibujo.current.length)
+    /*
+      ── CON LA BANDEJA ABIERTA, EL PAPEL ES DE PEGATINAS ──
+
+      Y no se pinta. Es el interruptor visible del que habla la cabecera:
+      mientras la bandeja está abierta, tocar el papel coloca o coge; se
+      cierra la bandeja —o se toca un color— y el papel vuelve a pintar.
+    */
+    if (conPegatinas) {
+      const debajo = laDeAhi(punto)
+
+      if (debajo) {
+        /* Cogida. Se guarda por dónde se cogió para que no salte. */
+        coger(debajo.id)
+        arrastre.current = { id: debajo.id, dx: punto[0] - debajo.x, dy: punto[1] - debajo.y }
+        repintar()
+        return
+      }
+
+      if (pegatina) {
+        contador.current += 1
+        const id = `p${contador.current}`
+        dibujo.current.push({
+          que: 'sello',
+          id,
+          emoji: pegatina,
+          x: punto[0],
+          y: punto[1],
+          tam: PEGATINA_AL_PONERLA,
+        })
+        setCuantos(dibujo.current.length)
+        /* Nace cogida y arrastrándose: así, el mismo dedo que la puso
+           puede seguir moviéndola sin levantarse. */
+        coger(id)
+        arrastre.current = { id, dx: 0, dy: 0 }
+        repintar()
+        return
+      }
+
+      /* Papel vacío y nada elegido: soltar la que hubiera. */
+      coger(null)
       repintar()
       return
     }
@@ -282,6 +436,23 @@ export default function Pizarra({
   }
 
   function sigue(e: React.PointerEvent<HTMLCanvasElement>) {
+    /* Arrastrando una pegatina. Se repinta la lista entera en cada
+       paso: hay que borrar el sitio de donde viene, y encima puede
+       haber trazos por debajo que hay que volver a poner. */
+    const cogida = arrastre.current
+    if (cogida) {
+      const punto = dondeEsta(e)
+      const sello = dibujo.current.find(
+        (x): x is Sello => x.que === 'sello' && x.id === cogida.id
+      )
+      if (sello) {
+        sello.x = punto[0] - cogida.dx
+        sello.y = punto[1] - cogida.dy
+        repintar()
+      }
+      return
+    }
+
     if (!pintando.current) return
     const ultimo = dibujo.current[dibujo.current.length - 1]
     if (!ultimo || ultimo.que !== 'trazo') return
@@ -314,10 +485,50 @@ export default function Pizarra({
 
   function acaba() {
     pintando.current = false
+    /* Se suelta el arrastre, pero NO el recuadro: al levantar el dedo
+       la pegatina sigue cogida, que es cuando hace falta la barra de
+       hacerla más grande. */
+    arrastre.current = null
+  }
+
+  /* Cerrar el modo pegatinas entero: la bandeja, la elegida y el
+     recuadro. Se llama desde los colores, los gruesos y la goma, que
+     son las tres maneras de decir «quiero pintar». */
+  function dejarLasPegatinas() {
+    setPegatina(null)
+    setConPegatinas(false)
+    coger(null)
+    repintar()
+  }
+
+  /* Más grande y más pequeña, a pasos. Un cuarto por toque: se nota a
+     la primera y no se dispara a los tres. */
+  function cambiarTamano(hacia: 'mas' | 'menos') {
+    const id = laElegida.current
+    if (!id) return
+    const sello = dibujo.current.find((x): x is Sello => x.que === 'sello' && x.id === id)
+    if (!sello) return
+    const nuevo = hacia === 'mas' ? sello.tam * 1.25 : sello.tam / 1.25
+    sello.tam = Math.round(Math.min(PEGATINA_MAYOR, Math.max(PEGATINA_MENOR, nuevo)))
+    repintar()
+  }
+
+  /* Quitar la cogida. Es lo que convierte «he puesto una sin querer» en
+     un toque, en vez de en deshacer a ciegas hasta que desaparezca. */
+  function quitarLaElegida() {
+    const id = laElegida.current
+    if (!id) return
+    dibujo.current = dibujo.current.filter((x) => !(x.que === 'sello' && x.id === id))
+    setCuantos(dibujo.current.length)
+    coger(null)
+    repintar()
   }
 
   function deshacer() {
-    dibujo.current.pop()
+    const fuera = dibujo.current.pop()
+    /* Si lo que se ha quitado era la cogida, se suelta: un recuadro
+       alrededor de algo que ya no existe es una pantalla mintiendo. */
+    if (fuera && fuera.que === 'sello' && fuera.id === laElegida.current) coger(null)
     setCuantos(dibujo.current.length)
     setSeguro(false)
     repintar()
@@ -331,6 +542,7 @@ export default function Pizarra({
     dibujo.current = []
     setCuantos(0)
     setSeguro(false)
+    coger(null)
     repintar()
   }
 
@@ -339,6 +551,11 @@ export default function Pizarra({
   async function guardar(dequien: QuienPinta | null) {
     setGuardando(true)
     setFallo(null)
+    /* El recuadro no va en la foto. `pintarTodo` ya lo deja fuera
+       —sólo lo pinta si se le pasa cuál marcar, y aquí no se le pasa—,
+       pero además se suelta para que la pantalla no se quede con una
+       pegatina cogida por detrás del panel. */
+    coger(null)
 
     try {
       const { ancho, alto } = medida.current
@@ -470,8 +687,73 @@ export default function Pizarra({
           </p>
         )}
 
-        {/* ── LAS PEGATINAS, CUANDO SE PIDEN ────────────────── */}
-        {conPegatinas && (
+        {/*
+          ── LA BANDEJA, O LA BARRA DE LA QUE ESTÁ COGIDA ──────
+
+          El mismo renglón hace las dos cosas, y no por ahorrar sitio:
+          mientras colocas una pegatina, la bandeja de las otras doce no
+          es una ayuda, es ruido. Lo que hace falta ahí es «más grande,
+          más pequeña, quítala, ya está».
+
+          Y en cuanto sueltas, vuelve la bandeja sola.
+        */}
+        {conPegatinas && elegida && (
+          <div className="mt-4 flex shrink-0 flex-wrap items-center gap-2.5">
+            <p className="mr-1 text-[19px] font-extrabold text-tinta-suave">
+              Arrástrala por el papel
+            </p>
+
+            <button
+              type="button"
+              onClick={() => cambiarTamano('mas')}
+              className="tocable flex h-[62px] items-center gap-3 rounded-full border border-borde bg-superficie px-6 text-[19px] font-extrabold text-tinta"
+            >
+              <Ico nombre="mas" tam={22} grosor={2.6} />
+              Más grande
+            </button>
+
+            <button
+              type="button"
+              onClick={() => cambiarTamano('menos')}
+              className="tocable flex h-[62px] items-center gap-3 rounded-full border border-borde bg-superficie px-6 text-[19px] font-extrabold text-tinta"
+            >
+              {/* Una raya, que es lo contrario del más. No hay icono de
+                  «menos» en el juego de mappel y no hace falta
+                  inventarlo: 22 px de línea es exactamente eso. */}
+              <span aria-hidden className="block h-[3px] w-[22px] rounded-full bg-current" />
+              Más pequeña
+            </button>
+
+            <button
+              type="button"
+              onClick={quitarLaElegida}
+              className="tocable flex h-[62px] items-center gap-3 rounded-full border px-6 text-[19px] font-extrabold"
+              style={{ borderColor: 'var(--t-alerta)', color: 'var(--t-alerta)' }}
+            >
+              <Ico nombre="atras" tam={22} grosor={2.4} />
+              Quitarla
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                coger(null)
+                repintar()
+              }}
+              className="tocable ml-auto flex h-[62px] items-center gap-3 rounded-full border px-6 text-[19px] font-extrabold"
+              style={{
+                background: 'var(--t-tinta)',
+                color: 'var(--t-fondo)',
+                borderColor: 'transparent',
+              }}
+            >
+              <Ico nombre="check" tam={22} grosor={2.6} />
+              Ya está
+            </button>
+          </div>
+        )}
+
+        {conPegatinas && !elegida && (
           <div className="mt-4 flex shrink-0 flex-wrap items-center gap-2.5">
             {PEGATINAS.map((p) => (
               <button
@@ -488,11 +770,11 @@ export default function Pizarra({
                 {p}
               </button>
             ))}
-            {pegatina && (
-              <p className="ml-2 text-[19px] font-extrabold text-tinta-suave">
-                Toca el papel donde quieras ponerla
-              </p>
-            )}
+            <p className="ml-2 text-[19px] font-extrabold text-tinta-suave">
+              {pegatina
+                ? 'Toca el papel donde quieras ponerla'
+                : 'Elige una, o toca una que ya esté puesta para moverla'}
+            </p>
           </div>
         )}
 
@@ -505,7 +787,10 @@ export default function Pizarra({
               onClick={() => {
                 setColor(c)
                 setBorrando(false)
-                setPegatina(null)
+                /* Tocar un color devuelve el papel a pintar. Es el
+                   mismo interruptor que el botón de Pegatinas, visto
+                   desde el otro lado: no hay modo escondido. */
+                dejarLasPegatinas()
               }}
               aria-label={`Pintar de este color`}
               className="tocable flex h-[62px] w-[62px] items-center justify-center rounded-full"
@@ -530,7 +815,7 @@ export default function Pizarra({
               onClick={() => {
                 setGrueso(g)
                 setBorrando(false)
-                setPegatina(null)
+                dejarLasPegatinas()
               }}
               aria-label="Cambiar el grosor"
               className="tocable flex h-[62px] w-[62px] items-center justify-center rounded-[20px] border"
@@ -551,7 +836,7 @@ export default function Pizarra({
             type="button"
             onClick={() => {
               setBorrando(!borrando)
-              setPegatina(null)
+              dejarLasPegatinas()
             }}
             className="tocable flex h-[62px] items-center gap-3 rounded-full border px-6 text-[19px] font-extrabold"
             style={{
@@ -569,7 +854,16 @@ export default function Pizarra({
             onClick={() => {
               const abrir = !conPegatinas
               setConPegatinas(abrir)
-              if (!abrir) setPegatina(null)
+              if (abrir) {
+                /* Abrir la bandeja apaga la goma: el papel pasa a ser
+                   de pegatinas y una goma encendida que no borra nada
+                   es un botón mintiendo. */
+                setBorrando(false)
+              } else {
+                setPegatina(null)
+                coger(null)
+                repintar()
+              }
             }}
             className="tocable flex h-[62px] items-center gap-3 rounded-full border px-6 text-[19px] font-extrabold"
             style={{
