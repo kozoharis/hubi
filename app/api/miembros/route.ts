@@ -60,17 +60,70 @@ export async function POST(peticion: NextRequest) {
     )
   }
 
-  let cuerpo: { correo?: string; nombre?: string; papel?: string; rol?: string; hasta?: string }
+  let cuerpo: {
+    correo?: string
+    nombre?: string
+    papel?: string
+    rol?: string
+    hasta?: string
+    sinEntrada?: boolean
+    color?: string
+  }
   try {
-    cuerpo = (await peticion.json()) as {
-      correo?: string
-      nombre?: string
-      papel?: string
-      rol?: string
-      hasta?: string
-    }
+    cuerpo = (await peticion.json()) as typeof cuerpo
   } catch {
     return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
+  }
+
+  /*
+    ═══════════════════════════════════════════════════════════════
+    ALGUIEN QUE NO ENTRA · el camino corto
+    ═══════════════════════════════════════════════════════════════
+
+    Haris: *«sería bueno poder dar de alta a tus hijos, para que no
+    sólo puedan decir quién ha dibujado qué, sino para cosas más
+    profundas: tareas o rutinas»*.
+
+    Aquí se bifurca antes de mirar el correo, porque un hijo de siete
+    años no tiene correo y no hace falta que lo tenga. Todo lo que hay
+    debajo de esta rama —crear la cuenta, mandar el número, esperar a
+    que acepte— sobra para él.
+
+    Y NO se hace aquí: se llama a `dar_de_alta_sin_entrada`, del paso
+    90. La comprobación de quién puede dar de alta a alguien vive
+    dentro de esa función, en la base. Repetirla aquí sería tener la
+    cerradura en dos sitios, y el día que una de las dos se olvide
+    conviene que se olvide la que no protege.
+  */
+  if (cuerpo.sinEntrada === true) {
+    const comoSeLlama = String(cuerpo.nombre ?? '').trim().replace(/\s+/g, ' ')
+    if (comoSeLlama.length < 2) {
+      return NextResponse.json({ error: 'Hace falta un nombre.' }, { status: 400 })
+    }
+
+    const { data, error } = await supabase.rpc('dar_de_alta_sin_entrada', {
+      casa: hogarId,
+      el_nombre: comoSeLlama,
+      el_color: String(cuerpo.color ?? '').trim() || '#6FA88A',
+    })
+
+    if (error) {
+      console.error('[MAPPEL] No se ha podido dar de alta sin entrada:', error.message)
+      /* Si la función no existe, se dice CUÁL es el paso que falta. Un
+         «algo ha ido mal» aquí costaría una tarde de buscar. */
+      const faltaElPaso = /dar_de_alta_sin_entrada|does not exist|schema cache/i.test(error.message)
+      return NextResponse.json(
+        {
+          error: faltaElPaso
+            ? 'Falta un paso en la base de datos.'
+            : 'No se ha podido dar de alta.',
+          detalle: faltaElPaso ? 'Ejecuta el paso 90 en Supabase.' : error.message,
+        },
+        { status: faltaElPaso ? 409 : 500 }
+      )
+    }
+
+    return NextResponse.json({ bien: true, id: data as string, nombre: comoSeLlama })
   }
 
   const correo = String(cuerpo.correo ?? '').trim().toLowerCase()
@@ -366,6 +419,35 @@ export async function DELETE(peticion: NextRequest) {
       { error: 'No puedes sacarte a ti mismo: el Drive de la casa es tuyo.' },
       { status: 400 }
     )
+  }
+
+  /*
+    ── A QUIEN NO ENTRA SE LE QUITA ENTERO ──
+
+    Sacar de la casa a alguien con cuenta es quitarle la fila de
+    `miembros`: su perfil sigue existiendo porque la persona sigue
+    existiendo, y puede estar en otra casa.
+
+    Con quien no entra no hay tal cosa. Su perfil no es de nadie: se
+    creó para esta casa y sin ella no significa nada. Dejarlo sería ir
+    dejando perfiles huérfanos en la base cada vez que un hijo se hace
+    mayor y se le da cuenta propia.
+
+    Lo hace `quitar_a_quien_no_entra`, del paso 90, que además se niega
+    a tocar a nadie que SÍ tenga cuenta. Si el paso no está dado, la
+    llamada falla y se sigue por el camino de siempre: se le quita la
+    fila de `miembros` y ya está. Peor, pero nunca roto.
+  */
+  const { data: sinEntrada } = await supabase
+    .from('perfiles')
+    .select('entra')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (sinEntrada && sinEntrada.entra === false) {
+    const { error: alQuitar } = await supabase.rpc('quitar_a_quien_no_entra', { quien: id })
+    if (!alQuitar) return NextResponse.json({ bien: true })
+    console.error('[MAPPEL] No se ha podido quitar a quien no entra:', alQuitar.message)
   }
 
   const admin = clienteServidor()

@@ -232,12 +232,28 @@ export default async function Ajustes({
     const ids = filas.map((m) => m.perfil_id as string)
 
     if (ids.length > 0) {
-      const { data: quienes } = await supabase
+      /* Con `entra` (paso 90) y, si la base todavía no lo tiene, sin
+         él: Postgres rechaza la consulta ENTERA cuando falta una
+         columna, y quedarse sin nombres dejaría Ajustes lleno de
+         «Alguien». */
+      let quienes: { id: string; nombre: string; entra?: boolean }[] = []
+      const conEntra = await supabase
         .from('perfiles')
-        .select('id, nombre')
+        .select('id, nombre, entra')
         .in('id', ids)
 
-      const nombreDe = new Map((quienes ?? []).map((p) => [p.id as string, p.nombre as string]))
+      if (conEntra.error) {
+        const pelada = await supabase.from('perfiles').select('id, nombre').in('id', ids)
+        quienes = (pelada.data ?? []) as typeof quienes
+      } else {
+        quienes = (conEntra.data ?? []) as typeof quienes
+      }
+
+      const nombreDe = new Map(quienes.map((p) => [p.id, p.nombre]))
+      /* Quién NO tiene llave. `=== false` y no `!p.entra`: sin la
+         columna el valor es indefinido, y entonces todo el mundo
+         entra, que es como estaba antes del paso 90. */
+      const sinEntrada = new Set(quienes.filter((p) => p.entra === false).map((p) => p.id))
 
       /* Lo concedido carpeta a carpeta. Envuelto aparte: la tabla es
          nueva y su ausencia no puede dejar sin Ajustes a nadie. */
@@ -298,6 +314,11 @@ export default async function Ajustes({
              invita ve a Marta en la lista y da por hecho que ya está
              dentro — y luego se extraña de que no vea nada. */
           pendiente: m.aceptado_en === null,
+          /* Del paso 90: existe para que le apunten cosas, no para
+             consultar. Sin esto, Ajustes le ofrecería cambiarle el
+             rol, decidir qué carpetas ve y mandarle una invitación —
+             tres preguntas sobre alguien que no va a entrar nunca. */
+          entra: !sinEntrada.has(id),
           rol: m.rol ?? null,
           hasta: m.acceso_hasta ?? null,
           /* Sin la columna del SQL 39, el de su papel. Se pierde poder

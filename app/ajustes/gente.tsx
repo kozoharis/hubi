@@ -36,6 +36,18 @@ export type Vecino = {
   soyYo: boolean
   /** Invitada, pero todavía no ha dicho que sí. */
   pendiente: boolean
+  /*
+    ── SI TIENE LLAVE O NO ──
+
+    Del paso 90. `false` es una persona de la casa **sin cuenta**: un
+    hijo pequeño, alguien a quien se le apuntan rutinas y citas pero
+    que no entra en mappel.
+
+    Cambia bastante lo que esta pantalla le puede preguntar: no tiene
+    sentido decidir qué carpetas ve quien no va a abrir mappel nunca,
+    ni esperar a que acepte una invitación que no se le ha mandado.
+  */
+  entra: boolean
   /** Quién es en esta casa: familia, ayuda, asesor, solo mirar. */
   rol: string | null
   /** Último día con acceso, si se le puso fecha de fin. */
@@ -67,6 +79,12 @@ export default function Gente({
   const [sacando, setSacando] = useState<string | null>(null)
   const [programando, setProgramando] = useState<{ id: string; nombre: string } | null>(null)
   const [invitando, setInvitando] = useState(false)
+  /* Dar de alta a alguien que no entra. Es otro formulario y no una
+     casilla dentro del de invitar: son dos cosas que se parecen muy
+     poco. Una manda un correo y espera; la otra no pregunta nada más
+     que el nombre. */
+  const [anadiendo, setAnadiendo] = useState(false)
+  const [suColor, setSuColor] = useState(COLORES[0])
   const [nombre, setNombre] = useState('')
   const [correo, setCorreo] = useState('')
   const [rol, setRol] = useState<Rol>('familia')
@@ -74,6 +92,59 @@ export default function Gente({
   const [ocupado, setOcupado] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
   const [hecho, setHecho] = useState<{ nombre: string; correo: string } | null>(null)
+
+  /*
+    ═══════════════════════════════════════════════════════════
+    DAR DE ALTA A ALGUIEN QUE NO ENTRA
+    ═══════════════════════════════════════════════════════════
+
+    Haris: *«sería bueno poder dar de alta a tus hijos, para que no
+    sólo puedan decir quién ha dibujado qué, sino para cosas más
+    profundas: tareas o rutinas»*.
+
+    Un nombre y un color. Nada más, y no por ahorrar: **no hay nada
+    más que preguntar**. No tiene correo porque no entra; no tiene rol
+    porque los roles dicen qué ve alguien al entrar; no hay
+    invitación que aceptar.
+
+    Lo que hace por debajo lo cuenta el paso 90: se crea un perfil sin
+    cuenta detrás, y desde ese momento las 32 columnas de la base que
+    apuntan a una persona pueden apuntarle a él. Sus rutinas, sus
+    citas, sus tareas y sus dibujos, el día uno y sin una pantalla
+    nueva.
+  */
+  async function anadirSinEntrada() {
+    setFallo(null)
+    setHecho(null)
+    setOcupado(true)
+
+    const comoSeLlama = nombre.trim()
+
+    const r = await fetch(api('/api/miembros'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sinEntrada: true, nombre: comoSeLlama, color: suColor }),
+    })
+    const d = (await r.json().catch(() => null)) as
+      | { bien?: boolean; error?: string; detalle?: string }
+      | null
+
+    setOcupado(false)
+
+    if (!r.ok || d?.bien !== true) {
+      setFallo(
+        d
+          ? [d.error ?? 'No se ha podido dar de alta.', d.detalle].filter(Boolean).join(' · ')
+          : 'mappel no ha llegado a intentarlo. Avisa a quien lo mantiene.'
+      )
+      return
+    }
+
+    setAnadiendo(false)
+    setNombre('')
+    setSuColor(COLORES[0])
+    router.refresh()
+  }
 
   function cerrarInvitacion() {
     setInvitando(false)
@@ -279,7 +350,11 @@ export default function Gente({
                     ? 'Creó la casa · su Google Drive'
                     : [
                         nombreDelRol(v.rol),
-                        v.pendiente ? 'todavía no ha entrado' : loQuePuede(v),
+                        !v.entra
+                          ? 'no entra en mappel'
+                          : v.pendiente
+                            ? 'todavía no ha entrado'
+                            : loQuePuede(v),
                         v.hasta ? `hasta el ${enPalabras(v.hasta)}` : null,
                       ]
                         .filter(Boolean)
@@ -318,22 +393,44 @@ export default function Gente({
                   />
                 )}
 
-                {/* Cambiar quién es. Hacía falta y no estaba: se elegía
-                    al invitar y ya no había manera de rectificar — que
-                    es justo lo que pasa en la vida real. */}
-                <Accion
-                  icono="lapiz"
-                  texto="Quién es"
-                  puesta={cambiando === v.id}
-                  alPulsar={() => setCambiando(cambiando === v.id ? null : v.id)}
-                />
+                {/*
+                  ── A QUIEN NO ENTRA NO SE LE PREGUNTA ESTO ──
 
-                <Accion
-                  icono="ojo"
-                  texto="Qué ve"
-                  puesta={repartiendo === v.id}
-                  alPulsar={() => setRepartiendo(repartiendo === v.id ? null : v.id)}
-                />
+                  «Quién es» reparte permisos y «Qué ve» reparte
+                  carpetas. Las dos preguntas son sobre lo que verá esa
+                  persona cuando abra mappel — y esta persona no va a
+                  abrir mappel nunca.
+
+                  Enseñarlas sería el error de la casilla de la lámpara
+                  desenchufada, el mismo que ya estaba escrito en
+                  `ajustes/page.tsx` sobre la tableta de la cocina: un
+                  interruptor que se puede mover y no hace nada es peor
+                  que no tener interruptor.
+
+                  Le queda «Sacar», que sí significa algo, y su color,
+                  que se cambia desde la misma lista.
+                */}
+                {v.entra && (
+                  <>
+                    {/* Cambiar quién es. Hacía falta y no estaba: se
+                        elegía al invitar y ya no había manera de
+                        rectificar — que es justo lo que pasa en la
+                        vida real. */}
+                    <Accion
+                      icono="lapiz"
+                      texto="Quién es"
+                      puesta={cambiando === v.id}
+                      alPulsar={() => setCambiando(cambiando === v.id ? null : v.id)}
+                    />
+
+                    <Accion
+                      icono="ojo"
+                      texto="Qué ve"
+                      puesta={repartiendo === v.id}
+                      alPulsar={() => setRepartiendo(repartiendo === v.id ? null : v.id)}
+                    />
+                  </>
+                )}
 
                 {/* En coral, y con la palabra: es el único de los
                     cuatro que quita algo. */}
@@ -357,12 +454,23 @@ export default function Gente({
                 }}
               >
                 <p className="t-cuerpo font-extrabold" style={{ color: 'var(--t-alerta)' }}>
-                  ¿Sacar a {v.nombre.split(' ')[0]} de esta casa?
+                  {v.entra
+                    ? `¿Sacar a ${v.nombre.split(' ')[0]} de esta casa?`
+                    : `¿Quitar a ${v.nombre.split(' ')[0]}?`}
                 </p>
                 <p className="t-apoyo mt-1.5 text-tinta-suave">
-                  Dejará de ver los papeles, las cuentas y la agenda. Lo que haya
-                  subido o apuntado no se borra: es de la casa. Y se le puede volver
-                  a invitar cuando quieras.
+                  {v.entra ? (
+                    <>
+                      Dejará de ver los papeles, las cuentas y la agenda. Lo que haya
+                      subido o apuntado no se borra: es de la casa. Y se le puede volver
+                      a invitar cuando quieras.
+                    </>
+                  ) : (
+                    <>
+                      Sus rutinas y sus citas no se borran: se quedan en la casa sin
+                      dueño. Y se le puede volver a dar de alta cuando quieras.
+                    </>
+                  )}
                 </p>
                 <div className="mt-3 space-y-2">
                   <button
@@ -614,17 +722,118 @@ export default function Gente({
               </button>
             </div>
           </div>
+        ) : anadiendo ? (
+          /*
+            ── UN NOMBRE Y UN COLOR ──
+
+            Y el color no es adorno: en una casa con niños, el color ES
+            el nombre. Es lo que hace que en la pared de la cocina se
+            vea de un vistazo que la rutina de las ocho es de Paula sin
+            tener que leer nada — a dos metros un nombre no se lee y un
+            círculo sí. Lo dice `lib/gente.ts` desde hace tiempo; aquí
+            sólo se elige.
+          */
+          <div className="rounded-[20px] border border-borde bg-superficie px-4 py-4">
+            <label htmlFor="sinllave" className="block text-[17px] font-extrabold leading-snug">
+              ¿Cómo se llama?
+            </label>
+            <input
+              id="sinllave"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Paula"
+              className="entrada mt-2.5"
+              autoFocus
+              maxLength={40}
+            />
+
+            <p className="mt-4 text-[17px] font-extrabold leading-snug">Su color</p>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {COLORES.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setSuColor(c)}
+                  aria-label="Elegir este color"
+                  className="h-[52px] w-[52px] rounded-full"
+                  style={{
+                    background: c,
+                    boxShadow:
+                      suColor === c
+                        ? `0 0 0 4px var(--t-superficie), 0 0 0 7px ${c}`
+                        : 'none',
+                  }}
+                />
+              ))}
+            </div>
+
+            <p className="t-apoyo mt-4 text-tinta-suave">
+              No entra en mappel: no hace falta correo ni contraseña. Está aquí para
+              que puedas ponerle rutinas, citas y tareas, y para que se sepa de quién
+              es cada cosa. El día que quiera entrar, se le invita como a cualquiera.
+            </p>
+
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={anadirSinEntrada}
+                disabled={ocupado || nombre.trim().length < 2}
+                className="flex h-[60px] flex-1 items-center justify-center gap-2 rounded-[16px] bg-accion text-[17px] font-extrabold text-accion-tinta disabled:opacity-50"
+              >
+                <Ico nombre="check" tam={19} grosor={2.3} />
+                {ocupado ? 'Dando de alta…' : 'Dar de alta'}
+              </button>
+              <button
+                onClick={() => {
+                  setAnadiendo(false)
+                  setNombre('')
+                  setFallo(null)
+                }}
+                disabled={ocupado}
+                className="h-[60px] flex-1 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave disabled:opacity-50"
+              >
+                Ahora no
+              </button>
+            </div>
+          </div>
         ) : (
-          <button
-            onClick={() => {
-              setInvitando(true)
-              setHecho(null)
-            }}
-            className="flex h-[60px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
-          >
-            <Ico nombre="mas" tam={20} grosor={2.4} />
-            Invitar a alguien
-          </button>
+          /*
+            ── DOS PUERTAS, Y LA DE SIEMPRE PRIMERO ──
+
+            Invitar es lo que se hace casi siempre, así que se queda
+            arriba y con el aspecto de antes. Dar de alta a alguien que
+            no entra va debajo y en letra más discreta: se hace dos
+            veces en la vida de una casa.
+
+            Dos botones y no uno con una casilla dentro: son dos cosas
+            que se parecen muy poco. Una manda un correo y espera a que
+            contesten; la otra termina en el momento.
+          */
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                setInvitando(true)
+                setNombre('')
+                setHecho(null)
+              }}
+              className="flex h-[60px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
+            >
+              <Ico nombre="mas" tam={20} grosor={2.4} />
+              Invitar a alguien
+            </button>
+
+            <button
+              onClick={() => {
+                setAnadiendo(true)
+                setNombre('')
+                setHecho(null)
+                setFallo(null)
+              }}
+              className="flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] text-[16px] font-extrabold text-tenue"
+            >
+              <Ico nombre="gente" tam={19} grosor={2.2} />
+              Añadir a alguien que no entra
+            </button>
+          </div>
         ))}
 
       {hecho && (
