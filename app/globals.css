@@ -1070,6 +1070,76 @@ input, textarea, select {
    La vuelta es más lenta que la ida a propósito (180 vs 120): el
    dedo se levanta antes de que el ojo lo confirme, y una vuelta seca
    se lee como un parpadeo. */
+/*
+  ═══════════════════════════════════════════════════════════════
+  QUE UN TOQUE SE NOTE · y que se note EN EL ACTO
+  ═══════════════════════════════════════════════════════════════
+
+  Haris: *«cuando tocas un botón parece que no reacciona, y a veces le
+  tienes que dar como dos veces»*.
+
+  Al contarlos salió el motivo de la mitad del problema: de los 260
+  botones y enlaces de mappel, **166 no tenían ni una respuesta al
+  tocarlos**. La clase `.tocable` —que es la que hunde el botón un pelo
+  al pulsar— estaba puesta a mano, botón por botón, y a mano siempre se
+  acaba olvidando.
+
+  Un botón que no se hunde al tocarlo no es un detalle de acabado: es
+  la única señal que tiene una persona de que el dedo ha dado donde
+  creía. Sin ella, la reacción natural es volver a dar.
+
+  ── ASÍ QUE AHORA ES DE SERIE, NO UN ADORNO QUE SE PONE ──
+
+  Un botón es un botón: se hunde al pulsarlo por el hecho de serlo, sin
+  que nadie tenga que acordarse. `.tocable` sigue existiendo para los
+  enlaces y para lo que no es un `<button>` —una tarjeta entera que se
+  toca, por ejemplo—, y como es una clase gana por especificidad, así
+  que lo que ya estaba afinado se queda exactamente igual.
+
+  ── Y `touch-action: manipulation`, QUE ES LA OTRA MITAD ──
+
+  Sin eso, el navegador de un móvil tiene que esperar a ver si viene un
+  segundo toque —porque dos toques seguidos significan «acercar»— antes
+  de dar el primero por bueno. Esa espera son unos 300 ms en los
+  navegadores que todavía la aplican, y 300 ms es exactamente el tiempo
+  que tarda una persona en pensar «esto no ha hecho nada».
+
+  `manipulation` dice: aquí no se acerca con dos toques. Y el toque
+  sale al instante.
+*/
+button,
+a,
+label,
+summary,
+[role='button'] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  transition: transform 180ms ease-out, opacity 180ms ease-out;
+}
+
+/* Apagado no se hunde: hundirse es decir «te he oído y voy», y un
+   botón apagado ni oye ni va. */
+button:not(:disabled):active,
+[role='button']:active {
+  transition-duration: 120ms;
+  transform: scale(0.985);
+  opacity: 0.92;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+  button:not(:disabled):active,
+  [role='button']:active {
+    transform: none;
+    opacity: 0.88;
+  }
+}
+
 .tocable {
   transition: transform 180ms ease-out, opacity 180ms ease-out;
   -webkit-tap-highlight-color: transparent;
