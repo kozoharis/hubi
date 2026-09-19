@@ -59,6 +59,43 @@ import { Ico } from '../iconos'
   cocina colgada en la pared de la casa es exactamente eso.
 
   ─────────────────────────────────────────────────────────────
+  LA DE DELANTE, Y SE PUEDE GIRAR
+
+  Haris: *«cuando quiero sacar una foto desde la tableta se me pierde
+  la opción de cambiar de cámara, de atrás a la de delante; por defecto
+  debería ir la de delante, y luego si quieres puedes cambiarla»*.
+
+  Tiene razón en las dos cosas, y la primera es de bulto.
+
+  Esto abría `facingMode: 'environment'` —la de atrás— por herencia del
+  móvil, donde es lo correcto: en un teléfono se fotografía una factura.
+  Pero **esta tableta está colgada en una pared**. La cámara de atrás
+  apunta al azulejo. Todo lo que se puede fotografiar desde aquí está
+  DELANTE de la pantalla: la familia, un dibujo que alguien enseña, los
+  nietos al pasar por la cocina.
+
+  O sea que no era una preferencia discutible: era la cámara que no
+  sirve, puesta por defecto.
+
+  ── Y EL ESPEJO ──
+
+  Con la de delante, lo que se ve va al revés que un espejo si no se
+  gira. Aquí se gira la vista Y la foto que sale, las dos. Podría
+  guardarse sin girar —es lo que hacen algunos teléfonos— pero entonces
+  la foto sale al revés de como se acaba de ver en la pantalla, y eso,
+  delante de alguien que acaba de colocarse, parece un fallo.
+
+  **Lo que ves al encuadrar es lo que se guarda.** Esa regla vale más
+  que la exactitud del original.
+
+  ── EL BOTÓN SOLO SALE SI HAY DOS ──
+
+  Se cuentan las cámaras de verdad (`enumerateDevices`) después de
+  abrir, que es cuando el navegador las deja ver. En una tableta con
+  una sola cámara, un botón de girar sería un botón que no hace nada —
+  y un botón que no hace nada, en una pared, se toca tres veces.
+
+  ─────────────────────────────────────────────────────────────
   SI NO HAY CÁMARA, O SI NO DEJAN
 
   Un monitor con un miniPC detrás no tiene cámara; una tableta puede
@@ -90,6 +127,17 @@ export default function Camara({
   const [estado, setEstado] = useState<Estado>({ que: 'abriendo' })
   const [fallo, setFallo] = useState<string | null>(null)
 
+  /* Cuál está puesta. `user` es la de delante, y es la de por defecto:
+     esta pantalla está colgada en una pared y lo que hay que retratar
+     está delante de ella. */
+  const [cual, setCual] = useState<'user' | 'environment'>('user')
+
+  /* Cuántas cámaras tiene de verdad esta tableta. Cero mientras no se
+     sabe: el botón de girar no aparece hasta que haya dos contadas. */
+  const [cuantas, setCuantas] = useState(0)
+
+  const espejo = cual === 'user'
+
   /* ── Abrir el objetivo, y cerrarlo SIEMPRE al salir ──────────
 
      Lo de cerrarlo no es limpieza: una cámara que se queda abierta deja
@@ -110,15 +158,31 @@ export default function Camara({
         return
       }
 
-      try {
-        const flujo = await navigator.mediaDevices.getUserMedia({
-          /* `environment` es la de atrás, que es la que apunta a la
-             cocina. Si la tableta solo tiene la de delante, el
-             navegador la da igual: es una preferencia, no una
-             exigencia. */
-          video: { facingMode: 'environment', width: { ideal: 1920 } },
+      /*
+        `facingMode` es una PREFERENCIA, no una exigencia: el navegador
+        da la que más se parezca. Por eso se pide la elegida y, si esa
+        petición falla del todo, se prueba con la otra antes de dar la
+        cámara por perdida — una tableta que solo tenga la de atrás
+        tiene que seguir haciendo fotos.
+      */
+      async function pedir(quien: 'user' | 'environment') {
+        return navigator.mediaDevices.getUserMedia({
+          video: { facingMode: quien, width: { ideal: 1920 } },
           audio: false,
         })
+      }
+
+      try {
+        let flujo: MediaStream
+        try {
+          flujo = await pedir(cual)
+        } catch (primera) {
+          /* Si no hay permiso, no hay segunda oportunidad: volver a
+             pedir sería otro aviso en la cara de quien ya ha dicho que
+             no. */
+          if (primera instanceof Error && primera.name === 'NotAllowedError') throw primera
+          flujo = await pedir(cual === 'user' ? 'environment' : 'user')
+        }
 
         if (!vivo) {
           flujo.getTracks().forEach((t) => t.stop())
@@ -131,6 +195,20 @@ export default function Camara({
           await video.current.play().catch(() => {})
         }
         setEstado({ que: 'mirando' })
+
+        /*
+          Y ahora se cuentan. Antes de abrir, el navegador devuelve la
+          lista sin nombres y a veces incompleta a propósito —es una
+          huella digital del aparato—; después del permiso, la da
+          entera. Por eso se cuenta aquí y no al montar.
+        */
+        try {
+          const aparatos = await navigator.mediaDevices.enumerateDevices()
+          if (vivo) setCuantas(aparatos.filter((a) => a.kind === 'videoinput').length)
+        } catch {
+          /* Sin la lista, el botón de girar no sale. Se pierde una
+             comodidad, no la cámara. */
+        }
       } catch (e) {
         if (!vivo) return
         const nombre = e instanceof Error ? e.name : ''
@@ -151,7 +229,22 @@ export default function Camara({
       senal.current?.getTracks().forEach((t) => t.stop())
       senal.current = null
     }
-  }, [])
+    /*
+      Con `cual` dentro: al girar la cámara, React deshace este efecto
+      —y la limpieza de arriba APAGA la anterior— y lo vuelve a montar
+      con la otra. Sin eso, girar dejaría las dos encendidas a la vez, y
+      en una tableta eso es el piloto puesto para siempre.
+    */
+  }, [cual])
+
+  /* Girar. Se pasa por «abriendo» a propósito: la otra cámara tarda su
+     medio segundo, y una pantalla congelada sin decir nada se toca otra
+     vez. */
+  function girar() {
+    setFallo(null)
+    setEstado({ que: 'abriendo' })
+    setCual((c) => (c === 'user' ? 'environment' : 'user'))
+  }
 
   function hacerla() {
     const v = video.current
@@ -162,6 +255,19 @@ export default function Camara({
     lienzo.height = v.videoHeight
     const pincel = lienzo.getContext('2d')
     if (!pincel) return
+
+    /*
+      La foto sale como se ha visto, no como la ve el sensor.
+
+      Con la de delante, el recuadro va girado —si no, colocarse es un
+      juego de espejos— así que la foto se gira igual. Guardarla sin
+      girar dejaría la foto al revés de lo que se acaba de ver en la
+      pantalla, y eso parece una avería.
+    */
+    if (espejo) {
+      pincel.translate(lienzo.width, 0)
+      pincel.scale(-1, 1)
+    }
     pincel.drawImage(v, 0, 0, lienzo.width, lienzo.height)
 
     lienzo.toBlob(
@@ -261,6 +367,9 @@ export default function Camara({
               muted
               autoPlay
               className="h-full w-full object-contain"
+              /* El espejo, sólo con la de delante. Con la de atrás
+                 girar la imagen sería enseñar la cocina al revés. */
+              style={espejo ? { transform: 'scaleX(-1)' } : undefined}
             />
           )}
         </div>
@@ -294,10 +403,25 @@ export default function Camara({
               </Boton>
             </>
           ) : (
-            <Boton principal onClick={hacerla} desactivado={estado.que === 'abriendo'}>
-              <Ico nombre="foto" tam={26} grosor={2.2} />
-              {estado.que === 'abriendo' ? 'Abriendo la cámara…' : 'Hacer la foto'}
-            </Boton>
+            <>
+              <Boton principal onClick={hacerla} desactivado={estado.que === 'abriendo'}>
+                <Ico nombre="foto" tam={26} grosor={2.2} />
+                {estado.que === 'abriendo' ? 'Abriendo la cámara…' : 'Hacer la foto'}
+              </Boton>
+
+              {/*
+                Y girar, sólo si de verdad hay dos. Con nombre, no con
+                un icono suelto: el punto 5 del planteamiento dice
+                iconos SIEMPRE acompañados de texto, y «girar» a secas
+                no distingue entre cambiar de cámara y voltear la foto.
+              */}
+              {cuantas > 1 && (
+                <Boton onClick={girar} desactivado={estado.que === 'abriendo'}>
+                  <Ico nombre="refrescar" tam={24} grosor={2.4} />
+                  {espejo ? 'Usar la de atrás' : 'Usar la de delante'}
+                </Boton>
+              )}
+            </>
           )}
 
           {/*

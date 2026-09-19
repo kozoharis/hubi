@@ -40,8 +40,10 @@ import Pizarra, { type QuienPinta } from './pizarra'
   ─────────────────────────────────────────────────────────────
   `capture` ABRE LA CÁMARA, Y SI NO HAY, ABRE LOS ARCHIVOS
 
-  `<input type="file" accept="image/*" capture="environment">` en una
-  tableta con cámara abre la cámara trasera directamente. En un aparato
+  `<input type="file" accept="image/*" capture="user">` en una tableta
+  con cámara abre la de delante directamente — la misma que abre
+  `camara.tsx`, por lo mismo: esto está colgado en una pared y lo que
+  hay que retratar está delante de la pantalla, no detrás. En un aparato
   sin cámara —un monitor con un miniPC detrás— el navegador ignora el
   `capture` y abre el selector de archivos. Las dos cosas son correctas
   y no hay que preguntar cuál: el aparato ya lo sabe.
@@ -158,7 +160,7 @@ export default function SubirFoto({
         ref={campo}
         type="file"
         accept="image/*"
-        capture="environment"
+        capture="user"
         onChange={elegida}
         className="hidden"
       />
