@@ -797,16 +797,35 @@ export default function Gente({
           </div>
         ) : (
           /*
-            ── DOS PUERTAS, Y LA DE SIEMPRE PRIMERO ──
-
-            Invitar es lo que se hace casi siempre, así que se queda
-            arriba y con el aspecto de antes. Dar de alta a alguien que
-            no entra va debajo y en letra más discreta: se hace dos
-            veces en la vida de una casa.
+            ── DOS PUERTAS, Y LAS DOS CON LA MISMA CARA ──
 
             Dos botones y no uno con una casilla dentro: son dos cosas
             que se parecen muy poco. Una manda un correo y espera a que
             contesten; la otra termina en el momento.
+
+            ⚠️  Y LOS DOS IGUALES. ESTO ESTUVO MAL Y DURÓ POCO.
+
+            El segundo salió más pequeño, sin recuadro y en gris, con un
+            razonamiento que sonaba bien: dar de alta a alguien que no
+            entra se hace dos veces en la vida de una casa, así que
+            debía pesar menos que invitar.
+
+            Haris, con la pantalla delante: *«aparece, pero casi no se
+            ve»*. Y tenía razón, porque el razonamiento confundía dos
+            cosas:
+
+                SECUNDARIO  ·  se hace menos veces
+                AUSENTE     ·  no parece que esté
+
+            En una pantalla donde TODOS los controles llevan recuadro,
+            uno sin recuadro y en gris no se lee como el segundo de la
+            lista: se lee como un texto de ayuda. La jerarquía la marca
+            el ORDEN —invitar va primero, y eso ya dice cuál es el
+            camino de siempre—, no el apagar el otro hasta que
+            desaparece.
+
+            Es la misma lección que la pared: un botón que no se ve no
+            es discreto, es un botón que no existe.
           */
           <div className="space-y-2">
             <button
@@ -828,9 +847,9 @@ export default function Gente({
                 setHecho(null)
                 setFallo(null)
               }}
-              className="flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] text-[16px] font-extrabold text-tenue"
+              className="flex h-[60px] w-full items-center justify-center gap-2 rounded-[16px] border border-borde text-[17px] font-extrabold text-tinta-suave"
             >
-              <Ico nombre="gente" tam={19} grosor={2.2} />
+              <Ico nombre="gente" tam={20} grosor={2.4} />
               Añadir a alguien que no entra
             </button>
           </div>
