@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { esDeNoche } from '@/lib/noche'
 import { Ico } from '../iconos'
 import SubirFoto from './subir-foto'
+import type { QuienPinta } from './pizarra'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -80,10 +81,15 @@ export default function Fotos({
     el centro, que es donde está la gente.
   */
   alto = false,
+  /* Los de la casa. Sólo se usan para la pizarra —para preguntar de
+     quién es el dibujo—, así que sin ellos el botón sigue estando y el
+     dibujo sale sin nombre. */
+  gente = [],
 }: {
   puedeSubir?: boolean
   pantallaCompleta?: boolean
   alto?: boolean
+  gente?: QuienPinta[]
 }) {
   const [fotos, setFotos] = useState<Foto[] | null>(null)
   const [cual, setCual] = useState(0)
@@ -157,7 +163,7 @@ export default function Fotos({
           Aquí pueden ir fotos de la familia.
         </p>
         <div className="mt-6 flex justify-center">
-          <SubirFoto alTerminar={traer} />
+          <SubirFoto alTerminar={traer} gente={gente} />
         </div>
       </div>
     )
@@ -229,8 +235,8 @@ export default function Fotos({
       </div>
 
       {puedeSubir && !pantallaCompleta && (
-        <div className="flex justify-end px-5 py-4">
-          <SubirFoto alTerminar={traer} />
+        <div className="flex flex-wrap justify-end gap-3 px-5 py-4">
+          <SubirFoto alTerminar={traer} gente={gente} />
         </div>
       )}
     </div>

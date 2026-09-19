@@ -1,4 +1,5 @@
 import { laPared } from '@/lib/pared'
+import { genteDeLaCasa } from '@/lib/gente'
 import { Nada, Rotulo } from '../rotulo'
 import Apuntar from './apuntar'
 import Nota, { type NotaDelCorcho } from './nota'
@@ -112,6 +113,14 @@ export default async function Notas() {
 
   const notas = (data ?? []) as NotaDelCorcho[]
 
+  /*
+    Los de la casa, con su color, para que la pizarra pueda preguntar de
+    quién es el dibujo. Envuelto: si esto falla, la pizarra sigue
+    abriéndose y el dibujo se guarda sin nombre. Nunca al revés — una
+    pregunta de adorno no puede tumbar el botón de pintar.
+  */
+  const gente = await genteDeLaCasa(supabase, casa).catch(() => [])
+
   return (
     <section className="mt-12">
       <Rotulo>En la casa</Rotulo>
@@ -163,7 +172,10 @@ export default async function Notas() {
       <div className="mt-12">
         <Rotulo>En casa</Rotulo>
         <div className="max-w-[760px]">
-          <Fotos puedeSubir />
+          <Fotos
+            puedeSubir
+            gente={gente.map((g) => ({ id: g.id, nombre: g.nombre, color: g.color }))}
+          />
         </div>
       </div>
     </section>

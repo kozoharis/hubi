@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { encoger } from '@/lib/encoger'
 import { Ico } from '../iconos'
 import CamaraDeLaPared from './camara'
+import Pizarra, { type QuienPinta } from './pizarra'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -53,9 +54,23 @@ import CamaraDeLaPared from './camara'
   en el propio navegador. Si algo falla ahí, se manda la original: el
   fallo va hacia «más lento», nunca hacia «no funciona».
 */
-export default function SubirFoto({ alTerminar }: { alTerminar: () => void }) {
+export default function SubirFoto({
+  alTerminar,
+  gente = [],
+}: {
+  alTerminar: () => void
+  /*
+    Los de la casa, para que la pizarra pueda preguntar de quién es el
+    dibujo. Llega como DATOS desde `notas/page.tsx`, que es el
+    servidor — nunca como una función que los busque: entre un
+    componente de servidor y uno de cliente sólo pasan datos, y una
+    función se compila sin una queja y revienta al abrir la pantalla.
+  */
+  gente?: QuienPinta[]
+}) {
   const campo = useRef<HTMLInputElement>(null)
   const [abierta, setAbierta] = useState(false)
+  const [pintando, setPintando] = useState(false)
   const [subiendo, setSubiendo] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
 
@@ -107,6 +122,27 @@ export default function SubirFoto({ alTerminar }: { alTerminar: () => void }) {
         />
       )}
 
+      {/*
+        ── Y LA PIZARRA, AL LADO DE LA CÁMARA ──
+
+        Haris: *«con la tableta es muy fácil que los niños hagan un
+        dibujo y se coloque como foto»*.
+
+        Aquí y no en otro sitio, porque aquí está la regla que ya
+        estaba escrita arriba: **hay un solo sitio desde el que se
+        pone una imagen en el corcho de la casa**. Un dibujo es una
+        imagen más, así que comparte botón, comparte tubería y
+        comparte destino. Un segundo camino sería un segundo camino
+        que mantener, y en una pared nadie va a buscar el otro.
+      */}
+      {pintando && (
+        <Pizarra
+          gente={gente}
+          alGuardar={alTerminar}
+          cerrar={() => setPintando(false)}
+        />
+      )}
+
       {fallo && (
         <p className="text-[17px] font-bold" style={{ color: 'var(--t-alerta)' }}>
           {fallo}
@@ -135,6 +171,16 @@ export default function SubirFoto({ alTerminar }: { alTerminar: () => void }) {
       >
         <Ico nombre="foto" tam={24} grosor={2.2} />
         {subiendo ? 'Guardando…' : 'Hacer una foto'}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setPintando(true)}
+        disabled={subiendo}
+        className="tocable flex h-[60px] items-center gap-3 rounded-full border border-borde bg-fondo px-6 text-[18px] font-extrabold text-tinta disabled:opacity-60"
+      >
+        <Ico nombre="lapiz" tam={24} grosor={2.2} />
+        Pintar un dibujo
       </button>
     </div>
   )
