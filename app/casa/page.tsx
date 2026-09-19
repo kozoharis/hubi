@@ -188,7 +188,10 @@ export default async function Hoy() {
   const nombreDe = new Map(gente.map((p) => [p.id, p.nombre.split(' ')[0]]))
 
   /* La misma lista, con el color, para las caras de cada renglón. */
-  const losDeCasa = gente.map((g) => ({ id: g.id, nombre: g.nombre, color: g.color }))
+  const losDeCasa = gente
+    /* Sin la tableta: una cosa apuntada no puede ser «de La cocina». */
+    .filter((g) => !g.esAparato)
+    .map((g) => ({ id: g.id, nombre: g.nombre, color: g.color }))
 
   /*
     ── Y AQUÍ HABÍA UNA CONSULTA QUE YA NO HACE FALTA ──

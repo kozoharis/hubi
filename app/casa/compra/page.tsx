@@ -342,7 +342,11 @@ export default async function Compra() {
         listas={lasListas
           .filter((l) => (l.nombre ?? '').trim().length > 0)
           .map((l) => ({ id: l.id, nombre: l.nombre as string }))}
-        gente={gente.map((g) => ({ id: g.id, nombre: g.nombre, color: g.color }))}
+        /* Sin la tableta: a una pantalla colgada en la pared no se le
+           puede encargar que vaya al súper. */
+        gente={gente
+          .filter((g) => !g.esAparato)
+          .map((g) => ({ id: g.id, nombre: g.nombre, color: g.color }))}
         menusAlQueAtar={menusAlQueAtar}
       />
     </section>

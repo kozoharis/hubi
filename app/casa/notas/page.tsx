@@ -172,9 +172,13 @@ export default async function Notas() {
       <div className="mt-12">
         <Rotulo>En casa</Rotulo>
         <div className="max-w-[760px]">
+          {/* Sin la tableta: preguntarle a un niño si el dibujo es
+              «de La cocina» no tiene sentido. */}
           <Fotos
             puedeSubir
-            gente={gente.map((g) => ({ id: g.id, nombre: g.nombre, color: g.color }))}
+            gente={gente
+              .filter((g) => !g.esAparato)
+              .map((g) => ({ id: g.id, nombre: g.nombre, color: g.color }))}
           />
         </div>
       </div>

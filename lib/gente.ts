@@ -39,6 +39,21 @@ export type Quien = {
   color: string
   /** Invitado pero todavía sin aceptar. */
   pendiente: boolean
+  /*
+    ── LA TABLETA NO ES UNA PERSONA ──
+
+    `miembros.clase` distingue a la gente de los aparatos desde el paso
+    59, y esta lista no lo miraba: la pantalla de la cocina salía en
+    ella como uno más. En «La casa» eso está bien —hay que poder verla
+    y quitarla—, pero en cualquier sitio donde se ASIGNA algo es un
+    fallo: la pizarra ofrecía «La cocina» al preguntar de quién es el
+    dibujo, y la compra la ofrecía para ir al súper.
+
+    No se filtra aquí porque los dos usos son legítimos. Se dice lo que
+    es y cada pantalla decide, que es la diferencia entre una función
+    que informa y una que opina.
+  */
+  esAparato: boolean
 }
 
 /*
@@ -160,11 +175,12 @@ export async function genteDeLaCasa(
       rol?: string | null
       color?: string | null
       aceptado_en?: string | null
+      clase?: string | null
     }[] = []
 
     const completa = await supabase
       .from('miembros')
-      .select('perfil_id, rol, color, aceptado_en')
+      .select('perfil_id, rol, color, aceptado_en, clase')
       .eq('hogar_id', hogarId)
       .order('unido_en')
 
@@ -197,6 +213,9 @@ export async function genteDeLaCasa(
       rol: m.rol ?? null,
       color: colorApagado(m.color, m.rol),
       pendiente: m.aceptado_en === null,
+      /* Sin la columna —paso 59 sin dar— nadie es un aparato. Se
+         pierde el poder apartarlos; no se rompe ninguna pantalla. */
+      esAparato: m.clase === 'dispositivo',
     }))
   } catch {
     return []
