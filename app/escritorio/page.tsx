@@ -14,10 +14,37 @@ export const dynamic = 'force-dynamic'
 
 /*
   ═══════════════════════════════════════════════════════════════
-  EL ESCRITORIO
+  MIS CASAS · cuál de ellas te está esperando
   ═══════════════════════════════════════════════════════════════
 
-  Todas tus casas de una vez.
+  ⚠️  ESTA PANTALLA SE LLAMABA «EL ESCRITORIO», Y ÉSE ERA EL FALLO.
+
+  Haris, abriéndola: *«¿cuál es la intención? No la entiendo… y si yo
+  no lo entiendo me da que los otros usuarios tampoco»*.
+
+  Y tenía razón por dos motivos distintos, los dos arreglables:
+
+  ── 1 · EL NOMBRE NO DECÍA QUÉ HACE ──
+
+  «El escritorio» es una metáfora, y una metáfora hay que explicarla.
+  Nadie abre mappel buscando un escritorio: se abre buscando **cuál de
+  mis casas me está esperando**. El nombre nuevo es literal y aburrido,
+  que es lo que tiene que ser el nombre de una pantalla.
+
+  ── 2 · EMPEZABA POR LA LETRA PEQUEÑA ──
+
+  Lo primero que se leía era de qué trimestre son las cuentas y qué no
+  entra en ellas. Dos advertencias contables antes de decir para qué
+  sirve la pantalla. Ahora la primera frase contesta la pregunta y la
+  advertencia va detrás, que es su sitio.
+
+  ── Y LO QUE NO ERA CULPA DE LA PANTALLA ──
+
+  Salían dos filas: SOLETES —una casa con su gente y su trimestre— y
+  «Documentos personales», que es un cajón de papeles. Comparar una
+  cosa con la otra no significa nada, y por eso se leía como un
+  sinsentido. Eso se arregla en la base, con `hogares.clase` (paso 91):
+  aquí sólo entran las casas.
 
   ─────────────────────────────────────────────────────────────
   LA ÚNICA PANTALLA DE MAPPEL QUE PIDE SITIO
@@ -90,15 +117,15 @@ export default async function Escritorio() {
         <div className="lg:hidden">
           <Volver href="/" />
           <div className="flex h-14 items-center">
-            <h1 className="t-titulo">El escritorio</h1>
+            <h1 className="t-titulo">Mis casas</h1>
           </div>
         </div>
 
         <Encabezado
           icono="casa"
           ambito="pizarra"
-          titulo="El escritorio"
-          pie={unaSola ? 'Ahora mismo tienes una casa' : 'Tus casas, de una vez'}
+          titulo="Mis casas"
+          pie={unaSola ? 'Ahora mismo tienes una casa' : 'Cuál te está esperando'}
           volver="/"
         />
       </Cabecera>
@@ -106,8 +133,8 @@ export default async function Escritorio() {
       <div className="ancho-trabajo pt-1">
         <p className="t-apoyo">
           {unaSola
-            ? 'Aquí saldrán todas tus casas juntas. Ahora mismo tienes una.'
-            : 'Tus casas, de una vez.'}{' '}
+            ? 'Aquí saldrán todas tus casas juntas, para ver de un vistazo cuál te está esperando. Ahora mismo tienes una.'
+            : 'Todas tus casas juntas, para ver de un vistazo cuál te está esperando sin entrar en cada una.'}{' '}
           {/*
             «Las cuentas son de 3º trimestre de 2026» — así salía, sin
             artículo, y es de las cosas que uno lee tres veces sin ver
@@ -128,7 +155,7 @@ export default async function Escritorio() {
             <Aviso
               tono="atencion"
               titulo="Todavía no hay de dónde leer esto"
-              explicacion="El escritorio necesita una consulta que aún no está puesta en la base de datos. Todo lo demás de mappel funciona igual."
+              explicacion="Esta pantalla necesita una consulta que aún no está puesta en la base de datos. Todo lo demás de mappel funciona igual."
               detalle="Falta ejecutar sql/52-el-escritorio.sql en Supabase."
             />
           </div>

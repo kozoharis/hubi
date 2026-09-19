@@ -158,7 +158,20 @@ export default function Casas({ casas }: { casas: Casa[] }) {
                 mirarlas todas juntas es más frecuente que ir a una
                 concreta — y con dos no estorba, es un renglón.
               */}
-              <li>
+              {/*
+                ── Y NO EN EL MÓVIL ──
+
+                Esta pantalla existe para COMPARAR casas, y comparar
+                necesita verlas juntas. En un teléfono las columnas se
+                apilan: deja de ser una tabla y pasa a ser una lista
+                larga de tarjetas — o sea, lo mismo que ya hay debajo
+                de este enlace, pero con más números.
+
+                Se sigue pudiendo abrir escribiendo la dirección, que
+                es lo que hace falta para probarla. Lo que se quita es
+                OFRECERLA donde no puede hacer su trabajo.
+              */}
+              <li className="hidden lg:block">
                 <Link
                   href="/escritorio"
                   className="tocable r-campo flex min-h-[56px] w-full items-center gap-2.5 border border-borde bg-superficie px-4 text-left"

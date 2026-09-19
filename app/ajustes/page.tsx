@@ -660,15 +660,19 @@ export default async function Ajustes({
           o no según lo que tengas — no según quién seas.
         */}
         {conVarias && (
+          /* Y sólo en pantalla ancha: es una tabla para comparar, y en
+             un teléfono una tabla se apila hasta dejar de serlo. El
+             porqué entero está en `casas.tsx`, donde está el otro
+             enlace. */
           <Link
             href="/escritorio"
-            className="tocable mt-2.5 flex items-center gap-3 rounded-[20px] border border-borde bg-superficie px-3.5 py-3"
+            className="tocable mt-2.5 hidden items-center gap-3 rounded-[20px] border border-borde bg-superficie px-3.5 py-3 lg:flex"
           >
             <PastillaAmbito icono="casa" ambito="pizarra" tam={44} />
             <span className="min-w-0 flex-1">
-              <span className="t-tarjeta block truncate">El escritorio</span>
+              <span className="t-tarjeta block truncate">Mis casas</span>
               <span className="t-apoyo mt-0.5 block">
-                Tus {susCasas.filter((c) => !c.pendiente).length} casas de una vez
+                Cuál de tus {susCasas.filter((c) => !c.pendiente).length} casas te está esperando
               </span>
             </span>
             <Ico nombre="flecha" tam={20} grosor={2.2} className="shrink-0" />
