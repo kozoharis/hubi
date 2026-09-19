@@ -1,10 +1,17 @@
 import { laPared, lasQueSeVenEnLaCocina } from '@/lib/pared'
+import { genteDeLaCasa } from '@/lib/gente'
 import { loQueSeOfrece } from '@/lib/lo-de-siempre'
 import { pasilloDe, PASILLOS } from '@/lib/comprables'
 import { hoyAqui } from '@/lib/tablon'
 import { comoSeLlamaElDia } from '@/lib/menus'
 import { Rotulo } from '../rotulo'
-import Lista, { type Cosa, type Grupo, type ParaUnMenu, type PorPasillo } from './lista'
+import Lista, {
+  type Cosa,
+  type Grupo,
+  type ParaUnMenu,
+  type PorPasillo,
+  type UnMenuAlQueAtar,
+} from './lista'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,6 +57,13 @@ export const dynamic = 'force-dynamic'
   veces.
 */
 
+/** «2026-09-19» + 7 → «2026-09-26». */
+function sumarDias(iso: string, cuantos: number): string {
+  const d = new Date(`${iso}T12:00:00`)
+  d.setDate(d.getDate() + cuantos)
+  return d.toISOString().slice(0, 10)
+}
+
 /* El día de después, en la misma forma que se guarda. */
 function elDiaSiguiente(fecha: string): string {
   const d = new Date(`${fecha}T12:00:00`)
@@ -79,10 +93,21 @@ export default async function Compra() {
   const { supabase, casa } = await laPared()
   const hoy = hoyAqui()
 
+  /*
+    Tres juegos de columnas y no dos, porque ahora hay DOS columnas que
+    pueden no estar: `para_menu_id` es del paso 87 y `para` del 89, y
+    se pueden haber dado por separado.
+
+    Postgres rechaza la consulta ENTERA cuando falta una columna, no esa
+    columna. Sin la escalera, un paso sin dar dejaría la compra en
+    blanco — que en esta pantalla significa «no falta nada en casa», o
+    sea una mentira.
+  */
+  const TODO = 'id, que, comprado, lista_id, para_menu_id, para'
   const CON = 'id, que, comprado, lista_id, para_menu_id'
   const SIN = 'id, que, comprado, lista_id'
 
-  const [laCompra, lasListas, historia] = await Promise.all([
+  const [laCompra, lasListas, historia, gente, paraAtar] = await Promise.all([
     /*
       Con `para_menu_id` y, si la base todavía no lo tiene, sin él. Es
       la red de siempre: Postgres rechaza la consulta ENTERA cuando
@@ -101,11 +126,14 @@ export default async function Compra() {
           .order('creado_en', { ascending: true })
           .limit(120)
 
-      const primera = await q(CON)
-      if (!primera.error) return (primera.data ?? []) as unknown as Cosa[]
+      const conTodo = await q(TODO)
+      if (!conTodo.error) return (conTodo.data ?? []) as unknown as Cosa[]
 
-      const segunda = await q(SIN)
-      return (segunda.data ?? []) as unknown as Cosa[]
+      const conMenu = await q(CON)
+      if (!conMenu.error) return (conMenu.data ?? []) as unknown as Cosa[]
+
+      const pelada = await q(SIN)
+      return (pelada.data ?? []) as unknown as Cosa[]
     })(),
     /*
       Las listas que se ven aquí: la de siempre de la casa —que es
@@ -135,6 +163,33 @@ export default async function Compra() {
         return ((data ?? []) as { que: string }[]).map((c) => c.que)
       } catch {
         return [] as string[]
+      }
+    })(),
+    /*
+      Los de la casa, con su color, para poder decir a quién le toca.
+      Envuelto: sin esto el panel sale sin la pregunta de quién, y el
+      resto sigue funcionando.
+    */
+    genteDeLaCasa(supabase, casa).catch(() => []),
+    /*
+      Y los menús de los próximos días, para poder atar una cosa a una
+      comida a mano. Sólo de hoy en adelante: atar el aceite a la cena
+      del martes pasado no le sirve a nadie.
+    */
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('menus')
+          .select('id, fecha, momento, que')
+          .eq('hogar_id', casa)
+          .gte('fecha', hoyAqui())
+          .lte('fecha', sumarDias(hoyAqui(), 7))
+          .order('fecha', { ascending: true })
+          .limit(40)
+        if (error) return [] as { id: string; fecha: string; momento: string; que: string | null }[]
+        return (data ?? []) as { id: string; fecha: string; momento: string; que: string | null }[]
+      } catch {
+        return [] as { id: string; fecha: string; momento: string; que: string | null }[]
       }
     })(),
   ])
@@ -233,6 +288,35 @@ export default async function Compra() {
   */
   const sugerencias = loQueSeOfrece(historia, laCompra.map((c) => c.que))
 
+  /*
+    ── LAS COMIDAS A LAS QUE SE PUEDE ATAR ALGO ──
+
+    Una por comida y no una por plato: desde el paso 85 la cena del
+    jueves puede ser lentejas Y merluza, y quien ata el aceite lo ata a
+    la cena, no a uno de los dos platos. Se juntan con un punto medio,
+    igual que en la pared de Hoy.
+  */
+  const porMomento = new Map<string, UnMenuAlQueAtar>()
+  for (const m of paraAtar) {
+    const clave = `${m.fecha}·${m.momento}`
+    const plato = (m.que ?? '').trim()
+    const ya = porMomento.get(clave)
+    if (ya) {
+      if (plato) ya.platos = ya.platos ? `${ya.platos} · ${plato}` : plato
+      continue
+    }
+    porMomento.set(clave, {
+      /* El identificador de la PRIMERA fila de esa comida. Es el que se
+         guarda, y con él la pantalla de la compra ya sabe agrupar por
+         día y momento — lo hace justo aquí arriba. */
+      id: m.id,
+      cuando: cuandoEs(m.fecha, hoy),
+      momento: m.momento === 'cena' ? 'Cena' : 'Comida',
+      platos: plato,
+    })
+  }
+  const menusAlQueAtar = [...porMomento.values()]
+
   return (
     <section className="mt-10">
       <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
@@ -249,7 +333,18 @@ export default async function Compra() {
         )}
       </div>
 
-      <Lista menus={menus} grupos={grupos} sugerencias={sugerencias} />
+      <Lista
+        menus={menus}
+        grupos={grupos}
+        sugerencias={sugerencias}
+        /* Una lista sin nombre no se puede ofrecer: un botón en blanco
+           es un botón que nadie sabe qué hace. */
+        listas={lasListas
+          .filter((l) => (l.nombre ?? '').trim().length > 0)
+          .map((l) => ({ id: l.id, nombre: l.nombre as string }))}
+        gente={gente.map((g) => ({ id: g.id, nombre: g.nombre, color: g.color }))}
+        menusAlQueAtar={menusAlQueAtar}
+      />
     </section>
   )
 }

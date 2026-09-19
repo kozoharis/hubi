@@ -56,6 +56,26 @@ export type Cosa = {
   /** Del paso 87. Puede no venir: la pantalla lo pide y, si la base
       todavía no lo tiene, vuelve a pedir sin ello. */
   para_menu_id?: string | null
+  /** Del paso 89: a quién le toca comprarlo. Vacío = cualquiera, que
+      es lo normal. Puede no venir, por lo mismo. */
+  para?: string | null
+}
+
+/** Uno de la casa, con su color. */
+export type Quien = { id: string; nombre: string; color: string }
+
+/** Una lista de la compra, para poder mandar algo a ella. */
+export type UnaLista = { id: string; nombre: string }
+
+/** Una comida de los próximos días, para poder atarle algo. */
+export type UnMenuAlQueAtar = {
+  id: string
+  /** «Hoy», «Mañana», «El jueves». */
+  cuando: string
+  /** «Comida» o «Cena». */
+  momento: string
+  /** «Lentejas · Merluza». Puede estar vacío: una comida sin poner. */
+  platos: string
 }
 
 /** Lo que hace falta para UNA comida concreta. */
@@ -82,10 +102,31 @@ export default function Lista({
   menus,
   grupos,
   sugerencias = [],
+  listas = [],
+  gente = [],
+  menusAlQueAtar = [],
 }: {
   menus: ParaUnMenu[]
   grupos: Grupo[]
   sugerencias?: string[]
+  /*
+    ── LO QUE HACE FALTA PARA ASIGNAR ──
+
+    Haris: *«desde la cocina, la tablet, sería bueno poder asignar las
+    compras también si fuera necesario»*.
+
+    Las tres llegan como DATOS desde el servidor, nunca como funciones
+    que las busquen: entre un componente de servidor y uno de cliente
+    sólo pasan datos, y una función se compila sin una queja y revienta
+    al abrir la pantalla. Ya nos costó el menú entero una vez.
+
+    Y las tres con respaldo vacío: una casa sin listas, sin menús o sin
+    gente no ve esa pregunta, y el panel sigue funcionando con las
+    demás.
+  */
+  listas?: UnaLista[]
+  gente?: Quien[]
+  menusAlQueAtar?: UnMenuAlQueAtar[]
 }) {
   const router = useRouter()
 
@@ -112,6 +153,14 @@ export default function Lista({
   const [ocupado, setOcupado] = useState(false)
   const [fallo, setFallo] = useState<string | null>(null)
 
+  /* En qué lista se apunta lo que se escriba. Nulo = la de la casa, que
+     es lo de siempre y lo que se queda puesto: quien apunta la leche no
+     tiene que elegir nada. */
+  const [enQueLista, setEnQueLista] = useState<string | null>(null)
+
+  /* La cosa que se está asignando, si hay alguna. */
+  const [asignando, setAsignando] = useState<Cosa | null>(null)
+
   /* Lo tocado en los botones de abajo desde que se cargó la pantalla.
      Sirve para que el botón desaparezca EN EL ACTO: si hay que esperar
      al refresco, se toca «Leche» dos veces y se apuntan dos. */
@@ -128,7 +177,7 @@ export default function Lista({
       const r = await fetch(api('/api/compra'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ que }),
+        body: JSON.stringify(enQueLista ? { que, lista_id: enQueLista } : { que }),
       })
       if (!r.ok) throw new Error()
       router.refresh()
@@ -183,6 +232,50 @@ export default function Lista({
   }
 
   /*
+    ── ASIGNAR ──
+
+    Se manda SOLO lo que cambia. `null` es un valor —«ya no le toca a
+    nadie»— y por eso viaja: el que no se manda es el que no se toca.
+  */
+  async function asignar(cosa: Cosa, cambio: Partial<Pick<Cosa, 'lista_id' | 'para' | 'para_menu_id'>>) {
+    /* Se pinta ya, como todo en esta pantalla. */
+    setLocales((c) => c.map((x) => (x.id === cosa.id ? { ...x, ...cambio } : x)))
+    setAsignando((a) => (a && a.id === cosa.id ? { ...a, ...cambio } : a))
+    setFallo(null)
+
+    try {
+      const r = await fetch(api(`/api/compra/${cosa.id}`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cambio),
+      })
+      const d = (await r.json().catch(() => null)) as
+        | { error?: string; detalle?: string }
+        | null
+      if (!r.ok) {
+        /* El detalle dice QUÉ paso falta, y eso es lo único que hace
+           falta saber para arreglarlo. Un «algo ha ido mal» aquí
+           costaría una tarde. */
+        setFallo(d?.detalle ?? d?.error ?? 'No se ha podido cambiar.')
+        setLocales((c) => c.map((x) => (x.id === cosa.id ? cosa : x)))
+        setAsignando((a) => (a && a.id === cosa.id ? cosa : a))
+        return
+      }
+      router.refresh()
+    } catch {
+      setFallo('No se ha podido cambiar. Inténtalo otra vez.')
+      setLocales((c) => c.map((x) => (x.id === cosa.id ? cosa : x)))
+      setAsignando((a) => (a && a.id === cosa.id ? cosa : a))
+    }
+  }
+
+  const sePuedeAsignar = listas.length > 0 || gente.length > 0 || menusAlQueAtar.length > 0
+
+  /* A quién le toca una cosa, si le toca a alguien. */
+  const porPersona = new Map(gente.map((g) => [g.id, g]))
+  const quienEs = (c: Cosa) => (c.para ? (porPersona.get(c.para) ?? null) : null)
+
+  /*
     Lo que se ofrece AHORA. Se recorta con lo que hay en pantalla y con
     lo recién tocado, no solo con lo que había al cargar: si no, tras
     apuntar la leche a mano el botón «Leche» seguiría ahí hasta el
@@ -234,6 +327,35 @@ export default function Lista({
             autoComplete="off"
             className="entrada mt-3 h-[72px] w-full text-[26px] font-extrabold"
           />
+
+          {/*
+            ── EN QUÉ LISTA ──
+
+            Sólo cuando hay más de una. Con una sola lista esto sería
+            un botón que siempre dice lo mismo, o sea una decisión de
+            adorno — y el punto 5 del planteamiento es «pocas
+            decisiones por pantalla».
+
+            «De la casa» va primero y viene puesto: apuntar la leche
+            sigue siendo escribir y dar, sin elegir nada. Elegir es la
+            excepción.
+          */}
+          {listas.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Pastilla elegida={enQueLista === null} alTocar={() => setEnQueLista(null)}>
+                De la casa
+              </Pastilla>
+              {listas.map((l) => (
+                <Pastilla
+                  key={l.id}
+                  elegida={enQueLista === l.id}
+                  alTocar={() => setEnQueLista(l.id)}
+                >
+                  {l.nombre}
+                </Pastilla>
+              ))}
+            </div>
+          )}
 
           <button
             type="button"
@@ -334,7 +456,14 @@ export default function Lista({
 
             <ul className="mt-3 space-y-2">
               {alDia(m.cosas).map((c) => (
-                <Renglon key={c.id} cosa={c} color={AMBITO.arena} alTocar={() => tachar(c)} />
+                <Renglon
+                  key={c.id}
+                  cosa={c}
+                  color={AMBITO.arena}
+                  alTocar={() => tachar(c)}
+                  dequien={quienEs(c)}
+                  alAsignar={sePuedeAsignar ? () => setAsignando(c) : null}
+                />
               ))}
             </ul>
           </div>
@@ -366,6 +495,8 @@ export default function Lista({
                           cosa={c}
                           color={AMBITO.oliva}
                           alTocar={() => tachar(c)}
+                          dequien={quienEs(c)}
+                          alAsignar={sePuedeAsignar ? () => setAsignando(c) : null}
                         />
                       ))}
                     </ul>
@@ -376,6 +507,151 @@ export default function Lista({
           )
         )}
       </div>
+
+      {/*
+        ══════════════════════════════════════════════════════════
+        EL PANEL DE ASIGNAR
+        ══════════════════════════════════════════════════════════
+
+        Haris: *«desde la cocina, la tablet, sería bueno poder asignar
+        las compras también si fuera necesario»*. Y el «si fuera
+        necesario» es la mitad de la frase: esto NO puede estorbar al
+        gesto de siempre.
+
+        Por eso no está en la pantalla, está detrás de un lápiz. Apuntar
+        la leche sigue siendo escribir y dar; tacharla sigue siendo un
+        toque en el renglón. Asignar es otra cosa, se hace de vez en
+        cuando, y se abre aparte.
+
+        ── LAS TRES PREGUNTAS, Y NINGUNA OBLIGATORIA ──
+
+        Cada una con su respuesta de «nada» PRIMERA y por defecto: «De
+        la casa», «Cualquiera», «De la casa» otra vez. Sin esa salida,
+        abrir el panel sería un peaje: entras a cambiar la lista y te
+        vas habiendo tenido que decidir de quién es.
+
+        ── Y SE GUARDA AL TOCAR, SIN BOTÓN DE GUARDAR ──
+
+        Cada toque manda su cambio y ya está. Un «Guardar» al final
+        sería un sitio más donde perder lo hecho, y en una pared el
+        movimiento natural es tocar y marcharse.
+
+        El mismo telón que la cámara y la pizarra, y tampoco se cierra
+        al tocarlo: se sale por el botón.
+      */}
+      {asignando && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-8 py-6"
+          style={{ background: 'rgba(26,23,20,.72)' }}
+        >
+          <div className="max-h-full w-full max-w-[960px] overflow-y-auto rounded-[36px] border border-borde bg-fondo px-9 py-8">
+            <p className="text-[18px] font-extrabold uppercase tracking-[0.2em] text-tenue">
+              Qué hago con
+            </p>
+            <p className="mt-2 text-[34px] font-extrabold leading-tight text-tinta">
+              {asignando.que}
+            </p>
+
+            {listas.length > 0 && (
+              <div className="mt-8">
+                <p className="text-[18px] font-extrabold uppercase tracking-[0.14em] text-tenue">
+                  En qué lista
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2.5">
+                  <Pastilla
+                    elegida={!asignando.lista_id}
+                    alTocar={() => asignar(asignando, { lista_id: null })}
+                  >
+                    De la casa
+                  </Pastilla>
+                  {listas.map((l) => (
+                    <Pastilla
+                      key={l.id}
+                      elegida={asignando.lista_id === l.id}
+                      alTocar={() => asignar(asignando, { lista_id: l.id })}
+                    >
+                      {l.nombre}
+                    </Pastilla>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {gente.length > 0 && (
+              <div className="mt-8">
+                <p className="text-[18px] font-extrabold uppercase tracking-[0.14em] text-tenue">
+                  Quién lo compra
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2.5">
+                  <Pastilla
+                    elegida={!asignando.para}
+                    alTocar={() => asignar(asignando, { para: null })}
+                  >
+                    Cualquiera
+                  </Pastilla>
+                  {gente.map((g) => (
+                    <Pastilla
+                      key={g.id}
+                      color={g.color}
+                      elegida={asignando.para === g.id}
+                      alTocar={() => asignar(asignando, { para: g.id })}
+                    >
+                      {g.nombre.split(' ')[0]}
+                    </Pastilla>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {menusAlQueAtar.length > 0 && (
+              <div className="mt-8">
+                <p className="text-[18px] font-extrabold uppercase tracking-[0.14em] text-tenue">
+                  Para qué comida
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2.5">
+                  <Pastilla
+                    elegida={!asignando.para_menu_id}
+                    alTocar={() => asignar(asignando, { para_menu_id: null })}
+                  >
+                    De la casa
+                  </Pastilla>
+                  {menusAlQueAtar.map((m) => (
+                    <Pastilla
+                      key={m.id}
+                      elegida={asignando.para_menu_id === m.id}
+                      alTocar={() => asignar(asignando, { para_menu_id: m.id })}
+                    >
+                      {m.cuando} · {m.momento}
+                      {m.platos ? ` · ${m.platos}` : ''}
+                    </Pastilla>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {fallo && (
+              <p className="mt-6 text-[20px] font-bold" style={{ color: 'var(--t-alerta)' }}>
+                {fallo}
+              </p>
+            )}
+
+            <div className="mt-9 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setAsignando(null)
+                  setFallo(null)
+                }}
+                className="tocable flex items-center justify-center gap-3 rounded-full border border-borde bg-superficie px-9 text-[21px] font-extrabold text-tinta"
+                style={{ minHeight: 68 }}
+              >
+                <Ico nombre="check" tam={24} grosor={2.6} />
+                Listo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -394,17 +670,36 @@ function Renglon({
   cosa,
   color,
   alTocar,
+  dequien = null,
+  alAsignar = null,
 }: {
   cosa: Cosa
   color: string
   alTocar: () => void
+  /** El de la casa a quien le toca, si le toca a alguien. */
+  dequien?: Quien | null
+  /** Abrir el panel de asignar. Nulo = esta casa no tiene nada que
+      asignar, y entonces el lápiz no sale. */
+  alAsignar?: (() => void) | null
 }) {
   return (
-    <li>
+    /*
+      ── DOS COSAS EN UN RENGLÓN, Y NO UN BOTÓN DENTRO DE OTRO ──
+
+      Tocar el renglón tacha; tocar el lápiz abre el panel. Son dos
+      botones hermanos dentro del `li`, no uno metido en el otro: un
+      botón dentro de otro no es HTML válido y, peor, en una pared el
+      toque acaba yendo al de fuera la mitad de las veces.
+
+      El grande sigue siendo tachar, que es lo que se hace mil veces.
+      El lápiz es pequeño y va a la derecha, que es donde ya está en el
+      menú diciendo lo mismo: **esto se puede cambiar**.
+    */
+    <li className="flex items-stretch gap-2">
       <button
         type="button"
         onClick={alTocar}
-        className={`tocable flex w-full items-center gap-4 rounded-[20px] border bg-superficie px-5 py-3 text-left ${
+        className={`tocable flex min-w-0 flex-1 items-center gap-4 rounded-[20px] border bg-superficie px-5 py-3 text-left ${
           cosa.comprado ? 'opacity-45' : ''
         }`}
         style={{
@@ -430,7 +725,71 @@ function Renglon({
         >
           {cosa.que}
         </span>
+
+        {/*
+          A quién le toca, con SU color y no con su nombre. A dos metros
+          un nombre no se lee y un círculo sí — es la misma decisión que
+          en la agenda y en el corcho, donde en una casa el color ES el
+          nombre.
+        */}
+        {dequien && (
+          <span
+            aria-label={`Le toca a ${dequien.nombre.split(' ')[0]}`}
+            className="block h-[26px] w-[26px] shrink-0 rounded-full"
+            style={{ background: dequien.color }}
+          />
+        )}
       </button>
+
+      {alAsignar && (
+        <button
+          type="button"
+          onClick={alAsignar}
+          aria-label={`Cambiar ${cosa.que} de lista, de persona o de menú`}
+          className="tocable flex w-[58px] shrink-0 items-center justify-center rounded-[20px] border border-borde bg-superficie text-apagado"
+        >
+          <Ico nombre="lapiz" tam={22} grosor={2.2} />
+        </button>
+      )}
     </li>
+  )
+}
+
+/* Una pastilla de elegir. La misma en el formulario de apuntar y en el
+   panel de asignar: dos maneras de enseñar «esto está elegido» serían
+   dos cosas que aprender donde sólo hay una. */
+function Pastilla({
+  children,
+  elegida,
+  alTocar,
+  color = null,
+}: {
+  children: React.ReactNode
+  elegida: boolean
+  alTocar: () => void
+  /** El color de la persona, cuando la pastilla es una persona. */
+  color?: string | null
+}) {
+  return (
+    <button
+      type="button"
+      onClick={alTocar}
+      className="tocable flex items-center gap-3 rounded-full border px-5 text-[19px] font-extrabold"
+      style={{
+        minHeight: 56,
+        background: elegida ? 'var(--t-tinta)' : 'var(--t-superficie)',
+        color: elegida ? 'var(--t-fondo)' : 'var(--t-tinta)',
+        borderColor: elegida ? 'transparent' : 'var(--t-borde)',
+      }}
+    >
+      {color && (
+        <span
+          aria-hidden
+          className="block h-[22px] w-[22px] shrink-0 rounded-full"
+          style={{ background: color }}
+        />
+      )}
+      {children}
+    </button>
   )
 }
