@@ -716,26 +716,38 @@ export default function Grabar({
         ejemplos, que no ocupen mucho, luego la parte del botón, y
         luego las respuestas»*.
 
-        Se ensancha, pero no siempre y no hasta el infinito, que es la
-        regla de esta aplicación: **si gana ancho, gana información o
+        Se ensancha, pero no siempre, y **con las medidas declaradas de
+        la casa, no con un número inventado.** La primera versión de
+        esto puso un 1040 a ojo; Haris preguntó si se adaptaba «como
+        todos los demás», y tenía razón: no, tenía su propia medida.
+        Ahora usa las mismas clases que el resto de la aplicación, las
+        de `globals.css`:
+
+          · Esperando o escuchando → `ancho-trabajo`, que es lo que
+            usan Inicio, Cuentas o la compra: 1100 desde 1024 y 2100
+            desde 1440, y por debajo lo que haya. Ahí SÍ se gana algo
+            al ensanchar: los ejemplos suben al lado del micrófono en
+            vez de quedarse debajo, fuera de la pantalla — y son lo
+            único que le dice a alguien qué puede pedir.
+          · Lo demás —pensando, lo que ha entendido, guardado, un
+            aviso— → `ancho-ficha`, 560. Son frases y botones: a lo
+            ancho de una pantalla de 27" no se leen mejor, se leen
+            peor. Es la misma medida que tiene la ficha de un papel.
+
+        Y no hace falta centrar nada: el contenedor va pegado a la
+        izquierda como todos, y quien centra el micrófono y los
+        ejemplos es la fila de dentro, con su `justify-center`. Sigue
+        mandando la regla: **si gana ancho, gana información o
         utilidad; nunca margen por margen.**
 
-          · Esperando o escuchando → 1040. Ahí SÍ se gana algo: los
-            ejemplos suben al lado del micrófono en vez de quedarse
-            debajo, fuera de la pantalla. Y son lo único que le dice a
-            alguien qué puede pedir.
-          · Lo demás —pensando, lo que ha entendido, guardado, un
-            aviso— → 600. Son frases y botones: a lo ancho de una
-            pantalla de 27" no se leen mejor, se leen peor.
-
-        En el móvil no cambia nada: 448 y las mismas medidas de
-        siempre.
+        En el móvil no cambia nada: las dos clases miden ahí lo mismo
+        que medía `columna-formulario`.
       */}
       <div
-        className={`relative mx-auto w-full max-w-md px-5 lg:px-9 ${
+        className={`relative ${
           estado === 'listo' || estado === 'grabando'
-            ? 'lg:max-w-[1040px]'
-            : 'lg:max-w-[600px]'
+            ? 'ancho-trabajo'
+            : 'ancho-ficha'
         }`}
       >
         <Volver href="/" oscuro />
