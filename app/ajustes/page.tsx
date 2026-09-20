@@ -555,10 +555,27 @@ export default async function Ajustes({
   */
   const segmentos = (
     <div className="flex gap-2" role="group" aria-label="Qué ajustes">
-      <Pildora href="/ajustes" puesta={!enLaCasa} className="flex-1">
+      {/*
+        `flex-1` SOLO en el móvil, que es donde esta fila ocupa el
+        ancho de la pantalla y repartirla a partes iguales es lo
+        correcto.
+
+        En grande no: aquí viven dentro de la banda del encabezado,
+        que es estrecha, y `flex-1` las obligaba a caber en la mitad
+        que les tocara — con `truncate` dentro de la pastilla, «La
+        casa» salía cortada. En grande cada una mide LO QUE MIDE SU
+        PALABRA.
+
+        Es exactamente el mismo arreglo que ya se hizo en la Agenda,
+        donde «Semana» salía como «Se…». Que un fallo aparezca dos
+        veces en dos pantallas distintas quiere decir que la pieza
+        pide el remedio de serie, y el día que salga una tercera vez
+        se sube al componente.
+      */}
+      <Pildora href="/ajustes" puesta={!enLaCasa} className="flex-1 lg:flex-none">
         Tú
       </Pildora>
-      <Pildora href="/ajustes?ver=casa" puesta={enLaCasa} className="flex-1">
+      <Pildora href="/ajustes?ver=casa" puesta={enLaCasa} className="flex-1 lg:flex-none">
         La casa
       </Pildora>
     </div>

@@ -14,6 +14,9 @@ export type Categoria = {
   segmento_drive: string
   orden: number
   naturaleza?: string
+  /* Si la carpeta raíz lleva cuentas: la Finca, los Alquileres. Las
+     que no —Casa, Salud, Vehículos, Seguros— son las de siempre. */
+  lleva_cuentas?: boolean
 }
 
 export type Documento = {
@@ -119,3 +122,4 @@ export function fechaLarga(iso: string): string {
   const [a, m, d] = iso.split('-')
   return `${Number(d)} de ${meses[Number(m) - 1]} de ${a}`
 }
+

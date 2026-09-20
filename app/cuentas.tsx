@@ -469,7 +469,11 @@ export default async function Cuentas({
           key={v}
           href={`${seccion.ruta}?vista=${v}&ancla=${periodo.desde}`}
           puesta={v === vista}
-          className="flex-1"
+          /* `flex-1` SOLO en el móvil. En la banda de arriba, repartir
+             el sitio a partes iguales cortaba la palabra más larga:
+             salía «Trimest…». En grande cada una mide lo que mide su
+             palabra. Mismo arreglo que en la Agenda y en Ajustes. */
+          className="flex-1 lg:flex-none"
         >
           {v === 'mes' ? 'Mes' : v === 'trimestre' ? 'Trimestre' : 'Año'}
         </Pildora>

@@ -95,6 +95,36 @@ export default function Nuevo({
   const [para, setPara] = useState<string[]>(
     paraInicial && perfiles.some((p) => p.id === paraInicial) ? [paraInicial] : [yo]
   )
+  /*
+    ═══════════════════════════════════════════════════════════
+    LO QUE VIENE PUESTO ES UNA PROPUESTA, NO UNA RESPUESTA
+    ═══════════════════════════════════════════════════════════
+
+    El fallo, contado como pasó: Haris apunta «Prueba 02», marca a
+    Julia y guarda. Le salen DOS tareas iguales — una suya y otra de
+    Julia— y ninguna de las dos es lo que quería.
+
+    Y el formulario hizo exactamente lo que dice su código: venía con
+    «Yo» marcado, marcar a Julia AÑADE, y dos marcas son dos tareas.
+    Ninguna línea está mal. Lo que está mal es la suma.
+
+    Porque esa marca de «Yo» no la ha puesto nadie: la pone la
+    pantalla al abrirse, para el caso normal —casi todo lo que se
+    apunta es para uno mismo— y **lo que nadie ha elegido no puede
+    contar como elegido**. La primera vez que se toca esta pregunta se
+    está respondiendo, no añadiendo: quien dice «Julia» está diciendo
+    de quién es, no «Julia también».
+
+    A partir de ahí sí son casillas de verdad: quien quiera las dos,
+    vuelve a marcar «Yo» —y entonces sale la frase que avisa de que
+    serán dos— y quien se equivoque lo ve al momento, porque la marca
+    de «Yo» se apaga delante de sus ojos.
+
+    La alternativa era no marcar a nadie al abrir. Es igual de honrada
+    y cuesta un toque más CADA VEZ que se apunta algo para uno mismo,
+    que es lo que más se hace. No compensa.
+  */
+  const [tocado, setTocado] = useState(false)
   const [fecha, setFecha] = useState<string | null>(HOY())
   const [hora, setHora] = useState('')
   const [nota, setNota] = useState('')
@@ -109,8 +139,16 @@ export default function Nuevo({
   const otros = perfiles.filter((p) => p.id !== yo)
 
   /* Marcar y desmarcar. Sin orden: la lista se pinta por perfiles, no
-     por el orden en que se fue tocando. */
+     por el orden en que se fue tocando.
+
+     El primer toque no añade: sustituye lo que venía puesto. El
+     porqué está arriba, en `tocado`. */
   function alternar(id: string) {
+    if (!tocado) {
+      setTocado(true)
+      setPara(para.includes(id) ? [] : [id])
+      return
+    }
     setPara((antes) => (antes.includes(id) ? antes.filter((x) => x !== id) : [...antes, id]))
   }
 

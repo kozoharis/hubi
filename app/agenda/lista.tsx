@@ -255,7 +255,28 @@ export default async function Lista({
       ]
     : []
 
-  // Lo que viene después de la semana que se está mirando.
+  /*
+    Lo que viene después de la semana que se está mirando.
+
+    ── EL FALLO QUE ESTO ARREGLA ──
+
+    «Más adelante» llevaba a `?ver=adelante` SIN la semana. Y el corte
+    —qué es «adelante»— se calcula aquí a partir de la semana que hay
+    en la dirección: sin ella, la pantalla de destino volvía a la de
+    hoy.
+
+    O sea que estando en la semana del 12 de octubre, el botón contaba
+    lo que hay después del 18 y luego enseñaba lo que hay después de
+    ESTE domingo. Todo lo que cae en medio —semanas que para quien
+    estaba mirando ya habían pasado— aparecía como «más adelante».
+
+    El número decía una cosa y la pantalla enseñaba otra, que es
+    exactamente lo que hace dudar de si la aplicación funciona.
+
+    Se arregla llevándose la semana en el enlace, igual que ya se la
+    llevaba el botón de volver. Ni una consulta más: el mismo dato que
+    ya estaba en la dirección.
+  */
   const adelante = pendientes.filter((r) => r.fecha && r.fecha > hasta)
   const sinFecha = pendientes.filter((r) => !r.fecha)
   const masAlla = adelante.length + sinFecha.length
@@ -291,6 +312,7 @@ export default async function Lista({
           sinFecha={sinFecha}
           nombres={nombres}
           yo={user.id}
+          desdeCuando={hasta}
           volver={enlaceAgenda({ semana, de })}
         />
       ) : (
@@ -835,7 +857,7 @@ export default async function Lista({
             /* Con techo en grande: un botón no crece con la pantalla. */
             <div className="mt-4 lg:max-w-[420px]">
               <BotonSecundario
-                href={enlaceAgenda({ de }, { ver: 'adelante' })}
+                href={enlaceAgenda({ semana, de }, { ver: 'adelante' })}
                 icono="flecha"
               >
                 Más adelante · {masAlla}
@@ -1203,6 +1225,11 @@ function MasAdelante({
   sinFecha,
   nombres,
   yo,
+  /* El domingo de la semana desde la que se entró. No se usa para
+     filtrar —eso ya viene hecho— sino para DECIRLO: sin esta frase,
+     esta pantalla es una lista de meses sin principio, y quien la ve
+     no sabe si le falta algo por arriba. */
+  desdeCuando,
   /* A dónde se vuelve: la semana y el filtro desde los que se entró.
      Antes era `/agenda` a secas y salir de aquí te dejaba en la
      semana de hoy, sin el calendario que tenías puesto. */
@@ -1212,6 +1239,7 @@ function MasAdelante({
   sinFecha: Recordatorio[]
   nombres: Record<string, string>
   yo: string
+  desdeCuando: string
   volver: string
 }) {
   const meses = new Map<string, Recordatorio[]>()
@@ -1225,6 +1253,11 @@ function MasAdelante({
       <div className="mt-4">
         <Volver href={volver} />
       </div>
+
+      <h1 className="mt-4 text-[26px] font-extrabold leading-tight">Más adelante</h1>
+      <p className="t-apoyo mt-1">
+        Lo que hay después del {diaConMes(desdeCuando)}.
+      </p>
 
       {meses.size === 0 && sinFecha.length === 0 && (
         <Vacio texto="No hay nada más apuntado." />
@@ -1367,6 +1400,12 @@ function diaEnPalabras(fecha: string, hoyISO: string): string {
 function nombreDelDia(fecha: string): string {
   const nombre = SEMANA[deISO(fecha).getDay()]
   return nombre.charAt(0).toUpperCase() + nombre.slice(1)
+}
+
+/** "2026-09-20" → "domingo 20 de septiembre" — dónde está el corte. */
+function diaConMes(fecha: string): string {
+  const f = deISO(fecha)
+  return `${SEMANA[f.getDay()]} ${f.getDate()} de ${MESES[f.getMonth()]}`
 }
 
 /** "2026-09" → "Septiembre" · "Enero de 2027" si cambia el año */

@@ -259,7 +259,11 @@ export default async function Documentos({
     await Promise.all([
       supabase
         .from('categorias')
-        .select('id, padre_id, nombre, segmento_drive, orden')
+        /* `lleva_cuentas` no es una columna nueva —es del SQL 27 y
+           media aplicación la pide ya—, sólo que esta pantalla no la
+           necesitaba hasta ahora. Es lo que separa las carpetas de
+           casa de las de una actividad con cuentas. */
+        .select('id, padre_id, nombre, segmento_drive, orden, lleva_cuentas')
         .eq('hogar_id', espacio)
         .eq('activa', true),
       supabase
@@ -290,6 +294,47 @@ export default async function Documentos({
   })[]
 
   const secciones = hijosDe(todas, null)
+
+  /*
+    ═══════════════════════════════════════════════════════════════
+    PRIMERO LO DE CASA, DESPUÉS LO QUE LLEVA CUENTAS
+    ═══════════════════════════════════════════════════════════════
+
+    Las carpetas salían todas seguidas, en el orden en que se
+    sembraron, y ahí se mezclaban dos cosas que no se buscan igual:
+
+      · CASA, SALUD, VEHÍCULOS, SEGUROS, DOCUMENTOS IMPORTANTES
+        son los papeles de la vida. Se entra a buscar UNO: la póliza,
+        el informe, la ITV.
+
+      · FINCA, ALQUILERES… son actividades con cuentas. Ahí no se
+        busca un papel: se revisa un trimestre, y el papel es la
+        prueba de un apunte que ya está en Cuentas.
+
+    Mezcladas, Salud aparecía la cuarta, detrás de dos actividades, y
+    lo que más se busca era lo que más costaba encontrar. Separadas y
+    con su rótulo, la pantalla se lee en dos golpes de vista.
+
+    Lo de casa VA PRIMERO por una razón y no por gusto: es lo que
+    busca cualquiera de los dos, y lo de las cuentas es lo que busca
+    quien lleva las cuentas — que es una persona y no todos los días.
+
+    Y si en una casa no hay ninguna actividad con cuentas, no hay dos
+    grupos que separar: se queda como estaba, con un solo rótulo.
+    Partir en dos una lista que no tiene dos mitades es inventarse una
+    distinción.
+  */
+  const deCasa = secciones.filter((c) => c.lleva_cuentas !== true)
+  const conCuentas = secciones.filter((c) => c.lleva_cuentas === true)
+
+  const grupos =
+    deCasa.length > 0 && conCuentas.length > 0
+      ? [
+          { titulo: 'Carpetas personales', lista: deCasa },
+          { titulo: 'Carpetas de cuentas', lista: conCuentas },
+        ]
+      : [{ titulo: 'Todo, por carpetas', lista: secciones }]
+
   const cuantos = contar(todas, papeles)
   const ultimas = ultima(todas, papeles)
 
@@ -615,13 +660,15 @@ export default async function Documentos({
         )}
 
         <section className="lg:col-start-1 lg:row-start-1">
-        <h2 className="rotulo mt-6 lg:mt-3">Todo, por carpetas</h2>
+        {grupos.map((g, i) => (
+          <div key={g.titulo}>
+        <h2 className={`rotulo ${i === 0 ? 'mt-6 lg:mt-3' : 'mt-7'}`}>{g.titulo}</h2>
         {/* Dos por fila en grande. Las secciones son seis o siete: en
             una sola columna hay que deslizar para ver Vehículos, y
             entonces la pantalla de las carpetas no enseña las
             carpetas. */}
         <ul className="mt-3 space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
-          {secciones.map((c) => {
+          {g.lista.map((c) => {
             const s = seccionPintada(c.segmento_drive)
             const n = cuantos.get(c.id) ?? 0
             const u = ultimas.get(c.id)
@@ -653,6 +700,8 @@ export default async function Documentos({
             )
           })}
         </ul>
+          </div>
+        ))}
         </section>
 
         </div>
@@ -694,20 +743,32 @@ export default async function Documentos({
                 ambito="pizarra"
                 elegida={seccionElegida === null}
               />
-              {secciones.map((c) => {
-                const s = seccionPintada(c.segmento_drive)
-                return (
-                  <EnCarpeta
-                    key={c.id}
-                    href={aquiCon(c.id, null)}
-                    nombre={c.nombre}
-                    cuantos={cuantos.get(c.id) ?? 0}
-                    ambito={s.ambito}
-                    elegida={seccionElegida?.id === c.id}
-                    nuevos={nuevos.get(c.id) ?? 0}
-                  />
-                )
-              })}
+              {/* El mismo corte que arriba, y con los mismos rótulos:
+                  una carpeta no puede estar en un sitio distinto
+                  según el tamaño de la pantalla. Cuando hay un solo
+                  grupo, el rótulo no se pinta — «Carpetas» ya está
+                  encima y repetirlo no separa nada. */}
+              {grupos.map((g) => (
+                <div key={g.titulo} className="contents">
+                  {grupos.length > 1 && (
+                    <h3 className="rotulo mb-1 mt-3.5 px-1">{g.titulo}</h3>
+                  )}
+                  {g.lista.map((c) => {
+                    const s = seccionPintada(c.segmento_drive)
+                    return (
+                      <EnCarpeta
+                        key={c.id}
+                        href={aquiCon(c.id, null)}
+                        nombre={c.nombre}
+                        cuantos={cuantos.get(c.id) ?? 0}
+                        ambito={s.ambito}
+                        elegida={seccionElegida?.id === c.id}
+                        nuevos={nuevos.get(c.id) ?? 0}
+                      />
+                    )
+                  })}
+                </div>
+              ))}
             </div>
           </nav>
 
