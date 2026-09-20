@@ -4,6 +4,7 @@ import { clienteServidor } from '@/lib/supabase/servidor'
 import { quien } from '@/lib/supabase/quien'
 import { mandaEnSuCasa, quienManda } from '@/lib/hogar'
 import { estadoGuardado } from '@/lib/google/calendario'
+import { elRotuloDeLaRaiz, NOMBRE_RAIZ } from '@/lib/google/drive'
 import Cabecera from '../../cabecera'
 import { Volver } from '../../iconos'
 import PrepararCalendario from '../calendario'
@@ -46,6 +47,34 @@ export default async function AjustesDeGoogle() {
   const conectado = conexion?.estado === 'activa'
   const caducado = conexion?.estado === 'caducada'
 
+  /*
+    ── CÓMO SE LLAMA LA CARPETA DE VERDAD ──
+
+    Aquí ponía «en una carpeta llamada mappel» escrito a mano, y para
+    una casa conectada cuando la aplicación se llamaba HUBI eso era
+    mentira: su carpeta sigue con el rótulo viejo, porque mappel entra
+    por identificador y nunca vuelve a mirar el nombre.
+
+    `elRotuloDeLaRaiz` pregunta cómo se llama y, si todavía lleva un
+    nombre nuestro de antes, se lo cambia de paso. Así esta pantalla
+    deja de afirmar y pasa a contar lo que hay — y la carpeta se pone
+    al día sola la primera vez que alguien entra aquí, sin tener que
+    reconectar nada ni tocar el Drive a mano.
+
+    Si Drive no contesta se dice el nombre de ahora, que es lo que
+    tendrá en cuanto se pueda preguntar. Nunca tumba la pantalla: es
+    una línea de texto.
+  */
+  let rotulo = NOMBRE_RAIZ
+  if (conectado && hogarId) {
+    try {
+      rotulo = (await elRotuloDeLaRaiz(hogarId)) ?? NOMBRE_RAIZ
+    } catch {
+      /* Sin conexión con Drive, o permiso caducado. No es asunto de
+         esta línea. */
+    }
+  }
+
   const calendario =
     manda && hogarId ? await estadoGuardado(hogarId) : { permiso: false, creado: false }
 
@@ -69,7 +98,7 @@ export default async function AjustesDeGoogle() {
               <>
                 Los papeles de esta casa se guardan en el Google Drive de{' '}
                 <strong className="text-tinta">{conexion?.email_cuenta ?? 'la cuenta'}</strong>,
-                en una carpeta llamada <strong className="text-tinta">mappel</strong>.
+                en una carpeta llamada <strong className="text-tinta">{rotulo}</strong>.
               </>
             ) : manda ? (
               'Todavía no se pueden guardar papeles. Conecta tu cuenta de Google aquí abajo.'

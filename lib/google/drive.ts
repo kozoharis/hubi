@@ -13,7 +13,8 @@ export const NOMBRE_RAIZ = 'mappel'
 
   Primero fue «J+C · FAMILY HUB» —que además lleva las iniciales de
   una familia concreta dentro del Drive de cualquier otra, que es
-  directamente un error—, luego «MAPPEL», y ahora «mappel».
+  directamente un error—, luego «HUBI», luego «MAPPEL», y ahora
+  «mappel».
 
   Esta lista NO es nostalgia: es lo único que impide que el archivo
   se parta en dos. Sin ella, el primer papel que se guardara después
@@ -24,8 +25,25 @@ export const NOMBRE_RAIZ = 'mappel'
   De aquí no se borra ningún nombre nunca. Cada uno es el rótulo que
   todavía puede tener la carpeta de alguien que lleve meses sin
   abrirla.
+
+  ─────────────────────────────────────────────────────────────
+  ⚠️  «HUBI» FALTABA, Y ERA UN AGUJERO DE VERDAD
+
+  Salió al preguntar Haris por qué su carpeta de Drive seguía
+  llamándose como antes. Esta lista tenía sólo MAPPEL y las
+  iniciales; la de `lib/google/calendario.ts`, en cambio, sí tenía
+  HUBI. O sea que el nombre existió y aquí se quedó fuera.
+
+  Lo que eso significaba: una casa cuya carpeta todavía se llama HUBI
+  —la de Haris, sin ir más lejos— que volviera a conectar Google
+  habría entrado por `asegurarRaiz`, no habría encontrado ninguno de
+  los nombres conocidos, y **habría creado una carpeta nueva y vacía**,
+  guardando su identificador como la raíz de la casa. Todos los
+  papeles de antes seguirían en la vieja y mappel escribiendo en la
+  nueva. Es exactamente el desastre silencioso que este comentario
+  llevaba meses advirtiendo, con el nombre que faltaba dentro.
 */
-const NOMBRES_DE_ANTES = ['MAPPEL', 'J+C · FAMILY HUB']
+const NOMBRES_DE_ANTES = ['MAPPEL', 'HUBI', 'J+C · FAMILY HUB']
 
 /**
  * Devuelve un acceso temporal al Drive DE ESTA CASA.
@@ -219,6 +237,73 @@ export async function asegurarRaiz(acceso: string): Promise<string> {
   }
 
   return crearCarpeta(acceso, NOMBRE_RAIZ, null)
+}
+
+/**
+ * Cómo se llama HOY la carpeta de esta casa en Drive — y, si todavía
+ * lleva un rótulo viejo, se lo cambia de paso.
+ *
+ * ─────────────────────────────────────────────────────────────
+ * POR QUÉ HACÍA FALTA ESTO
+ *
+ * `asegurarRaiz` sabe renombrar, pero sólo se llama al conectar
+ * Google. Después, la casa guarda `carpeta_raiz_id` y mappel entra
+ * SIEMPRE por identificador: nunca vuelve a mirar cómo se llama la
+ * carpeta. Así que una casa conectada cuando aquello se llamaba HUBI
+ * se queda con ese rótulo para siempre, aunque la aplicación entera
+ * se haya renombrado. Es lo que vio Haris en su Drive.
+ *
+ * El nombre no rompe nada —el identificador es lo que manda—, pero
+ * Ajustes → Google decía «en una carpeta llamada mappel», y eso, para
+ * esa casa, no era verdad. Un texto que no coincide con lo que la
+ * persona ve en su Drive le hace dudar de si está mirando la carpeta
+ * correcta.
+ *
+ * ─────────────────────────────────────────────────────────────
+ * Y NO TOCA LO QUE NO ES SUYO
+ *
+ * Sólo renombra si la carpeta se llama como se llamó mappel alguna
+ * vez. Si alguien le ha puesto «Casa» o «Papeles de la finca», ese
+ * nombre es SUYO y no se toca: lo que hace entonces esta función es
+ * devolverlo, para que Ajustes diga el nombre de verdad en vez de
+ * afirmar uno que no existe.
+ *
+ * Devuelve `null` si no se ha podido preguntar. Nunca lanza por su
+ * cuenta: es una línea de texto en una pantalla de ajustes, no puede
+ * tumbarla.
+ */
+export async function elRotuloDeLaRaiz(hogarId: string): Promise<string | null> {
+  const { acceso, raiz } = await accesoDrive(hogarId)
+
+  const r = await fetch(`${API}/files/${raiz}?fields=name`, {
+    headers: { Authorization: `Bearer ${acceso}` },
+  })
+  if (!r.ok) return null
+
+  const { name } = (await r.json()) as { name?: string }
+  const rotulo = (name ?? '').trim()
+
+  if (!rotulo) return null
+  if (rotulo === NOMBRE_RAIZ) return rotulo
+  if (!NOMBRES_DE_ANTES.includes(rotulo)) return rotulo
+
+  const p = await fetch(`${API}/files/${raiz}?fields=id`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${acceso}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name: NOMBRE_RAIZ }),
+  })
+
+  /* Si Google no deja renombrarla, se dice el nombre que tiene. Un
+     rótulo viejo es un detalle; decir uno que no existe, no. */
+  if (!p.ok) {
+    console.error('[MAPPEL] Raiz encontrada pero no renombrada:', await p.text())
+    return rotulo
+  }
+
+  return NOMBRE_RAIZ
 }
 
 /**
