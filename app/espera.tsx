@@ -1,5 +1,5 @@
 import { PastillaAmbito, type Ambito } from './piezas'
-import { type Icono } from './iconos'
+import { Ico, type Icono } from './iconos'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -82,6 +82,8 @@ export default function Espera({
   pie,
   conPie = false,
   conCaja = false,
+  volver = false,
+  conControles = false,
   ancho = 'ancho-trabajo',
   children,
 }: {
@@ -102,6 +104,15 @@ export default function Espera({
       crece 76 px de golpe y empuja hacia abajo todo lo que ya se
       estaba leyendo. */
   conCaja?: boolean
+  /** El botón de volver, en las pantallas que cuelgan de una pestaña.
+      Se dibuja de verdad —el círculo y la flecha— pero NO es un enlace:
+      esto es un armazón, y un botón que se puede pulsar durante medio
+      segundo y después desaparece es peor que ninguno. */
+  volver?: boolean
+  /** Las pastillas de elegir (En el corcho · Guardadas, Semana · Mes…).
+      En el móvil van a su propia línea, y son 48 px de alto que si no
+      se reservan mueven toda la pantalla al llegar. */
+  conControles?: boolean
   ancho?: 'ancho-trabajo' | 'ancho-panoramica'
   /** La forma del contenido. Cada pestaña dibuja la suya. */
   children?: React.ReactNode
@@ -141,6 +152,11 @@ export default function Espera({
         <div className={ancho}>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-0 pb-0.5 pt-1">
             <div className="flex min-w-0 flex-1 items-center gap-3">
+            {volver && (
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-borde bg-superficie text-tinta">
+                <Ico nombre="atras" tam={22} grosor={2.4} />
+              </span>
+            )}
             {icono && ambito ? (
               <>
                 <PastillaAmbito icono={icono} ambito={ambito} tam={44} />
@@ -168,6 +184,14 @@ export default function Espera({
             {conCaja && (
               <div className="espera w-[420px] max-w-full shrink-0 ancha:order-2">
                 <Hueco alto={64} redondez={18} />
+              </div>
+            )}
+
+            {/* Las pastillas, con el mismo envoltorio que en
+                `encabezado.tsx`: a su propia línea hasta 1439. */}
+            {conControles && (
+              <div className="espera order-last mt-3 w-full ancha:order-3 ancha:mt-0 ancha:w-auto ancha:shrink-0">
+                <Hueco ancho={260} alto={48} redondez={999} />
               </div>
             )}
           </div>
