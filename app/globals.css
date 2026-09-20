@@ -491,16 +491,16 @@ body {
 
        LECTURA      448 · 650                    prosa; no crece nunca
        FICHA        448 · 560                    formularios y fichas
-       TRABAJO      448 · 1100 · 1280 · 1500     listas, tablas, zonas
+       TRABAJO      448 · 1100 · 2100            listas, tablas, zonas
        PANORÁMICA   448 · fluido                 lo que ES una rejilla
 
    ── POR QUÉ TRABAJO TIENE TECHO Y PANORÁMICA NO ──
 
    Son dos oficios distintos. Una fila de tabla de 2 200 px obliga al
    ojo a viajar de un extremo al otro y se pierde el renglón: por eso
-   Trabajo corta en 1 500, que con el rail de 248 y los márgenes cabe
-   exacto en un monitor de 1 800 — y lo que sobra se queda de margen,
-   que está bien. Una rejilla de siete días quiere justo lo contrario:
+   Trabajo corta en 2 100 y no antes — y lo que sobra en una pantalla
+   de 4K se queda de margen, que está bien. Una rejilla de siete días
+   quiere justo lo contrario:
    cada columna se ensancha pero el ojo nunca recorre la fila entera,
    así que cuanto más ancha, más legible.
 
@@ -563,25 +563,40 @@ body {
 }
 
 @media (min-width: 1440px) {
-  .ancho-trabajo { max-width: 1280px; }
-}
-
-@media (min-width: 1800px) {
   /*
-    ── EL TECHO SUBE DE 1500 A 2100 ──
+    ── EL TECHO SUBE DE 1280 A 2100, Y AQUÍ, NO EN 1800 ──
 
-    1500 estaba pensado para una fila de tabla, y para una fila de
-    tabla está bien: de un extremo al otro el ojo pierde el renglón.
+    1500 —y luego 1280— estaba pensado para una fila de tabla, y para
+    una fila de tabla está bien: de un extremo al otro el ojo pierde
+    el renglón.
 
     Pero se lo puse al CONTENEDOR, y el contenedor no es una fila. En
     un monitor de 2000 px eso dejaba medio metro de papel muerto a la
     derecha en Inicio, en el Día a día y en Cuentas, y no se leía como
     margen: se leía como que la pantalla se había parado.
 
-    Ahora el contenedor llega hasta donde llegue la pantalla, y **lo
-    que no debe estirarse se frena por dentro**, que es donde tiene
-    sentido: la columna de tarjetas del Inicio, la lista del Mes, la
-    ficha de un papel. Cada pieza sabe cuánto quiere medir; el
+    Eso ya se arregló una vez… pero sólo a partir de 1800, y ahí quedó
+    un escalón absurdo en medio:
+
+        1 530 – 1 800    el contenedor se para en 1 280
+        1 800 en adelante  el contenedor llega a 2 100
+
+    O sea que la misma pantalla, en una ventana de 1 680, dejaba 150
+    px de papel muerto que a 1 800 no dejaba. Y ése es justo el tramo
+    donde vive medio mundo: un portátil de 16 pulgadas, o un monitor
+    de 1 920 con la letra al 125 %.
+
+    Haris lo dijo mirándolo, sin ver el CSS: *«el único que se adapta
+    a la pantalla completa es el calendario… todos los demás tienen un
+    ancho fijo»*. Tenía razón, y el ancho fijo era éste.
+
+    Subir el escalón a donde ya estaba no ensancha nada que no
+    estuviera ya permitido: cualquiera de estas pantallas YA llegaba a
+    2 100 por encima de 1 800. Lo único que se quita es el bache.
+
+    Y sigue mandando la regla: **lo que no debe estirarse se frena por
+    dentro** —la columna de tarjetas del Inicio, la lista del Mes, la
+    ficha de un papel—. Cada pieza sabe cuánto quiere medir; el
     contenedor no tiene por qué saberlo por ella.
 
     El 2100 que queda es para una pantalla de 4K, donde sí vuelve a

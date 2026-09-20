@@ -161,7 +161,7 @@ export default async function Documentos({
 
     return (
       <main className="min-h-dvh pb-40 lg:pb-16">
-        <Cabecera trabajo>
+        <Cabecera panoramica>
           <div className="lg:hidden">
             <Titulo />
             <Buscador valor={busqueda} />
@@ -175,7 +175,7 @@ export default async function Documentos({
           />
         </Cabecera>
 
-        <div className="ancho-trabajo pt-2">
+        <div className="ancho-panoramica pt-2">
 
           {averia && (
             <div className="mt-4">
@@ -565,7 +565,7 @@ export default async function Documentos({
         ésta no—, y a la derecha lo que se viene a hacer aquí: buscar
         un papel o guardar uno.
       */}
-      <Cabecera trabajo>
+      <Cabecera panoramica>
         <div className="lg:hidden">
           <Titulo />
           <Buscador valor="" />
@@ -579,7 +579,7 @@ export default async function Documentos({
         />
       </Cabecera>
 
-      <div className="ancho-trabajo pt-2">
+      <div className="ancho-panoramica pt-2">
 
         {averia && (
           <div className="mt-3">

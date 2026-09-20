@@ -483,7 +483,7 @@ export default async function Cuentas({
 
   return (
     <main className="min-h-dvh pb-40 lg:pb-16">
-      <Cabecera trabajo>
+      <Cabecera panoramica>
         <div className="lg:hidden">
         <div className="flex h-14 items-center gap-3">
           <PastillaAmbito icono={seccion.icono} ambito={seccion.ambito} tam={44} />
@@ -540,7 +540,7 @@ export default async function Cuentas({
         />
       </Cabecera>
 
-      <div className="ancho-trabajo pt-1">
+      <div className="ancho-panoramica pt-1">
 
         {/* ── Qué periodo ── */}
         {/* Eran de 44 px —por debajo del suelo de 48 del propio CSS— y
