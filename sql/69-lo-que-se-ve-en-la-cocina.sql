@@ -133,6 +133,20 @@ comment on column hogares.notas_en_casa is
   en la cocina se ven las citas médicas sin que las filas cambiaran, o
   al revés — dos verdades distintas para lo mismo.
 */
+/*
+  ⚠️  ESTA LISTA CRECE · MÍRALA ANTES DE AÑADIR UNA COLUMNA
+
+  Al ser un permiso POR COLUMNA, cualquier columna nueva de `hogares`
+  nace sin poder escribirse, y Postgres lo cuenta como si sobrara el
+  permiso de la tabla entera: «permission denied for table hogares».
+  Pasó con el sitio de la casa, en el paso 93 — la columna estaba
+  bien y lo que faltaba era una línea aquí.
+
+  La lista buena y completa está en el **paso 94**, que vuelve a dar
+  este permiso con las cuatro del sitio dentro. Lo de aquí abajo se
+  queda como estaba para que este archivo siga contando lo que hizo,
+  pero si buscas qué se puede escribir hoy, mira el 94.
+*/
 revoke update on table hogares from authenticated;
 grant  update (nombre, usa_compra, impuesto) on table hogares to authenticated;
 
