@@ -750,7 +750,22 @@ export default function Grabar({
             : 'ancho-ficha'
         }`}
       >
-        <Volver href="/" oscuro />
+        {/*
+          El «volver», sólo en el móvil.
+
+          Es la misma regla que ya cumplen Cuentas y el Día a día: en
+          el ordenador el rail está a la vista y el Inicio está a un
+          toque, siempre en el mismo sitio. Una flecha atrás encima de
+          una navegación permanente es un segundo camino para lo
+          mismo, y dos caminos para lo mismo es una decisión de más en
+          una pantalla que no debería pedir ninguna.
+
+          En el móvil sí se queda: ahí no hay rail, y desde Hablar la
+          barra de abajo no se pinta.
+        */}
+        <div className="lg:hidden">
+          <Volver href="/" oscuro />
+        </div>
 
         {/*
           ── Escuchando o en espera ──
