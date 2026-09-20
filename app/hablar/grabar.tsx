@@ -703,12 +703,61 @@ export default function Grabar({
         />
       </div>
 
-      <div className="columna-formulario relative">
+      {/*
+        ═══════════════════════════════════════════════════════════
+        LA MEDIDA · Y POR QUÉ CAMBIA
+        ═══════════════════════════════════════════════════════════
+
+        Esto era `columna-formulario`: 448 px, y en el ordenador
+        además pegada a la izquierda (`margin-inline: 0`). O sea que
+        en una tablet apaisada MAPPEL se veía como en el móvil, en una
+        tira estrecha junto al rail, con media pantalla negra vacía al
+        lado. Haris: *«debería ocupar toda la página… en un lado los
+        ejemplos, que no ocupen mucho, luego la parte del botón, y
+        luego las respuestas»*.
+
+        Se ensancha, pero no siempre y no hasta el infinito, que es la
+        regla de esta aplicación: **si gana ancho, gana información o
+        utilidad; nunca margen por margen.**
+
+          · Esperando o escuchando → 1040. Ahí SÍ se gana algo: los
+            ejemplos suben al lado del micrófono en vez de quedarse
+            debajo, fuera de la pantalla. Y son lo único que le dice a
+            alguien qué puede pedir.
+          · Lo demás —pensando, lo que ha entendido, guardado, un
+            aviso— → 600. Son frases y botones: a lo ancho de una
+            pantalla de 27" no se leen mejor, se leen peor.
+
+        En el móvil no cambia nada: 448 y las mismas medidas de
+        siempre.
+      */}
+      <div
+        className={`relative mx-auto w-full max-w-md px-5 lg:px-9 ${
+          estado === 'listo' || estado === 'grabando'
+            ? 'lg:max-w-[1040px]'
+            : 'lg:max-w-[600px]'
+        }`}
+      >
         <Volver href="/" oscuro />
 
-        {/* ── Escuchando o en espera ── */}
+        {/*
+          ── Escuchando o en espera ──
+
+          En el móvil, una columna centrada — como siempre.
+
+          En el ordenador, dos: el micrófono y los ejemplos, uno al
+          lado del otro. Sólo cuando hay micrófono: mientras piensa no
+          hay dos cosas que poner, así que se queda la columna de
+          siempre y el aro se centra.
+        */}
         {(estado === 'listo' || estado === 'grabando' || estado === 'pensando' || estado === 'buscando') && (
-          <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
+          <div
+            className={`flex min-h-[70vh] flex-col items-center justify-center text-center ${
+              estado === 'pensando' || estado === 'buscando'
+                ? ''
+                : 'lg:flex-row lg:items-center lg:justify-center lg:gap-14'
+            }`}
+          >
             {estado === 'pensando' || estado === 'buscando' ? (
               <>
                 {/* El mismo aro, girando: sigue siendo MAPPEL pensando,
@@ -726,6 +775,26 @@ export default function Grabar({
               </>
             ) : (
               <>
+                {/*
+                  `contents` es la pieza que hace que el móvil no se
+                  entere de nada: en móvil este envoltorio NO EXISTE
+                  para la maquetación —sus hijos siguen siendo hijos
+                  directos de la columna de arriba, exactamente como
+                  antes— y sólo a partir de `lg` se convierte en una
+                  caja de verdad, la del micrófono.
+
+                  Sin eso habría que mover estas líneas dentro de un
+                  div nuevo, y ese div cambiaría el centrado vertical
+                  del móvil, que está bien.
+                */}
+                {/* Sin `shrink-0`, a propósito: la que cede es ésta.
+                    A 1024 con el rail puesto quedan unos 700 px de
+                    sitio, y si las dos columnas se plantaran en su
+                    medida la página se movería de lado. El micrófono
+                    mide 160 y va centrado, así que una columna más
+                    estrecha no le quita nada; a los ejemplos sí, que
+                    son frases. */}
+                <div className="contents lg:flex lg:w-[440px] lg:min-w-0 lg:flex-col lg:items-center">
                 <h1 className="text-[30px] font-extrabold leading-tight tracking-tight text-white">
                   {estado !== 'grabando'
                     ? '¿Qué necesitas?'
@@ -886,8 +955,30 @@ export default function Grabar({
                   </form>
                 )}
 
+                </div>
+
+                {/*
+                  ── LOS EJEMPLOS ──
+
+                  La columna se reserva también MIENTRAS GRABA, aunque
+                  entonces esté vacía. Si no, al tocar el micrófono la
+                  columna de la derecha desaparecería y el micrófono
+                  daría un salto al centro justo en el momento en que
+                  estás hablándole. Lo que desaparece son los ejemplos,
+                  no el sitio donde estaban.
+                */}
+                {(estado === 'listo' || estado === 'grabando') && (
+                <div className="contents lg:block lg:w-[330px] lg:shrink-0 lg:self-center">
                 {estado === 'listo' && (
-                  <ul className="mt-8 w-full space-y-2.5 text-left">
+                  <>
+                  {/* El título sólo en el ordenador: en el móvil los
+                      ejemplos van justo debajo del botón y se entiende
+                      solo que son ejemplos. Aquí, en una columna
+                      aparte, sin nombre serían una lista suelta. */}
+                  <p className="hidden text-[13px] font-extrabold uppercase tracking-[.14em] text-slate-400 lg:block">
+                    Le puedes pedir
+                  </p>
+                  <ul className="mt-8 w-full space-y-2.5 text-left lg:mt-3">
                     <Ejemplo
                       que="Apuntar"
                       frase={
@@ -920,6 +1011,9 @@ export default function Grabar({
                       }
                     />
                   </ul>
+                  </>
+                )}
+                </div>
                 )}
               </>
             )}
