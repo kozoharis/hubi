@@ -1,5 +1,7 @@
+import Espera from './espera'
+
 /*
-  Lo que se ve mientras la pantalla llega.
+  Lo que se ve mientras la pantalla llega, cuando no sabemos cuál.
 
   Sin este archivo, Next no puede mandar NADA hasta que el servidor ha
   terminado de leer la base de datos: el teléfono se queda en blanco
@@ -14,50 +16,24 @@
   A propósito no lleva ni texto ni «Cargando…» ni ruedecitas: solo la
   forma de lo que va a venir, en gris muy suave. Nada que leer, nada
   que dé la impresión de que algo va mal.
+
+  ─────────────────────────────────────────────────────────────
+  ESTE ES EL DE LA RAÍZ, Y ES EL GENÉRICO
+
+  Desde aquí se puede ir a cualquier sitio, así que no hay cabecera
+  que pintar: no sabemos ni el icono, ni el color, ni el nombre. Se
+  pintan bloques y ya.
+
+  Las pestañas sí lo saben, y cada una tiene el suyo —`loading.tsx`
+  dentro de su carpeta— con su icono, su color y su título de verdad.
+  Ver `app/espera.tsx`, que es de donde sale la forma común.
+
+  El ancho también cambia: antes esto era `columna-formulario` —448 px
+  para todas—, y en un ordenador eso significaba una columnita estrecha
+  que después se abría de golpe. Ahora es el ancho de trabajo, que es
+  el que declara la mayoría de las pantallas.
 */
 
 export default function Cargando() {
-  return (
-    <main className="espera min-h-dvh pb-40" aria-hidden>
-      <div className="techo columna-formulario">
-        <div className="flex h-14 items-center justify-between">
-          <Hueco ancho={120} alto={26} />
-          <Hueco ancho={44} alto={44} redondez={999} />
-        </div>
-
-        <div className="mt-4 space-y-2">
-          <Hueco ancho={140} alto={15} />
-          <Hueco ancho={230} alto={28} />
-        </div>
-
-        <div className="mt-6 space-y-3">
-          <Hueco alto={74} redondez={22} />
-          <Hueco alto={74} redondez={22} />
-          <Hueco alto={74} redondez={22} />
-        </div>
-      </div>
-    </main>
-  )
-}
-
-function Hueco({
-  ancho,
-  alto,
-  redondez = 12,
-}: {
-  ancho?: number
-  alto: number
-  redondez?: number
-}) {
-  return (
-    <div
-      className="latido"
-      style={{
-        width: ancho ? `${ancho}px` : '100%',
-        height: `${alto}px`,
-        borderRadius: `${redondez}px`,
-        background: 'var(--t-borde)',
-      }}
-    />
-  )
+  return <Espera />
 }

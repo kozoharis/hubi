@@ -301,7 +301,21 @@ export default function Barra() {
             <Link
               key={p.clave}
               href={p.href}
-              prefetch={false}
+              /*
+                Estas cinco eran los únicos `prefetch={false}` de todo
+                el proyecto, y se pusieron cuando adelantar una pestaña
+                no servía de nada: todas las pantallas son
+                `force-dynamic`, o sea que lo que se adelantaba no era
+                la pantalla —esa se hace cuando se pide, con sus
+                consultas— sino, como mucho, el código.
+
+                Ahora sí sirve: cada pestaña tiene su propio armazón de
+                espera con su cabecera de verdad, y ese armazón es
+                estático. Adelantarlo significa que al pulsar aparece
+                en el mismo momento, sin ir al servidor a por él. No se
+                adelantan las consultas de nadie: el armazón no lee la
+                base de datos.
+              */
               aria-current={p.clave === activa ? 'page' : undefined}
               className="flex flex-1"
             >

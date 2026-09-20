@@ -181,8 +181,25 @@ export default function Encabezado({
           </div>
         </div>
 
-        {/* La caja, con su medida. No se estira. */}
-        {caja && <div className="w-[420px] shrink-0 ancha:order-2">{caja}</div>}
+        {/*
+          La caja, con su medida. No se estira.
+
+          ── Y `max-w-full`, QUE FALTABA ──
+
+          Salió midiendo el armazón de espera contra esta cabecera: a
+          390 px —un móvil normal— la página entera medía 440. Los
+          420 px de la caja más `shrink-0` significan «cuatrocientos
+          veinte pase lo que pase», y en un móvil de 390 eso son 50 px
+          que se salen por la derecha. La página se podía mover de
+          lado, y las cinco pestañas llevan caja.
+
+          Un dedo que arrastra para bajar y mueve la pantalla de lado
+          se lee como que la aplicación está rota. Y no se ve en un
+          ordenador: ahí sobra sitio y la caja mide sus 420 limpios.
+
+          `max-w-full` no le quita nada a nadie: donde cabe, sigue
+          midiendo 420; donde no cabe, mide lo que hay. */}
+        {caja && <div className="w-[420px] max-w-full shrink-0 ancha:order-2">{caja}</div>}
 
         {/* Los segmentos. Hasta 1439, `w-full` los echa a la segunda
             línea con su medida de siempre; de 1440 en adelante entran
