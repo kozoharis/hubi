@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Aviso, BotonPrincipal, BotonSecundario } from '../../piezas'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -68,7 +69,7 @@ export default function AnadirPantalla({ pantallas }: { pantallas: Pantalla[] })
         return
       }
       setSeguro(null)
-      router.refresh()
+      refrescar(router)
     } catch {
       setFallo({ que: 'No hay conexión. Inténtalo otra vez.' })
     } finally {
@@ -100,7 +101,7 @@ export default function AnadirPantalla({ pantallas }: { pantallas: Pantalla[] })
 
       setLista(d.correo ?? correo.trim().toLowerCase())
       setAbierto(false)
-      router.refresh()
+      refrescar(router)
     } catch {
       setFallo({ que: 'No hay conexión. Inténtalo otra vez.' })
     } finally {

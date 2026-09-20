@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { useAlDia } from '@/lib/al-dia'
 import { Ico, pintaDe } from '../iconos'
 import { AMBITO, PastillaAmbito } from '../piezas'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -129,7 +130,7 @@ export default function Cosa({
         body: JSON.stringify({ estado: antes ? 'pendiente' : 'hecho' }),
       })
       if (!r.ok) throw new Error()
-      router.refresh()
+      refrescar(router)
     } catch {
       setMarcada(antes)
       setFallo(true)
@@ -388,7 +389,7 @@ function Cambiar({
         setFallo(d?.error ?? 'No se ha podido guardar.')
         return false
       }
-      router.refresh()
+      refrescar(router)
       return true
     } catch {
       setFallo('No se ha podido guardar.')

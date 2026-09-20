@@ -13,6 +13,7 @@ import {
   Fila,
   PastillaAmbito,
 } from '../piezas'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -125,7 +126,7 @@ export default function Empezar({ nombre }: { nombre: string }) {
     /* `refresh` antes de moverse: el inicio se pinta en el servidor y
        tiene que volver a leer que ahora sí hay casa. Sin esto se
        entraría a un MAPPEL que todavía cree que no existe. */
-    router.refresh()
+    refrescar(router)
     /* espacio: a propósito — al entrar todavía no hay espacio elegido.
        Va al Inicio a secas, y allí `casa_activa` decide cuál se enseña
        la primera vez. Desde ahí ya se navega dentro de él. */

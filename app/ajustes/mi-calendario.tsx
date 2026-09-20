@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import { PastillaAmbito } from '../piezas'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   Conectar tu calendario de Google.
@@ -66,7 +67,7 @@ export default function MiCalendario({
     setUrl('')
     setAbierto(false)
     setOcupado(false)
-    router.refresh()
+    refrescar(router)
   }
 
   async function cambiarComparte(valor: boolean) {
@@ -83,7 +84,7 @@ export default function MiCalendario({
       setComparte(!valor)       // no se guardó: se deshace
     }
     setOcupado(false)
-    router.refresh()
+    refrescar(router)
   }
 
   async function desconectar() {
@@ -91,7 +92,7 @@ export default function MiCalendario({
     await fetch(api('/api/calendario/ical'), { method: 'DELETE' })
     setBien(null)
     setOcupado(false)
-    router.refresh()
+    refrescar(router)
   }
 
   return (

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -105,7 +106,7 @@ export default function Unidades({
     setNombre('')
     setPresupuesto('')
     setCreando(false)
-    router.refresh()
+    refrescar(router)
   }
 
   async function renombrar(id: string) {
@@ -127,7 +128,7 @@ export default function Unidades({
     }
 
     setEditando(null)
-    router.refresh()
+    refrescar(router)
   }
 
   /*
@@ -149,7 +150,7 @@ export default function Unidades({
       return
     }
     setRetirando(null)
-    router.refresh()
+    refrescar(router)
   }
 
   return (

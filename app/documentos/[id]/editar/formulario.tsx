@@ -8,6 +8,7 @@ import type { Categoria } from '@/lib/carpetas'
 import { avisosDe, enPalabras, esAviso, type Vencimiento } from '@/lib/vencimientos'
 import { hoyAqui } from '@/lib/tablon'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   Corregir un papel.
@@ -189,7 +190,7 @@ export default function Corregir({
     }
 
     router.push(`/documentos/${papel.id}`)
-    router.refresh()
+    refrescar(router)
   }
 
   async function borrar() {
@@ -206,7 +207,7 @@ export default function Corregir({
     }
 
     router.push('/documentos')
-    router.refresh()
+    refrescar(router)
   }
 
   // ── Eligiendo carpeta ──────────────────────────────────────

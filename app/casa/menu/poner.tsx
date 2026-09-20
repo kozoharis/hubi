@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { comoSeLlamaElDia } from '@/lib/menus'
 import { Ico } from '../../iconos'
 import type { Receta } from './recetas'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -109,7 +110,7 @@ export default function Poner({
 
       /* Vacío significa quitarlo. Con identificador se quita ese
          plato; los demás de esa comida se quedan. Lo decide la API. */
-      router.refresh()
+      refrescar(router)
       cerrar()
     } catch {
       setFallo('No se ha podido guardar. Inténtalo otra vez.')

@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../../iconos'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ¿ESTO SE VE EN LA PANTALLA DE LA COCINA?
@@ -51,7 +52,7 @@ export default function EnLaCocina({
           body: JSON.stringify({ visible_en_casa: nuevo }),
         })
         if (!r.ok) throw new Error(String(r.status))
-        router.refresh()
+        refrescar(router)
       } catch {
         setValor(antes)
         setFallo('No se ha podido cambiar. Inténtalo otra vez.')

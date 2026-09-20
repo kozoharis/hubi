@@ -7,6 +7,7 @@ import { Ico } from './iconos'
 import { Aviso, BotonPrincipal, BotonSecundario, Tarjeta } from './piezas'
 import type { Casa } from '@/lib/casas'
 import { api, laPuertaDe } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -92,7 +93,7 @@ export default function Casas({ casas }: { casas: Casa[] }) {
       return
     }
 
-    router.refresh()
+    refrescar(router)
   }
 
   if (casas.length <= 1 && ofrecidas.length === 0) return null

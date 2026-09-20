@@ -7,6 +7,7 @@ import { useAlDia } from '@/lib/al-dia'
 import { Ico } from '../iconos'
 import { AMBITO } from '../piezas'
 import LoQueQuepa from './lo-que-quepa'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -127,7 +128,7 @@ export default function Rutinas({
         body: JSON.stringify({ id: r.id, hecha: !antes }),
       })
       if (!p.ok) throw new Error()
-      router.refresh()
+      refrescar(router)
     } catch {
       setLocales((l) => l.map((x) => (x.id === r.id ? { ...x, hecha: antes } : x)))
       setFallo('No se ha podido cambiar. Inténtalo otra vez.')

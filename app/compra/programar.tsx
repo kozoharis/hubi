@@ -6,6 +6,7 @@ import { Ico } from '../iconos'
 import { Aviso } from '../piezas'
 import { hoyAqui } from '@/lib/tablon'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   PONERLE DÍA A UNA COMPRA.
@@ -115,7 +116,7 @@ export default function Programar({
 
     setGuardando(false)
     alCerrar()
-    router.refresh()
+    refrescar(router)
   }
 
   return (

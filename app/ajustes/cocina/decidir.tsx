@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Aviso, BotonPrincipal } from '../../piezas'
+import { refrescar } from '@/lib/refrescar'
 
 export type Cuenta = {
   tipo: string
@@ -110,7 +111,7 @@ export default function Decidir({
           : `Guardado. He repasado ${n} ${n === 1 ? 'cosa' : 'cosas'}.`
       )
       setPisarLoDecidido(false)
-      router.refresh()
+      refrescar(router)
     } catch {
       setFallo('No hay conexión. Inténtalo otra vez.')
     } finally {

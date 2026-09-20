@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 export default function AccionHecho({
   id,
@@ -21,7 +22,7 @@ export default function AccionHecho({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estado: hecho ? 'pendiente' : 'hecho' }),
     })
-    router.refresh()
+    refrescar(router)
     setCambiando(false)
   }
 

@@ -14,6 +14,7 @@ import {
   Pildora,
   Tarjeta,
 } from '../piezas'
+import { refrescar } from '@/lib/refrescar'
 import { enHoras } from '@/lib/dia'
 import { api } from '@/lib/api'
 
@@ -127,7 +128,7 @@ export default function Parte({
     }
 
     setAbierto(false)
-    router.refresh()
+    refrescar(router)
   }
 
   // ══ Lo que ve la familia: el parte, sin poder tocarlo ══════

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Ico } from '../../../iconos'
 import { Aviso } from '../../../piezas'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -165,7 +166,7 @@ function Lista({
     if (d.aviso) setAviso(d.aviso)
     setNombre('')
     setCreando(false)
-    router.refresh()
+    refrescar(router)
   }
 
   async function renombrar(id: string) {
@@ -186,7 +187,7 @@ function Lista({
       return
     }
     setEditando(null)
-    router.refresh()
+    refrescar(router)
   }
 
   /*
@@ -228,7 +229,7 @@ function Lista({
       return
     }
     setRetirando(null)
-    router.refresh()
+    refrescar(router)
   }
 
   return (

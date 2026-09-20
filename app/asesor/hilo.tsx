@@ -13,6 +13,7 @@ import {
   Campo,
   Vacio,
 } from '../piezas'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -115,7 +116,7 @@ export default function Hilo({
     }
 
     setTexto('')
-    router.refresh()
+    refrescar(router)
   }
 
   return (

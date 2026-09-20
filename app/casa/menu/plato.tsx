@@ -7,6 +7,7 @@ import ComprobarEnLaPared from './comprobar'
 import Poner from './poner'
 import type { Receta } from './recetas'
 import type { ListaDeCompra, MenuQueSeComprueba } from '@/lib/comprobar-menu'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -279,7 +280,7 @@ function UnPlato({
           alGuardar={(f) => {
             setFaltan(f)
             setMirado(true)
-            router.refresh()
+            refrescar(router)
           }}
           cerrar={() => setAbierto(false)}
         />

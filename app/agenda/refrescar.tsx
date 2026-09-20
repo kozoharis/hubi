@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   El botón de traer las citas de Google otra vez.
@@ -45,7 +46,7 @@ export default function Refrescar({ cuantasHabia }: { cuantasHabia: number }) {
       } else {
         setDicho('Actualizado.')
       }
-      router.refresh()
+      refrescar(router)
     } catch {
       setDicho('No hay conexión.')
     }

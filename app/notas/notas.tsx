@@ -8,6 +8,7 @@ import { Ico } from '../iconos'
 import { Aviso } from '../piezas'
 import type { NotaVista } from '@/lib/notas'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -270,7 +271,7 @@ export default function Notas({
       return false
     }
 
-    router.refresh()
+    refrescar(router)
     return true
   }
 

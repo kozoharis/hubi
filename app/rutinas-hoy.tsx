@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Ico } from './iconos'
 import { Aviso } from './piezas'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -85,7 +86,7 @@ export default function RutinasHoy({
       return
     }
 
-    router.refresh()
+    refrescar(router)
   }
 
   if (rutinas.length === 0) return null

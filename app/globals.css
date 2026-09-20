@@ -1196,6 +1196,50 @@ button:not(:disabled):active,
 }
 
 /* ═══════════════════════════════════════════════════════════
+   Y EL MISMO VELO PARA UN BOTÓN QUE SIGUE TRABAJANDO
+   ═══════════════════════════════════════════════════════════
+
+   `.en-camino` tapa el hueco de un ENLACE: se toca una tarjeta y
+   hasta que llega la pantalla nueva se queda pulsada.
+
+   Un botón tiene el mismo hueco y era el que faltaba. Se toca
+   «Guardar», el dedo se va, el botón vuelve a su sitio — y durante el
+   medio segundo largo que tarda el servidor la pantalla no dice
+   nada. Ese silencio es lo que se lee como «no ha hecho nada», y la
+   reacción de cualquiera es volver a dar.
+
+   Mismo velo y mismo retraso de 140 ms: por debajo de eso sería un
+   destello que nadie llega a leer, y un destello sólo se percibe como
+   torpeza. Ningún símbolo nuevo que aprender — se lee como que sigue
+   pulsado, que es exactamente lo que pasa.
+
+   Quién pone y quita el atributo: `lib/sigue-trabajando.ts`, en un
+   solo sitio para toda la aplicación.
+
+   `pointer-events: none` es lo que hace que esto no pueda estorbar
+   nunca: el velo se ve y no se toca, así que un botón velado sigue
+   pulsándose igual que si no lo estuviera. */
+[data-trabajando] {
+  position: relative;
+}
+
+[data-trabajando]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: var(--t-velo);
+  animation: asomar 160ms ease-out 140ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-trabajando]::after {
+    animation-duration: 1ms;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
    «ESTO HA CAMBIADO» · lo hecho, lo que llega
    ═══════════════════════════════════════════════════════════
 

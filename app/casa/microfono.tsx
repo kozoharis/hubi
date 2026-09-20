@@ -7,6 +7,7 @@ import { grabarVoz, sePuedeGrabar, type Grabando } from '../hablar/grabadora'
 import { aWav } from '@/lib/a-wav'
 import { NOCHE, DEGRADADO, DEGRADADO_TUMBADO, TURQUESA } from '@/lib/voz-mappel'
 import { Ico } from '../iconos'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -306,7 +307,7 @@ export default function Microfono() {
       }
 
       setPaso({ que: 'hecho', texto: dicho })
-      router.refresh()
+      refrescar(router)
       /* Se cierra solo. Nadie se queda mirando un cartel de «hecho» en
          una cocina, y dejarlo puesto tapa la pared hasta que alguien
          pase y lo quite. */

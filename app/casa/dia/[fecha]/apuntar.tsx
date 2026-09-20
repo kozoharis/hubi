@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Ico } from '../../../iconos'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -107,7 +108,7 @@ export default function Apuntar({ fecha, gente }: { fecha: string; gente: Quien[
       setHora('')
       setPara(null)
       setAbierto(false)
-      router.refresh()
+      refrescar(router)
     } catch {
       setFallo('No se ha podido apuntar.')
     } finally {

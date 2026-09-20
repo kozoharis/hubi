@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Ico } from '../../iconos'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -62,7 +63,7 @@ export default function ALaVista({ id, inicial }: { id: string; inicial: boolean
           body: JSON.stringify({ destacado: nuevo }),
         })
         if (!r.ok) throw new Error(String(r.status))
-        router.refresh()
+        refrescar(router)
       } catch {
         setValor(antes)
         setFallo('No se ha podido cambiar. Inténtalo otra vez.')

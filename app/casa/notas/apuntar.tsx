@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Ico } from '../../iconos'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -73,7 +74,7 @@ export default function Apuntar() {
 
       setTexto('')
       setAbierto(false)
-      router.refresh()
+      refrescar(router)
     } catch {
       setFallo('No se ha podido dejar la nota.')
     } finally {

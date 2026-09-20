@@ -8,6 +8,7 @@ import Marco from './marco'
 import { elEspacio } from '@/lib/espacio'
 import Rail from './rail'
 import Instalacion from './instalacion'
+import SigueTrabajando from './sigue-trabajando'
 
 const fuente = { variable: 'font-stub', className: 'font-stub' }
 
@@ -362,6 +363,13 @@ export default async function RootLayout({
           navegador, que llega a los pocos segundos y sólo una vez.
         */}
         <Instalacion />
+
+        {/*
+          Tampoco pinta nada por su cuenta: deja pulsado el botón que
+          está esperando al servidor, en las cincuenta pantallas a la
+          vez. El porqué está en `lib/sigue-trabajando.ts`.
+        */}
+        <SigueTrabajando />
 
         <ProveedorActividades casa={{ actividades, rol, usaCompra, esPantalla }}>
           {/*

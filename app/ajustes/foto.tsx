@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Avatar from '../avatar'
 import { Ico } from '../iconos'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   Quién eres: tu foto y tu nombre.
@@ -72,7 +73,7 @@ export default function TuPerfil({
       setAviso(d.error ?? 'No se ha podido guardar la foto.')
       return
     }
-    router.refresh()
+    refrescar(router)
   }
 
   async function quitarFoto() {
@@ -111,7 +112,7 @@ export default function TuPerfil({
 
     setEditando(false)
     setOcupado(false)
-    router.refresh()
+    refrescar(router)
   }
 
   // ── Cambiando el nombre ────────────────────────────────────

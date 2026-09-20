@@ -8,6 +8,7 @@ import { paraLaVentana, SANDBOX } from '@/lib/enlace-seguro'
 import { Ico } from '../../iconos'
 import { AMBITO } from '../../piezas'
 import GuardarReceta from './guardar-receta'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -97,7 +98,7 @@ export default function Recetas({ recetas }: { recetas: Receta[] }) {
       })
       if (!res.ok) throw new Error()
       setCompra('hecho')
-      router.refresh()
+      refrescar(router)
       /* Vuelve a su sitio solo: un cartel de «hecho» permanente en una
          pared lo acaba tapando alguien con la mano. */
       setTimeout(() => setCompra('quieto'), 2500)

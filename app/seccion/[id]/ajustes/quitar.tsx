@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useIr } from '@/app/enlace'
 import { BotonDestructivo } from '../../../piezas'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -80,7 +81,7 @@ export default function Quitar({
        a una pantalla que ya no existe enseña un «no encontrado» justo
        después de hacer algo bien. */
     router.replace('/')
-    router.refresh()
+    refrescar(router)
   }
 
   if (!abierto) {

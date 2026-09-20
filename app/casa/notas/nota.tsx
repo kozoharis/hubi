@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Ico } from '../../iconos'
 import { AMBITO } from '../../piezas'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -92,7 +93,7 @@ export default function Nota({
       /* Se refresca para que Hoy y el resto de la pared se enteren,
          pero esta tarjeta se queda puesta y apagada: lo de arriba es
          el «deshacer» que se ve, y no depende de este refresco. */
-      router.refresh()
+      refrescar(router)
     } catch {
       setFallo('No se ha podido. Inténtalo otra vez.')
       setTrabajando(false)

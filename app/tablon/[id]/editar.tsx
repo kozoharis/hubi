@@ -5,6 +5,7 @@ import { useIr } from '@/app/enlace'
 import { Aviso, BotonDestructivo, BotonSecundario } from '../../piezas'
 import { api } from '@/lib/api'
 import { elMotivo, loQueSePuedeDecir } from '@/lib/fallo'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   Cambiar o borrar una tarea que ya existe.
@@ -107,7 +108,7 @@ export default function Editar({
       if (!r.ok) await elMotivo(r, 'No se ha podido guardar.')
 
       setAbierto(false)
-      router.refresh()
+      refrescar(router)
     } catch (e) {
       setAviso(loQueSePuedeDecir(e, 'No se ha podido guardar.'))
     }
@@ -120,7 +121,7 @@ export default function Editar({
       const r = await fetch(api(`/api/recordatorios/${id}`), { method: 'DELETE' })
       if (!r.ok) await elMotivo(r, 'No se ha podido borrar.')
       router.push('/agenda')
-      router.refresh()
+      refrescar(router)
     } catch (e) {
       setAviso(loQueSePuedeDecir(e, 'No se ha podido borrar.'))
       setBorrando(false)

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Ico } from '../iconos'
 import { Aviso } from '../piezas'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -168,9 +169,9 @@ export default function Sitio({
       setDelAparato(null)
       setTexto('')
       setComoSeLlama('')
-      /* Recarga entera y no `router.refresh()`: el tiempo de la pared
-         se pide en el servidor y se guarda media hora, así que lo que
-         hay que rehacer es la petición, no la pantalla. */
+      /* Recarga entera, y no un refresco de los de siempre: el tiempo
+         de la pared se pide en el servidor y se guarda media hora, así
+         que lo que hay que rehacer es la petición, no la pantalla. */
       window.location.reload()
     } catch {
       setFallo('No hay conexión. Inténtalo otra vez.')

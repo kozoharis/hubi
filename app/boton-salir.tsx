@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { clienteNavegador } from '@/lib/supabase/navegador'
 import { BotonDestructivo } from './piezas'
+import { refrescar } from '@/lib/refrescar'
 
 export default function BotonSalir() {
   const router = useRouter()
@@ -13,7 +14,7 @@ export default function BotonSalir() {
     setSaliendo(true)
     await clienteNavegador().auth.signOut()
     router.push('/entrar')
-    router.refresh()
+    refrescar(router)
   }
 
   return (

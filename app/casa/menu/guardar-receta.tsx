@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Ico } from '../../iconos'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -112,7 +113,7 @@ export default function GuardarReceta({
         return
       }
 
-      router.refresh()
+      refrescar(router)
       cerrar()
     } catch {
       setFallo('No se ha podido guardar. Inténtalo otra vez.')

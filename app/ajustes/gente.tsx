@@ -9,6 +9,7 @@ import { ROLES, nombreDelRol, type Rol } from '@/lib/roles'
 import { COLORES } from '@/lib/gente'
 import type { Rutina } from '@/lib/rutinas'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -143,7 +144,7 @@ export default function Gente({
     setAnadiendo(false)
     setNombre('')
     setSuColor(COLORES[0])
-    router.refresh()
+    refrescar(router)
   }
 
   function cerrarInvitacion() {
@@ -209,7 +210,7 @@ export default function Gente({
     const eraAyuda = rol === 'ayuda'
     cerrarInvitacion()
     if (eraAyuda && d.id) setProgramando({ id: d.id, nombre: comoSeLlama })
-    router.refresh()
+    refrescar(router)
   }
 
   async function cambiarRol(id: string, nuevo: Rol) {
@@ -240,7 +241,7 @@ export default function Gente({
     }
 
     setCambiando(null)
-    router.refresh()
+    refrescar(router)
   }
 
   /* Aparte de cambiar el papel a propósito: cambiar un color no puede
@@ -274,7 +275,7 @@ export default function Gente({
       return
     }
 
-    router.refresh()
+    refrescar(router)
   }
 
   /*
@@ -304,7 +305,7 @@ export default function Gente({
       return
     }
     setSacando(null)
-    router.refresh()
+    refrescar(router)
   }
 
   return (

@@ -8,6 +8,7 @@ import { Ico, Logo, Palabra } from '../iconos'
 import ColorDeBarra from '../color-barra'
 import { api } from '@/lib/api'
 import { NOCHE } from '@/lib/voz-mappel'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   Tres pasos, no dos.
@@ -163,7 +164,7 @@ export default function Entrar() {
        Va al Inicio a secas, y allí `casa_activa` decide cuál se enseña
        la primera vez. Desde ahí ya se navega dentro de él. */
     router.push('/')
-    router.refresh()
+    refrescar(router)
   }
 
   return (

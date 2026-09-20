@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { refrescar } from '@/lib/refrescar'
 
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 const MESES = [
@@ -23,7 +24,7 @@ const MESES = [
   donde está el aparato, y eso solo lo sabe el aparato.
 
   **Se refresca sola.** Cada cinco minutos pide la pantalla otra vez.
-  Con `router.refresh()` y no recargando la página: recargar apaga y
+  Refrescando y no recargando la página: recargar apaga y
   enciende: parpadea, y en una pared eso se ve desde la otra punta de
   la cocina. Así solo cambia lo que ha cambiado.
 
@@ -57,7 +58,7 @@ export default function Reloj() {
     const arranque = setTimeout(() => setAhora(new Date()), 0)
 
     const elReloj = setInterval(() => setAhora(new Date()), 20_000)
-    const laVuelta = setInterval(() => router.refresh(), 5 * 60_000)
+    const laVuelta = setInterval(() => refrescar(router), 5 * 60_000)
 
     return () => {
       clearTimeout(arranque)

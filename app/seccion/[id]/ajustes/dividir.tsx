@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Ico } from '../../../iconos'
 import { Aviso } from '../../../piezas'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -81,7 +82,7 @@ export default function Dividir({
       setFallo(d.error ?? 'No se ha podido guardar.')
       return false
     }
-    router.refresh()
+    refrescar(router)
     return true
   }
 

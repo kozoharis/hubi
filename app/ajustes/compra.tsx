@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ¿Esta casa usa la lista de la compra?
@@ -37,7 +38,7 @@ export default function Compra({ puesta }: { puesta: boolean }) {
       setFallo(d?.error ?? 'No se ha podido cambiar.')
       return
     }
-    router.refresh()
+    refrescar(router)
   }
 
   return (

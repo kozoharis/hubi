@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Ico } from '../../../iconos'
 import { Aviso, BotonPrincipal, BotonSecundario } from '../../../piezas'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -79,7 +80,7 @@ export default function DeQuienEs({
       setFallo(d.error ?? 'No se ha podido cambiar.')
       return
     }
-    router.refresh()
+    refrescar(router)
   }
 
   /*

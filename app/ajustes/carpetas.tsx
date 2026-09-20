@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -73,7 +74,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
       setFallo(d?.error ?? 'No se ha podido cambiar.')
       return
     }
-    router.refresh()
+    refrescar(router)
   }
 
   async function crear() {
@@ -109,7 +110,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
     setNombre('')
     setIcono('📁')
     setCreando(false)
-    router.refresh()
+    refrescar(router)
   }
 
   /* Cambiarle el icono a una que ya existe. Se toca el propio icono:
@@ -133,7 +134,7 @@ export default function Carpetas({ carpetas }: { carpetas: Carpeta[] }) {
       setFallo(d?.error ?? 'No se ha podido cambiar el icono.')
       return
     }
-    router.refresh()
+    refrescar(router)
   }
 
   return (

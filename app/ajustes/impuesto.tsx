@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { comoSeLlama, tipoHabitual, type Impuesto } from '@/lib/impuesto'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ¿Esta casa lleva IGIC o IVA?
@@ -54,7 +55,7 @@ export default function ImpuestoDeLaCasa({ puesto }: { puesto: Impuesto }) {
       setFallo(d?.detalle ?? d?.error ?? 'No se ha podido cambiar.')
       return
     }
-    router.refresh()
+    refrescar(router)
   }
 
   return (

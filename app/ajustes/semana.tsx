@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Ico } from '../iconos'
 import { DIAS, DE_SIEMPRE, type Rutina } from '@/lib/rutinas'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -145,7 +146,7 @@ export default function Semana({
     }
 
     alCerrar()
-    router.refresh()
+    refrescar(router)
   }
 
   const cuantas = trabajos.reduce(

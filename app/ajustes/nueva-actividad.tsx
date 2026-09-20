@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useIr } from '@/app/enlace'
 import { Ico } from '../iconos'
 import { api } from '@/lib/api'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -113,7 +114,7 @@ export default function NuevaActividad() {
     }
 
     cerrar()
-    router.refresh()
+    refrescar(router)
     /* Se entra directamente a «Cómo la llevas»: es donde se terminan
        de decidir las partes y las partidas, y llegar ahí solo es el
        siguiente paso natural de lo que acaba de hacer. */

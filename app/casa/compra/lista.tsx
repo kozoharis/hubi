@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { useAlDia } from '@/lib/al-dia'
 import { Ico } from '../../iconos'
 import { AMBITO } from '../../piezas'
+import { refrescar } from '@/lib/refrescar'
 
 /*
   ═══════════════════════════════════════════════════════════════
@@ -180,7 +181,7 @@ export default function Lista({
         body: JSON.stringify(enQueLista ? { que, lista_id: enQueLista } : { que }),
       })
       if (!r.ok) throw new Error()
-      router.refresh()
+      refrescar(router)
       return true
     } catch {
       setFallo('No se ha podido apuntar. Inténtalo otra vez.')
@@ -224,7 +225,7 @@ export default function Lista({
         body: JSON.stringify({ comprado: !antes }),
       })
       if (!r.ok) throw new Error()
-      router.refresh()
+      refrescar(router)
     } catch {
       setLocales((c) => c.map((x) => (x.id === cosa.id ? { ...x, comprado: antes } : x)))
       setFallo('No se ha podido cambiar. Inténtalo otra vez.')
@@ -261,7 +262,7 @@ export default function Lista({
         setAsignando((a) => (a && a.id === cosa.id ? cosa : a))
         return
       }
-      router.refresh()
+      refrescar(router)
     } catch {
       setFallo('No se ha podido cambiar. Inténtalo otra vez.')
       setLocales((c) => c.map((x) => (x.id === cosa.id ? cosa : x)))
