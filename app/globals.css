@@ -1316,7 +1316,7 @@ button:not(:disabled):active,
 
 /* ── El armazón que se ve mientras llega la pantalla ────── */
 /*
-  No aparece hasta pasados 280 ms.
+  No aparece hasta pasados 170 ms.
 
   Ese era el "rastro" al cambiar de pestaña: la navegación tarda ahora
   unos 200 ms, y el armazón salía y se iba dentro de ese suspiro. El
@@ -1331,9 +1331,24 @@ button:not(:disabled):active,
 
   `both` es lo que hace que funcione: mantiene la opacidad a 0
   durante la espera en vez de mostrarlo y luego animarlo.
+
+  ── DE 280 A 170, Y POR QUÉ SE PUEDE ──
+
+  Los 280 ms se eligieron cuando esto tapaba la PÁGINA ENTERA,
+  cabecera incluida: había que esperar mucho porque lo que se enseñaba
+  era un desconocido gris de arriba abajo, y era mejor no enseñarlo.
+
+  Desde el paso del armazón por pantalla, la cabecera se pinta de
+  verdad y no espera a nada: lo único que tapa esto son los bloques
+  del cuerpo, debajo de un título que ya se está leyendo. Eso pesa
+  mucho menos, así que puede salir antes — Haris: *«si puedes bajar el
+  ritmo de actualización y que se vea antes, genial»*.
+
+  Sigue habiendo retardo a propósito. A cero, cada toque enseñaría un
+  parpadeo gris incluso cuando la pantalla llega en un suspiro.
 */
 .espera {
-  animation: asomar 260ms ease-out 280ms both;
+  animation: asomar 200ms ease-out 170ms both;
 }
 
 @keyframes asomar {

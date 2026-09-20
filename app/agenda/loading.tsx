@@ -1,9 +1,12 @@
-import Espera, { Hueco } from '../espera'
+import Espera, { Hueco, TituloMovil } from '../espera'
 
 /*
-  La Agenda: la fila de Semana · Mes · El día, y debajo los días con
-  sus renglones. Sin la tira de los siete: a 360 px es una fila de
-  casillas pequeñas y en gris parece suciedad.
+  La Agenda mientras llega.
+
+  En el móvil, debajo del nombre van las tres pastillas —Semana · Mes ·
+  El día— y después, ya en el cuerpo, la caja de MAPPEL. Sin la tira de
+  los siete días: a 360 px es una fila de casillas pequeñas y en gris
+  parece suciedad.
 */
 export default function Cargando() {
   return (
@@ -12,14 +15,23 @@ export default function Cargando() {
       ambito="azul"
       titulo="Agenda"
       conCaja
+      conControles
       ancho="ancho-panoramica"
+      movil={
+        <>
+          <TituloMovil icono="calendario" ambito="azul" titulo="Agenda" />
+          <div className="espera mt-2">
+            <Hueco alto={48} redondez={999} />
+          </div>
+        </>
+      }
     >
-      <div className="flex gap-2">
-        <Hueco alto={48} redondez={999} />
-        <Hueco alto={48} redondez={999} />
-        <Hueco alto={48} redondez={999} />
+      {/* La caja de MAPPEL, que en el móvil vive aquí abajo. */}
+      <div className="mb-4 lg:hidden">
+        <Hueco alto={64} redondez={18} />
       </div>
-      <div className="mt-5 space-y-3">
+
+      <div className="space-y-3">
         <Hueco ancho={140} alto={15} />
         <Hueco alto={64} redondez={20} />
         <Hueco alto={64} redondez={20} />
