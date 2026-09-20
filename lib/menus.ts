@@ -207,3 +207,81 @@ export function deDondeEs(url: string | null): string | null {
     return null
   }
 }
+
+/*
+  ═══════════════════════════════════════════════════════════════
+  Y SI ES UN VÍDEO, QUE SE VEA AQUÍ
+  ═══════════════════════════════════════════════════════════════
+
+  Haris: *«cuando seleccionas el menú que aparezca la receta y el
+  vídeo… que nada se pierda a nivel visual»*.
+
+  Casi todas las recetas de esta casa son vídeos de YouTube, y hasta
+  hoy lo único que había era un enlace que SACA de mappel: se abre otra
+  pestaña, se ve el vídeo, y al volver hay que acordarse de en qué día
+  se estaba. Con el vídeo dentro, se mira y se sigue.
+
+  Devuelve la dirección para meter en un marco, o `null` si eso no es
+  un vídeo — y entonces se queda el enlace de siempre, que para una
+  receta de un blog es exactamente lo que hace falta.
+
+  ── TRES DECISIONES PEQUEÑAS ──
+
+  · `youtube-nocookie.com` y no `youtube.com`. Es el mismo reproductor
+    sin las galletas de seguimiento. Una casa no tiene por qué
+    aparecer en el historial de publicidad de nadie por mirar cómo se
+    hace un bizcocho.
+
+  · Sólo YouTube y Vimeo. No se adivina: si no se reconoce el sitio,
+    no se mete nada en un marco. Meter en un marco una dirección
+    cualquiera que alguien ha pegado es abrirle la puerta de par en
+    par a lo que sea que haya al otro lado.
+
+  · Y si la dirección no se puede ni leer, `null` sin ruido. Una
+    receta con el enlace mal escrito tiene que seguir saliendo.
+*/
+export function elVideo(url: string | null): string | null {
+  if (!url) return null
+
+  let d: URL
+  try {
+    d = new URL(url)
+  } catch {
+    return null
+  }
+
+  if (d.protocol !== 'https:' && d.protocol !== 'http:') return null
+
+  const sitio = d.hostname.replace(/^www\./, '').toLowerCase()
+
+  /* youtu.be/XXXX · youtube.com/watch?v=XXXX · /embed/XXXX · /shorts/XXXX */
+  if (sitio === 'youtu.be') {
+    const id = d.pathname.slice(1).split('/')[0]
+    return id ? `https://www.youtube-nocookie.com/embed/${limpiaId(id)}` : null
+  }
+
+  if (sitio === 'youtube.com' || sitio === 'm.youtube.com' || sitio === 'youtube-nocookie.com') {
+    const v = d.searchParams.get('v')
+    if (v) return `https://www.youtube-nocookie.com/embed/${limpiaId(v)}`
+
+    const partes = d.pathname.split('/').filter(Boolean)
+    if ((partes[0] === 'embed' || partes[0] === 'shorts' || partes[0] === 'live') && partes[1]) {
+      return `https://www.youtube-nocookie.com/embed/${limpiaId(partes[1])}`
+    }
+    return null
+  }
+
+  if (sitio === 'vimeo.com' || sitio === 'player.vimeo.com') {
+    const id = d.pathname.split('/').filter(Boolean).pop() ?? ''
+    return /^\d+$/.test(id) ? `https://player.vimeo.com/video/${id}` : null
+  }
+
+  return null
+}
+
+/* Sólo letras, números, guion y guion bajo: es lo que llevan los
+   identificadores de YouTube. Cualquier otra cosa que venga pegada
+   —una comilla, un `?`— se queda fuera de la dirección del marco. */
+function limpiaId(t: string): string {
+  return t.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24)
+}

@@ -1,3 +1,4 @@
+import Link from '@/app/enlace'
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
@@ -70,7 +71,7 @@ export default async function Cuentas() {
   const mes = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
 
   const espacio = await elEspacioO(supabase)
-  const [{ data: categorias }, { data: movimientos }, gastoCasa] = await Promise.all([
+  const [{ data: categorias }, { data: movimientos }, gastoCasa, previstos] = await Promise.all([
     supabase.from('categorias').select('id, padre_id').eq('hogar_id', espacio),
     supabase
       .from('movimientos')
@@ -79,18 +80,77 @@ export default async function Cuentas() {
       .gte('fecha', `${mes}-01`)
       .lte('fecha', `${mes}-31`),
     gastadoEnCasa(supabase),
+    /*
+      ── LO QUE ESTÁ APUNTADO PERO NADIE HA CONFIRMADO ──
+
+      Los pagos fijos se apuntan solos cuando les toca —si no, las
+      cuentas estarían siempre incompletas— pero nacen marcados como
+      previstos: MAPPEL no los ha visto pagar, los ha supuesto porque
+      tocaba.
+
+      Hasta hoy eso sólo se veía entrando en Pagos fijos, que es una
+      pantalla a la que se entra cuando te acuerdas. Y es justo el
+      dato que hace que un balance esté bien o mal.
+
+      Envuelto, como todo lo del SQL 47: sin la columna `previsto`
+      esta consulta falla entera y lo que se pierde es el aviso, no la
+      pantalla.
+    */
+    supabase
+      .from('movimientos')
+      .select('importe, categoria_id')
+      .eq('hogar_id', espacio)
+      .eq('previsto', true)
+      .limit(200)
+      .then(
+        (r: { data: { importe: number; categoria_id: string | null }[] | null }) => r.data ?? [],
+        () => [] as { importe: number; categoria_id: string | null }[]
+      ),
   ])
 
-  const balances = new Map<string, number>()
+  /*
+    ═══════════════════════════════════════════════════════════════
+    AQUÍ CADA CUENTA DECÍA «+0 €», Y ERA VERDAD
+    ═══════════════════════════════════════════════════════════════
+
+    Haris, mirando la lista: *«no pongas lo de +0 € que el balance
+    aparezca una vez dentro»*.
+
+    El «+0 €» no era un fallo: era el balance DEL MES en curso, y el
+    día 2 de mes es cero en todas las cuentas de todas las casas del
+    mundo. O sea que la primera cosa que se leía al abrir Cuentas era
+    un número correcto que no dice nada — y que encima parece una
+    avería, porque un cero verde con un más delante se lee como «aquí
+    no hay nada».
+
+    Lo que sí se viene a saber de un vistazo es SI ESTÁ PASANDO ALGO:
+    cuánto se ha apuntado y si queda algo por confirmar. El balance
+    está dentro, una vez, grande y con su periodo elegible, que es
+    donde un número así significa algo.
+  */
+  const apuntes = new Map<string, number>()
+  const sinConfirmar = new Map<string, number>()
+
   for (const a of actividades) {
     const suyas = ramaDe(categorias ?? [], a.id)
-    let balance = 0
-    for (const m of movimientos ?? []) {
-      if (!m.categoria_id || !suyas.has(m.categoria_id as string)) continue
-      balance += (m.tipo === 'ingreso' ? 1 : -1) * Number(m.importe)
-    }
-    balances.set(a.id, balance)
+    apuntes.set(
+      a.id,
+      (movimientos ?? []).filter(
+        (m) => m.categoria_id && suyas.has(m.categoria_id as string)
+      ).length
+    )
+    sinConfirmar.set(
+      a.id,
+      previstos.filter((m) => m.categoria_id && suyas.has(m.categoria_id)).length
+    )
   }
+
+  /* Y el total, para la banda de arriba. Se cuentan TODOS los de la
+     casa, también los que no cuelgan de ninguna actividad: un recibo
+     de la luz de casa sin confirmar es exactamente igual de urgente
+     que uno de la finca. */
+  const porConfirmar = previstos.length
+  const euroPorConfirmar = previstos.reduce((s, m) => s + Number(m.importe), 0)
 
   const nombreMes = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(hoy)
 
@@ -162,15 +222,57 @@ export default async function Cuentas() {
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8">
 
         <section className="lg:col-start-1 lg:row-start-1">
+        {/*
+          ══ LO QUE PIDE ATENCIÓN ══
+
+          Arriba del todo y SÓLO cuando hay algo. Un recuadro
+          permanente diciendo «no hay nada pendiente» es ruido en la
+          pantalla que se abre para mirar el dinero, y además enseña a
+          no mirarlo.
+
+          Es el mismo principio que lo vencido en la Agenda: lo que
+          reclama algo no se esconde detrás de un botón que hay que
+          saber que existe.
+        */}
+        {porConfirmar > 0 && (
+          <Link
+            href="/pagos"
+            className="tocable mt-4 flex items-center gap-3.5 rounded-[20px] border px-4 py-3.5 lg:mt-0"
+            style={{ borderColor: 'var(--t-alerta)', background: 'var(--t-alerta-velo)' }}
+          >
+            <span
+              className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-[14px]"
+              style={{ background: 'var(--t-alerta)', color: '#FFFFFF' }}
+            >
+              <Ico nombre="reloj" tam={22} grosor={2.2} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="t-tarjeta block">
+                {porConfirmar === 1
+                  ? '1 apunte sin confirmar'
+                  : `${porConfirmar} apuntes sin confirmar`}
+              </span>
+              <span className="t-apoyo mt-0.5 block">
+                {Math.round(euroPorConfirmar).toLocaleString('es-ES')} € que mappel ha
+                apuntado porque tocaba, pero no ha visto pagar
+              </span>
+            </span>
+            <Ico nombre="flecha" tam={21} grosor={2.3} className="shrink-0" />
+          </Link>
+        )}
+
         {/* ══ LAS ACTIVIDADES ══ */}
         {actividades.length > 0 ? (
           <>
-            <h2 className="t-seccion mt-4 lg:mt-0">Cómo va cada una</h2>
-            <p className="t-apoyo mt-1">En {nombreMes}</p>
+            <h2 className={`t-seccion mt-4 ${porConfirmar > 0 ? 'lg:mt-7' : 'lg:mt-0'}`}>
+              Cómo va cada una
+            </h2>
+            <p className="t-apoyo mt-1">Entra en cada una para ver su balance</p>
 
             <ul className="mt-3 space-y-2.5">
               {actividades.map((a) => {
-                const balance = balances.get(a.id) ?? 0
+                const cuantos = apuntes.get(a.id) ?? 0
+                const suyosSinConfirmar = sinConfirmar.get(a.id) ?? 0
                 const pintada = seccionPintada(a.segmento)
                 return (
                   <li key={a.id}>
@@ -178,15 +280,25 @@ export default async function Cuentas() {
                       <PastillaAmbito icono={pintada.icono} ambito={pintada.ambito} tam={48} />
                       <span className="min-w-0 flex-1">
                         <span className="t-tarjeta block truncate">{a.nombre}</span>
-                        {/* Un balance es de los pocos sitios donde el
-                            color ES el signo, así que lleva los colores
-                            de estado — no los de ámbito. */}
-                        <span
-                          className="t-cuerpo mt-0.5 block tabular-nums"
-                          style={{ color: balance >= 0 ? 'var(--t-bien)' : 'var(--t-alerta)' }}
-                        >
-                          {balance >= 0 ? '+' : '−'}
-                          {Math.abs(Math.round(balance)).toLocaleString('es-ES')} €
+                        {/* Qué está pasando en esta cuenta, en una
+                            línea: cuánto se ha apuntado este mes y si
+                            queda algo por confirmar.
+
+                            Sin color de estado. El color aquí sería el
+                            del signo de un balance, y el balance ya no
+                            está: teñir de verde «12 apuntes» sería
+                            decir que doce apuntes son buenos, que es
+                            una opinión que nadie ha pedido. */}
+                        <span className="t-apoyo mt-0.5 block">
+                          {cuantos === 0
+                            ? `Nada apuntado en ${nombreMes}`
+                            : `${cuantos} ${cuantos === 1 ? 'apunte' : 'apuntes'} en ${nombreMes}`}
+                          {suyosSinConfirmar > 0 && (
+                            <span style={{ color: 'var(--t-alerta)' }}>
+                              {' · '}
+                              {suyosSinConfirmar} sin confirmar
+                            </span>
+                          )}
                         </span>
                       </span>
                       <Ico nombre="flecha" tam={21} grosor={2.3} className="shrink-0" />

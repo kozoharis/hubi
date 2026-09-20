@@ -11,6 +11,9 @@ import {
   Hecho,
   PastillaAmbito,
 } from '../../piezas'
+import { Pildora } from '../../piezas'
+import Cabecera from '../../cabecera'
+import Encabezado from '../../encabezado'
 import CamposEstancia, { ESTANCIA_VACIA, type Estancia } from '../../estancia'
 import { TIPOS, desglose, comoSeLlama, tipoHabitual, type Impuesto } from '@/lib/impuesto'
 import { api } from '@/lib/api'
@@ -36,6 +39,8 @@ export default function Apuntar({
   */
   seccion = null,
   raizId = null,
+  cuentas = [],
+  laPuesta = null,
   /* IGIC, IVA o nada. Apagado de serie: en una casa que no factura,
      esto no aparece por ningún lado. */
   impuesto = 'ninguno',
@@ -49,6 +54,10 @@ export default function Apuntar({
   /* La sección de la que se viene. Viaja a «Guardar un papel» para que
      el papel no se salga de ella. Ver `app/guardar/page.tsx`. */
   raizId?: string | null
+  /* Las cuentas de esta casa: las actividades y «La casa». Para poder
+     cambiar de una a otra sin salir de aquí. */
+  cuentas?: { clave: string; nombre: string }[]
+  laPuesta?: string | null
   impuesto?: Impuesto
 }) {
   const [paso, setPaso] = useState<Paso>('tipo')
@@ -133,7 +142,7 @@ export default function Apuntar({
   if (paso === 'hecho') {
     return (
       <main className="flex min-h-dvh flex-col justify-center py-16">
-        <div className="columna-formulario">
+        <div className="ancho-ficha">
           <Hecho
             titulo="Apuntado"
             explicacion={`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} de ${importe.replace('.', ',')} € · ${concepto}`}
@@ -150,26 +159,84 @@ export default function Apuntar({
     )
   }
 
+  /*
+    ── LAS CUENTAS, ARRIBA ──
+
+    Sólo si hay más de una. Enlaces y no botones: cambiar de cuenta
+    cambia las categorías que se ofrecen, o sea que es otra pantalla —
+    y así se puede copiar la dirección, volver atrás y recargar.
+
+    Sólo en el paso de elegir qué apuntar. Una vez puesto el importe,
+    cambiar de cuenta borraría lo escrito, y un botón que borra lo que
+    llevas escrito no debería estar a la vista.
+  */
+  const elector =
+    cuentas.length > 1 && paso === 'tipo' ? (
+      <div className="flex flex-wrap gap-2" role="group" aria-label="En qué cuenta">
+        {cuentas.map((c) => (
+          <Pildora
+            key={c.clave}
+            href={`/finca/apuntar?seccion=${encodeURIComponent(c.clave)}`}
+            puesta={laPuesta === c.clave}
+          >
+            {c.nombre}
+          </Pildora>
+        ))}
+      </div>
+    ) : null
+
   return (
     <main className="techo-holgado min-h-dvh pb-10">
-      <div className="columna-formulario">
-        {/*
-          El botón de volver del sistema.
+      {/*
+        ═══════════════════════════════════════════════════════
+        Y ESTA PANTALLA TENÍA CARA DE MÓVIL EN UN ORDENADOR
+        ═══════════════════════════════════════════════════════
 
-          Era uno casero, y además el de «datos → tipo» usaba
-          `window.location.href`, que RECARGA LA APLICACIÓN ENTERA en
-          vez de navegar: medio segundo de pantalla en blanco para
-          retroceder un paso dentro de la misma pantalla.
-        */}
-        {paso === 'datos' ? (
-          <Volver alPulsar={() => setPaso('tipo')} />
-        ) : (
-          <Volver href={volver} />
-        )}
+        Haris: *«cuando quieras apuntar algo… la visualización es como
+        la del móvil… debemos de mantener como todo igual»*.
+
+        Y era literal: mientras todas las demás pantallas tienen su
+        banda de arriba —icono, título, pie, botón de volver— ésta era
+        una columna de 448 px pegada al rail y nada más. No es que
+        estuviera mal medida: es que le faltaba la cabecera entera, y
+        sin ella una pantalla del producto parece una pantalla de otro
+        producto.
+
+        Ahora lleva la de siempre, `ficha`, que es la que usan la
+        tarea, la ficha del papel y los ajustes de una sección: 560 px,
+        que es lo que mide un formulario que se lee de una pasada.
+      */}
+      <Cabecera ficha>
+        <div className="lg:hidden">
+          {paso === 'datos' ? (
+            <Volver alPulsar={() => setPaso('tipo')} />
+          ) : (
+            <Volver href={volver} />
+          )}
+          <div className="flex h-12 items-center">
+            <h1 className="t-titulo">Apuntar algo</h1>
+          </div>
+          {elector && <div className="mt-2">{elector}</div>}
+        </div>
+
+        <Encabezado
+          icono="euro"
+          ambito="pizarra"
+          titulo="Apuntar algo"
+          pie={nombre}
+          volver={volver}
+          controles={elector ?? undefined}
+        />
+      </Cabecera>
+
+      <div className="ancho-ficha pt-1">
 
         {paso === 'tipo' && (
           <>
-            <h1 className="t-titulo mt-4">¿Qué quieres apuntar?</h1>
+            {/* «¿Qué quieres apuntar?» y no el nombre de la pantalla:
+                el título ya lo dice la banda de arriba, y repetirlo
+                sería decirlo dos veces. Aquí va la PREGUNTA. */}
+            <p className="rotulo mt-4">¿Qué quieres apuntar?</p>
 
             {/* Lo primero, porque es lo que menos trabajo da */}
             {/*

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Ico } from '../iconos'
 import { Aviso, BotonDestructivo, BotonPrincipal, BotonSecundario, Vacio } from '../piezas'
 import { api } from '@/lib/api'
+import { hoyAqui } from '@/lib/tablon'
 import Comprobar, { type ListaDeCompra } from './comprobar'
 import RepetirPlato from './repetir-plato'
 import {
@@ -11,6 +12,7 @@ import {
   comoSeLlamaLaSemana,
   otraSemana,
   deDondeEs,
+  elVideo,
   MOMENTOS,
   type Momento,
 } from '@/lib/menus'
@@ -648,6 +650,156 @@ export default function Semana() {
     )
   }
 
+  /*
+    ═══════════════════════════════════════════════════════════
+    LO QUE HAY DENTRO DE UNA RECETA, ESCRITO UNA VEZ
+    ═══════════════════════════════════════════════════════════
+
+    Se pinta en dos sitios: desplegada debajo de su título en el
+    móvil, y en la columna de la derecha en un ordenador. Es lo MISMO
+    —los mismos botones, el mismo orden, los mismos días— y por eso
+    está escrito una vez: dos copias serían dos sitios donde arreglar
+    el mismo botón, y uno de los dos se queda sin arreglar.
+  */
+  function elDetalle(r: Receta) {
+    const video = elVideo(r.url)
+
+    return (
+      <>
+        {/*
+          ── EL VÍDEO, DENTRO ──
+
+          Haris: *«que aparezca la receta y el vídeo… que nada se
+          pierda a nivel visual»*. Antes sólo había un enlace, y un
+          enlace SACA de mappel: otra pestaña, y al volver hay que
+          acordarse de en qué día se estaba.
+
+          El enlace se queda igualmente debajo, que es lo que hace
+          falta para verlo en la tele o mandárselo a alguien.
+        */}
+        {video && (
+          <div className="mt-2 overflow-hidden rounded-[16px] border border-borde bg-tinta">
+            <iframe
+              src={video}
+              title={r.titulo}
+              loading="lazy"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+              className="aspect-video w-full"
+            />
+          </div>
+        )}
+      {r.url && (
+        <a
+          href={r.url}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="t-apoyo mt-0.5 flex h-12 items-center font-extrabold"
+          style={{ color: 'var(--t-bien)' }}
+        >
+          Abrir · {deDondeEs(r.url)}
+        </a>
+      )}
+      {r.nota && (
+        <p className="t-apoyo mt-1 whitespace-pre-wrap">{r.nota}</p>
+      )}
+
+      {/* Lo que lleva, en corto: aquí se está eligiendo qué se
+          come, no cocinando. La lista entera se lee en la
+          cocina, que es donde hace falta. */}
+      {(r.ingredientes ?? []).length > 0 && (
+        <p className="t-apoyo mt-1 font-extrabold">
+          Lleva {(r.ingredientes ?? []).length}{' '}
+          {(r.ingredientes ?? []).length === 1 ? 'cosa' : 'cosas'}:{' '}
+          {(r.ingredientes ?? []).slice(0, 3).join(', ')}
+          {(r.ingredientes ?? []).length > 3 && '…'}
+        </p>
+      )}
+
+      {/*
+        Ponerla en un día desde aquí. Es el camino natural: se
+        mira el cajón, se ve algo que apetece y se coloca. Al
+        revés —abrir el día y buscar la receta— hay que
+        acordarse de cómo se llamaba.
+      */}
+      <div className="mt-2.5 flex flex-wrap gap-2">
+        {dias.slice(0, 7).map((fecha) => (
+          <button
+            key={fecha}
+            onClick={() => guardar(fecha, 'comida', r.titulo, r.id)}
+            className="t-apoyo h-[48px] min-w-[52px] rounded-[16px] border border-borde bg-superficie px-3 font-extrabold text-tinta"
+          >
+            {comoSeLlamaElDia(fecha).split(' ')[0].slice(0, 3)}
+          </button>
+        ))}
+      </div>
+      <p className="t-apoyo mt-1.5">Toca un día para ponerla de comida</p>
+
+      {/*
+        ── Y QUE VUELVA ──
+
+        Los botones de arriba ponen el plato UNA vez, esta
+        semana. Esto lo pone todos los viernes durante tres
+        meses. Son dos cosas distintas y por eso son dos sitios
+        distintos: mezclarlas obligaría a preguntar «¿solo hoy o
+        siempre?» cada vez que se toca un día, que es la
+        pregunta de más que sobra catorce veces por semana.
+      */}
+      {repitiendo === r.id ? (
+        <RepetirPlato
+          receta={r}
+          alHecho={() => traer(lunes ?? undefined)}
+          cerrar={() => setRepitiendo(null)}
+        />
+      ) : (
+        <button
+          onClick={() => setRepitiendo(r.id)}
+          className="t-apoyo mt-1 flex h-12 items-center gap-1.5 font-extrabold text-tinta"
+        >
+          <Ico nombre="refrescar" tam={18} grosor={2.4} />
+          Que vuelva cada semana
+        </button>
+      )}
+
+      {/*
+        ── CORREGIRLA ──
+
+        Delante de «Quitar», y no al revés: hasta ahora la única
+        manera de arreglar una receta era quitarla y volver a
+        escribirla, y eso además dejaba sin enlazar los menús
+        que ya la usaban. El botón de al lado es el que hace
+        daño; éste tiene que ir antes.
+      */}
+      <div className="mt-1 flex items-center gap-5">
+        <button
+          onClick={() => corregir(r)}
+          className="t-apoyo flex h-12 items-center gap-1.5 font-extrabold text-tinta"
+        >
+          <Ico nombre="lapiz" tam={18} grosor={2.4} />
+          Cambiarla
+        </button>
+
+        {/* Era texto suelto de 14 px: 20 px de alto en una lista
+            donde todo lo demás pasa de 48. */}
+        <button
+          onClick={() => quitarIdea(r.id)}
+          className="t-apoyo flex h-12 items-center font-extrabold"
+          style={{ color: 'var(--t-alerta)' }}
+        >
+          Quitar
+        </button>
+      </div>
+      </>
+    )
+  }
+
+
+  /* El día de hoy donde viven ellos, para marcar su columna. Se llama
+     `elDiaDeHoy` y no `hoy` porque aquí arriba ya hay un `hoy` que es
+     un `Date` y sirve para otra cosa (lo que se acaba). */
+  const elDiaDeHoy = hoyAqui()
+
   return (
     <div>
       {/*
@@ -672,8 +824,20 @@ export default function Semana() {
 
       {vista === 'semana' && (
         <>
-          {/* ── La semana que se está mirando ── */}
-          <div className="mt-4 flex items-center gap-2">
+          {/*
+            ── LA SEMANA QUE SE ESTÁ MIRANDO ──
+
+            Con techo en grande, y es el mismo arreglo que ya se hizo
+            en Cuentas: una fila de tres elementos —flecha, fecha,
+            flecha— repartida a lo ancho de una pantalla panorámica
+            deja la fecha sola en mitad del papel y las flechas
+            pegadas a los bordes, a un palmo de distancia de lo que
+            mueven. Eso es lo que Haris vio: *«las fechas del menú se
+            ven un poco raro»*.
+
+            440 px es lo que mide el grupo con los dedos juntos.
+          */}
+          <div className="mt-4 flex items-center gap-2 lg:max-w-[440px]">
             <button
               onClick={() => lunes && traer(otraSemana(lunes, -1))}
               aria-label="La semana anterior"
@@ -761,7 +925,20 @@ export default function Semana() {
           <div className="denso-trabajo mt-4 hidden grid-cols-7 gap-2 lg:grid">
             {dias.map((fecha) => (
               <div key={fecha} className="min-w-0">
-                <p className="rotulo mb-1.5 truncate text-center">{comoSeLlamaElDia(fecha)}</p>
+                {/*
+                  ── Y HOY SE VE SIN CONTAR ──
+
+                  Los siete rótulos eran idénticos, así que para saber
+                  en qué columna escribir la cena de esta noche había
+                  que leerse el número de cada uno. En una semana que
+                  no es la de hoy no se marca ninguno, que es lo
+                  correcto: ahí no hay hoy.
+                */}
+                <p
+                  className={`rotulo mb-1.5 truncate text-center ${fecha === elDiaDeHoy ? 'text-tinta' : ''}`}
+                >
+                  {fecha === elDiaDeHoy ? `Hoy · ${comoSeLlamaElDia(fecha)}` : comoSeLlamaElDia(fecha)}
+                </p>
                 <div className="flex flex-col gap-2 rounded-[14px] border border-borde bg-superficie p-2">
                   {MOMENTOS.flatMap(({ valor, texto }) => {
                     /*
@@ -1005,7 +1182,9 @@ export default function Semana() {
           <ul className="mt-4 space-y-2.5 lg:hidden">
             {dias.map((fecha) => (
               <li key={fecha} className="rounded-[20px] border border-borde bg-superficie px-4 py-3.5">
-                <p className="rotulo">{comoSeLlamaElDia(fecha)}</p>
+                <p className={`rotulo ${fecha === elDiaDeHoy ? 'text-tinta' : ''}`}>
+                  {fecha === elDiaDeHoy ? `Hoy · ${comoSeLlamaElDia(fecha)}` : comoSeLlamaElDia(fecha)}
+                </p>
 
                 <div className="mt-2 space-y-2">
                   {MOMENTOS.flatMap(({ valor, texto }) => {
@@ -1252,7 +1431,88 @@ export default function Semana() {
               />
             </div>
           ) : (
-            <ul className="mt-4 space-y-2.5">
+            <>
+            {/*
+              ═══════════════════════════════════════════════════
+              EN UN ORDENADOR, EL CAJÓN SE ABRE EN DOS
+              ═══════════════════════════════════════════════════
+
+              Haris: *«dejar una lista de menús en una columna y en la
+              segunda, más ancha, cuando seleccionas el menú que
+              aparezca la receta y el vídeo… que nada se pierda a
+              nivel visual»*.
+
+              Lo que había era una lista de títulos que se despliegan:
+              correcto en un móvil —no cabe otra cosa— y un desperdicio
+              en un ordenador, donde al abrir una receta el resto se
+              va hacia abajo y la pantalla se queda con una columna de
+              texto en medio de metro y medio de papel.
+
+              Dos zonas: los títulos a la izquierda, con su medida
+              justa, y a la derecha la receta entera —el vídeo, lo que
+              lleva, lo escrito y sus botones— sin que se mueva nada de
+              sitio. Elegir otra cambia la derecha y ya está.
+
+              ── Y SIEMPRE HAY UNA ELEGIDA ──
+
+              Si no se ha tocado ninguna, la primera. Una columna
+              derecha vacía diciendo «elige una receta» es media
+              pantalla pidiendo un clic para enseñar algo que se podía
+              haber enseñado ya.
+            */}
+            <div className="mt-4 hidden lg:grid lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start lg:gap-6">
+              <nav aria-label="Las recetas" className="flex flex-col gap-1.5">
+                {recetas.map((r) => {
+                  const puesta = (desplegada ?? recetas[0]?.id) === r.id
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setDesplegada(r.id)}
+                      aria-current={puesta ? 'true' : undefined}
+                      className="tocable flex min-h-[52px] items-center gap-2.5 rounded-[16px] border px-3.5 text-left"
+                      style={
+                        puesta
+                          ? { borderColor: 'var(--t-tinta)', background: 'var(--t-superficie)' }
+                          : { borderColor: 'transparent', background: 'transparent' }
+                      }
+                    >
+                      <span
+                        className={`min-w-0 flex-1 text-[16px] leading-snug ${puesta ? 'font-extrabold text-tinta' : 'font-bold text-tinta-suave'}`}
+                      >
+                        {r.titulo}
+                      </span>
+                      {/* El punto dice que ésa lleva vídeo, sin abrirla.
+                          Con veinte recetas, saber cuáles se pueden ver
+                          y cuáles sólo leer ahorra la mitad de los
+                          clics. */}
+                      {elVideo(r.url) && (
+                        <span
+                          aria-label="Con vídeo"
+                          className="h-[9px] w-[9px] shrink-0 rounded-full"
+                          style={{ background: 'var(--t-bien)' }}
+                        />
+                      )}
+                    </button>
+                  )
+                })}
+              </nav>
+
+              <div className="min-w-0 rounded-[20px] border border-borde bg-superficie px-5 py-4">
+                {(() => {
+                  const r = recetas.find((x) => x.id === desplegada) ?? recetas[0]
+                  if (!r) return null
+                  return (
+                    <>
+                      <h2 className="t-seccion">{r.titulo}</h2>
+                      {cambiando === r.id && abierto ? elFormulario() : elDetalle(r)}
+                    </>
+                  )
+                })()}
+              </div>
+            </div>
+
+            <ul className="mt-4 space-y-2.5 lg:hidden">
               {recetas.map((r) => (
                 <li key={r.id} className="rounded-[20px] border border-borde bg-superficie px-4 py-3.5">
                   {/*
@@ -1290,110 +1550,7 @@ export default function Semana() {
                     </span>
                   </button>
 
-                  {desplegada === r.id && (
-                    <>
-                    {r.url && (
-                      <a
-                        href={r.url}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="t-apoyo mt-0.5 flex h-12 items-center font-extrabold"
-                        style={{ color: 'var(--t-bien)' }}
-                      >
-                        Abrir · {deDondeEs(r.url)}
-                      </a>
-                    )}
-                    {r.nota && (
-                      <p className="t-apoyo mt-1 whitespace-pre-wrap">{r.nota}</p>
-                    )}
-
-                    {/* Lo que lleva, en corto: aquí se está eligiendo qué se
-                        come, no cocinando. La lista entera se lee en la
-                        cocina, que es donde hace falta. */}
-                    {(r.ingredientes ?? []).length > 0 && (
-                      <p className="t-apoyo mt-1 font-extrabold">
-                        Lleva {(r.ingredientes ?? []).length}{' '}
-                        {(r.ingredientes ?? []).length === 1 ? 'cosa' : 'cosas'}:{' '}
-                        {(r.ingredientes ?? []).slice(0, 3).join(', ')}
-                        {(r.ingredientes ?? []).length > 3 && '…'}
-                      </p>
-                    )}
-
-                    {/*
-                      Ponerla en un día desde aquí. Es el camino natural: se
-                      mira el cajón, se ve algo que apetece y se coloca. Al
-                      revés —abrir el día y buscar la receta— hay que
-                      acordarse de cómo se llamaba.
-                    */}
-                    <div className="mt-2.5 flex flex-wrap gap-2">
-                      {dias.slice(0, 7).map((fecha) => (
-                        <button
-                          key={fecha}
-                          onClick={() => guardar(fecha, 'comida', r.titulo, r.id)}
-                          className="t-apoyo h-[48px] min-w-[52px] rounded-[16px] border border-borde bg-superficie px-3 font-extrabold text-tinta"
-                        >
-                          {comoSeLlamaElDia(fecha).split(' ')[0].slice(0, 3)}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="t-apoyo mt-1.5">Toca un día para ponerla de comida</p>
-
-                    {/*
-                      ── Y QUE VUELVA ──
-
-                      Los botones de arriba ponen el plato UNA vez, esta
-                      semana. Esto lo pone todos los viernes durante tres
-                      meses. Son dos cosas distintas y por eso son dos sitios
-                      distintos: mezclarlas obligaría a preguntar «¿solo hoy o
-                      siempre?» cada vez que se toca un día, que es la
-                      pregunta de más que sobra catorce veces por semana.
-                    */}
-                    {repitiendo === r.id ? (
-                      <RepetirPlato
-                        receta={r}
-                        alHecho={() => traer(lunes ?? undefined)}
-                        cerrar={() => setRepitiendo(null)}
-                      />
-                    ) : (
-                      <button
-                        onClick={() => setRepitiendo(r.id)}
-                        className="t-apoyo mt-1 flex h-12 items-center gap-1.5 font-extrabold text-tinta"
-                      >
-                        <Ico nombre="refrescar" tam={18} grosor={2.4} />
-                        Que vuelva cada semana
-                      </button>
-                    )}
-
-                    {/*
-                      ── CORREGIRLA ──
-
-                      Delante de «Quitar», y no al revés: hasta ahora la única
-                      manera de arreglar una receta era quitarla y volver a
-                      escribirla, y eso además dejaba sin enlazar los menús
-                      que ya la usaban. El botón de al lado es el que hace
-                      daño; éste tiene que ir antes.
-                    */}
-                    <div className="mt-1 flex items-center gap-5">
-                      <button
-                        onClick={() => corregir(r)}
-                        className="t-apoyo flex h-12 items-center gap-1.5 font-extrabold text-tinta"
-                      >
-                        <Ico nombre="lapiz" tam={18} grosor={2.4} />
-                        Cambiarla
-                      </button>
-
-                      {/* Era texto suelto de 14 px: 20 px de alto en una lista
-                          donde todo lo demás pasa de 48. */}
-                      <button
-                        onClick={() => quitarIdea(r.id)}
-                        className="t-apoyo flex h-12 items-center font-extrabold"
-                        style={{ color: 'var(--t-alerta)' }}
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                    </>
-                  )}
+                  {desplegada === r.id && elDetalle(r)}
 
                   {/*
                     ── Y EL FORMULARIO, AQUÍ MISMO ──
@@ -1407,6 +1564,7 @@ export default function Semana() {
                 </li>
               ))}
             </ul>
+            </>
           )}
 
         </>

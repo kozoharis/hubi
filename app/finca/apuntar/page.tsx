@@ -85,6 +85,35 @@ export default async function PaginaApuntar({
     : (todas.find((c) => c.segmento_drive === (seccion || 'FINCA') && !c.padre_id) ?? null)
 
   /*
+    ═══════════════════════════════════════════════════════════
+    EN QUÉ CUENTA SE APUNTA, Y PODER CAMBIARLO
+    ═══════════════════════════════════════════════════════════
+
+    Haris: *«no sé si incluso un botón de las cuentas que tienes… en
+    la parte de arriba»*.
+
+    Hasta hoy la cuenta venía en la dirección y no se podía cambiar:
+    quien entraba a apuntar un gasto de la Finca y a mitad se daba
+    cuenta de que era de la casa tenía que salir, volver a Cuentas,
+    entrar en la otra y empezar otra vez.
+
+    Y hay algo peor que el rodeo: la pantalla NO DECÍA en cuál estaba
+    apuntando. El nombre salía dentro del texto de «Tengo el papel» y
+    en ningún sitio más, así que la única manera de saberlo era leerse
+    una frase de ayuda.
+
+    Con las cuentas arriba, la que está puesta se ve siempre y cambiar
+    es un toque. Y si sólo hay una, no se pinta ninguna: una pregunta
+    con una sola respuesta no es una pregunta.
+  */
+  const cuentas = [
+    ...todas
+      .filter((c) => !c.padre_id && c.lleva_cuentas === true)
+      .map((c) => ({ clave: c.segmento_drive, nombre: c.nombre })),
+    { clave: 'resto', nombre: 'La casa' },
+  ]
+
+  /*
     Solo las carpetas FINALES, y solo las que mueven dinero.
 
     Lo segundo es nuevo y hace falta aquí: en las cuentas de casa
@@ -147,6 +176,11 @@ export default async function PaginaApuntar({
         la casa. Estaba contado en `app/guardar/page.tsx`.
       */
       raizId={deCasa ? null : (raiz?.id ?? null)}
+      cuentas={cuentas}
+      /* Cuál está puesta. `resto` es la casa; si no, el segmento de la
+         raíz. No se usa `seccion` tal cual porque puede venir vacío
+         —y entonces la que manda es la primera actividad, no «nada». */
+      laPuesta={deCasa ? 'resto' : (raiz?.segmento_drive ?? null)}
     />
   )
 }
