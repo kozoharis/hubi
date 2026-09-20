@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Aviso, BotonPrincipal, BotonSecundario, Vacio } from '../piezas'
-import { CADAS, comoSeDice, type Cada, type PagoFijo } from '@/lib/pagos-fijos'
+import { RITMOS, comoSeDice, type PagoFijo } from '@/lib/pagos-fijos'
 import { TIPOS, comoSeLlama, tipoHabitual, desglose, type Impuesto } from '@/lib/impuesto'
 import { api } from '@/lib/api'
 
@@ -64,7 +64,18 @@ export default function Fijos({
   const [proveedor, setProveedor] = useState('')
   const [importe, setImporte] = useState('')
   const [partida, setPartida] = useState<string | null>(null)
-  const [cada, setCada] = useState<Cada>('mensual')
+  /*
+    ── CADA CUÁNTO, EN MESES ──
+
+    Era una de tres palabras. Ahora es un número, y los botones son
+    atajos para escribirlo: 1, 2, 3, 6, 12 y «Otro».
+
+    `aMano` es sólo si el campo del «Otro» está a la vista. No es un
+    segundo dato: lo que se guarda es `meses`, se haya puesto con un
+    botón o a mano.
+  */
+  const [meses, setMeses] = useState(1)
+  const [aMano, setAMano] = useState(false)
   const [dia, setDia] = useState(1)
   const [tipoImpuesto, setTipoImpuesto] = useState<number>(tipoHabitual(impuesto) ?? 0)
   const [esperaPapel, setEsperaPapel] = useState(true)
@@ -115,7 +126,7 @@ export default function Fijos({
         proveedor: proveedor.trim(),
         importe: importe.trim(),
         categoria_id: partida,
-        cada,
+        cada_meses: meses,
         dia,
         espera_papel: esperaPapel,
         impuesto_tipo: impuesto === 'ninguno' ? null : tipoImpuesto,
@@ -289,7 +300,7 @@ export default function Fijos({
                 <span className="min-w-0 flex-1">
                   <span className="t-tarjeta block truncate">{p.que}</span>
                   <span className="t-apoyo mt-0.5 block">
-                    {comoSeDice(p.cada)} · día {p.dia}
+                    {comoSeDice(p)} · día {p.dia}
                     {p.espera_papel ? '' : ' · sin factura'}
                   </span>
                 </span>
@@ -396,24 +407,74 @@ export default function Fijos({
             </>
           )}
 
+          {/*
+            ── CADA CUÁNTO ──
+
+            Eran tres botones y Haris echó de menos dos cosas: *«los
+            botones de cada dos meses adicional o también una opción de
+            que tú lo pongas»*. Las dos son el mismo hueco — el seguro
+            que se paga en dos plazos y la cuota semestral no caben en
+            mensual, trimestral ni anual.
+
+            Cinco atajos y un «Otro». Los cinco son los que se usan; el
+            «Otro» es para que no haga falta volver a tocar esto nunca
+            más: por debajo todos escriben lo mismo, un número de
+            meses.
+
+            Y el campo de «Otro» sólo aparece al elegirlo. Un número
+            suelto ahí puesto, con cinco botones al lado, hace dudar de
+            cuál de los dos manda.
+          */}
           <p className="rotulo mt-4">¿Cada cuánto?</p>
           <div className="mt-2 grid grid-cols-3 gap-2.5">
-            {CADAS.map((c) => (
-              <button
-                key={c.valor}
-                onClick={() => setCada(c.valor)}
-                aria-pressed={cada === c.valor}
-                className="t-apoyo flex h-[60px] items-center justify-center rounded-[16px] border px-2 text-center font-extrabold leading-tight"
-                style={{
-                  borderColor: cada === c.valor ? 'var(--color-accion)' : 'var(--t-borde)',
-                  background: cada === c.valor ? 'var(--t-bien-velo)' : 'var(--t-superficie)',
-                  color: 'var(--t-tinta)',
+            {RITMOS.map((r) => (
+              <Ritmo
+                key={r.meses}
+                texto={r.texto}
+                puesto={!aMano && meses === r.meses}
+                alPulsar={() => {
+                  setAMano(false)
+                  setMeses(r.meses)
                 }}
-              >
-                {c.texto}
-              </button>
+              />
             ))}
+            <Ritmo
+              texto="Otro"
+              puesto={aMano}
+              alPulsar={() => setAMano(true)}
+            />
           </div>
+
+          {aMano && (
+            <label className="mt-2.5 flex items-center gap-3 rounded-[16px] border border-borde bg-superficie px-4 py-3">
+              <span className="t-cuerpo shrink-0 font-extrabold">Cada</span>
+              <input
+                type="number"
+                min={1}
+                max={36}
+                inputMode="numeric"
+                value={meses}
+                onChange={(e) => {
+                  const n = Math.round(Number(e.target.value))
+                  /* Se deja escribir cualquier cosa y se guarda dentro
+                     de lo posible: un campo que se resiste mientras
+                     escribes —que no deja llegar al 12 porque el 1 ya
+                     es válido— se siente estropeado. */
+                  setMeses(Number.isFinite(n) ? Math.min(36, Math.max(1, n)) : 1)
+                }}
+                className="t-cuerpo w-[90px] rounded-[12px] border border-borde bg-superficie px-3 py-2 text-center font-extrabold tabular-nums outline-none focus:border-[color:var(--color-accion)]"
+                autoFocus
+              />
+              <span className="t-cuerpo font-extrabold">meses</span>
+            </label>
+          )}
+
+          {/* Lo que va a pasar, dicho con el número ya puesto. Sin
+              esto, «cada 2 meses» y «el día 8» son dos datos sueltos
+              que hay que juntar en la cabeza. */}
+          <p className="t-apoyo mt-2">
+            {comoSeDice({ cada: 'mensual', cada_meses: meses })}, el día {dia}.
+          </p>
 
           <label className="mt-4 block">
             <span className="rotulo">¿Qué día del mes?</span>
@@ -506,5 +567,35 @@ export default function Fijos({
         </div>
       )}
     </div>
+  )
+}
+
+/*
+  Un botón de ritmo. Se sacó del cuerpo porque ahora son seis y
+  escribirlos seis veces es como uno se queda con el borde de otro
+  color el día que cambie la paleta.
+*/
+function Ritmo({
+  texto,
+  puesto,
+  alPulsar,
+}: {
+  texto: string
+  puesto: boolean
+  alPulsar: () => void
+}) {
+  return (
+    <button
+      onClick={alPulsar}
+      aria-pressed={puesto}
+      className="t-apoyo flex h-[60px] items-center justify-center rounded-[16px] border px-2 text-center font-extrabold leading-tight"
+      style={{
+        borderColor: puesto ? 'var(--color-accion)' : 'var(--t-borde)',
+        background: puesto ? 'var(--t-bien-velo)' : 'var(--t-superficie)',
+        color: 'var(--t-tinta)',
+      }}
+    >
+      {texto}
+    </button>
   )
 }

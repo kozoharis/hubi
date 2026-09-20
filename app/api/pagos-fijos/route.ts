@@ -4,7 +4,7 @@ import { quien } from '@/lib/supabase/quien'
 import { SIN_CASA } from '@/lib/hogar'
 import { hoyAqui } from '@/lib/tablon'
 import { pagosAlDia, papelesQueFaltan } from '@/lib/pagos-al-dia'
-import type { Cada } from '@/lib/pagos-fijos'
+import { laPalabraDe, type Cada } from '@/lib/pagos-fijos'
 import { elEspacio, elEspacioO } from '@/lib/espacio'
 
 export const dynamic = 'force-dynamic'
@@ -96,7 +96,33 @@ export async function POST(peticion: NextRequest) {
   const que = String(cuerpo.que ?? '').trim().slice(0, 80)
   const importe = elImporte(cuerpo.importe)
   const categoriaId = String(cuerpo.categoria_id ?? '')
-  const cada = CADAS.includes(String(cuerpo.cada)) ? (String(cuerpo.cada) as Cada) : 'mensual'
+  /*
+    ── EL RITMO, EN MESES ──
+
+    Desde el paso 92 lo que manda es un número. La pantalla manda
+    `cada_meses`; las pantallas viejas —y la voz, que todavía dice
+    «mensual»— siguen mandando `cada`, y se traduce.
+
+    `cada` se sigue escribiendo SIEMPRE, con la palabra que
+    corresponda, porque es lo único que va a leer el código que no
+    conozca la columna nueva. Y si la base de datos no la tiene, el
+    insert se reintenta sin ella un poco más abajo.
+  */
+  const dichos = Math.round(Number(cuerpo.cada_meses))
+  const porPalabra = CADAS.includes(String(cuerpo.cada))
+    ? (String(cuerpo.cada) as Cada)
+    : 'mensual'
+
+  const meses =
+    Number.isFinite(dichos) && dichos >= 1 && dichos <= 36
+      ? dichos
+      : porPalabra === 'anual'
+        ? 12
+        : porPalabra === 'trimestral'
+          ? 3
+          : 1
+
+  const cada = laPalabraDe(meses)
   const dia = Math.min(28, Math.max(1, Math.round(Number(cuerpo.dia) || 1)))
 
   if (que.length < 2) {
@@ -113,25 +139,43 @@ export async function POST(peticion: NextRequest) {
     ? String(cuerpo.desde)
     : hoyAqui()
 
-  const { data, error } = await supabase
-    .from('pagos_fijos')
-    .insert({
-      hogar_id: hogarId,
-      que,
-      proveedor: String(cuerpo.proveedor ?? '').trim().slice(0, 80) || null,
-      categoria_id: categoriaId,
-      importe,
-      impuesto_tipo:
-        cuerpo.impuesto_tipo == null || cuerpo.impuesto_tipo === ''
-          ? null
-          : Number(cuerpo.impuesto_tipo),
-      cada,
-      dia,
-      desde,
-      espera_papel: cuerpo.espera_papel !== false,
-      creado_por: user.id,
-    })
-    .select('id')
+  const fila = {
+    hogar_id: hogarId,
+    que,
+    proveedor: String(cuerpo.proveedor ?? '').trim().slice(0, 80) || null,
+    categoria_id: categoriaId,
+    importe,
+    impuesto_tipo:
+      cuerpo.impuesto_tipo == null || cuerpo.impuesto_tipo === ''
+        ? null
+        : Number(cuerpo.impuesto_tipo),
+    cada,
+    cada_meses: meses,
+    dia,
+    desde,
+    espera_papel: cuerpo.espera_papel !== false,
+    creado_por: user.id,
+  }
+
+  let { data, error } = await supabase.from('pagos_fijos').insert(fila).select('id')
+
+  /*
+    ── Y SI EL PASO 92 NO SE HA EJECUTADO TODAVÍA ──
+
+    La trampa de siempre: Postgres no ignora una columna que no
+    conoce, rechaza el INSERT entero. Sin este respaldo, el día que se
+    publique esto y antes de tocar la base de datos NADIE podría
+    apuntar un pago fijo.
+
+    Lo que se pierde entonces es el ritmo exacto: un «cada dos meses»
+    se guarda como 'trimestral', que es lo que dice `laPalabraDe` y es
+    el redondeo que no infla el balance. El pago se guarda igual.
+  */
+  if (error && /cada_meses/.test(error.message ?? '')) {
+    const sinLoNuevo: Record<string, unknown> = { ...fila }
+    delete sinLoNuevo.cada_meses
+    ;({ data, error } = await supabase.from('pagos_fijos').insert(sinLoNuevo).select('id'))
+  }
 
   /* Con `.select()`: un insert que la seguridad no permite contesta
      «todo bien» habiendo escrito cero filas. */

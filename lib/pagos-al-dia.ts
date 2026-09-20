@@ -45,6 +45,7 @@ type Fila = {
   importe: number
   impuesto_tipo: number | null
   cada: Cada
+  cada_meses?: number | null
   dia: number
   desde: string
   hasta: string | null
@@ -67,13 +68,32 @@ export async function pagosAlDia(
   const puestos: Puesto[] = []
   const fallos: string[] = []
 
-  let consulta = supa.from('pagos_fijos').select(
+  /*
+    ── `cada_meses` VA EN SU PROPIO INTENTO ──
+
+    Es la columna del paso 92, y aquí la trampa de siempre es peor que
+    en ninguna otra pantalla: si se pide y la base no la conoce,
+    Postgres no devuelve esa columna vacía — rechaza la consulta
+    ENTERA. Y esta función, cuando la consulta falla, se calla y
+    devuelve cero pagos, porque eso es lo correcto cuando la tabla
+    todavía no existe.
+
+    O sea que pedirla a secas apagaría TODOS los pagos fijos de todas
+    las casas, en silencio, hasta que alguien se diera cuenta de que
+    su balance lleva un mes sin previsiones. Se pide con ella y, si no
+    puede ser, sin ella: entonces manda `cada`, como toda la vida.
+  */
+  const CAMPOS =
     'id, hogar_id, que, proveedor, categoria_id, importe, impuesto_tipo, cada, dia, desde, hasta, espera_papel'
-  ).eq('activo', true)
 
-  if (soloHogar) consulta = consulta.eq('hogar_id', soloHogar)
+  async function traer(campos: string) {
+    let c = supa.from('pagos_fijos').select(campos).eq('activo', true)
+    if (soloHogar) c = c.eq('hogar_id', soloHogar)
+    return (await c) as { data: Fila[] | null; error: unknown }
+  }
 
-  const { data, error } = await consulta
+  let { data, error } = await traer(`${CAMPOS}, cada_meses`)
+  if (error) ({ data, error } = await traer(CAMPOS))
   if (error || !data) {
     /* Sin la tabla todavía —el sql/47 sin ejecutar— esto no es un fallo
        que haya que gritar: simplemente no hay pagos fijos. */
@@ -131,7 +151,7 @@ export async function pagosAlDia(
         pago_fijo_id: pago.id,
         periodo,
         previsto: true,
-        nota: `Apuntado solo: ${comoSeLlamaElPeriodo(periodo, pago.cada)}`,
+        nota: `Apuntado solo: ${comoSeLlamaElPeriodo(periodo, pago)}`,
       }
       if (tipo != null) {
         fila.impuesto_tipo = tipo
@@ -157,7 +177,7 @@ export async function pagosAlDia(
       puestos.push({
         pago: pago.que,
         periodo: String(fila.periodo),
-        como: comoSeLlamaElPeriodo(String(fila.periodo), pago.cada),
+        como: comoSeLlamaElPeriodo(String(fila.periodo), pago),
       })
     }
   }
@@ -189,15 +209,23 @@ export async function papelesQueFaltan(
 ): Promise<Falta[]> {
   const faltan: Falta[] = []
 
-  let consulta = supa
-    .from('pagos_fijos')
-    .select('id, hogar_id, que, proveedor, categoria_id, cada, dia, desde, hasta')
-    .eq('activo', true)
-    .eq('espera_papel', true)
+  /* Con la columna del paso 92 y, si no está, sin ella. El porqué
+     está arriba, en `pagosAlDia`: aquí una consulta rechazada es «no
+     falta ningún papel», que es una mentira tranquila. */
+  const CAMPOS = 'id, hogar_id, que, proveedor, categoria_id, cada, dia, desde, hasta'
 
-  if (soloHogar) consulta = consulta.eq('hogar_id', soloHogar)
+  async function traer(campos: string) {
+    let c = supa
+      .from('pagos_fijos')
+      .select(campos)
+      .eq('activo', true)
+      .eq('espera_papel', true)
+    if (soloHogar) c = c.eq('hogar_id', soloHogar)
+    return (await c) as { data: Fila[] | null; error: unknown }
+  }
 
-  const { data, error } = await consulta
+  let { data, error } = await traer(`${CAMPOS}, cada_meses`)
+  if (error) ({ data, error } = await traer(CAMPOS))
   if (error || !data) return faltan
 
   for (const pago of data as Fila[]) {
@@ -237,12 +265,12 @@ export async function papelesQueFaltan(
     papeles = docs ?? []
 
     for (const periodo of ultimos) {
-      if (faltaElPapel(periodo, pago.cada, pago.proveedor, pago.categoria_id, papeles)) {
+      if (faltaElPapel(periodo, pago, pago.proveedor, pago.categoria_id, papeles)) {
         faltan.push({
           pago_id: pago.id,
           que: pago.que,
           periodo,
-          como: comoSeLlamaElPeriodo(periodo, pago.cada),
+          como: comoSeLlamaElPeriodo(periodo, pago),
           categoria_id: pago.categoria_id,
         })
       }

@@ -34,6 +34,15 @@
 
 export type Cada = 'mensual' | 'trimestral' | 'anual'
 
+/*
+  Lo mínimo que hay que saber de un pago para contar sus periodos: el
+  número de meses si lo tiene, y la palabra de siempre si no.
+
+  Va como tipo suelto porque lo piden funciones que reciben un pago
+  entero y otras que reciben sólo esto.
+*/
+export type Ritmo = { cada: Cada; cada_meses?: number | null }
+
 export type PagoFijo = {
   id: string
   que: string
@@ -42,6 +51,9 @@ export type PagoFijo = {
   importe: number
   impuesto_tipo: number | null
   cada: Cada
+  /* Del paso 92. Manda sobre `cada`. Opcional porque puede llegar sin
+     él de una base de datos que todavía no lo tenga. */
+  cada_meses?: number | null
   dia: number
   desde: string
   hasta: string | null
@@ -49,18 +61,69 @@ export type PagoFijo = {
   activo: boolean
 }
 
-export const CADAS: { valor: Cada; texto: string; meses: number }[] = [
-  { valor: 'mensual', texto: 'Todos los meses', meses: 1 },
-  { valor: 'trimestral', texto: 'Cada tres meses', meses: 3 },
-  { valor: 'anual', texto: 'Una vez al año', meses: 12 },
+/*
+  ═══════════════════════════════════════════════════════════════
+  EL RITMO ES UN NÚMERO DE MESES, NO UNA PALABRA
+  ═══════════════════════════════════════════════════════════════
+
+  Eran tres palabras —mensual, trimestral, anual— y el paso 47 explicó
+  bien por qué. Lo que faltaba era el seguro que se paga en dos plazos
+  y la cuota semestral: ninguno de los dos cabe en ninguna de las tres.
+
+  Desde el paso 92 manda `cada_meses`, un número. Las palabras siguen
+  en la base de datos como espejo para el código que no conozca la
+  columna nueva, y aquí sirven de respaldo si ese código es éste —o
+  sea, si el 92 todavía no se ha ejecutado.
+
+  Los botones de la pantalla son ATAJOS para escribir un número. Se
+  pueden añadir o quitar sin tocar la base de datos ni la API, que es
+  justamente lo que antes no se podía.
+*/
+export const RITMOS: { meses: number; texto: string }[] = [
+  { meses: 1, texto: 'Todos los meses' },
+  { meses: 2, texto: 'Cada dos meses' },
+  { meses: 3, texto: 'Cada tres meses' },
+  { meses: 6, texto: 'Cada seis meses' },
+  { meses: 12, texto: 'Una vez al año' },
 ]
 
-export function cadaCuantosMeses(cada: Cada): number {
-  return CADAS.find((c) => c.valor === cada)?.meses ?? 1
+/** Lo que dura un periodo de este pago, en meses. */
+export function mesesDe(p: Ritmo): number {
+  const n = Number(p.cada_meses)
+  if (Number.isFinite(n) && n >= 1 && n <= 36) return Math.round(n)
+  return p.cada === 'anual' ? 12 : p.cada === 'trimestral' ? 3 : 1
 }
 
-export function comoSeDice(cada: Cada): string {
-  return CADAS.find((c) => c.valor === cada)?.texto ?? 'Todos los meses'
+/*
+  La palabra que se guarda en `cada`, que es sólo el espejo.
+
+  Redondeando HACIA ARRIBA: dos meses se guarda como 'trimestral'.
+  Porque si algún día se lee el espejo en vez del número, un periodo
+  de MÁS genera un apunte previsto de más y eso infla el balance —y el
+  paso 47 ya decidió que el balance nunca miente hacia arriba—. Un
+  periodo de menos sólo hace que falte una previsión, que se ve.
+*/
+export function laPalabraDe(meses: number): Cada {
+  if (meses <= 1) return 'mensual'
+  if (meses <= 3) return 'trimestral'
+  return 'anual'
+}
+
+/** «Cada dos meses», «Cada cinco meses». Como se diría en voz alta. */
+export function comoSeDice(p: Ritmo): string {
+  const meses = mesesDe(p)
+  const atajo = RITMOS.find((r) => r.meses === meses)
+  if (atajo) return atajo.texto
+  return `Cada ${enLetra(meses)} meses`
+}
+
+const LETRAS = [
+  '', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho',
+  'nueve', 'diez', 'once', 'doce',
+]
+
+function enLetra(n: number): string {
+  return LETRAS[n] ?? String(n)
 }
 
 /*
@@ -85,10 +148,10 @@ export function comoSeDice(cada: Cada): string {
 const TOPE = 24
 
 export function periodosLlegados(
-  pago: { cada: Cada; dia: number; desde: string; hasta: string | null },
+  pago: Ritmo & { dia: number; desde: string; hasta: string | null },
   hoy: string
 ): string[] {
-  const paso = cadaCuantosMeses(pago.cada)
+  const paso = mesesDe(pago)
   const [aDesde, mDesde] = pago.desde.split('-').map(Number)
   if (!aDesde || !mDesde) return []
 
@@ -137,10 +200,15 @@ const MESES = [
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
 ]
 
-export function comoSeLlamaElPeriodo(periodo: string, cada: Cada): string {
+export function comoSeLlamaElPeriodo(periodo: string, ritmo: Ritmo): string {
   const [a, m] = periodo.split('-').map(Number)
-  if (cada === 'anual') return String(a)
-  if (cada === 'trimestral') return `${Math.floor((m - 1) / 3) + 1}º trimestre de ${a}`
+  const meses = mesesDe(ritmo)
+  if (meses === 12) return String(a)
+  if (meses === 3) return `${Math.floor((m - 1) / 3) + 1}º trimestre de ${a}`
+  /* Cualquier otro ritmo —dos meses, seis, cinco— no tiene nombre
+     propio en castellano, y el periodo se llama por el mes en que
+     EMPIEZA. «El de septiembre» se entiende; «el 3º bimestre» no lo
+     dice nadie. */
   return `${MESES[m - 1]} de ${a}`
 }
 
@@ -172,12 +240,12 @@ export function comoSeLlamaElPeriodo(periodo: string, cada: Cada): string {
 const GRACIA = 7
 export function faltaElPapel(
   periodo: string,
-  cada: Cada,
+  ritmo: Ritmo,
   proveedor: string | null,
   categoriaId: string,
   papeles: { proveedor: string | null; categoria_id: string | null; fecha_documento: string }[]
 ): boolean {
-  const meses = cadaCuantosMeses(cada)
+  const meses = mesesDe(ritmo)
   const [a, m] = periodo.split('-').map(Number)
 
   const desde = menosDias(periodo, GRACIA)

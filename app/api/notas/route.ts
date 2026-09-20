@@ -13,8 +13,9 @@ export const dynamic = 'force-dynamic'
   LAS NOTAS
   ═══════════════════════════════════════════════════════════════
 
-  Poner una, cambiarla, decir que la has visto, quitarla y volver a
-  sacarla. Cinco cosas, dos verbos: POST pone, PATCH toca.
+  Poner una, cambiarla, decir que la has visto, quitarla, volver a
+  sacarla y, al final del todo, borrarla. Seis cosas, tres verbos:
+  POST pone, PATCH toca, DELETE borra.
 
   Todo con la SESIÓN, nunca con la clave de servidor. La clave de
   servidor se salta las políticas — y las políticas son justo lo que
@@ -330,6 +331,105 @@ export async function PATCH(peticion: NextRequest) {
       {
         error: 'No se ha podido cambiar la nota.',
         detalle: error?.message ?? 'Puede que no tengas permiso para escribir en esta casa.',
+      },
+      { status: 500 }
+    )
+  }
+
+  return NextResponse.json({ bien: true })
+}
+
+// ── Borrarla del todo ──────────────────────────────────────
+/*
+  ═══════════════════════════════════════════════════════════════
+  Y ESTO ES LO ÚNICO DE MAPPEL QUE NO SE PUEDE DESHACER
+  ═══════════════════════════════════════════════════════════════
+
+  Hasta hoy una nota no se podía borrar: «Quitar» la aparta a
+  Guardadas y allí se quedaba para siempre. Está bien pensado —lo que
+  se quita se puede volver a poner— pero deja el corcho creciendo sin
+  fondo, y Haris lo dijo mirándolo: *«deberían poder eliminarse
+  también»*.
+
+  Tres decisiones, y las tres son de seguridad:
+
+  1 · SOLO DESDE GUARDADAS. Del corcho se QUITA; de Guardadas se
+      BORRA. Así borrar nunca es el botón de al lado del que se usa
+      todos los días, y para llegar a él hay que haber apartado la
+      nota antes. Dos gestos separados en el tiempo, que es lo que
+      convierte un descuido en una decisión.
+
+  2 · SOLO QUIEN LA ESCRIBIÓ. Es lo que dice la política
+      `notas_borrar` del SQL 39 desde el primer día, así que esto no
+      abre ningún permiso nuevo: comprueba aquí lo mismo que la base
+      de datos va a comprobar de todas formas, para poder contestar
+      con una frase en vez de con un error.
+
+  3 · Y LA PANTALLA PREGUNTA ANTES. Eso vive en el corcho, no aquí:
+      una API no pregunta, ejecuta.
+*/
+export async function DELETE(peticion: NextRequest) {
+  const supabase = await clienteSesion()
+  const user = await quien(supabase)
+  if (!user) {
+    return NextResponse.json({ error: 'Tienes que entrar primero.' }, { status: 401 })
+  }
+
+  let cuerpo: { id?: string }
+  try {
+    cuerpo = (await peticion.json()) as { id?: string }
+  } catch {
+    return NextResponse.json({ error: 'No se ha recibido nada.' }, { status: 400 })
+  }
+
+  const id = String(cuerpo.id ?? '')
+  if (!id) return NextResponse.json({ error: 'Falta la nota.' }, { status: 400 })
+
+  const hogarId = await elEspacio(supabase)
+  if (!hogarId) return NextResponse.json({ error: SIN_CASA }, { status: 409 })
+
+  const { data: nota } = await supabase
+    .from('notas')
+    .select('id, escrita_por, guardada_en')
+    .eq('hogar_id', hogarId)
+    .eq('id', id)
+    .maybeSingle()
+
+  /* Que ya no esté NO es un error: quien la borra quería que no
+     estuviera, y si otro se le adelantó el resultado es el mismo.
+     Contestar 404 aquí haría salir un aviso rojo por una cosa que ha
+     salido bien. */
+  if (!nota) return NextResponse.json({ bien: true })
+
+  if (nota.escrita_por !== user.id) {
+    return NextResponse.json(
+      { error: 'Solo puede borrarla quien la escribió.' },
+      { status: 403 }
+    )
+  }
+
+  if (!nota.guardada_en) {
+    return NextResponse.json(
+      {
+        error: 'Esa nota todavía está en el corcho.',
+        detalle: 'Quítala primero y bórrala desde Guardadas.',
+      },
+      { status: 409 }
+    )
+  }
+
+  const { error } = await supabase
+    .from('notas')
+    .delete()
+    .eq('hogar_id', hogarId)
+    .eq('id', id)
+
+  if (error) {
+    console.error('[MAPPEL] No se ha podido borrar la nota:', error)
+    return NextResponse.json(
+      {
+        error: 'No se ha podido borrar la nota.',
+        detalle: error.message,
       },
       { status: 500 }
     )
