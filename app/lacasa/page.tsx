@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import Barra from '../barra'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
 import { Volver } from '../iconos'
@@ -214,7 +213,6 @@ export default async function LaCasaHoy({
         )}
       </div>
 
-      <Barra activa="dia" voz={false} />
     </main>
   )
 }

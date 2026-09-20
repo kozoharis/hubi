@@ -4,7 +4,6 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien as quienEs } from '@/lib/supabase/quien'
 import { partesDe, enHoras, primeroDelMes } from '@/lib/dia'
 import { hoyAqui } from '@/lib/tablon'
-import Barra from '../../barra'
 import Cabecera from '../../cabecera'
 import Encabezado from '../../encabezado'
 import { Ico, Volver } from '../../iconos'
@@ -217,7 +216,6 @@ export default async function HorasDeAlguien({
         </div>
       </div>
 
-      <Barra activa="dia" voz={false} />
     </main>
   )
 }

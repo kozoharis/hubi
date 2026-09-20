@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import Barra from '../barra'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
 import { Aviso, PastillaAmbito } from '../piezas'
@@ -348,7 +347,6 @@ export default async function Compra() {
         />
       </div>
 
-      <Barra activa="dia" />
     </main>
   )
 }

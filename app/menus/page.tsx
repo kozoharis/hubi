@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import Barra from '../barra'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
 import { Volver } from '../iconos'
@@ -46,7 +45,6 @@ export default async function PaginaMenus() {
 
       {/* Encendía «Inicio» estando en Menús. Ninguna pestaña de abajo
           es ésta: se dice, en vez de marcar una que no es. */}
-      <Barra activa="dia" />
     </main>
   )
 }

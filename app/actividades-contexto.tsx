@@ -51,6 +51,15 @@ export type Casa = {
   /** Si esta casa usa la lista de la compra. */
   usaCompra: boolean
   /*
+    Si esta casa tiene Google Drive conectado.
+
+    Lo pide la barra de abajo desde que vive en el armazón: con Drive
+    conectado, el Inicio enseña HABLAR como elemento protagonista y el
+    botón flotante sobraría. Antes lo decidía el propio Inicio
+    (`voz={!conectado}`) porque era él quien pintaba la barra.
+  */
+  conectado: boolean
+  /*
     Si quien mira es una PANTALLA colgada en la casa y no una persona.
 
     Va aquí y no se deduce del rol porque no se puede: un dispositivo
@@ -61,7 +70,13 @@ export type Casa = {
   esPantalla: boolean
 }
 
-const VACIA: Casa = { actividades: [], rol: null, usaCompra: true, esPantalla: false }
+const VACIA: Casa = {
+  actividades: [],
+  rol: null,
+  usaCompra: true,
+  esPantalla: false,
+  conectado: false,
+}
 
 const Contexto = createContext<Casa | null>(null)
 

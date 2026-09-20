@@ -9,7 +9,6 @@ import AccionHecho from './accion'
 import Editar from './editar'
 import EnLaCocina from './en-la-cocina'
 import ALaVista from './a-la-vista'
-import Barra from '../../barra'
 import Encabezado from '../../encabezado'
 import { Volver } from '../../iconos'
 import type { Icono } from '../../iconos'
@@ -301,7 +300,6 @@ export default async function Detalle({
           />
         </div>
       </div>
-      <Barra activa="agenda" />
     </main>
   )
 }

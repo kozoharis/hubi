@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import Link from './enlace'
 import { Ico, Logo, Palabra } from './iconos'
 import { useCasa } from './actividades-contexto'
-import { pestanasDe, puedeHablar } from './pestanas'
+import { cualEsta, hayNavegacion, pestanasDe, puedeHablar } from './pestanas'
 import { DEGRADADO } from '@/lib/voz-mappel'
 
 /*
@@ -39,41 +39,18 @@ import { DEGRADADO } from '@/lib/voz-mappel'
   superficie tiene la suya y ninguna estorba a la otra.
 */
 
-/* De qué pestaña es cada dirección. Se mira el camino de dentro —el
-   que queda después del espacio— porque `/e/<casa>/documentos` es
-   Papeles igual que `/documentos`. */
-function cualEsta(ruta: string): string {
-  const dentro = ruta.replace(/^\/e\/[0-9a-fA-F-]{36}/, '') || '/'
-  if (dentro === '/') return 'inicio'
-  if (dentro.startsWith('/documentos')) return 'documentos'
-  if (dentro.startsWith('/agenda') || dentro.startsWith('/tablon')) return 'agenda'
-  if (dentro.startsWith('/cuentas') || dentro.startsWith('/finca') ||
-      dentro.startsWith('/seccion') || dentro.startsWith('/gastos')) return 'cuentas'
-  if (dentro.startsWith('/dia') || dentro.startsWith('/compra') ||
-      dentro.startsWith('/menus') || dentro.startsWith('/lacasa')) return 'dia'
-  return ''
-}
-
 /*
-  DONDE TODAVÍA NO HAY NADIE DENTRO, NO HAY RAIL.
+  ── DE QUÉ PESTAÑA ES CADA DIRECCIÓN, Y DÓNDE NO HAY NAVEGACIÓN ──
 
-  El rail vive en `layout.tsx`, o sea en TODAS las pantallas, y la
-  barra de abajo la pinta cada pantalla por su cuenta. Esa diferencia
-  tenía una consecuencia que no se veía en el móvil: en un ordenador,
-  quien abría MAPPEL sin haber entrado se encontraba las cinco pestañas
-  de la casa a la izquierda —Papeles, Cuentas, Ajustes— antes de
-  escribir su correo.
+  Las dos reglas vivían aquí, y ahora están en `pestanas.ts` porque
+  desde hoy la barra de abajo también las necesita: vive en el armazón,
+  igual que el rail, y tampoco tiene a nadie que le diga dónde está.
 
-  No abría nada, porque cada una de esas pantallas manda a `/entrar` al
-  no encontrar sesión. Pero enseñaba el interior de una casa a quien
-  todavía está en la puerta, y dejaba el formulario de entrar
-  encajonado en el hueco de la derecha.
-
-  Son también las únicas pantallas que se ven a pantalla completa, y
-  por eso son las únicas que siguen CENTRADAS: sin rail delante, no hay
-  pasillo vacío que corregir.
+  Lo que decía el comentario que había aquí —que el rail vive en
+  `layout.tsx` y la barra la pinta cada pantalla— ya no es verdad. Era
+  la causa de que en el móvil parpadeara la pantalla entera al cambiar
+  de pestaña, y se arregló subiendo la barra aquí arriba.
 */
-const SIN_RAIL = ['/entrar', '/empezar', '/privacidad', '/terminos']
 
 export default function Rail() {
   const { rol, esPantalla } = useCasa()
@@ -81,8 +58,7 @@ export default function Rail() {
   const activa = cualEsta(ruta)
   const pestanas = pestanasDe(rol)
 
-  const dentro = ruta.replace(/^\/e\/[0-9a-fA-F-]{36}/, '') || '/'
-  if (SIN_RAIL.some((r) => dentro === r || dentro.startsWith(r + '/'))) return null
+  if (!hayNavegacion(ruta)) return null
 
   /* Una pantalla colgada en la pared no se navega, se mira. */
   if (esPantalla) return null

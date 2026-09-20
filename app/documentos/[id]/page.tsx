@@ -4,7 +4,6 @@ import { quien } from '@/lib/supabase/quien'
 import { euros } from '@/lib/periodos'
 import { caminoDe, fechaLarga, type Categoria } from '@/lib/carpetas'
 import { diaLimite } from '@/lib/vencimientos'
-import Barra from '../../barra'
 import Cabecera from '../../cabecera'
 import Encabezado from '../../encabezado'
 import { Ico, Volver } from '../../iconos'
@@ -484,7 +483,6 @@ export default async function Documento({
         </div>
       </div>
 
-      <Barra activa="documentos" />
     </main>
   )
 }
@@ -512,7 +510,6 @@ function NoSeHaPodido() {
           explicacion="Sigue guardado, no se ha perdido nada. Es un fallo al leerlo. Vuelve a intentarlo en un momento."
         />
       </div>
-      <Barra activa="documentos" />
     </main>
   )
 }

@@ -4,7 +4,6 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import BotonSalir from '../boton-salir'
-import Barra from '../barra'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
 import { Ico, Logo, Volver, type Icono } from '../iconos'
@@ -1006,7 +1005,6 @@ export default async function Ajustes({
         </p>
       </div>
 
-      <Barra voz={false} />
     </main>
   )
 }

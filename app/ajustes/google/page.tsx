@@ -5,7 +5,6 @@ import { quien } from '@/lib/supabase/quien'
 import { mandaEnSuCasa, quienManda } from '@/lib/hogar'
 import { estadoGuardado } from '@/lib/google/calendario'
 import Cabecera from '../../cabecera'
-import Barra from '../../barra'
 import { Volver } from '../../iconos'
 import PrepararCalendario from '../calendario'
 import { elEspacio } from '@/lib/espacio'
@@ -116,7 +115,6 @@ export default async function AjustesDeGoogle() {
         )}
       </div>
 
-      <Barra voz={false} />
     </main>
   )
 }

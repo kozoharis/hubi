@@ -4,7 +4,6 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { actividadesDe } from '@/lib/actividades'
 import { gastadoEnCasa } from '@/lib/gastos-casa'
-import Barra from '../barra'
 import MappelCaja from '../mappel-caja'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
@@ -382,7 +381,6 @@ export default async function Cuentas() {
         </div>
       </div>
 
-      <Barra activa="cuentas" />
     </main>
   )
 }

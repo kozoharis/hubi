@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { clienteServidor } from '@/lib/supabase/servidor'
-import Barra from './barra'
 import Arranque from './arranque'
 import Invitacion from './invitacion'
 import SinAvisos from './sin-avisos'
@@ -1133,7 +1132,6 @@ export default async function Inicio({
         La regla sigue siendo la misma —un solo botón— pero ahora se
         cumple mirando si el otro existe.
       */}
-      <Barra activa="inicio" voz={!conectado} />
     </main>
   )
 }

@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Anadir from "./anadir"
-import Barra from '../barra'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
 import { Ico } from '../iconos'
@@ -232,7 +231,6 @@ export default async function Documentos({
             })}
           </ul>
         </div>
-        <Barra activa="documentos" />
       </main>
     )
   }
@@ -885,7 +883,6 @@ export default async function Documentos({
           <Anadir />
         </div>
       </div>
-      <Barra activa="documentos" />
     </main>
   )
 }

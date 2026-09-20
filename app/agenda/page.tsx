@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import Barra from '../barra'
 import MappelCaja from '../mappel-caja'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
@@ -220,7 +219,6 @@ export default async function Agenda({
         )}
       </div>
 
-      <Barra activa="agenda" />
     </main>
   )
 }

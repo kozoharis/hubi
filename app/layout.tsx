@@ -7,6 +7,7 @@ import { ProveedorActividades } from './actividades-contexto'
 import Marco from './marco'
 import { elEspacio } from '@/lib/espacio'
 import Rail from './rail'
+import Barra from './barra'
 import Instalacion from './instalacion'
 import SigueTrabajando from './sigue-trabajando'
 
@@ -180,6 +181,10 @@ export default async function RootLayout({
   */
   let esPantalla = false
   let usaCompra = true
+  /* Si esta casa tiene Google conectado. Lo pide la barra de abajo
+     desde que vive aquí: con Drive conectado el Inicio ya enseña
+     HABLAR en grande y el botón flotante sobraría. */
+  let conectado = false
 
   try {
     const supabase = await clienteSesion()
@@ -236,12 +241,23 @@ export default async function RootLayout({
       esPantalla = (mio?.clase as string | null) === 'dispositivo'
 
       if (mio?.hogar_id) {
-        const { data: casa } = await supabase
-          .from('hogares')
-          .select('usa_compra')
-          .eq('id', mio.hogar_id)
-          .maybeSingle()
+        /* Las dos, a la vez. Son dos tablas distintas y ninguna
+           depende de la otra, así que esperarlas una detrás de otra
+           sería un viaje de más en TODAS las pantallas. */
+        const [{ data: casa }, { data: drive }] = await Promise.all([
+          supabase
+            .from('hogares')
+            .select('usa_compra')
+            .eq('id', mio.hogar_id)
+            .maybeSingle(),
+          supabase
+            .from('conexion_drive')
+            .select('estado')
+            .eq('hogar_id', mio.hogar_id)
+            .maybeSingle(),
+        ])
         if (casa && casa.usa_compra === false) usaCompra = false
+        conectado = drive?.estado === 'activa'
       }
     }
   } catch {
@@ -371,7 +387,7 @@ export default async function RootLayout({
         */}
         <SigueTrabajando />
 
-        <ProveedorActividades casa={{ actividades, rol, usaCompra, esPantalla }}>
+        <ProveedorActividades casa={{ actividades, rol, usaCompra, esPantalla, conectado }}>
           {/*
             ── DOS SUPERFICIES, UN ARMAZÓN ──
 
@@ -392,6 +408,20 @@ export default async function RootLayout({
           <div className="flex h-full">
             <Rail />
             <Marco>{children}</Marco>
+
+            {/*
+              ── Y LA BARRA DE ABAJO, AQUÍ TAMBIÉN ──
+
+              Fuera del `<Marco>`, igual que el rail. Eso es todo el
+              arreglo: al vivir fuera de lo que cambia, no se va
+              cuando cambias de pestaña. El porqué largo está en
+              `barra.tsx`.
+
+              Va DESPUÉS del marco en el documento porque está fija
+              encima de él: así queda por delante sin tener que
+              inventarse un `z-index` nuevo.
+            */}
+            <Barra />
           </div>
         </ProveedorActividades>
       </body>

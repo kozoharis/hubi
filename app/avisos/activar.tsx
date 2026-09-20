@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Barra from '../barra'
 import Cabecera from '../cabecera'
 import { Volver } from '../iconos'
 import { Aviso, BotonPrincipal, BotonSecundario, PastillaAmbito } from '../piezas'
@@ -319,7 +318,6 @@ export default function Activar({ clavePublica }: { clavePublica: string }) {
           </div>
         )}
       </div>
-      <Barra activa={null} />
     </main>
   )
 }

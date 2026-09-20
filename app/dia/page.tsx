@@ -6,7 +6,6 @@ import { genteDeLaCasa, elAsesor } from '@/lib/gente'
 import { cuantasNotas, notasDe, conFecha } from '@/lib/notas'
 import { loDeHoy } from '@/lib/rutinas'
 import { hoyAqui } from '@/lib/tablon'
-import Barra from '../barra'
 import MappelCaja from '../mappel-caja'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
@@ -565,7 +564,6 @@ export default async function DiaADia() {
         </div>
       </div>
 
-      <Barra activa="dia" />
     </main>
   )
 }

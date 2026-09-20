@@ -1,7 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
 import Encabezado from '../../../encabezado'
 import { Volver, iconoDeEmoji } from '../../../iconos'
@@ -244,7 +243,6 @@ export default async function AjustesDeLaSeccion({
         <Quitar seccionId={id} nombre={nombre} apuntes={apuntes} papeles={papeles} />
       </div>
 
-      <Barra activa="cuentas" voz={false} />
     </main>
   )
 }

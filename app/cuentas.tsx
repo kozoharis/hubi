@@ -6,7 +6,6 @@ import { calcular, euros, eurosRedondo, type Vista } from '@/lib/periodos'
 import { fechaBreve } from '@/lib/carpetas'
 import { nombreApartamento } from '@/lib/reservas'
 import { unidadesDe, comoEsLaSeccion } from '@/lib/unidades'
-import Barra from './barra'
 import Cabecera from './cabecera'
 import Encabezado from './encabezado'
 import { Ico, type Icono } from './iconos'
@@ -1173,7 +1172,6 @@ export default async function Cuentas({
 
       {/* Las actividades viven ahora dentro de Cuentas: estando en la
           Finca, la pestaña que está encendida es Cuentas. */}
-      <Barra activa="cuentas" />
     </main>
   )
 }

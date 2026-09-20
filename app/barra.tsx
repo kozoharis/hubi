@@ -5,7 +5,8 @@ import Link from '@/app/enlace'
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { Ico, type Icono } from './iconos'
 import { useCasa } from './actividades-contexto'
-import { pestanasDe, puedeHablar } from './pestanas'
+import { usePathname } from 'next/navigation'
+import { cualEsta, hayBarra, laVozAqui, pestanasDe, puedeHablar } from './pestanas'
 import { DEGRADADO } from '@/lib/voz-mappel'
 
 /*
@@ -102,14 +103,54 @@ type Seccion = string | null
   las políticas de la base de datos. Aquí solo se decide qué se
   ofrece: no esconder, sino que cada uno encuentre lo suyo.
 */
-export default function Barra({
-  activa = null,
-  voz = true,
-}: {
-  activa?: Seccion
-  voz?: boolean
-}) {
-  const { rol, esPantalla } = useCasa()
+/*
+  ═══════════════════════════════════════════════════════════════
+  LA BARRA VIVE EN EL ARMAZÓN, Y ANTES NO
+  ═══════════════════════════════════════════════════════════════
+
+  Haris, probando en el móvil: *«aprietas una pestaña y tarda en
+  pasar… se queda como en blanco y luego no es mucho, pero se ve
+  raro»*.
+
+  No era lentitud. Era que **desaparecía el marco entero**.
+
+  Hasta hoy esta barra la pintaba CADA PANTALLA —veintiséis sitios,
+  cada uno diciéndole cuál era su pestaña—, así que al cambiar de
+  pestaña se iba con la pantalla vieja: se iban la cabecera, el
+  contenido y la barra, entraba el armazón gris de `loading.tsx` —que
+  no tiene barra— y volvía todo. Dura poco, y por eso «no es mucho»;
+  pero lo que se va y vuelve es lo ÚNICO fijo que hay en un móvil, y
+  eso el ojo lo ve.
+
+  En el ordenador no pasaba, y ahí estaba la pista: el rail siempre
+  vivió en `layout.tsx`, fuera de la pantalla, y por eso no se mueve
+  al navegar. Lo dejó escrito el propio `rail.tsx` hace meses —«el
+  rail vive en layout.tsx y la barra de abajo la pinta cada pantalla
+  por su cuenta»— y se quedó en un apunte.
+
+  Ahora las dos viven en el armazón. Es la misma navegación en dos
+  posturas, y ninguna de las dos se va cuando cambias de sitio.
+
+  ── Y POR ESO YA NO RECIBE NADA ──
+
+  `activa` y `voz` eran los dos datos que le pasaba cada pantalla, y
+  los dos se deducen solos:
+
+      activa  →  `cualEsta(ruta)`, la misma regla que usa el rail
+      voz     →  `laVozAqui(ruta, conectado)`, la regla escrita entera
+                 en `pestanas.ts` por primera vez
+
+  Que no reciba nada no es elegancia: es que **una pantalla nueva ya
+  sale con su barra bien puesta sin que nadie se acuerde de ponérsela**
+  — que es exactamente lo que el comentario de `actividades-contexto`
+  ya avisaba que iba a fallar: *«son quince archivos, y el día que
+  alguien añada uno nuevo se le olvidará»*.
+*/
+export default function Barra() {
+  const { rol, esPantalla, conectado } = useCasa()
+  const ruta = usePathname() ?? '/'
+  const activa: Seccion = cualEsta(ruta) || null
+  const voz = laVozAqui(ruta, conectado)
 
   /*
     ═══════════════════════════════════════════════════════════
@@ -134,7 +175,8 @@ export default function Barra({
     que antes — dos sitios señalados y ninguno claro.
 
     Se limpia solo: `useLinkStatus` pasa a falso cuando la navegación
-    termina, y para entonces la pantalla nueva ya manda su `activa`.
+    termina, y para entonces `cualEsta(ruta)` ya devuelve la nueva —
+    la dirección cambia en cuanto la navegación se confirma.
   */
   const [yendo, setYendo] = useState<string | null>(null)
 
@@ -174,6 +216,17 @@ export default function Barra({
      de un aparato es `nada` en carpetas y en cuentas— y el botón de
      HABLAR, que en una pared no lo va a pulsar nadie. */
   if (esPantalla) return null
+
+  /*
+    Y sólo donde salía antes.
+
+    Esto antes no hacía falta: la pintaba quien la quería. Ahora la
+    pinta el armazón, así que hay que decir dónde NO — y la respuesta
+    es «en las mismas de siempre», que es lo que comprueba
+    `pruebas/pestanas.ts` pantalla por pantalla. El porqué de no
+    igualarla al rail de una vez está en `pestanas.ts`.
+  */
+  if (!hayBarra(ruta)) return null
 
   /* `lg:hidden`: en grande navega el rail de la izquierda. Dos sitios
      señalando dónde estás es peor que uno. */

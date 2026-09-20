@@ -3,7 +3,6 @@ import { redirect, notFound } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import Anadir from "../../anadir"
-import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
 import Encabezado from '../../../encabezado'
 import { Ico, Volver } from '../../../iconos'
@@ -464,7 +463,6 @@ export default async function Seccion({
         )}
       </div>
 
-      <Barra activa="documentos" />
     </main>
   )
 }

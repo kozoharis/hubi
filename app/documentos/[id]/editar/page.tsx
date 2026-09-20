@@ -1,7 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import Barra from '../../../barra'
 import Cabecera from '../../../cabecera'
 import { Volver } from '../../../iconos'
 import { Aviso } from '../../../piezas'
@@ -81,7 +80,6 @@ export default async function EditarDocumento({
             explicacion="Sigue guardado, no se ha perdido nada. Es un fallo al leerlo. Vuelve a intentarlo en un momento."
           />
         </div>
-        <Barra activa="documentos" />
       </main>
     )
   }
@@ -105,7 +103,6 @@ export default async function EditarDocumento({
         <Corregir papel={data as Papel} categorias={(cats ?? []) as Categoria[]} />
       </div>
 
-      <Barra activa="documentos" />
     </main>
   )
 }

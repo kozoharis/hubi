@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
-import Barra from '../barra'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
 import { Volver } from '../iconos'
@@ -102,7 +101,6 @@ export default async function PaginaPagos() {
           es una clave que ya no existe —las actividades se identifican
           por su id— y por tanto no encendía nada igual. Se dice
           explícitamente en vez de dejarlo a que falle bien. */}
-      <Barra activa="cuentas" />
     </main>
   )
 }

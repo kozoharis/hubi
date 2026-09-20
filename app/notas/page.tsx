@@ -7,7 +7,6 @@ import { notasDe, conFecha } from '@/lib/notas'
 import Cabecera from '../cabecera'
 import { Pildora } from '../piezas'
 import Encabezado from '../encabezado'
-import Barra from '../barra'
 import { Volver } from '../iconos'
 import Notas from './notas'
 import { elEspacio } from '@/lib/espacio'
@@ -152,7 +151,6 @@ export default async function PaginaNotas({
         />
       </div>
 
-      <Barra activa="dia" />
     </main>
   )
 }
