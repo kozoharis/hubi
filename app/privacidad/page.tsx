@@ -118,10 +118,30 @@ export default function Privacidad() {
               posible acceder a ningún dato, y la separación entre casas la impone
               la propia base de datos, no la aplicación.
             </p>
+            {/*
+              ── ESTO YA NO ERA VERDAD ──
+
+              Decía que marcar algo como privado «está previsto pero
+              todavía no está disponible». Lo estuvo hasta el paso 82,
+              que lo construyó: las carpetas se pueden marcar como
+              propias, y lo que hay dentro no lo ve nadie más de la
+              casa — tampoco quien la creó.
+
+              Un texto de privacidad que se queda corto es tan malo
+              como uno que se pasa: éste le estaba diciendo a quien lo
+              leyera que sus informes médicos se ven en toda la casa
+              cuando ya podía cerrarlos.
+            */}
             <p className="mt-3">
-              Hoy <strong>todos los documentos de una casa son compartidos</strong>{' '}
-              entre sus miembros. La posibilidad de marcar un documento como privado
-              está prevista pero todavía no está disponible.
+              Una carpeta se puede marcar como <strong>tuya</strong>. Lo que haya
+              dentro deja de verlo el resto de la casa — incluida la persona que la
+              creó, que en esto no tiene ningún privilegio. Es lo que usamos para
+              Salud y para la documentación personal de cada uno.
+            </p>
+            <p className="mt-3">
+              El resto de carpetas son <strong>de la casa</strong>: las ven todos sus
+              miembros. Quien entre en la casa mañana verá lo compartido y no verá lo
+              de nadie, sin que haya que acordarse de cerrarle nada.
             </p>
           </section>
 

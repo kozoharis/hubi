@@ -102,7 +102,24 @@ const CABECERAS = [
     value: [
       'microphone=(self)',
       'camera=(self)',
-      'geolocation=()',
+      /*
+        ── ESTO ESTABA CERRADO DEL TODO, Y SE ABRE A mappel ──
+
+        Decía `geolocation=()`: ni mappel ni nada metido dentro podía
+        siquiera preguntar. Era correcto mientras el sitio de la casa
+        estaba escrito a mano en el código.
+
+        Desde el paso 93 hay un botón en Ajustes —«usar la ubicación
+        de este aparato»— que rellena el pueblo de la casa sin tener
+        que buscarlo. Se usa UNA vez, al configurarlo, y lo que se
+        guarda es el sitio; a partir de ahí mappel no vuelve a
+        preguntar dónde está nadie.
+
+        `(self)` y no `*`: mappel puede pedirlo, y una página de fuera
+        metida en un marco —el vídeo de una receta— sigue sin poder ni
+        preguntar. Que es exactamente lo que se quería proteger.
+      */
+      'geolocation=(self)',
       /* La pared se pone a pantalla completa para que Android le quite
          las barras. Va explícito aunque el valor por defecto ya sea
          éste: una cabecera que enumera unas y calla otras invita a

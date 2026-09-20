@@ -20,17 +20,18 @@
   datos cabe en una pared que se lee desde la puerta.
 
   ─────────────────────────────────────────────────────────────
-  ⚠️  AQUÍ ESTÁ ESCRITO DÓNDE VIVÍS · ES LA SEGUNDA LÍNEA ASÍ
+  DÓNDE · LO DICE LA CASA, Y ESTO ES SÓLO EL RESPALDO
 
-  La primera es `ZONA` en `lib/tablon.ts`. Ésta es la otra.
+  Aquí estaba escrito a mano el norte de Tenerife, heredado del
+  planteamiento original, y por eso la cocina enseñaba el tiempo de
+  Los Realejos. Desde el paso 93 el sitio es un dato de la CASA —se
+  busca el pueblo una vez en Ajustes y se guarda con sus coordenadas y
+  su huso— y estos números son lo que se usa mientras no lo haya.
 
-  Está puesto en el norte de Tenerife porque es lo que dice la zona
-  horaria (`Atlantic/Canary`) y porque el planteamiento habla de llevar
-  cosas a Los Realejos. **Si no es ahí, se cambian estos dos números y
-  ya está** — no hay nada más que tocar en todo el proyecto.
-
-  Se buscan en cualquier mapa: pulsar sobre el pueblo y copiar las
-  coordenadas.
+  Que el respaldo sea Madrid y no un vacío es a propósito: una casa
+  recién creada enseña el tiempo de algún sitio desde el primer día, y
+  si ese sitio no es el suyo se ve enseguida y se cambia. Un hueco
+  gris no se ve: se ignora.
 
   ─────────────────────────────────────────────────────────────
   Y SI FALLA, NO SALE
@@ -41,12 +42,21 @@
   existe hoy.
 */
 
-export const DONDE = {
-  lat: 28.39,
-  lon: -16.59,
-  /* Solo para poder decir de dónde es la previsión si algún día hace
-     falta. No se enseña: en tu propia cocina ya sabes dónde estás. */
-  sitio: 'Norte de Tenerife',
+export type Sitio = {
+  lat: number
+  lon: number
+  zona: string
+  /* Cómo se llama. No se enseña en la pared —en tu propia cocina ya
+     sabes dónde estás— pero sí en Ajustes, para poder comprobar que
+     lo que hay puesto es tu pueblo y no el de otro. */
+  nombre: string
+}
+
+export const DONDE: Sitio = {
+  lat: 40.4168,
+  lon: -3.7038,
+  zona: 'Europe/Madrid',
+  nombre: 'Madrid',
 }
 
 export type DiaDeTiempo = {
@@ -70,18 +80,25 @@ export type ElTiempo = {
   cada cinco minutos: sin esto serían casi trescientas llamadas al día
   por pantalla, para un dato que cambia cada hora larga.
 
-  `next: { revalidate }` es la caché de Next, o sea que la comparten
-  todas las pantallas de todas las casas — que es lo correcto, porque
-  el tiempo no es de nadie.
+  `next: { revalidate }` es la caché de Next y va por DIRECCIÓN, así
+  que dos casas del mismo pueblo comparten la misma petición y dos de
+  pueblos distintos tienen la suya. Sale solo, sin tener que pensarlo:
+  el tiempo no es de nadie, es del sitio.
 */
-export async function elTiempo(): Promise<ElTiempo | null> {
+export async function elTiempo(sitio: Sitio = DONDE): Promise<ElTiempo | null> {
   try {
+    /*
+      El huso va en la petición y no es un adorno: es lo que parte los
+      días. Pidiendo la previsión de Madrid con la medianoche de
+      Londres, «mañana» empieza una hora tarde y la máxima de mañana
+      puede ser la de pasado.
+    */
     const direccion =
       `https://api.open-meteo.com/v1/forecast` +
-      `?latitude=${DONDE.lat}&longitude=${DONDE.lon}` +
+      `?latitude=${sitio.lat}&longitude=${sitio.lon}` +
       `&current=temperature_2m,weather_code` +
       `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
-      `&timezone=Atlantic%2FCanary&forecast_days=4`
+      `&timezone=${encodeURIComponent(sitio.zona)}&forecast_days=4`
 
     const r = await fetch(direccion, { next: { revalidate: 1800 } })
     if (!r.ok) return null

@@ -70,10 +70,39 @@ export function deducirTipo(titulo: string): string {
   'en-CA' no es un capricho: es el único idioma que da la fecha ya
   escrita como 2026-08-29, que es como se guarda en la base de datos.
 
-  SI NO VIVÍS EN CANARIAS, aquí se cambia. Es la única línea del
-  proyecto donde está escrito dónde estáis.
+  ─────────────────────────────────────────────────────────────
+  ⚠️  ESTO DECÍA 'Atlantic/Canary' Y NO ERA VERDAD
+
+  Venía del planteamiento original —Juan Miguel, Conchita, Los
+  Realejos— y se quedó puesto cuando la aplicación se mudó. Salió a la
+  luz por el tiempo de la cocina, que enseñaba el de Tenerife; pero el
+  tiempo era lo de menos.
+
+  **`ZONA` decide qué es «hoy» en toda la aplicación**: lo de hoy en
+  la agenda, lo vencido, el día en que se apunta un gasto, cuándo le
+  toca a un pago fijo. Con Canarias puesta en una casa de la
+  península, entre las 00:00 y las 01:00 —las 02:00 en verano— mappel
+  creía que todavía era ayer: una tarea apuntada a las 00:30 caía en
+  el día anterior y salía ya vencida.
+
+  Eso no lo relaciona nadie nunca con un huso horario.
+
+  ─────────────────────────────────────────────────────────────
+  Y SIGUE SIENDO UNA CONSTANTE, A PROPÓSITO
+
+  Desde el paso 93 la CASA tiene su sitio guardado —con su huso— y de
+  ahí sale la previsión del tiempo. Esta línea no: `hoyAqui()` es una
+  función pura que se llama desde cincuenta sitios, muchos sin sesión
+  ni casa a mano (la cita diaria, los avisos del móvil), y volverla
+  dependiente de la casa es un cambio de otro tamaño.
+
+  Mientras todas las casas estén en el mismo huso, esto es correcto y
+  es una línea. El día que haya una casa en Canarias y otra en Madrid
+  habrá que llevarlo hasta el final, y el dato ya estará guardado.
+
+  SI OS MUDÁIS, aquí se cambia.
 */
-export const ZONA = 'Atlantic/Canary'
+export const ZONA = 'Europe/Madrid'
 
 const FORMATO_DIA = new Intl.DateTimeFormat('en-CA', {
   timeZone: ZONA,

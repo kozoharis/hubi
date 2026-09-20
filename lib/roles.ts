@@ -55,8 +55,24 @@ export const ROLES: {
     valor: 'asesor',
     nombre: 'Asesor o gestor',
     pie: 'Las cuentas de tus actividades. No toca nada.',
+    /*
+      ── ESTE TEXTO DECÍA LO CONTRARIO DE LO QUE HACE LA BASE ──
+
+      Ponía: «VE VUESTRA AGENDA ENTERA —también las citas del
+      médico—». Era verdad hasta el paso 64, que se la cerró: desde
+      entonces `nivel_por_rol('asesor','agenda')` es `nada` y lo único
+      que ve de la agenda es lo suyo —lo que él escribió y lo que le
+      encargaron— más los vencimientos de los papeles que puede abrir.
+      Es la regla del 64: **el aviso sigue al papel**.
+
+      Que un texto mienta a favor de la seguridad no lo hace inocuo.
+      Éste hace justo el daño que quería evitar: decirle a alguien que
+      invitar a su gestora le enseña las citas del médico es
+      convencerle de que no la invite. Se quedó sin actualizar cuando
+      se cerró la puerta, que es como se quedan todos.
+    */
     detalle:
-      'Entra, mira y se descarga lo que necesite de la finca, las obras o los pisos. No puede subir papeles, ni apuntar gastos, ni tocar las cuentas. Sí puede dejarte avisos y ponerte tareas, y VE VUESTRA AGENDA ENTERA —también las citas del médico—: es lo que hace falta para que os pongáis de acuerdo en las fechas.',
+      'Entra, mira y se descarga lo que necesite de la finca, las obras o los pisos. No puede subir papeles, ni apuntar gastos, ni tocar las cuentas. Sí puede dejarte avisos y ponerte tareas. De la agenda solo ve lo suyo —lo que él apunta y lo que le encargas— y los vencimientos de los papeles que ya puede abrir: vuestras citas del médico no las ve.',
   },
   {
     valor: 'mirar',

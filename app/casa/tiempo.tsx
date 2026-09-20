@@ -1,4 +1,6 @@
 import { COMO_SE_LLAMA, elCielo, elTiempo, type Cielo } from '@/lib/tiempo'
+import { elSitioDeLaCasa } from '@/lib/sitio'
+import { clienteSesion } from '@/lib/supabase/sesion'
 import { Ico, type Icono } from '../iconos'
 import { AMBITO } from '../piezas'
 import { Rotulo } from './rotulo'
@@ -61,7 +63,14 @@ const COLOR: Record<Cielo, string> = {
 const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
 
 export default async function Tiempo({ banda = false }: { banda?: boolean }) {
-  const t = await elTiempo()
+  /*
+    De dónde es la previsión: del sitio de la casa, no del que venía
+    escrito en el código. `elSitioDeLaCasa` devuelve siempre uno —el
+    guardado, o el del código si no hay— así que esta esquina no
+    depende de que nadie haya configurado nada.
+  */
+  const supabase = await clienteSesion()
+  const t = await elTiempo(await elSitioDeLaCasa(supabase))
   if (!t || t.dias.length === 0) return null
 
   const hoy = t.dias[0]

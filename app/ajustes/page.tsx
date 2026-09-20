@@ -21,6 +21,7 @@ import Gente, { type Vecino } from './gente'
 import Carpetas, { type Carpeta } from './carpetas'
 import Compra from './compra'
 import ImpuestoDeLaCasa from './impuesto'
+import SitioDeLaCasa from './sitio'
 import { esImpuesto, type Impuesto } from '@/lib/impuesto'
 import MiCalendario from './mi-calendario'
 import { casasDe } from '@/lib/casas'
@@ -466,6 +467,9 @@ export default async function Ajustes({
      en vez de decir «esa columna no existe». */
   let usaCompra = true
   let impuesto: Impuesto = 'ninguno'
+  /* Dónde está la casa, del paso 93. Nulo = todavía no se ha dicho, y
+     entonces manda el sitio escrito en `lib/tiempo.ts`. */
+  let sitio: { nombre: string; lat: number; lon: number; zona: string } | null = null
   /* Qué sale en la pantalla de la cocina. `null` es «nadie lo ha
      decidido», y es distinto de la lista vacía, que es «se ha decidido
      que no salga nada». La primera se dice; la segunda también, pero
@@ -492,25 +496,64 @@ export default async function Ajustes({
     if (hogarId) {
       /* En dos intentos: `impuesto` es del SQL 46 y no puede tumbar la
          lectura de `usa_compra`, que funciona desde el 32. */
-      let casa: { usa_compra?: boolean; impuesto?: string } | null = null
+      type Casa = {
+        usa_compra?: boolean
+        impuesto?: string
+        sitio_nombre?: string | null
+        sitio_lat?: number | null
+        sitio_lon?: number | null
+        sitio_zona?: string | null
+      }
+      let casa: Casa | null = null
 
-      const con = await supabase
+      /*
+        Tres intentos y no dos, porque son tres edades distintas:
+        `usa_compra` es del SQL 32, `impuesto` del 46 y el sitio del
+        93. Una consulta con las tres no puede tumbar a las dos
+        anteriores — y sin esto, publicar el sitio antes de ejecutar
+        el 93 dejaría Ajustes sin saber si esta casa usa la compra.
+      */
+      const conTodo = await supabase
         .from('hogares')
-        .select('usa_compra, impuesto')
+        .select('usa_compra, impuesto, sitio_nombre, sitio_lat, sitio_lon, sitio_zona')
         .eq('id', hogarId)
         .maybeSingle()
 
-      if (con.error) {
-        const sin = await supabase
+      if (!conTodo.error) casa = conTodo.data
+      else {
+        const con = await supabase
           .from('hogares')
-          .select('usa_compra')
+          .select('usa_compra, impuesto')
           .eq('id', hogarId)
           .maybeSingle()
-        casa = sin.data
-      } else casa = con.data
+
+        if (con.error) {
+          const sin = await supabase
+            .from('hogares')
+            .select('usa_compra')
+            .eq('id', hogarId)
+            .maybeSingle()
+          casa = sin.data
+        } else casa = con.data
+      }
 
       if (casa && casa.usa_compra === false) usaCompra = false
       if (casa && esImpuesto(casa.impuesto)) impuesto = casa.impuesto
+
+      /* Las dos coordenadas, o ninguna: media coordenada no es un
+         sitio. Si falta una, se enseña como «sin poner». */
+      if (
+        casa &&
+        Number.isFinite(Number(casa.sitio_lat)) &&
+        Number.isFinite(Number(casa.sitio_lon))
+      ) {
+        sitio = {
+          nombre: casa.sitio_nombre ?? 'Tu casa',
+          lat: Number(casa.sitio_lat),
+          lon: Number(casa.sitio_lon),
+          zona: casa.sitio_zona ?? 'Europe/Madrid',
+        }
+      }
     }
   } catch {
     /* Sin la columna todavía: se comporta como siempre. */
@@ -858,6 +901,23 @@ export default async function Ajustes({
             </div>
           </>
         )}
+
+        {/*
+          ── DÓNDE ESTÁ LA CASA ──
+
+          Va aquí, en «La casa», y no en «Tú»: la regla que parte esta
+          pantalla en dos es *lo de Tú sólo te afecta a ti; lo de La
+          casa lo notan los demás*. El sitio lo notan todos — es el
+          tiempo que sale en la cocina y el que ve Julia desde el
+          móvil.
+
+          Y encima de la compra porque de esto depende algo que se
+          mira todos los días al entrar en la cocina.
+        */}
+        <h2 className="rotulo mt-5">Dónde estáis</h2>
+        <div className="mt-2.5">
+          <SitioDeLaCasa puesto={sitio} puedo={manda} />
+        </div>
 
         {/* ── Lo que además usas ── */}
         <h2 className="rotulo mt-5">La lista de la compra</h2>
