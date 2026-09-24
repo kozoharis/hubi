@@ -56,13 +56,62 @@ type Datos = {
 const HOY = () => new Date().toISOString().slice(0, 10)
 const MAXIMO = 4 * 1024 * 1024
 
-export default function Formulario({
+/*
+  ═══════════════════════════════════════════════════════════════
+  «GUARDAR OTRO», Y POR QUÉ ESTO ES UN ENVOLTORIO
+  ═══════════════════════════════════════════════════════════════
+
+  Haris, usándolo de verdad: *«escaneo un documento desde una de las
+  cuentas, lo relaciona muy bien… y después me dice ¿quieres escanear
+  otro? o ir al inicio. Lo de escanear otro no me deja, no funciona el
+  botón»*.
+
+  Y no funcionaba, literalmente. «Guardar otro» era un enlace a
+  `/guardar`, y eso fallaba dos veces:
+
+    1 · **No limpiaba nada.** En Next, ir de `/guardar?raiz=X` a
+        `/guardar` vuelve a pedir la pantalla al servidor, pero este
+        componente sigue siendo el mismo y **conserva su estado**. El
+        `resultado` del papel anterior seguía puesto, así que se
+        quedaba enseñando «Documento guardado». Desde fuera: un botón
+        que no hace nada.
+    2 · **Perdía la cuenta.** El enlace iba a `/guardar` pelado, sin
+        el `?raiz=`, así que aunque hubiera funcionado habría salido
+        del ámbito de la actividad desde la que se entró — que es
+        justo lo que se arregló en su día.
+
+  Se podría resolver poniendo a cero las veintitantas variables de
+  estado una por una. **No se hace así a propósito**: el día que se
+  añada una nueva, alguien olvidará añadirla a esa lista, y entonces
+  el importe o la fecha del papel anterior se colarán en el
+  siguiente. Un fallo silencioso y en los datos.
+
+  Así que se tira el formulario entero y se monta uno nuevo. La
+  `key` cambia, React descarta TODO lo de dentro, y las propiedades
+  —la sección fijada incluida— siguen siendo las mismas. No hay nada
+  que acordarse de limpiar, ni hoy ni dentro de un año.
+*/
+export default function Formulario(props: {
+  categorias: Categoria[]
+  esPropietario?: boolean
+  enCarpeta?: string | null
+  raizFijada?: string | null
+  paraLista?: string | null
+}) {
+  const [vez, setVez] = useState(0)
+  return <Cuerpo key={vez} {...props} deNuevo={() => setVez((v) => v + 1)} />
+}
+
+function Cuerpo({
   categorias,
   esPropietario = false,
   enCarpeta = null,
   raizFijada = null,
   paraLista = null,
+  deNuevo,
 }: {
+  /** Empezar otro papel: tira este formulario y monta uno limpio. */
+  deNuevo: () => void
   categorias: Categoria[]
   /* El buscador de Drive abre la cuenta de quien conectó Google. */
   esPropietario?: boolean
@@ -1033,7 +1082,11 @@ export default function Formulario({
             <BotonPrincipal href={`/documentos/${resultado.id}`} icono="ojo">
               Ver documento
             </BotonPrincipal>
-            <BotonSecundario href="/guardar" icono="mas">
+            {/* No es un enlace: es el mismo sitio otra vez, limpio. Y
+                así se queda dentro de la actividad desde la que se
+                entró, sin tener que volver al inicio y entrar de
+                nuevo. */}
+            <BotonSecundario onClick={deNuevo} icono="mas">
               Guardar otro
             </BotonSecundario>
             <BotonTerciario href="/" icono="casa">

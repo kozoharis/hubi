@@ -193,8 +193,13 @@ export default function Sitio({
         <span className="min-w-0 flex-1">
           <span className="t-tarjeta block">Dónde está la casa</span>
           <span className="t-apoyo mt-0.5 block">
+            {/* Antes decía «· de aquí sale el tiempo de la cocina».
+                Ahora esta tarjeta vive DENTRO del apartado de la
+                cocina, y repetir «de la cocina» debajo de un rótulo
+                que ya pone «La pantalla de la cocina» es ruido. Se
+                queda lo que sí hace falta saber: para qué sirve. */}
             {loQueHay
-              ? `${loQueHay} · de aquí sale el tiempo de la cocina`
+              ? `${loQueHay} · de aquí sale el tiempo`
               : 'Sin poner. La cocina enseña el tiempo de Madrid.'}
           </span>
         </span>

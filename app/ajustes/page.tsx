@@ -901,23 +901,6 @@ export default async function Ajustes({
           </>
         )}
 
-        {/*
-          ── DÓNDE ESTÁ LA CASA ──
-
-          Va aquí, en «La casa», y no en «Tú»: la regla que parte esta
-          pantalla en dos es *lo de Tú sólo te afecta a ti; lo de La
-          casa lo notan los demás*. El sitio lo notan todos — es el
-          tiempo que sale en la cocina y el que ve Julia desde el
-          móvil.
-
-          Y encima de la compra porque de esto depende algo que se
-          mira todos los días al entrar en la cocina.
-        */}
-        <h2 className="rotulo mt-5">Dónde estáis</h2>
-        <div className="mt-2.5">
-          <SitioDeLaCasa puesto={sitio} puedo={manda} />
-        </div>
-
         {/* ── Lo que además usas ── */}
         <h2 className="rotulo mt-5">La lista de la compra</h2>
         <div className="mt-2.5">
@@ -958,6 +941,34 @@ export default async function Ajustes({
                   : `Salen ${tiposEnCasa.length} ${tiposEnCasa.length === 1 ? 'clase de cosa' : 'clases de cosas'}`
             }
           />
+
+          {/*
+            ── DÓNDE ESTÁ LA CASA, Y POR QUÉ ESTÁ AQUÍ ──
+
+            Vivía suelto más arriba, bajo un rótulo propio —«Dónde
+            estáis»— entre las carpetas y la compra. Haris, con la
+            pantalla delante y una flecha roja: *«coloca todo lo de la
+            cocina con la cocina, por lo del tiempo»*.
+
+            Y tenía razón por una cosa comprobable: **ese dato hoy no
+            sirve para nada más**. `elSitioDeLaCasa` sólo lo lee
+            `app/casa/tiempo.tsx`, que es la pared. Su propio pie ya lo
+            confesaba —«de aquí sale el tiempo de la cocina»— y aun así
+            estaba en otra parte de la pantalla. Un ajuste que explica
+            de qué sección es, colocado fuera de esa sección, es un
+            ajuste que se busca dos veces.
+
+            Ojo con una cosa si algún día esto cambia: la ZONA HORARIA
+            de la aplicación NO sale de aquí. `ZONA`, en `lib/tablon.ts`,
+            es una constante del despliegue y gobierna qué es «hoy» en
+            toda la aplicación. Lo de aquí es sólo el sitio del que se
+            pide la previsión. El día que el tiempo salga también en el
+            móvil, esto vuelve a ser un ajuste de la casa y hay que
+            sacarlo de este grupo.
+          */}
+          <div className="mt-3">
+            <SitioDeLaCasa puesto={sitio} puedo={manda} />
+          </div>
         </div>
 
         {/*
