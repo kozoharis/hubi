@@ -4,6 +4,7 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import BotonSalir from '../boton-salir'
+import CerrarLosDemas from '../cerrar-los-demas'
 import Cabecera from '../cabecera'
 import Encabezado from '../encabezado'
 import { Ico, Logo, Volver, type Icono } from '../iconos'
@@ -813,9 +814,27 @@ export default async function Ajustes({
         </div>
         </div>
 
-        {/* ── Y la puerta de salida, al final de lo tuyo ── */}
+        {/*
+          ── Y LAS DOS PUERTAS DE SALIDA, AL FINAL DE LO TUYO ──
+
+          Primero la de los demás aparatos y después la de éste, en ese
+          orden a propósito: quien viene aquí preocupado por haberse
+          dejado la sesión abierta en otro sitio se encuentra lo que
+          busca ANTES que el botón rojo de salir — que resuelve otra
+          cosa distinta y, si se pulsa por error, te deja fuera de aquí.
+
+          Por qué no hay una lista de «dónde tienes la app abierta»
+          está contado en `app/cerrar-los-demas.tsx`.
+        */}
         <div className="mt-8 border-t border-borde pt-6 lg:max-w-[440px]">
-          <BotonSalir />
+          <h2 className="rotulo">Tu sesión</h2>
+          <div className="mt-2.5">
+            <CerrarLosDemas />
+          </div>
+
+          <div className="mt-6">
+            <BotonSalir />
+          </div>
         </div>
           </>
         )}
