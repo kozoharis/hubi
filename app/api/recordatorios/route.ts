@@ -6,6 +6,7 @@ import { avisarA } from '@/lib/push'
 import { ponerCita } from '@/lib/google/calendario'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { elEspacio, elEspacioO } from '@/lib/espacio'
+import { apunta } from '@/lib/sucesos'
 
 export const dynamic = 'force-dynamic'
 
@@ -232,6 +233,10 @@ export async function POST(peticion: NextRequest) {
       }
     }
   })
+
+  /* Una por tarea: quien dicta tres cosas de golpe ha hecho tres
+     cosas, y para la recurrencia eso es un día activo igual. */
+  data.forEach(() => apunta('tarea_creada', { hogar: hogarId, perfil: user.id }))
 
   // `id` a secas para quien solo mandó una: no se rompe nada de lo que
   // ya llamaba a esta ruta.

@@ -5,6 +5,10 @@
     {
       "path": "/api/push/diario",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/mantenimiento",
+      "schedule": "0 4 * * 1"
     }
   ]
 }

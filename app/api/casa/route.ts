@@ -4,6 +4,7 @@ import { quien } from '@/lib/supabase/quien'
 import { SIN_CASA } from '@/lib/hogar'
 import { esImpuesto } from '@/lib/impuesto'
 import { elEspacio } from '@/lib/espacio'
+import { apunta } from '@/lib/sucesos'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,6 +80,10 @@ export async function POST(peticion: NextRequest) {
       { status: 500 }
     )
   }
+
+  /* La casa existe de verdad: `crear_mi_casa` la ha creado entera en
+     una transacción. Sólo a partir de aquí se apunta. */
+  apunta('espacio_creado', { hogar: data as string, perfil: user.id })
 
   return NextResponse.json({ bien: true, hogar: data })
 }

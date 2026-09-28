@@ -60,6 +60,11 @@ const DEL_ESPACIO = [
   'documentos', 'categorias', 'movimientos', 'recordatorios', 'notas',
   'compra', 'listas_compra', 'unidades', 'rutinas', 'rutinas_hechas',
   'menus', 'recetas', 'pagos_fijos', 'dias_en_casa',
+  /* `sucesos` y `concesiones` son de un espacio como las demás, aunque
+     no las vea nadie: si un suceso se apunta sin decir de qué casa, la
+     métrica de esa casa se pierde, y una concesión sin espacio sería
+     una capacidad regalada a todo el mundo. */
+  'sucesos', 'concesiones',
 ]
 
 function archivos(dir, sacos = []) {

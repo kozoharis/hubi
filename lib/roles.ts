@@ -28,6 +28,39 @@
   es lo que de verdad se agradece.
 */
 
+/*
+  ─────────────────────────────────────────────────────────────
+  ANTES DE AÑADIR UN ROL AQUÍ · LA REGLA DEL PATROCINADOR
+
+  Esta lista es donde algún día alguien va a escribir `| 'sponsor'`.
+  Cuando llegue ese día, que lea esto primero.
+
+  ── QUIEN PAGA NO ES MIEMBRO ──
+
+  Una promotora, un ayuntamiento o una aseguradora pueden pagar MAPPEL
+  para una casa. Eso NO les convierte en gente de esa casa, y por lo
+  tanto no se escribe aquí.
+
+  Pagar concede CAPACIDADES —que la casa pueda usar la IA de papeles,
+  por ejemplo—. No concede ACCESO. Son dos cosas distintas y viven en
+  dos sitios distintos:
+
+      quién entra y qué ve   →  `miembros`     (esta lista, los roles)
+      qué puede usar la casa →  `concesiones`  (sql/96)
+
+  `concesiones` no tiene ni una columna de permiso. No es una promesa
+  de que no se vaya a colar: es que no hay por dónde. Y `miembros` es
+  lo único que abre una puerta.
+
+  Un rol `sponsor` en esta lista rompería eso de un plumazo: metería a
+  quien paga DENTRO de la casa, y a partir de ahí el que su nivel sea
+  `nada` en todo es una decisión revisable — exactamente lo que no
+  queremos que sea.
+
+  Que alguien pague la IA no le deja ver qué analiza la IA.
+
+      claude/regla-sponsor-no-es-miembro.md
+*/
 export type Rol = 'familia' | 'ayuda' | 'asesor' | 'mirar'
 
 export const ROLES: {

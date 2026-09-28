@@ -3,7 +3,8 @@ import { clienteSesion } from '@/lib/supabase/sesion'
 import { quien } from '@/lib/supabase/quien'
 import { avisarDeCompra } from '@/lib/push'
 import { esAlgoQueSeCompra } from '@/lib/comprables'
-import { elEspacioO } from '@/lib/espacio'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
+import { apunta } from '@/lib/sucesos'
 
 export const dynamic = 'force-dynamic'
 
@@ -201,6 +202,18 @@ export async function POST(peticion: NextRequest) {
 
     /* Si faltaba el SQL se dice, pero DESPUÉS de haber apuntado: el
      aviso es para quien mantiene MAPPEL, no una excusa para no guardar. */
+  /* Lo que más se usa de todo MAPPEL: un papel se guarda una vez por
+     semana, la compra es todos los días. Sin esto, una casa que usa
+     MAPPEL a diario para la compra saldría como inactiva.
+
+     `elEspacio` y no `elEspacioO`: si no hay casa, mejor no apuntar
+     nada que apuntar un espacio que no existe. */
+  apunta('compra_apuntada', {
+    hogar: await elEspacio(supabase),
+    perfil: user.id,
+    via: 'escrito',
+  })
+
   return NextResponse.json({
     ok: true,
     cuantas: data?.length ?? cosas.length,

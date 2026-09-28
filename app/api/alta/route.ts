@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { clienteServidor } from '@/lib/supabase/servidor'
+import { apunta } from '@/lib/sucesos'
 
 export const dynamic = 'force-dynamic'
 
@@ -274,6 +275,10 @@ export async function POST(peticion: NextRequest) {
       { status: 500 }
     )
   }
+
+  /* El único suceso sin espacio: todavía no hay ninguno. Y sin perfil,
+     que se crea después, al entrar por primera vez. */
+  apunta('cuenta_creada', { hogar: null })
 
   return NextResponse.json({ bien: true })
 }

@@ -6,6 +6,7 @@ import { desgloseQueToca } from '@/lib/impuesto'
 import { tipoDe, TIPOS_BUENOS } from '@/lib/archivos'
 import { accesoDrive, idDeCarpeta, subirArchivo } from '@/lib/google/drive'
 import { elEspacio, elEspacioO } from '@/lib/espacio'
+import { apunta } from '@/lib/sucesos'
 import {
   cadena,
   rutaDeCarpetas,
@@ -333,6 +334,10 @@ export async function POST(peticion: NextRequest) {
       apuntado = true
     }
   }
+
+  /* El papel está en Drive y apuntado en la base. Aquí abajo, después
+     de todo lo que podía fallar. */
+  apunta('documento_guardado', { hogar: hogarId, perfil: user.id })
 
   return NextResponse.json({
     id: documento.id,

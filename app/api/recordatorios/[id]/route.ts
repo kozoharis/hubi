@@ -4,6 +4,7 @@ import { quien } from '@/lib/supabase/quien'
 import { ponerCita, quitarCita } from '@/lib/google/calendario'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { elEspacio, elEspacioO } from '@/lib/espacio'
+import { apunta } from '@/lib/sucesos'
 
 export const dynamic = 'force-dynamic'
 
@@ -182,6 +183,11 @@ export async function PATCH(
   /* La casa, antes del `after`: dentro ya no hay sesión que consultar
      y el calendario que se toca es el de esta casa. */
   const hogarId = await elEspacio(supabase)
+
+  /* Sólo al marcar HECHO. Deshacerlo no es una acción menos, pero
+     contar las dos haría que tachar y destachar dos veces pareciera
+     cuatro días de uso. */
+  if (hecho) apunta('tarea_hecha', { hogar: hogarId, perfil: user.id })
 
   after(async () => {
     if (!hogarId) return

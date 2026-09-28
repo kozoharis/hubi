@@ -5,6 +5,7 @@ import { SIN_CASA } from '@/lib/hogar'
 import { elEspacio } from '@/lib/espacio'
 import { avisarA } from '@/lib/push'
 import { leerPerfil } from '@/lib/perfil'
+import { apunta } from '@/lib/sucesos'
 
 export const dynamic = 'force-dynamic'
 
@@ -141,6 +142,10 @@ export async function POST(peticion: NextRequest) {
       console.error('[MAPPEL] Nota guardada pero sin avisar:', e)
     }
   }
+
+  /* La nota ya está puesta. El aviso de arriba puede haber fallado y
+     eso no cambia que se haya escrito. */
+  apunta('nota_creada', { hogar: hogarId, perfil: user.id, via: 'escrito' })
 
   return NextResponse.json({ bien: true, id: data.id })
 }

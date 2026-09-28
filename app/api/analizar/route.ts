@@ -5,7 +5,8 @@ import { leerDocumento } from '@/lib/ocr'
 import { entenderPapel, type Conocido } from '@/lib/entender'
 import { tipoDe, TIPOS_BUENOS } from '@/lib/archivos'
 import { cadena, cuelgaDe, type Categoria } from '@/lib/rutas'
-import { elEspacioO } from '@/lib/espacio'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
+import { apunta } from '@/lib/sucesos'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -321,6 +322,14 @@ export async function POST(peticion: NextRequest) {
         comoSeLeyo = 'modelo'
       } catch (e) {
         console.error('[MAPPEL] El modelo no ha podido con la foto:', e)
+        /* Que la IA NO entienda un papel es una métrica de producto:
+           dice si la promesa de automatización se sostiene. Por eso
+           tiene tipo propio y no un `ok` dentro del suceso bueno. */
+        apunta('papel_no_entendido', {
+          hogar: await elEspacio(supabase),
+          perfil: user.id,
+          via: 'foto',
+        })
         return NextResponse.json(
           {
             error: enCristiano(e),
@@ -330,6 +339,11 @@ export async function POST(peticion: NextRequest) {
         )
       }
     } else {
+      apunta('papel_no_entendido', {
+        hogar: await elEspacio(supabase),
+        perfil: user.id,
+        via: 'foto',
+      })
       return NextResponse.json(
         { error: 'Este documento no se ha podido leer solo. Clasifícalo a mano.' },
         { status: 422 }
@@ -338,6 +352,15 @@ export async function POST(peticion: NextRequest) {
 
     // Solo aceptamos una categoría si existe de verdad y es una hoja.
     const sugerida = hojas.find((c) => c.id === lectura.categoria_id) ?? null
+
+    /* La IA ha entendido el papel. Todavía no se ha guardado nada
+       —eso lo decide la persona en la pantalla siguiente— pero la
+       promesa del producto se ha cumplido aquí. */
+    apunta('papel_leido_por_ia', {
+      hogar: await elEspacio(supabase),
+      perfil: user.id,
+      via: 'foto',
+    })
 
     return NextResponse.json({
       ...lectura,

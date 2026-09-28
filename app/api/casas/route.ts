@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { clienteSesion } from '@/lib/supabase/sesion'
 import { clienteServidor } from '@/lib/supabase/servidor'
 import { quien } from '@/lib/supabase/quien'
+import { apunta } from '@/lib/sucesos'
 
 export const dynamic = 'force-dynamic'
 
@@ -95,6 +96,11 @@ export async function POST(peticion: NextRequest) {
           { status: 500 }
         )
       }
+      /* Ya está dentro. Dentro del `if`: si la fila ya tenía
+         `aceptado_en`, esto es sólo cambiar de casa, no aceptar nada,
+         y contarlo otra vez inflaría la métrica cada vez que alguien
+         cambia de espacio. */
+      apunta('invitacion_aceptada', { hogar: casa, perfil: user.id })
     }
     /* Y se pasa a mirarla: quien acepta una invitación quiere entrar,
        no volver a buscarla en un menú. */

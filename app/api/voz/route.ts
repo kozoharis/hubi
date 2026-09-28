@@ -37,7 +37,8 @@ function aDondeLleva(
 import { citasDeLaFamilia } from '@/lib/agenda-google'
 import { calcular, euros } from '@/lib/periodos'
 import { hoyAqui } from '@/lib/tablon'
-import { elEspacioO } from '@/lib/espacio'
+import { elEspacio, elEspacioO } from '@/lib/espacio'
+import { apunta } from '@/lib/sucesos'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -180,6 +181,16 @@ export async function POST(peticion: NextRequest) {
       () => {},
       () => {}
     )
+
+  /*
+    Y EL MISMO MOMENTO, PARA LA MÉTRICA.
+
+    Aquí y no en cada una de las doce respuestas de más abajo: éste es
+    el punto que MAPPEL ya había decidido que significa «ha hablado»
+    —el renglón de arriba—, y tener dos definiciones distintas de lo
+    mismo en el mismo archivo es como se acaba midiendo otra cosa.
+  */
+  apunta('voz_usada', { hogar: await elEspacio(supabase), perfil: user.id, via: 'voz' })
 
   try {
     /* Las pistas son los botones de "¿qué quieres que haga con esto?".
