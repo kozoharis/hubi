@@ -1,6 +1,14 @@
+import Link from '@/app/enlace'
 import { hoyAqui } from '@/lib/tablon'
-import { elLunesDe, laSemanaDe, comoSeLlamaLaSemana } from '@/lib/menus'
+import {
+  elLunesDe,
+  laSemanaDe,
+  comoSeLlamaLaSemana,
+  otraSemana,
+  laSemanaEnPalabras,
+} from '@/lib/menus'
 import { laPared, lasListasDeCompra, losMenus } from '@/lib/pared'
+import { Ico, type Icono } from '../../iconos'
 import { AMBITO } from '../../piezas'
 import { Nada, Rotulo } from '../rotulo'
 import Recetas, { type Receta } from './recetas'
@@ -41,14 +49,62 @@ export const dynamic = 'force-dynamic'
   Se atenúan. Esconderlos dejaría la semana empezando el jueves, y
   entonces habría que leer los rótulos para saber dónde está uno. Es lo
   mismo que hace la pestaña de la Semana y por el mismo motivo.
+
+  ─────────────────────────────────────────────────────────────
+  Y AHORA TAMBIÉN LAS SEMANAS QUE VIENEN
+
+  Haris: *«sería bueno que en la cocina para organizar las comidas se
+  vieran también las semanas siguientes, y así poder organizarlo desde
+  ese espacio»*.
+
+  Enseñaba una sola semana, la de hoy, y eso dejaba la pared sirviendo
+  para MIRAR lo que ya estaba decidido pero no para DECIDIRLO. Y el
+  menú de la semana que viene no se piensa un lunes por la mañana: se
+  piensa el domingo por la tarde, de pie en la cocina, que es
+  exactamente cuando se está delante de esta pantalla y no del móvil.
+
+  Va igual que el Calendario de la pared —`?lunes=` en la dirección,
+  flechas de 60 px y un botón de vuelta— y a propósito: dos maneras
+  distintas de cambiar de semana en la misma pared obligarían a
+  aprender dos.
+
+  ── Y por qué en la dirección y no en un estado ──
+
+  Por lo mismo que las cinco pestañas: la vuelta automática a Hoy
+  —`vuelve-a-hoy.tsx`, a los tres minutos sin tocarla— se lleva por
+  delante también la semana en la que alguien dejó la pantalla. Si la
+  semana viviera en un `useState`, habría que acordarse de reiniciarla
+  aparte, y el día que alguien se olvidara la cocina amanecería
+  enseñando el menú de dentro de un mes.
+
+  ── Y hacia atrás también ──
+
+  Podría parecer que las semanas pasadas no sirven para planificar.
+  Sirven: la pregunta de verdad delante de la nevera es «¿qué pusimos
+  la semana pasada?», que es como no repetir lentejas tres lunes
+  seguidos.
 */
 
-export default async function Menu() {
+export default async function Menu({
+  searchParams,
+}: {
+  searchParams: Promise<{ lunes?: string }>
+}) {
   const { supabase, casa } = await laPared()
 
   const hoy = hoyAqui()
-  const lunes = elLunesDe(hoy)
+
+  /*
+    Se valida la forma antes de usarla. Una fecha torcida —escrita a
+    mano, o un enlace viejo— se ignora y se enseña esta semana, que es
+    lo único que nunca está mal. Igual que en el Calendario.
+  */
+  const pedida = (await searchParams).lunes ?? ''
+  const lunes = /^\d{4}-\d{2}-\d{2}$/.test(pedida) ? elLunesDe(pedida) : elLunesDe(hoy)
   const dias = laSemanaDe(lunes)
+
+  const estaSemana = lunes === elLunesDe(hoy)
+  const enPalabras = laSemanaEnPalabras(lunes, hoy)
 
   const [menus, lasRecetas, listas] = await Promise.all([
     losMenus(supabase, casa, dias[0], dias[6]),
@@ -105,11 +161,50 @@ export default async function Menu() {
 
   return (
     <section className="mt-12">
-      <div className="flex items-baseline gap-5">
-        <Rotulo>Qué se come</Rotulo>
-        <p className="text-[20px] font-extrabold text-tinta-suave">
-          {comoSeLlamaLaSemana(lunes)}
-        </p>
+      <div className="flex items-center justify-between gap-8">
+        <div className="flex items-baseline gap-5">
+          <Rotulo>Qué se come</Rotulo>
+          {/*
+            Primero la palabra y después la fecha: «La semana que viene
+            · Del 6 al 12 de octubre». La palabra se lee desde la
+            puerta y la fecha se lee de cerca, y en ese orden ninguna
+            de las dos estorba a la otra.
+
+            Las semanas lejanas no tienen palabra —`laSemanaEnPalabras`
+            devuelve nada— y entonces manda la fecha sola, que es lo
+            honesto: «en siete semanas» no sitúa a nadie.
+          */}
+          <p className="text-[20px] font-extrabold text-tinta-suave">
+            {enPalabras && !estaSemana && (
+              <span className="text-tinta">{enPalabras} · </span>
+            )}
+            {comoSeLlamaLaSemana(lunes)}
+          </p>
+        </div>
+
+        {/*
+          ── ADELANTE Y ATRÁS ──
+
+          Los mismos 60 px, el mismo redondeo y el mismo botón de vuelta
+          que el Calendario de la pared. Se mira de pie, de paso y a
+          veces con una mano ocupada.
+
+          Y el del medio solo sale cuando hace falta: un «Esta semana»
+          encendido estando ya en esta semana es un botón que no hace
+          nada, y en una pared eso lo prueba todo el mundo una vez.
+        */}
+        <div className="flex shrink-0 items-center gap-3">
+          <Flecha hacia={otraSemana(lunes, -1)} icono="atras" que="Semana anterior" />
+          {!estaSemana && (
+            <a
+              href="/casa/menu"
+              className="flex h-[60px] items-center rounded-full border border-borde bg-superficie px-6 text-[18px] font-extrabold text-tinta"
+            >
+              Esta semana
+            </a>
+          )}
+          <Flecha hacia={otraSemana(lunes, 1)} icono="flecha" que="Semana siguiente" />
+        </div>
       </div>
 
       <div className="mt-2 xl:grid xl:grid-cols-[1.35fr_1fr] xl:items-start xl:gap-12">
@@ -126,9 +221,19 @@ export default async function Menu() {
         El aviso se queda, arriba y en una línea: dice qué pasa sin
         quitar de en medio lo que hay que tocar.
       */}
+      {/*
+        Y el aviso dice DE QUÉ semana habla. Escribir «esta semana»
+        mirando la que viene es decirle a alguien que está donde no
+        está, y en una pantalla que vuelve sola a Hoy cada tres minutos
+        eso se confunde enseguida.
+      */}
       {!hayAlguno && (
         <div className="mt-6">
-          <Nada>Esta semana no hay nada puesto todavía. Toca un día y ponlo.</Nada>
+          <Nada>
+            {estaSemana
+              ? 'Esta semana no hay nada puesto todavía. Toca un día y ponlo.'
+              : `${enPalabras ?? 'Esa semana'} no tiene nada puesto todavía. Toca un día y ponlo.`}
+          </Nada>
         </div>
       )}
 
@@ -263,4 +368,29 @@ const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', '
 
 function nombreDelDia(iso: string): string {
   return DIAS[new Date(`${iso}T12:00:00`).getDay()]
+}
+
+/*
+  Una flecha de semana. Es la misma que la del Calendario de la pared,
+  copiada a propósito en vez de compartida: son dos pantallas con dos
+  direcciones distintas, y sacarla a un archivo común obligaría a
+  pasarle el camino como parámetro para ahorrar doce renglones.
+
+  El dibujo va solo, que es la única excepción de MAPPEL a «un dibujo
+  nunca va solo», y se paga con el `aria-label`: dos flechas a los
+  lados de una fecha son el idioma de cualquier calendario, y escribir
+  «Semana siguiente» al lado de cada una le robaría a la fecha el sitio
+  que necesita.
+*/
+function Flecha({ hacia, icono, que }: { hacia: string; icono: Icono; que: string }) {
+  return (
+    <Link
+      href={`/casa/menu?lunes=${hacia}`}
+      aria-label={que}
+      title={que}
+      className="tocable flex h-[60px] w-[60px] items-center justify-center rounded-full border border-borde bg-superficie text-tinta"
+    >
+      <Ico nombre={icono} tam={26} grosor={2.3} />
+    </Link>
+  )
 }

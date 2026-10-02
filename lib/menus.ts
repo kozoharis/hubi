@@ -62,6 +62,44 @@ export function otraSemana(lunes: string, cuantas: number): string {
   return comoTexto(d)
 }
 
+/**
+ * Cuántas semanas hay de una a otra. Negativo hacia atrás.
+ *
+ * Cuenta LUNES A LUNES y no días sueltos: así «la semana que viene» es
+ * la que viene, y no depende de si hoy es lunes o domingo.
+ */
+export function cuantasSemanas(deLunes: string, aLunes: string): number {
+  const a = elDia(elLunesDe(deLunes))
+  const b = elDia(elLunesDe(aLunes))
+  return Math.round((b.getTime() - a.getTime()) / (7 * 86_400_000))
+}
+
+/*
+  ─────────────────────────────────────────────────────────────
+  CÓMO SE DICE UNA SEMANA CUANDO NO ES ÉSTA
+
+  «Del 6 al 12 de octubre» obliga a saber qué día es hoy para entender
+  dónde estás. En una pantalla colgada en la cocina, que se mira de
+  paso y sin pararse, eso es justo el trabajo que no se puede pedir.
+
+  Así que delante de la fecha va la palabra: «la semana que viene»,
+  «la semana pasada». A partir de dos semanas ya no hay palabra que
+  valga —«en tres semanas» se entiende peor que la fecha— y entonces
+  manda la fecha sola.
+*/
+export function laSemanaEnPalabras(lunes: string, hoy: string): string | null {
+  switch (cuantasSemanas(hoy, lunes)) {
+    case 0:
+      return 'Esta semana'
+    case 1:
+      return 'La semana que viene'
+    case -1:
+      return 'La semana pasada'
+    default:
+      return null
+  }
+}
+
 /** «lunes 9» — el nombre del día con su número, que es como se lee. */
 export function comoSeLlamaElDia(iso: string): string {
   const d = elDia(iso)
