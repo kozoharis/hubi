@@ -148,12 +148,37 @@ export type Inicio = {
 export function queVeEnInicio(rol: string | null | undefined): Inicio {
   switch (rol) {
     case 'ayuda':
-      /* Lo de hoy y la compra. Los tickets se suben desde la propia
-         compra, que es donde tiene sentido: con el papel en la mano al
-         salir del súper. «Guardar documento» a secas la mandaría a
-         elegir carpeta entre veinte que no puede ver. */
+      /*
+        ── Y AQUÍ PONÍA QUE NO PODÍA GUARDAR PAPELES ──
+
+        Decía: *«los tickets se suben desde la propia compra, que es
+        donde tiene sentido: con el papel en la mano al salir del
+        súper. "Guardar documento" a secas la mandaría a elegir
+        carpeta entre veinte que no puede ver»*.
+
+        La primera mitad sigue siendo verdad y el botón de la compra se
+        queda donde está: al salir del súper, ésa es la vía corta.
+
+        La segunda mitad **ya no es cierta**, y conviene decirlo
+        porque es el motivo entero de la decisión anterior. `poner_rol`
+        —sql/39— le abre a quien ayuda la carpeta CASA entera con
+        permiso de escribir, y `categorias_leer` —sql/33— filtra por
+        `puedo_ver_carpeta`. O sea que al entrar en Guardar NO ve
+        veinte carpetas: ve las suyas, las cuatro o cinco de Casa.
+        Nunca Salud, nunca las cuentas, nunca los papeles de la
+        familia.
+
+        Haris: *«sobre todo por si se olvidan de hacerlo en el momento
+        de la compra»*. Y eso es exactamente lo que faltaba: el ticket
+        aparece en el bolsillo el martes por la tarde, cuando la
+        compra del lunes ya está cerrada y la vía corta ya ha pasado.
+        Sin esta puerta, ese ticket no se guarda nunca.
+
+        El permiso llevaba meses dado. Lo único que lo tapaba era esta
+        línea.
+      */
       return {
-        guardarDocumento: false,
+        guardarDocumento: true,
         compra: true,
         notas: true,
         cuentasCasa: false,

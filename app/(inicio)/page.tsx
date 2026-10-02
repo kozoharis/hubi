@@ -677,7 +677,12 @@ export default async function Inicio({
         {rol && rol !== 'familia' && (
           <p className="mt-4 rounded-[18px] border border-borde bg-superficie px-4 py-3.5 text-[15.5px] font-semibold leading-snug text-tinta-suave lg:col-start-1 lg:row-start-3">
             {rol === 'ayuda'
-              ? 'Aquí tienes lo que te han encargado y la lista de la compra. El ticket del súper se guarda desde la propia compra.'
+              ? /* Decía que el ticket se guardaba «desde la propia compra», y
+                   desde ahí se sigue guardando — es la vía corta al salir del
+                   súper. Pero ahora también desde aquí, que es la que hace
+                   falta cuando el ticket aparece en el bolsillo dos días
+                   después y la compra ya está cerrada. */
+                'Aquí tienes lo que te han encargado y la lista de la compra. Y puedes guardar un ticket o un papel de la casa cuando quieras.'
               : rol === 'asesor'
                 ? 'Tienes acceso a las cuentas y a los papeles de las actividades de esta casa. Están abajo. No puedes cambiar nada.'
                 : 'Puedes ver las cosas de esta casa, pero no cambiar nada.'}
@@ -787,7 +792,13 @@ export default async function Inicio({
                       ? ` · ${desdeElUltimo(ultimoPapel?.[0]?.creado_en as string | undefined)}`
                       : ''
                   }`
-                : 'Haz una foto y yo lo archivo'}
+                : /* La primera vez se dice QUÉ cabe aquí, y a quien ayuda se le
+                     dice con sus palabras: ella no viene a archivar los papeles
+                     de la familia —no los ve— sino a dejar el ticket del súper
+                     o la factura del fontanero. */
+                  rol === 'ayuda'
+                  ? 'El ticket del súper, o un papel de la casa'
+                  : 'Haz una foto y yo lo archivo'}
             </p>
           </div>
         )}
