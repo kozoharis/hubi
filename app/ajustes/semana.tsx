@@ -41,7 +41,24 @@ import { refrescar } from '@/lib/refrescar'
   que nadie lo note.
 */
 
-type Trabajo = { que: string; dias: number[] }
+type Trabajo = { que: string; dias: number[]; cada: number }
+
+/*
+  ── CADA CUÁNTO VUELVE ──
+
+  Cuatro opciones y ni una más. «Cada cuatro semanas» dice lo que hace
+  y por eso se escribe así, con su aclaración entre paréntesis: NO es
+  «el primer lunes de cada mes». Cada cuatro semanas son trece veces
+  al año y el primer lunes son doce, y a los pocos meses dejarían de
+  coincidir. Un texto que promete una cosa y hace otra es el fallo que
+  más caro sale en MAPPEL.
+*/
+const CADA: { valor: number; texto: string }[] = [
+  { valor: 1, texto: 'Cada semana' },
+  { valor: 2, texto: 'Cada dos semanas' },
+  { valor: 3, texto: 'Cada tres semanas' },
+  { valor: 4, texto: 'Cada cuatro semanas (una vez al mes)' },
+]
 
 export default function Semana({
   quienEs,
@@ -64,16 +81,31 @@ export default function Semana({
      por día como está en la base de datos. Es lo mismo, contado como
      lo cuenta una persona. */
   const dePartida: Trabajo[] = (() => {
-    if (plan.length === 0) return DE_SIEMPRE.map((t) => ({ ...t, dias: [] }))
+    if (plan.length === 0) return DE_SIEMPRE.map((t) => ({ ...t, dias: [], cada: 1 }))
 
     const juntos = new Map<string, number[]>()
-    for (const r of plan) juntos.set(r.que, [...(juntos.get(r.que) ?? []), r.dia])
+    const suCada = new Map<string, number>()
+    for (const r of plan) {
+      juntos.set(r.que, [...(juntos.get(r.que) ?? []), r.dia])
+      /* La frecuencia es del TRABAJO, no de cada día suyo. Si por lo
+         que sea dos filas del mismo trabajo tuvieran distinta, manda
+         la mayor: es la que alguien eligió a propósito, porque uno es
+         el valor por defecto. */
+      suCada.set(r.que, Math.max(suCada.get(r.que) ?? 1, r.cada_semanas ?? 1))
+    }
 
-    const suyos = [...juntos.entries()].map(([que, dias]) => ({ que, dias }))
+    const suyos = [...juntos.entries()].map(([que, dias]) => ({
+      que,
+      dias,
+      cada: suCada.get(que) ?? 1,
+    }))
     /* Y detrás, las de siempre que todavía no tenga, por si quiere
        añadir alguna sin escribirla. */
     const yaEstan = new Set(suyos.map((t) => t.que))
-    return [...suyos, ...DE_SIEMPRE.filter((t) => !yaEstan.has(t.que)).map((t) => ({ ...t, dias: [] }))]
+    return [
+      ...suyos,
+      ...DE_SIEMPRE.filter((t) => !yaEstan.has(t.que)).map((t) => ({ ...t, dias: [], cada: 1 })),
+    ]
   })()
 
   const [trabajos, setTrabajos] = useState<Trabajo[]>(dePartida)
@@ -106,7 +138,7 @@ export default function Semana({
   function anadir() {
     const que = nuevo.trim().slice(0, 80)
     if (que.length < 2) return
-    setTrabajos((ts) => [...ts, { que, dias: [] }])
+    setTrabajos((ts) => [...ts, { que, dias: [], cada: 1 }])
     setNuevo('')
   }
 
@@ -119,7 +151,9 @@ export default function Semana({
        piensa una persona; allí se separa porque es como se consulta
        «qué toca hoy». */
     const rutinas = trabajos.flatMap((t) =>
-      t.dias.filter((d) => viene.includes(d)).map((d) => ({ que: t.que, dia: d }))
+      t.dias
+        .filter((d) => viene.includes(d))
+        .map((d) => ({ que: t.que, dia: d, cada_semanas: t.cada }))
     )
 
     const r = await fetch(api('/api/rutinas'), {
@@ -230,6 +264,37 @@ export default function Semana({
                 )
               })}
             </div>
+
+            {/*
+              ── Y CADA CUÁNTO VUELVE ──
+
+              Sólo cuando el trabajo tiene algún día marcado. Preguntar
+              cada cuánto vuelve algo que no se hace ningún día es
+              pedir que se conteste a nada, y en una lista de diez
+              trabajos serían diez preguntas vacías.
+
+              Debajo de los días y no al lado: es una pregunta sobre lo
+              que se acaba de marcar arriba, y leída en ese orden se
+              entiende sola — «los lunes… cada dos semanas».
+            */}
+            {t.dias.some((d) => viene.includes(d)) && (
+              <select
+                value={t.cada}
+                onChange={(e) =>
+                  setTrabajos((ts) =>
+                    ts.map((x, j) => (j === i ? { ...x, cada: Number(e.target.value) } : x))
+                  )
+                }
+                aria-label={`Cada cuánto: ${t.que}`}
+                className="entrada mt-2 h-12 text-[15.5px]"
+              >
+                {CADA.map((c) => (
+                  <option key={c.valor} value={c.valor}>
+                    {c.texto}
+                  </option>
+                ))}
+              </select>
+            )}
           </li>
         ))}
       </ul>

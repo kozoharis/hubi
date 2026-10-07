@@ -9,6 +9,7 @@
     "lint": "eslint",
     "probar-voz": "tsx pruebas/voz.ts",
     "probar-espacio": "node pruebas/espacio.mjs",
+    "probar-rutinas": "tsx pruebas/rutinas.ts",
     "probar-sucesos": "tsx pruebas/sucesos.ts",
     "probar-papeles": "tsx pruebas/papeles.ts",
     "probar-ruta": "tsx pruebas/ruta.ts",

@@ -46,7 +46,7 @@ export async function POST(peticion: NextRequest) {
 
   let cuerpo: {
     /** Las rutinas que debe haber, tal cual. Reemplazan a las de esa persona. */
-    rutinas?: { que?: string; dia?: number; hora?: string | null }[]
+    rutinas?: { que?: string; dia?: number; hora?: string | null; cada_semanas?: number }[]
     /** De quién son. Nulo = de la casa. */
     para?: string | null
   }
@@ -74,6 +74,11 @@ export async function POST(peticion: NextRequest) {
       que: String(r.que ?? '').trim().slice(0, 80),
       dia: Number(r.dia),
       hora: typeof r.hora === 'string' && /^\d{2}:\d{2}/.test(r.hora) ? r.hora.slice(0, 5) : null,
+      /* Cada cuántas semanas vuelve. Lo que no sea 1, 2, 3 o 4 es 1:
+         el `check` del sql/97 lo rechazaría igual, y un plan entero
+         que no entra por una casilla mal puesta es peor que una
+         rutina semanal de más. */
+      cada: [1, 2, 3, 4].includes(Number(r.cada_semanas)) ? Number(r.cada_semanas) : 1,
     }))
     .filter((r) => r.que.length > 0 && r.dia >= 1 && r.dia <= 7)
 
@@ -82,6 +87,45 @@ export async function POST(peticion: NextRequest) {
       { error: 'Son demasiadas. El plan de una semana no llega a cien cosas.' },
       { status: 400 }
     )
+  }
+
+  /*
+    ═══════════════════════════════════════════════════════════════
+    EL ANCLA SE CONSERVA, Y ESTO ES LO MÁS DELICADO DE AQUÍ
+    ═══════════════════════════════════════════════════════════════
+
+    El plan se guarda borrando y volviendo a escribir. Con rutinas
+    semanales eso daba igual: una rutina que vuelve todas las semanas
+    es la misma la escribas cuando la escribas.
+
+    Con «cada dos semanas» NO da igual. `desde` dice desde qué semana
+    se cuenta, y si se perdiera al reescribir, cada vez que alguien
+    tocara una casilla del plan —aunque fuera de otro trabajo— todas
+    las quincenales saltarían de fase. «Las sábanas cada dos semanas»
+    pasaría a tocar la semana que no toca, sin que nada lo avise.
+
+    Así que antes de borrar se apunta el ancla de cada trabajo, y al
+    volver a escribirlo se le devuelve la suya. Se reconoce por el
+    nombre y el día, que es lo que identifica un trabajo para quien lo
+    montó. Lo que no estuviera antes nace con el ancla de hoy.
+
+    Envuelto: sin el sql/97 no hay columna `desde`, esto devuelve
+    vacío y todo se comporta como antes.
+  */
+  const anclas = new Map<string, string>()
+  try {
+    let viejas = supabase
+      .from('rutinas')
+      .select('que, dia, desde')
+      .eq('hogar_id', hogarId)
+    viejas = para ? viejas.eq('para', para) : viejas.is('para', null)
+
+    const { data: antes } = await viejas
+    for (const v of (antes ?? []) as { que: string; dia: number; desde: string | null }[]) {
+      if (v.desde) anclas.set(`${v.que}·${v.dia}`, v.desde)
+    }
+  } catch {
+    /* Sin columna todavía. Nada que conservar. */
   }
 
   /* Se borra lo de ESA persona, no todo el plan de la casa: si el
@@ -105,20 +149,44 @@ export async function POST(peticion: NextRequest) {
 
   if (filas.length === 0) return NextResponse.json({ bien: true, cuantas: 0 })
 
-  const { data, error } = await supabase
+  const comunes = filas.map((r, i) => ({
+    hogar_id: hogarId,
+    que: r.que,
+    dia: r.dia,
+    hora: r.hora,
+    para,
+    orden: i,
+    creada_por: user.id,
+  }))
+
+  /*
+    Con las columnas del sql/97 y, si no están, sin ellas.
+
+    La regla de siempre en MAPPEL: una columna nueva nunca puede ser
+    obligatoria para lo que ya funcionaba. Entre que esto se despliega
+    y que la migración se ejecuta hay unos minutos, y en esos minutos
+    guardar el plan de la semana tiene que seguir funcionando.
+  */
+  let { data, error } = await supabase
     .from('rutinas')
     .insert(
-      filas.map((r, i) => ({
-        hogar_id: hogarId,
-        que: r.que,
-        dia: r.dia,
-        hora: r.hora,
-        para,
-        orden: i,
-        creada_por: user.id,
+      comunes.map((c, i) => ({
+        ...c,
+        cada_semanas: filas[i].cada,
+        /* La suya si ya la tenía; si no, desde hoy. */
+        desde: anclas.get(`${filas[i].que}·${filas[i].dia}`) ?? hoyAqui(),
       }))
     )
     .select('id')
+
+  if (error) {
+    const segunda = await supabase.from('rutinas').insert(comunes).select('id')
+    if (!segunda.error) {
+      console.warn('[MAPPEL] Plan guardado sin las semanas: falta el sql/97.')
+      data = segunda.data
+      error = null
+    }
+  }
 
   /* El `.select()`: sin él, un insert que las políticas no permitan
      mete cero filas y contesta que todo ha ido bien. */
